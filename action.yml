@@ -1,0 +1,31 @@
+# action.yml
+name: "SDK Generation Action"
+description: "Manage SDK Generation and Release"
+inputs:
+  speakeasy-version:
+    description: The version of the Speakeasy CLI to use or "latest"
+    default: latest
+    required: false
+  openapi-doc-location:
+    description: The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document
+    required: true
+  github-access-token:
+    description: A GitHub access token with write access to the repo
+  languages:
+    description: |-
+      A yaml string containing a list of languages to generate SDKs for example:
+      languages: |
+        - go: ./go-sdk # specifying a output directory
+        - python # using default output of ./python-client-sdk
+        - typescript # using default output of ./typescript-client-sdk
+
+      If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
+    required: true
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  args:
+    - ${{ inputs.speakasy-version }}
+    - ${{ inputs.openapi-doc-location }}
+    - ${{ inputs.github-access-token }}
+    - ${{ inputs.languages }}
