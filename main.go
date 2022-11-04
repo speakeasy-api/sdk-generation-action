@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"os/exec"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -19,6 +20,8 @@ func main() {
 	for _, env := range os.Environ() {
 		fmt.Println(env)
 	}*/
+
+	runSpeakeasy()
 
 	accessToken := os.Getenv("INPUT_GITHUB-ACCESS-TOKEN")
 	if accessToken == "" {
@@ -44,6 +47,14 @@ func main() {
 		},
 	})
 	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func runSpeakeasy() {
+	cmd := exec.Command("/speakeasy", "--version")
+	cmd.Stdout = os.Stdout
+	if err := cmd.Run(); err != nil {
 		log.Fatal(err)
 	}
 }
