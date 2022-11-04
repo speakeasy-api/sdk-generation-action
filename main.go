@@ -1,17 +1,16 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"net/url"
 	"os"
-	"path"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
 func main() {
-	fmt.Println("speakeasy-version: ", os.Getenv("INPUT_SPEAKEASY-VERSION"))
+	/*fmt.Println("speakeasy-version: ", os.Getenv("INPUT_SPEAKEASY-VERSION"))
 	fmt.Println("openapi-doc-location: ", os.Getenv("INPUT_OPENAPI-DOC-LOCATION"))
 	fmt.Println("github-access-token: ", os.Getenv("INPUT_GITHUB-ACCESS-TOKEN"))
 	fmt.Println("languages: ", os.Getenv("INPUT_LANGUAGES"))
@@ -19,10 +18,9 @@ func main() {
 	fmt.Println("Docker Container ENV")
 	for _, env := range os.Environ() {
 		fmt.Println(env)
-	}
+	}*/
 
-	accessToken := os.Getenv("INPUT_GITHUB-ACCESS-TOKEN") // TODO validate
-
+	accessToken := os.Getenv("INPUT_GITHUB-ACCESS-TOKEN")
 	if accessToken == "" {
 		log.Fatal("No access token provided")
 	}
@@ -30,11 +28,14 @@ func main() {
 	githubURL := os.Getenv("GITHUB_SERVER_URL")
 	githubRepoLocation := os.Getenv("GITHUB_REPOSITORY")
 
-	repoPath := path.Join(githubURL, githubRepoLocation)
+	repoPath, err := url.JoinPath(githubURL, githubRepoLocation)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	log.Println("Cloning repo: ", repoPath)
 
-	_, err := git.PlainClone("/repo", false, &git.CloneOptions{
+	_, err = git.PlainClone("/repo", false, &git.CloneOptions{
 		URL:      repoPath,
 		Progress: os.Stdout,
 		Auth: &http.BasicAuth{
