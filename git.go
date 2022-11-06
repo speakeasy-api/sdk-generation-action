@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
@@ -48,4 +49,36 @@ func getGithubAuth(accessToken string) *gitHttp.BasicAuth {
 		Username: "gen",
 		Password: accessToken,
 	}
+}
+
+func commitAndPush(g *git.Repository, openAPIDocVersion, speakeasyVersion, accessToken string) error {
+	w, err := g.Worktree()
+	if err != nil {
+		return fmt.Errorf("error getting worktree: %w", err)
+	}
+
+	fmt.Println("Commit and pushing changes to git")
+
+	if _, err := w.Add("."); err != nil {
+		return fmt.Errorf("error adding changes: %w", err)
+	}
+
+	// TODO maybe print commit hash
+	if _, err := w.Commit(fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeay CLI %s", openAPIDocVersion, speakeasyVersion), &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  "Speakeasy CI",
+			Email: "ci@speakeasyapi.dev",
+		},
+		All: true,
+	}); err != nil {
+		return fmt.Errorf("error committing changes: %w", err)
+	}
+
+	if err := g.Push(&git.PushOptions{
+		Auth: getGithubAuth(accessToken),
+	}); err != nil {
+		return fmt.Errorf("error pushing changes: %w", err)
+	}
+
+	return nil
 }

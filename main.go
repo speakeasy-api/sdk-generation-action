@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/go-git/go-git/v5"
 	"github.com/hashicorp/go-version"
 	"github.com/invopop/yaml"
 )
@@ -114,26 +113,8 @@ func runAction() error {
 	}
 
 	if regenerated {
-		w, err := g.Worktree()
-		if err != nil {
-			return fmt.Errorf("error getting worktree: %w", err)
-		}
-
-		if _, err := w.Add("."); err != nil {
-			return fmt.Errorf("error adding changes: %w", err)
-		}
-
-		// TODO maybe print commit hash
-		if _, err := w.Commit(fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeay CLI %s", version, speakeasyVersion), &git.CommitOptions{
-			All: true,
-		}); err != nil {
-			return fmt.Errorf("error committing changes: %w", err)
-		}
-
-		if err := g.Push(&git.PushOptions{
-			Auth: getGithubAuth(accessToken),
-		}); err != nil {
-			return fmt.Errorf("error pushing changes: %w", err)
+		if err := commitAndPush(g, version, speakeasyVersion, accessToken); err != nil {
+			return err
 		}
 	}
 
