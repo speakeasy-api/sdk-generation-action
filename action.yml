@@ -2,15 +2,16 @@
 name: "SDK Generation Action"
 description: "Manage SDK Generation and Release"
 inputs:
-  speakeasy-version:
+  speakeasy_version:
     description: The version of the Speakeasy CLI to use or "latest"
     default: latest
     required: false
-  openapi-doc-location:
+  openapi_doc_location:
     description: The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document
     required: true
-  github-access-token:
+  github_access_token:
     description: A GitHub access token with write access to the repo
+    required: true
   languages:
     description: |-
       A yaml string containing a list of languages to generate SDKs for example:
@@ -25,7 +26,7 @@ runs:
   using: "docker"
   image: "Dockerfile"
   args:
-    - ${{ inputs.speakasy-version }}
-    - ${{ inputs.openapi-doc-location }}
-    - ${{ inputs.github-access-token }}
+    - ${{ inputs.speakeasy_version }}
+    - ${{ inputs.openapi_doc_location }}
+    - ${{ inputs.github_access_token }}
     - ${{ inputs.languages }}
