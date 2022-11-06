@@ -1,62 +1,63 @@
-# The Speakeasy CLI 
-![181640742-31ab234a-3b39-432e-b899-21037596b360](https://user-images.githubusercontent.com/68016351/196461357-fcb8d90f-cd67-498e-850f-6146c58d0114.png)
+# Speakeasy SDK Generation Action
 
-Speakeasy is a complete platform for API Developer Experience. Achieve the vision of self service APIs by moving beyond API docs. Give your API users a seamless onboarding and integration experience in minutes. Today Speakeasy powers: 
-- Developer Portals a Service: A best in class interactive portal for your API users to self service key management, request logs, usage and more.   
-- Client SDKs as Service: Idiomatic Client SDKs that just work. Generators built from the ground up with a focus on a langauge ergonomics 
+This action provides a self contained solution for automatically generating new versions of a client SDK either when the reference OpenAPI doc is updated or the Speakeasy CLI that is used to generate the SDKs is updated.
 
-## Overview
+The action runs through the following steps:
+- Downloads the latest (or pinned) version of the Speakeasy CLI
+- Clones the Repo
+- Downloads or loads the latest OpenAPI doc from a url or the repo
+- Checks for changes to the OpenAPI doc and the Speakeasy CLI Version
+- Generates a new SDK for the configured languages if necessary
+- Creates a commit with the new SDK(s) and pushes it to the repo
+- Publishes the new SDK(s) to the configured package manager (coming soon.)
 
-This CLI is a tool for interacting with the [Speakeasy](https://docs.speakeasyapi.dev/docs/speakeasy-cli/) platform and its various functions:
+## Inputs
 
-- Generating idiomatic client SDKs from OpenAPI3 specs:
-  * Live: go, python3 
-  * Coming soon: typescript(web/server), java, rust, ruby, c#
-  
-Want to learn more about our generation methodology ? Checkout out this [blog post]() to learn more about our generators. If you're interested in having managed Github repos generated for your SDKs reach out to us [here](https://www.speakeasyapi.dev/request-access) to learn more about our enterprise support model or come chat with us on [Slack](https://join.slack.com/t/speakeasy-dev/shared_invite/zt-1df0lalk5-HCAlpcQiqPw8vGukQWhexw). We'd love to help you build out API dev ex.   
+## `speakeasy_version`
 
-- (Coming Soon) Interacting with the Speakeasy platform to create and manage your developer portal.
-  * Create and manage workspaces
-  * Manage OpenAPI schemas
+The version of the Speakeasy CLI to use or `"latest"`. Default `"latest"`.
 
-## Installation
+## `openapi_doc_location`
 
-### Homebrew
+**Required** The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document.
 
-```bash
-brew install speakeasy-api/homebrew-tap/speakeasy
+## `github_access_token`
+
+**Required** A GitHub access token with write access to the repo.
+
+## `languages`
+
+**Required** A yaml string containing a list of languages to generate SDKs for example:
+```yaml
+languages: |
+  - go: ./go-sdk # specifying a output directory
+  - python # using default output of ./python-client-sdk
+  - typescript # using default output of ./typescript-client-sdk
 ```
 
-## CLI  
-`speakeasy`  
+If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo.
 
+## Example usage
 
-The speakeasy cli tool provides access to the speakeasyapi.dev toolchain  
+`.github/workflows/speakeasy_sdk_generation.yml`
+```yaml
+name: Generate
 
-### Details
+on:
+  workflow_dispatch: {} # Allows manual triggering of the workflow to generate SDK
+  schedule:
+    - cron: 0 0 * * * # Runs every day at midnight
 
- A cli tool for interacting with the Speakeasy https://www.speakeasyapi.dev/ platform and its various functions including:
-	- Generating Client SDKs from OpenAPI specs (go, python, typescript(web/server), + more coming soon)
-	- Interacting with the Speakeasy API to create and manage your API workspaces	(coming soon)
-	- Generating OpenAPI specs from your API traffic 								(coming soon)
-	- Validating OpenAPI specs 														(coming soon)
-	- Generating Postman collections from OpenAPI Specs 							(coming soon)
-
-
-### Usage
-
+jobs:
+  generate:
+    name: Generate SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: speakeasy-api/sdk-generation-action@v1.4
+        with:
+          speakeasy_version: latest
+          openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          languages: |-
+            - go
 ```
-speakeasy [flags]
-```
-
-#### Options
-
-```
-  -h, --help   help for speakeasy
-```
-
-#### Sub Commands
-
-* [speakeasy api](docs/api/README.md)	 - Access the Speakeasy API via the CLI
-* [speakeasy generate](docs/generate/README.md)	 - Generate Client SDKs, OpenAPI specs from request logs (coming soon) and more
-* [speakeasy validate](docs/validate/README.md)	 - Validate OpenAPI schemas + more (coming soon)
