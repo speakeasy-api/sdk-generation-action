@@ -22,6 +22,9 @@ inputs:
 
       If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
     required: true
+  debug:
+    description: "Enable debug logging"
+    default: "false"
 runs:
   using: "docker"
   image: "Dockerfile"

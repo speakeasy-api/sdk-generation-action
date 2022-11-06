@@ -28,12 +28,24 @@ func main() {
 }
 
 func runAction() error {
+	debug := os.Getenv("INPUT_DEBUG") == "true"
+
+	if debug {
+		for _, env := range os.Environ() {
+			fmt.Println(env)
+		}
+	}
+
 	pinnedSpeakeasyVersion := os.Getenv("INPUT_SPEAKEASY_VERSION")
 	openAPIDocLoc := os.Getenv("INPUT_OPENAPI_DOC_LOCATION")
 	languages := os.Getenv("INPUT_LANGUAGES")
+
 	accessToken := os.Getenv("INPUT_GITHUB_ACCESS_TOKEN")
 	if accessToken == "" {
-		return errors.New("github access token is required")
+		accessToken = os.Getenv("GITHUB_TOKEN")
+		if accessToken == "" {
+			return errors.New("github access token is required")
+		}
 	}
 
 	if err := downloadSpeakeasy(pinnedSpeakeasyVersion); err != nil {
