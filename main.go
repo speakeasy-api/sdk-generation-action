@@ -42,10 +42,7 @@ func runAction() error {
 
 	accessToken := os.Getenv("INPUT_GITHUB_ACCESS_TOKEN")
 	if accessToken == "" {
-		accessToken = os.Getenv("GITHUB_TOKEN")
-		if accessToken == "" {
-			return errors.New("github access token is required")
-		}
+		return errors.New("github access token is required")
 	}
 
 	if err := downloadSpeakeasy(pinnedSpeakeasyVersion); err != nil {

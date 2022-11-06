@@ -20,13 +20,20 @@ func cloneRepo(accessToken string) (*git.Repository, error) {
 		return nil, fmt.Errorf("failed to construct repo url: %w", err)
 	}
 
-	fmt.Println("Cloning repo: ", repoPath)
+	ref := os.Getenv("GITHUB_HEAD_REF")
+	if ref == "" {
+		ref = os.Getenv("GITHUB_REF")
+	} else {
+		ref = string(plumbing.NewBranchReferenceName(ref))
+	}
+
+	fmt.Printf("Cloning repo: %s from ref: %s\n", repoPath, ref)
 
 	g, err := git.PlainClone(path.Join(baseDir, "repo"), false, &git.CloneOptions{
 		URL:           repoPath,
 		Progress:      os.Stdout,
 		Auth:          getGithubAuth(accessToken),
-		ReferenceName: plumbing.NewBranchReferenceName(os.Getenv("GITHUB_HEAD_REF")),
+		ReferenceName: plumbing.ReferenceName(ref),
 		SingleBranch:  true,
 	})
 	if err != nil {
