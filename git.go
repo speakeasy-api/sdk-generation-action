@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -68,6 +69,7 @@ func commitAndPush(g *git.Repository, openAPIDocVersion, speakeasyVersion, acces
 		Author: &object.Signature{
 			Name:  "Speakeasy CI",
 			Email: "ci@speakeasyapi.dev",
+			When:  time.Now(),
 		},
 		All: true,
 	}); err != nil {
