@@ -31,7 +31,7 @@ inputs:
     default: "false"
 outputs:
   python_regenerated:
-    description: "True if the Python SDK was regenerated"
+    description: "true if the Python SDK was regenerated"
 runs:
   using: "docker"
   image: "Dockerfile"
