@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/go-git/go-git/v5"
@@ -52,35 +53,55 @@ func getGithubAuth(accessToken string) *gitHttp.BasicAuth {
 	}
 }
 
-func commitAndPush(g *git.Repository, openAPIDocVersion, speakeasyVersion, accessToken string) error {
+func commitAndPush(g *git.Repository, openAPIDocVersion, speakeasyVersion, accessToken string) (string, error) {
 	w, err := g.Worktree()
 	if err != nil {
-		return fmt.Errorf("error getting worktree: %w", err)
+		return "", fmt.Errorf("error getting worktree: %w", err)
 	}
 
 	fmt.Println("Commit and pushing changes to git")
 
 	if _, err := w.Add("."); err != nil {
-		return fmt.Errorf("error adding changes: %w", err)
+		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
-	// TODO maybe print commit hash
-	if _, err := w.Commit(fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeay CLI %s", openAPIDocVersion, speakeasyVersion), &git.CommitOptions{
+	commitHash, err := w.Commit(fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeay CLI %s", openAPIDocVersion, speakeasyVersion), &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "Speakeasy CI",
 			Email: "ci@speakeasyapi.dev",
 			When:  time.Now(),
 		},
 		All: true,
-	}); err != nil {
-		return fmt.Errorf("error committing changes: %w", err)
+	})
+	if err != nil {
+		return "", fmt.Errorf("error committing changes: %w", err)
 	}
 
 	if err := g.Push(&git.PushOptions{
 		Auth: getGithubAuth(accessToken),
 	}); err != nil {
-		return fmt.Errorf("error pushing changes: %w", err)
+		return "", fmt.Errorf("error pushing changes: %w", err)
 	}
 
-	return nil
+	return commitHash.String(), nil
+}
+
+func checkDirDirty(g *git.Repository, dir string) (bool, error) {
+	w, err := g.Worktree()
+	if err != nil {
+		return false, fmt.Errorf("error getting worktree: %w", err)
+	}
+
+	status, err := w.Status()
+	if err != nil {
+		return false, fmt.Errorf("error getting status: %w", err)
+	}
+
+	for f, s := range status {
+		if strings.HasPrefix(f, dir) && s.Worktree != git.Unmodified {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

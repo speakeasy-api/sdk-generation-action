@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 	"github.com/invopop/yaml"
@@ -65,12 +66,12 @@ func runAction() error {
 		return err
 	}
 
-	openAPIDocPath, checksum, version, err := getOpenAPIFileInfo(openAPIDocLoc)
+	docPath, docChecksum, docVersion, err := getOpenAPIFileInfo(openAPIDocLoc)
 	if err != nil {
 		return err
 	}
 
-	regenerated := false
+	langGenerated := map[string]bool{}
 
 	for lang, cfg := range genConfigs {
 		dir := langs[lang]
@@ -79,23 +80,56 @@ func runAction() error {
 			langCfg = map[string]string{
 				"version": "0.0.0",
 			}
+			cfg.Config[lang] = langCfg
 		}
 		sdkVersion := langCfg["version"]
 
-		newVersion, err := checkForChanges(speakeasyVersion, version, checksum, sdkVersion, cfg.Config["management"])
+		newVersion, err := checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion, cfg.Config["management"])
 		if err != nil {
 			return err
 		}
 
 		if newVersion != "" {
 			fmt.Println("New version detected: ", newVersion)
-			out, err := runSpeakeasyCommand("generate", "sdk", "-s", openAPIDocPath, "-l", lang, "-o", path.Join(baseDir, "repo", dir))
+			out, err := runSpeakeasyCommand("generate", "sdk", "-s", docPath, "-l", lang, "-o", path.Join(baseDir, "repo", dir))
 			if err != nil {
 				return fmt.Errorf("error generating sdk: %w - %s", err, out)
 			}
 			fmt.Println(out)
 
-			cfg.Config[lang]["version"] = newVersion
+			dirty, err := checkDirDirty(g, dir)
+			if err != nil {
+				return err
+			}
+
+			if dirty {
+				langGenerated[lang] = true
+				cfg.Config[lang]["version"] = newVersion
+			}
+		} else {
+			fmt.Println("No changes detected")
+		}
+	}
+
+	outputs := map[string]string{}
+
+	regenerated := false
+
+	releaseVersion := ""
+	usingGoVersion := false
+
+	if c, ok := genConfigs["go"]; ok {
+		releaseVersion = c.Config["go"]["version"]
+		usingGoVersion = true
+	}
+
+	for lang, cfg := range genConfigs {
+		if langGenerated[lang] {
+			outputs[lang+"_regenerated"] = "true"
+
+			cfg.Config["management"]["speakeasy-version"] = speakeasyVersion
+			cfg.Config["management"]["openapi-version"] = docVersion
+			cfg.Config["management"]["openapi-checksum"] = docChecksum
 
 			data, err := yaml.Marshal(cfg.Config)
 			if err != nil {
@@ -106,17 +140,48 @@ func runAction() error {
 				return fmt.Errorf("error writing config: %w", err)
 			}
 
+			if !usingGoVersion {
+				if releaseVersion == "" {
+					releaseVersion = cfg.Config[lang]["version"]
+				} else {
+					v, err := version.NewVersion(releaseVersion)
+					if err != nil {
+						return fmt.Errorf("error parsing version: %w", err)
+					}
+
+					v2, err := version.NewVersion(cfg.Config[lang]["version"])
+					if err != nil {
+						return fmt.Errorf("error parsing version: %w", err)
+					}
+
+					if v2.GreaterThan(v) {
+						releaseVersion = cfg.Config[lang]["version"]
+					}
+				}
+			}
+
 			regenerated = true
-		} else {
-			fmt.Println("No changes detected")
 		}
 	}
 
 	if regenerated {
-		if err := commitAndPush(g, version, speakeasyVersion, accessToken); err != nil {
+		commitHash, err := commitAndPush(g, docVersion, speakeasyVersion, accessToken)
+		if err != nil {
+			return err
+		}
+
+		if err := createRelease(releaseVersion, commitHash, docPath, docVersion, speakeasyVersion); err != nil {
 			return err
 		}
 	}
+
+	outputLines := []string{}
+
+	for k, v := range outputs {
+		outputLines = append(outputLines, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	os.Setenv("GITHUB_OUTPUT", strings.Join(outputLines, "\n"))
 
 	return nil
 }
@@ -220,10 +285,6 @@ func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion strin
 			fmt.Println("Bumping SDK patch version")
 			patch++
 		}
-
-		mgmtConfig["speakeasy-version"] = speakeasyVersion
-		mgmtConfig["openapi-version"] = docVersion
-		mgmtConfig["openapi-checksum"] = docChecksum
 
 		return fmt.Sprintf("%d.%d.%d", major, minor, patch), nil
 	}

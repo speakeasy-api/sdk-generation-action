@@ -9,11 +9,11 @@ import (
 )
 
 func runSpeakeasyCommand(args ...string) (string, error) {
-	cmdPath := strings.Join([]string{baseDir, "speakeasy"}, string(os.PathSeparator))
+	cmdPath := strings.Join([]string{baseDir, "bin", "speakeasy"}, string(os.PathSeparator))
 
 	output, err := exec.Command(cmdPath, args...).CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("error running speakeasy command: speakeasy %s - %w", strings.Join(args, " "), err)
+		return "", fmt.Errorf("error running speakeasy command: speakeasy %s - %w\n %s", strings.Join(args, " "), err, string(output))
 	}
 
 	return string(output), nil

@@ -19,33 +19,40 @@ type genConfig struct {
 func loadGeneratorConfigs(langConfigs map[string]string) map[string]genConfig {
 	genConfigs := map[string]genConfig{}
 
-	base := map[string]string{
-		"openapi-version":   "0.0.0",
-		"openapi-checksum":  "",
-		"speakeasy-version": "",
-	}
+	sharedCache := map[string]map[string]map[string]string{}
 
 	for lang, dir := range langConfigs {
 		configPath := path.Join(baseDir, "repo", dir, "gen.yaml")
 
 		if _, err := os.Stat(configPath); os.IsNotExist(err) {
-			configPath = path.Join(baseDir, "repo", "gen.yml")
+			configPath = path.Join(baseDir, "repo", "gen.yaml")
+		}
+
+		cfg, ok := sharedCache[configPath]
+		if !ok {
+			cfg = map[string]map[string]string{}
+
+			fmt.Println("Loading generator config: ", configPath)
+
+			data, err := os.ReadFile(configPath)
+			if err == nil {
+				_ = yaml.Unmarshal(data, &cfg)
+			}
+
+			if cfg["management"] == nil {
+				cfg["management"] = map[string]string{
+					"openapi-version":   "",
+					"openapi-checksum":  "",
+					"speakeasy-version": "",
+				}
+			}
+
+			sharedCache[configPath] = cfg
 		}
 
 		genConfig := genConfig{
-			ConfigPath: path.Join(baseDir, "repo", dir, "gen.yaml"),
-			Config:     map[string]map[string]string{},
-		}
-
-		fmt.Println("Loading generator config: ", configPath)
-
-		data, err := os.ReadFile(configPath)
-		if err == nil {
-			_ = yaml.Unmarshal(data, &genConfig.Config)
-		}
-
-		if genConfig.Config["management"] == nil {
-			genConfig.Config["management"] = base
+			ConfigPath: configPath,
+			Config:     cfg,
 		}
 
 		genConfigs[lang] = genConfig

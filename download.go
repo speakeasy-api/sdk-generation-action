@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/go-github/v48/github"
@@ -117,7 +118,7 @@ func downloadSpeakeasy(pinnedVersion string) error {
 		return fmt.Errorf("failed to download speakeasy cli: %w", err)
 	}
 
-	if err := extract(fileName, baseDir); err != nil {
+	if err := extract(fileName, filepath.Join(baseDir, "bin")); err != nil {
 		return fmt.Errorf("failed to extract speakeasy cli: %w", err)
 	}
 
@@ -129,10 +130,12 @@ func downloadSpeakeasy(pinnedVersion string) error {
 func getOpenAPIFileInfo(openAPIPath string) (string, string, string, error) {
 	var filePath string
 
-	if _, err := os.Stat(openAPIPath); !os.IsNotExist(err) {
-		fmt.Println("Using local OpenAPI file: ", openAPIPath)
+	localPath := filepath.Join(baseDir, "repo", openAPIPath)
 
-		filePath = openAPIPath
+	if _, err := os.Stat(localPath); err == nil {
+		fmt.Println("Using local OpenAPI file: ", localPath)
+
+		filePath = localPath
 	} else {
 		u, err := url.Parse(openAPIPath)
 		if err != nil {
