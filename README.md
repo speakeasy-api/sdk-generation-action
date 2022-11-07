@@ -13,19 +13,19 @@ The action runs through the following steps:
 
 ## Inputs
 
-## `speakeasy_version`
+### `speakeasy_version`
 
 The version of the Speakeasy CLI to use or `"latest"`. Default `"latest"`.
 
-## `openapi_doc_location`
+### `openapi_doc_location`
 
 **Required** The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document.
 
-## `github_access_token`
+### `github_access_token`
 
 **Required** A GitHub access token with write access to the repo.
 
-## `languages`
+### `languages`
 
 **Required** A yaml string containing a list of languages to generate SDKs for example:
 ```yaml
@@ -36,6 +36,16 @@ languages: |
 ```
 
 If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo.
+
+### `create_release`
+
+Whether to create a release for the new SDK version. Default `"true"`.
+
+## Outputs
+
+### `python_regenerated`
+    
+`true` if the Python SDK was regenerated
 
 ## Example usage
 
@@ -53,7 +63,7 @@ jobs:
     name: Generate SDK
     runs-on: ubuntu-latest
     steps:
-      - uses: speakeasy-api/sdk-generation-action@v1.4
+      - uses: speakeasy-api/sdk-generation-action@v2.4
         with:
           speakeasy_version: latest
           openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml

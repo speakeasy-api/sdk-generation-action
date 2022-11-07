@@ -22,9 +22,16 @@ inputs:
 
       If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
     required: true
+  create_release:
+    description: "Create a Github release on generation"
+    default: "true"
+    required: false
   debug:
     description: "Enable debug logging"
     default: "false"
+outputs:
+  python_regenerated:
+    description: "True if the Python SDK was regenerated"
 runs:
   using: "docker"
   image: "Dockerfile"

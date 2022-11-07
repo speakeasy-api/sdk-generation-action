@@ -39,6 +39,7 @@ func runAction() error {
 	pinnedSpeakeasyVersion := os.Getenv("INPUT_SPEAKEASY_VERSION")
 	openAPIDocLoc := os.Getenv("INPUT_OPENAPI_DOC_LOCATION")
 	languages := os.Getenv("INPUT_LANGUAGES")
+	createGitRelease := os.Getenv("INPUT_CREATE_RELEASE") == "true"
 
 	accessToken := os.Getenv("INPUT_GITHUB_ACCESS_TOKEN")
 	if accessToken == "" {
@@ -170,8 +171,10 @@ func runAction() error {
 			return err
 		}
 
-		if err := createRelease(releaseVersion, commitHash, docPath, docVersion, speakeasyVersion, accessToken); err != nil {
-			return err
+		if createGitRelease {
+			if err := createRelease(releaseVersion, commitHash, openAPIDocLoc, docVersion, speakeasyVersion, accessToken); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -180,6 +183,10 @@ func runAction() error {
 	for k, v := range outputs {
 		outputLines = append(outputLines, fmt.Sprintf("%s=%s", k, v))
 	}
+
+	currentOutput := os.Getenv("GITHUB_OUTPUT")
+
+	outputLines = append([]string{currentOutput}, outputLines...)
 
 	o := strings.Join(outputLines, "\n")
 
