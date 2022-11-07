@@ -63,7 +63,7 @@ jobs:
       go_regenerated: ${{ steps.generate.outputs.go_regenerated }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v3.2
+        uses: speakeasy-api/sdk-generation-action@v3.3
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -109,4 +109,4 @@ jobs:
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
-        run: npm publish
+        run: npm publish --access public
