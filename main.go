@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strings"
 
 	"github.com/hashicorp/go-version"
 	"github.com/invopop/yaml"
@@ -178,21 +177,9 @@ func runAction() error {
 		}
 	}
 
-	outputLines := []string{}
-
-	for k, v := range outputs {
-		outputLines = append(outputLines, fmt.Sprintf("%s=%s", k, v))
+	if err := setOutputs(outputs); err != nil {
+		return err
 	}
-
-	currentOutput := os.Getenv("GITHUB_OUTPUT")
-
-	outputLines = append([]string{currentOutput}, outputLines...)
-
-	o := strings.Join(outputLines, "\n")
-
-	fmt.Printf("Setting outputs: \n%s\n", o)
-
-	os.Setenv("GITHUB_OUTPUT", o)
 
 	return nil
 }
@@ -301,4 +288,22 @@ func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion strin
 	}
 
 	return "", nil
+}
+
+func setOutputs(outputs map[string]string) error {
+	outputFile := os.Getenv("GITHUB_OUTPUT")
+
+	f, err := os.OpenFile(outputFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
+	if err != nil {
+		return fmt.Errorf("error opening output file: %w", err)
+	}
+	defer f.Close()
+
+	for k, v := range outputs {
+		if _, err := f.WriteString(fmt.Sprintf("%s=%s\n", k, v)); err != nil {
+			return fmt.Errorf("error writing output: %w", err)
+		}
+	}
+
+	return nil
 }
