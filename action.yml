@@ -32,10 +32,16 @@ inputs:
 outputs:
   python_regenerated:
     description: "true if the Python SDK was regenerated"
+  python_directory:
+    description: "The directory the Python SDK was generated to"
   typescript_regenerated:
     description: "true if the Typescript SDK was regenerated"
+  typescript_directory:
+    description: "The directory the Typescript SDK was generated to"
   go_regenerated:
     description: "true if the Go SDK was regenerated"
+  go_directory:
+    description: "The directory the Go SDK was generated to"
 runs:
   using: "docker"
   image: "Dockerfile"
@@ -44,3 +50,4 @@ runs:
     - ${{ inputs.openapi_doc_location }}
     - ${{ inputs.github_access_token }}
     - ${{ inputs.languages }}
+    - ${{ inputs.create_release }}

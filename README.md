@@ -57,13 +57,25 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
     
 `true` if the Python SDK was regenerated
 
+### `python_directory`
+
+The directory the Python SDK was generated in
+
 ### `typescript_regenerated`
     
 `true` if the Typescript SDK was regenerated
 
+### `typescript_directory`
+
+The directory the Typescript SDK was generated in
+
 ### `go_regenerated`
     
 `true` if the Go SDK was regenerated
+
+### `go_directory`
+
+The directory the Go SDK was generated in
 
 ## Example Workflow usage
 
@@ -78,7 +90,7 @@ on:
 
 jobs:
   generate:
-    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v3.3 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v3.4 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers
     with:
       speakeasy_version: latest
       openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
@@ -106,7 +118,7 @@ jobs:
     name: Generate SDK
     runs-on: ubuntu-latest
     steps:
-      - uses: speakeasy-api/sdk-generation-action@v3.3
+      - uses: speakeasy-api/sdk-generation-action@v3.4
         with:
           speakeasy_version: latest
           openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml

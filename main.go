@@ -72,6 +72,7 @@ func runAction() error {
 	}
 
 	langGenerated := map[string]bool{}
+	outputs := map[string]string{}
 
 	for lang, cfg := range genConfigs {
 		dir := langs[lang]
@@ -91,11 +92,17 @@ func runAction() error {
 
 		if newVersion != "" {
 			fmt.Println("New version detected: ", newVersion)
-			out, err := runSpeakeasyCommand("generate", "sdk", "-s", docPath, "-l", lang, "-o", path.Join(baseDir, "repo", dir))
+			outputDir := path.Join(baseDir, "repo", dir)
+
+			fmt.Printf("Generating %s SDK in %s\n", lang, outputDir)
+
+			out, err := runSpeakeasyCommand("generate", "sdk", "-s", docPath, "-l", lang, "-o", outputDir)
 			if err != nil {
 				return fmt.Errorf("error generating sdk: %w - %s", err, out)
 			}
 			fmt.Println(out)
+
+			outputs[fmt.Sprintf("%s_directory", lang)] = outputDir
 
 			dirty, err := checkDirDirty(g, dir)
 			if err != nil {
@@ -110,8 +117,6 @@ func runAction() error {
 			fmt.Println("No changes detected")
 		}
 	}
-
-	outputs := map[string]string{}
 
 	regenerated := false
 

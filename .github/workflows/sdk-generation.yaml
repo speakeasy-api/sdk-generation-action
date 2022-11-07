@@ -59,11 +59,14 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       python_regenerated: ${{ steps.generate.outputs.python_regenerated }}
+      python_directory: ${{ steps.generate.outputs.python_directory }}
       typescript_regenerated: ${{ steps.generate.outputs.typescript_regenerated }}
+      typescript_directory: ${{ steps.generate.outputs.typescript_directory }}
       go_regenerated: ${{ steps.generate.outputs.go_regenerated }}
+      go_directory: ${{ steps.generate.outputs.go_directory }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v3.3
+        uses: speakeasy-api/sdk-generation-action@v3.4
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -75,6 +78,9 @@ jobs:
     name: Publish Python SDK
     runs-on: ubuntu-latest
     needs: generate
+    defaults:
+      run:
+        working-directory: ${{ needs.generate.outputs.python_directory }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -97,6 +103,9 @@ jobs:
     name: Publish Typescript SDK
     runs-on: ubuntu-latest
     needs: generate
+    defaults:
+      run:
+        working-directory: ${{ needs.generate.outputs.typescript_directory }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up Node
