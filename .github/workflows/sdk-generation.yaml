@@ -63,7 +63,7 @@ jobs:
       go_regenerated: ${{ steps.generate.outputs.go_regenerated }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v3.1
+        uses: speakeasy-api/sdk-generation-action@v3.2
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: generate
     steps:
-      - uses: actions/checkout@v3.1
+      - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -98,9 +98,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: generate
     steps:
-      - uses: actions/checkout@v3.1
+      - uses: actions/checkout@v3
       - name: Set up Node
-        uses: actions/setup-node@v3.1
+        uses: actions/setup-node@v3
         with:
           node-version: "16.x"
           registry-url: "https://registry.npmjs.org"
