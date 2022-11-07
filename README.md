@@ -1,16 +1,21 @@
 # Speakeasy SDK Generation Action & Workflows
 
-This repo provides both an action and a workflow to generate the Speakeasy SDKs. The workflow provides options for publishing the SDKS to various package managers once the action generates the SDKs.
+The `sdk-generation-action` provides both an action and a workflow to generate Client SDKs from an OpenAPI document using the [Speakeasy CLI tool](https://github.com/speakeasy-api/speakeasy). You can use these to manage CI/CD (ie the automatic generation and publishing of Client SDKs) in a repo containing the generated SDKs.
 
-This action provides a self contained solution for automatically generating new versions of a client SDK either when the reference OpenAPI doc is updated or the Speakeasy CLI that is used to generate the SDKs is updated.
+You can find more information about our Client SDK Generator for OpenAPI Documents here: https://docs.speakeasyapi.dev/docs/using-speakeasy/client-sdks/index.html
+
+The included workflow provides options for publishing the SDKs to various package managers once the action is successful.
+
+This action provides a self contained solution for automatically generating new versions of a client SDK either when either the reference OpenAPI doc is updated or the Speakeasy CLI that is used to generate the SDKs is updated.
 
 The action runs through the following steps:
 - Downloads the latest (or pinned) version of the Speakeasy CLI
-- Clones the Repo
+- Clones the associated repo
 - Downloads or loads the latest OpenAPI doc from a url or the repo
 - Checks for changes to the OpenAPI doc and the Speakeasy CLI Version
 - Generates a new SDK for the configured languages if necessary
 - Creates a commit with the new SDK(s) and pushes it to the repo
+- Optionally creates a Github release for the new commit
 
 ## Inputs
 
