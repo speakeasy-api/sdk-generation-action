@@ -170,7 +170,7 @@ func runAction() error {
 			return err
 		}
 
-		if err := createRelease(releaseVersion, commitHash, docPath, docVersion, speakeasyVersion); err != nil {
+		if err := createRelease(releaseVersion, commitHash, docPath, docVersion, speakeasyVersion, accessToken); err != nil {
 			return err
 		}
 	}
@@ -181,7 +181,11 @@ func runAction() error {
 		outputLines = append(outputLines, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	os.Setenv("GITHUB_OUTPUT", strings.Join(outputLines, "\n"))
+	o := strings.Join(outputLines, "\n")
+
+	fmt.Printf("Setting outputs: \n%s\n", o)
+
+	os.Setenv("GITHUB_OUTPUT", o)
 
 	return nil
 }
