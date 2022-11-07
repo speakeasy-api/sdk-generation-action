@@ -291,6 +291,8 @@ func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion strin
 }
 
 func setOutputs(outputs map[string]string) error {
+	fmt.Println("Setting outputs:")
+
 	outputFile := os.Getenv("GITHUB_OUTPUT")
 
 	f, err := os.OpenFile(outputFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
@@ -300,7 +302,10 @@ func setOutputs(outputs map[string]string) error {
 	defer f.Close()
 
 	for k, v := range outputs {
-		if _, err := f.WriteString(fmt.Sprintf("%s=%s\n", k, v)); err != nil {
+		out := fmt.Sprintf("%s=%s\n", k, v)
+		fmt.Print(out)
+
+		if _, err := f.WriteString(out); err != nil {
 			return fmt.Errorf("error writing output: %w", err)
 		}
 	}
