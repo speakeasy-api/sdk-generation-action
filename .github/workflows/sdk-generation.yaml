@@ -48,7 +48,7 @@ jobs:
       python_regenerated: ${{ steps.generate.outputs.python_regenerated }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v1.4
+        uses: speakeasy-api/sdk-generation-action@v2.3
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
