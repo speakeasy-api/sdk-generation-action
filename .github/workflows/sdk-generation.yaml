@@ -44,15 +44,18 @@ jobs:
   generate:
     name: Generate SDK
     runs-on: ubuntu-latest
+    outputs:
+      python_regenerated: ${{ steps.generate.outputs.python_regenerated }}
     steps:
-      - uses: speakeasy-api/sdk-generation-action@v1.4
+      - id: generate
+        uses: speakeasy-api/sdk-generation-action@v1.4
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
           github_access_token: ${{ secrets.github_access_token }}
           languages: ${{ inputs.languages }}
   publish-pypi:
-    if: ${{ jobs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == true }}
+    if: ${{ needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == true }}
     name: Publish SDK
     runs-on: ubuntu-latest
     needs: generate
