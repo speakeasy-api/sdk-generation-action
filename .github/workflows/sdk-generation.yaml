@@ -23,8 +23,18 @@ on:
           If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
         required: true
         type: string
+      create_release:
+        description: "Create a Github release on generation"
+        default: "true"
+        required: false
+        type: string
       publish_python:
         description: "Publish the Python SDK to PyPi"
+        default: "false"
+        required: false
+        type: string
+      publish_typescript:
+        description: "Publish the Typescript SDK to NPM"
         default: "false"
         required: false
         type: string
@@ -39,6 +49,9 @@ on:
       pypi_token:
         description: A PyPi access token for publishing the package to PyPi, include the `pypi-` prefix
         required: false
+      npm_token:
+        description: An NPM access token for publishing the package to NPM, include the `npm_` prefix
+        required: false
 
 jobs:
   generate:
@@ -46,23 +59,26 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       python_regenerated: ${{ steps.generate.outputs.python_regenerated }}
+      typescript_regenerated: ${{ steps.generate.outputs.typescript_regenerated }}
+      go_regenerated: ${{ steps.generate.outputs.go_regenerated }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v2.7
+        uses: speakeasy-api/sdk-generation-action@v3
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
           github_access_token: ${{ secrets.github_access_token }}
           languages: ${{ inputs.languages }}
+          create_release: ${{ inputs.create_release }}
   publish-pypi:
     if: ${{ needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' }}
-    name: Publish SDK
+    name: Publish Python SDK
     runs-on: ubuntu-latest
     needs: generate
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.9"
       - name: Install dependencies
@@ -76,3 +92,21 @@ jobs:
         run: |
           python setup.py sdist bdist_wheel
           twine upload dist/*
+  publish-npm:
+    if: ${{ needs.generate.outputs.typescript_regenerated == 'true' && inputs.publish_typescript == 'true' }}
+    name: Publish Typescript SDK
+    runs-on: ubuntu-latest
+    needs: generate
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.x"
+          registry-url: "https://registry.npmjs.org"
+      - name: Install dependencies
+        run: npm ci
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+        run: npm publish

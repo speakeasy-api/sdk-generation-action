@@ -32,6 +32,10 @@ inputs:
 outputs:
   python_regenerated:
     description: "true if the Python SDK was regenerated"
+  typescript_regenerated:
+    description: "true if the Typescript SDK was regenerated"
+  go_regenerated:
+    description: "true if the Go SDK was regenerated"
 runs:
   using: "docker"
   image: "Dockerfile"
