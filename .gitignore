@@ -3,3 +3,4 @@ build/
 .env
 repo/
 speakeasy
+bin/

@@ -21,6 +21,10 @@ import (
 )
 
 func extract(fileName string, outDir string) error {
+	if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create output directory: %s - %w", outDir, err)
+	}
+
 	f, err := os.Open(fileName)
 	if err != nil {
 		return fmt.Errorf("failed to open archive: %w", err)

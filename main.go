@@ -112,6 +112,8 @@ func runAction() error {
 			if dirty {
 				langGenerated[lang] = true
 				cfg.Config[lang]["version"] = newVersion
+			} else {
+				fmt.Printf("Regenerating %s SDK did not result in any changes\n", lang)
 			}
 		} else {
 			fmt.Println("No changes detected")

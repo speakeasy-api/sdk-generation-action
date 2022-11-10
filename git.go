@@ -97,8 +97,10 @@ func checkDirDirty(g *git.Repository, dir string) (bool, error) {
 		return false, fmt.Errorf("error getting status: %w", err)
 	}
 
+	cleanedDir := path.Clean(dir)
+
 	for f, s := range status {
-		if strings.HasPrefix(f, dir) && s.Worktree != git.Unmodified {
+		if strings.HasPrefix(f, cleanedDir) && s.Worktree != git.Unmodified {
 			return true, nil
 		}
 	}
