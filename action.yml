@@ -1,5 +1,5 @@
 # action.yml
-name: "SDK Generation Action"
+name: "Speakeasy Client SDK Generation"
 description: "Manage SDK Generation and Release"
 inputs:
   speakeasy_version:
