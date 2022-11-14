@@ -94,6 +94,11 @@ func runAction() error {
 			fmt.Println("New version detected: ", newVersion)
 			outputDir := path.Join(baseDir, "repo", dir)
 
+			cfg.Config[lang]["version"] = newVersion
+			if err := writeConfigFile(cfg); err != nil {
+				return err
+			}
+
 			fmt.Printf("Generating %s SDK in %s\n", lang, outputDir)
 
 			out, err := runSpeakeasyCommand("generate", "sdk", "-s", docPath, "-l", lang, "-o", outputDir)
@@ -111,8 +116,12 @@ func runAction() error {
 
 			if dirty {
 				langGenerated[lang] = true
-				cfg.Config[lang]["version"] = newVersion
 			} else {
+				cfg.Config[lang]["version"] = sdkVersion
+				if err := writeConfigFile(cfg); err != nil {
+					return err
+				}
+
 				fmt.Printf("Regenerating %s SDK did not result in any changes\n", lang)
 			}
 		} else {
@@ -315,6 +324,19 @@ func setOutputs(outputs map[string]string) error {
 		if _, err := f.WriteString(out); err != nil {
 			return fmt.Errorf("error writing output: %w", err)
 		}
+	}
+
+	return nil
+}
+
+func writeConfigFile(cfg genConfig) error {
+	data, err := yaml.Marshal(cfg.Config)
+	if err != nil {
+		return fmt.Errorf("error marshaling config: %w", err)
+	}
+
+	if err := os.WriteFile(cfg.ConfigPath, data, os.ModePerm); err != nil {
+		return fmt.Errorf("error writing config: %w", err)
 	}
 
 	return nil

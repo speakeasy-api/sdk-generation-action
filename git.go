@@ -100,6 +100,10 @@ func checkDirDirty(g *git.Repository, dir string) (bool, error) {
 	cleanedDir := path.Clean(dir)
 
 	for f, s := range status {
+		if strings.Contains(f, "gen.yaml") {
+			continue
+		}
+
 		if strings.HasPrefix(f, cleanedDir) && s.Worktree != git.Unmodified {
 			return true, nil
 		}
