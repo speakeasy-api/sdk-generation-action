@@ -107,7 +107,12 @@ func runAction() error {
 			}
 			fmt.Println(out)
 
-			outputs[fmt.Sprintf("%s_directory", lang)] = dir
+			dirForOutput := dir
+			if dirForOutput == "" {
+				dirForOutput = "."
+			}
+
+			outputs[fmt.Sprintf("%s_directory", lang)] = dirForOutput
 
 			dirty, err := checkDirDirty(g, dir)
 			if err != nil {
