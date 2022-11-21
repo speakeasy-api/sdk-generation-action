@@ -9,6 +9,7 @@ The included workflow provides options for publishing the SDKs to various packag
 This action provides a self contained solution for automatically generating new versions of a client SDK either when either the reference OpenAPI doc is updated or the Speakeasy CLI that is used to generate the SDKs is updated.
 
 The action runs through the following steps:
+
 - Downloads the latest (or pinned) version of the Speakeasy CLI
 - Clones the associated repo
 - Downloads or loads the latest OpenAPI doc from a url or the repo
@@ -34,6 +35,7 @@ The version of the Speakeasy CLI to use or `"latest"`. Default `"latest"`.
 ### `languages`
 
 **Required** A yaml string containing a list of languages to generate SDKs for example:
+
 ```yaml
 languages: |
   - go: ./go-sdk # specifying a output directory
@@ -59,7 +61,7 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 ## Outputs
 
 ### `python_regenerated`
-    
+
 `true` if the Python SDK was regenerated
 
 ### `python_directory`
@@ -67,7 +69,7 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 The directory the Python SDK was generated in
 
 ### `typescript_regenerated`
-    
+
 `true` if the Typescript SDK was regenerated
 
 ### `typescript_directory`
@@ -75,7 +77,7 @@ The directory the Python SDK was generated in
 The directory the Typescript SDK was generated in
 
 ### `go_regenerated`
-    
+
 `true` if the Go SDK was regenerated
 
 ### `go_directory`
@@ -85,6 +87,7 @@ The directory the Go SDK was generated in
 ## Example Workflow usage
 
 `.github/workflows/speakeasy_sdk_generation.yml`
+
 ```yaml
 name: Generate
 
@@ -95,7 +98,7 @@ on:
 
 jobs:
   generate:
-    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v3.8 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v3.9 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers
     with:
       speakeasy_version: latest
       openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
@@ -110,6 +113,7 @@ jobs:
 ## Example Action usage
 
 `.github/workflows/speakeasy_sdk_generation.yml`
+
 ```yaml
 name: Generate
 
@@ -123,7 +127,7 @@ jobs:
     name: Generate SDK
     runs-on: ubuntu-latest
     steps:
-      - uses: speakeasy-api/sdk-generation-action@v3.8
+      - uses: speakeasy-api/sdk-generation-action@v3.9
         with:
           speakeasy_version: latest
           openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml

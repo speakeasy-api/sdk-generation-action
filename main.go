@@ -290,12 +290,13 @@ func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion strin
 		if bumpMajor {
 			fmt.Println("Bumping SDK major version")
 			major++
-		}
-		if bumpMinor {
+			minor = 0
+			patch = 0
+		} else if bumpMinor {
 			fmt.Println("Bumping SDK minor version")
 			minor++
-		}
-		if bumpPatch {
+			patch = 0
+		} else if bumpPatch {
 			fmt.Println("Bumping SDK patch version")
 			patch++
 		}
