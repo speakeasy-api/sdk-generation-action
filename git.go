@@ -98,6 +98,9 @@ func checkDirDirty(g *git.Repository, dir string) (bool, error) {
 	}
 
 	cleanedDir := path.Clean(dir)
+	if cleanedDir == "." {
+		cleanedDir = ""
+	}
 
 	for f, s := range status {
 		if strings.Contains(f, "gen.yaml") {
