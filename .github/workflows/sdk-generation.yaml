@@ -64,9 +64,10 @@ jobs:
       typescript_directory: ${{ steps.generate.outputs.typescript_directory }}
       go_regenerated: ${{ steps.generate.outputs.go_regenerated }}
       go_directory: ${{ steps.generate.outputs.go_directory }}
+      commit_hash: ${{ steps.generate.outputs.commit_hash }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v3.10
+        uses: speakeasy-api/sdk-generation-action@v4
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -83,6 +84,8 @@ jobs:
         working-directory: ${{ needs.generate.outputs.python_directory }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.generate.outputs.commit_hash }}
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -108,6 +111,8 @@ jobs:
         working-directory: ${{ needs.generate.outputs.typescript_directory }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.generate.outputs.commit_hash }}
       - name: Set up Node
         uses: actions/setup-node@v3
         with:

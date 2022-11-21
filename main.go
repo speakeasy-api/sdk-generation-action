@@ -196,6 +196,8 @@ func runAction() error {
 				return err
 			}
 		}
+
+		outputs["commit_hash"] = commitHash
 	}
 
 	if err := setOutputs(outputs); err != nil {
