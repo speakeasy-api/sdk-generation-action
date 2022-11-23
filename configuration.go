@@ -13,13 +13,13 @@ import (
 
 type genConfig struct {
 	ConfigPath string
-	Config     map[string]map[string]string
+	Config     map[string]any
 }
 
 func loadGeneratorConfigs(langConfigs map[string]string) map[string]genConfig {
 	genConfigs := map[string]genConfig{}
 
-	sharedCache := map[string]map[string]map[string]string{}
+	sharedCache := map[string]map[string]any{}
 
 	for lang, dir := range langConfigs {
 		configPath := path.Join(baseDir, "repo", dir, "gen.yaml")
@@ -30,7 +30,7 @@ func loadGeneratorConfigs(langConfigs map[string]string) map[string]genConfig {
 
 		cfg, ok := sharedCache[configPath]
 		if !ok {
-			cfg = map[string]map[string]string{}
+			cfg = map[string]any{}
 
 			fmt.Println("Loading generator config: ", configPath)
 
@@ -40,7 +40,7 @@ func loadGeneratorConfigs(langConfigs map[string]string) map[string]genConfig {
 			}
 
 			if cfg["management"] == nil {
-				cfg["management"] = map[string]string{
+				cfg["management"] = map[string]any{
 					"openapi-version":   "",
 					"openapi-checksum":  "",
 					"speakeasy-version": "",

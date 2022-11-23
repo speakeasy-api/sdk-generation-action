@@ -76,16 +76,19 @@ func runAction() error {
 
 	for lang, cfg := range genConfigs {
 		dir := langs[lang]
-		langCfg, ok := cfg.Config[lang]
+		c, ok := cfg.Config[lang]
 		if !ok {
-			langCfg = map[string]string{
+			c = map[string]string{
 				"version": "0.0.0",
 			}
-			cfg.Config[lang] = langCfg
+			cfg.Config[lang] = c
 		}
-		sdkVersion := langCfg["version"]
+		langCfg := c.(map[string]any)
 
-		newVersion, err := checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion, cfg.Config["management"])
+		sdkVersion := langCfg["version"].(string)
+
+		mgmtConfig := cfg.Config["management"].(map[string]any)
+		newVersion, err := checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion, mgmtConfig)
 		if err != nil {
 			return err
 		}
@@ -94,7 +97,8 @@ func runAction() error {
 			fmt.Println("New version detected: ", newVersion)
 			outputDir := path.Join(baseDir, "repo", dir)
 
-			cfg.Config[lang]["version"] = newVersion
+			langCfg["version"] = newVersion
+			cfg.Config[lang] = langCfg
 			if err := writeConfigFile(cfg); err != nil {
 				return err
 			}
@@ -122,7 +126,8 @@ func runAction() error {
 			if dirty {
 				langGenerated[lang] = true
 			} else {
-				cfg.Config[lang]["version"] = sdkVersion
+				langCfg["version"] = sdkVersion
+				cfg.Config[lang] = langCfg
 				if err := writeConfigFile(cfg); err != nil {
 					return err
 				}
@@ -140,7 +145,9 @@ func runAction() error {
 	usingGoVersion := false
 
 	if c, ok := genConfigs["go"]; ok {
-		releaseVersion = c.Config["go"]["version"]
+		goCfg := c.Config["go"].(map[string]any)
+
+		releaseVersion = goCfg["version"].(string)
 		usingGoVersion = true
 	}
 
@@ -148,9 +155,12 @@ func runAction() error {
 		if langGenerated[lang] {
 			outputs[lang+"_regenerated"] = "true"
 
-			cfg.Config["management"]["speakeasy-version"] = speakeasyVersion
-			cfg.Config["management"]["openapi-version"] = docVersion
-			cfg.Config["management"]["openapi-checksum"] = docChecksum
+			mgmtConfig := cfg.Config["management"].(map[string]any)
+
+			mgmtConfig["speakeasy-version"] = speakeasyVersion
+			mgmtConfig["openapi-version"] = docVersion
+			mgmtConfig["openapi-checksum"] = docChecksum
+			cfg.Config["management"] = mgmtConfig
 
 			data, err := yaml.Marshal(cfg.Config)
 			if err != nil {
@@ -161,22 +171,24 @@ func runAction() error {
 				return fmt.Errorf("error writing config: %w", err)
 			}
 
+			langCfg := cfg.Config[lang].(map[string]any)
+
 			if !usingGoVersion {
 				if releaseVersion == "" {
-					releaseVersion = cfg.Config[lang]["version"]
+					releaseVersion = langCfg["version"].(string)
 				} else {
 					v, err := version.NewVersion(releaseVersion)
 					if err != nil {
 						return fmt.Errorf("error parsing version: %w", err)
 					}
 
-					v2, err := version.NewVersion(cfg.Config[lang]["version"])
+					v2, err := version.NewVersion(langCfg["version"].(string))
 					if err != nil {
 						return fmt.Errorf("error parsing version: %w", err)
 					}
 
 					if v2.GreaterThan(v) {
-						releaseVersion = cfg.Config[lang]["version"]
+						releaseVersion = langCfg["version"].(string)
 					}
 				}
 			}
@@ -207,7 +219,7 @@ func runAction() error {
 	return nil
 }
 
-func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion string, mgmtConfig map[string]string) (string, error) {
+func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion string, mgmtConfig map[string]any) (string, error) {
 	if speakeasyVersion != mgmtConfig["speakeasy-version"] || docVersion != mgmtConfig["openapi-version"] || docChecksum != mgmtConfig["openapi-checksum"] {
 		bumpMajor := false
 		bumpMinor := false
@@ -216,7 +228,7 @@ func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion strin
 		if mgmtConfig["speakeasy-version"] == "" {
 			bumpMinor = true
 		} else {
-			previousSpeakeasyV, err := version.NewVersion(mgmtConfig["speakeasy-version"])
+			previousSpeakeasyV, err := version.NewVersion(mgmtConfig["speakeasy-version"].(string))
 			if err != nil {
 				return "", fmt.Errorf("error parsing config speakeasy version: %w", err)
 			}
@@ -246,7 +258,7 @@ func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion strin
 			currentDocV, err := version.NewVersion(docVersion)
 			// If not a semver then we just deal with the checksum
 			if err == nil {
-				previousDocV, err := version.NewVersion(mgmtConfig["openapi-version"])
+				previousDocV, err := version.NewVersion(mgmtConfig["openapi-version"].(string))
 				if err != nil {
 					return "", fmt.Errorf("error parsing config openapi version: %w", err)
 				}
