@@ -19,6 +19,7 @@ inputs:
         - go: ./go-sdk # specifying a output directory
         - python # using default output of ./python-client-sdk
         - typescript # using default output of ./typescript-client-sdk
+        - java # using default output of ./java-client-sdk
 
       If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
     required: true
@@ -42,6 +43,10 @@ outputs:
     description: "true if the Go SDK was regenerated"
   go_directory:
     description: "The directory the Go SDK was generated to"
+  java_regenerated:
+    description: "true if the Java SDK was regenerated"
+  java_directory:
+    description: "The directory the Java SDK was generated to"
   commit_hash:
     description: "The commit hash if the SDK was regenerated"
 runs:

@@ -41,6 +41,7 @@ languages: |
   - go: ./go-sdk # specifying a output directory
   - python # using default output of ./python-client-sdk
   - typescript # using default output of ./typescript-client-sdk
+  - java # using default output of ./java-client-sdk
 ```
 
 If multiple languages are present we will treat the repo as a mono repo, if a single language is present as a single language repo.
@@ -84,6 +85,14 @@ The directory the Typescript SDK was generated in
 
 The directory the Go SDK was generated in
 
+### `java_regenerated`
+
+`true` if the Java SDK was regenerated
+
+### `java_directory`
+
+The directory the Java SDK was generated in
+
 ## Example Workflow usage
 
 `.github/workflows/speakeasy_sdk_generation.yml`
@@ -98,7 +107,7 @@ on:
 
 jobs:
   generate:
-    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v4.1 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v5 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers
     with:
       speakeasy_version: latest
       openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
@@ -127,7 +136,7 @@ jobs:
     name: Generate SDK
     runs-on: ubuntu-latest
     steps:
-      - uses: speakeasy-api/sdk-generation-action@v4.1
+      - uses: speakeasy-api/sdk-generation-action@v5
         with:
           speakeasy_version: latest
           openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml

@@ -19,6 +19,7 @@ on:
             - go: ./go-sdk # specifying a output directory
             - python # using default output of ./python-client-sdk
             - typescript # using default output of ./typescript-client-sdk
+            - java # using default output of ./java-client-sdk
 
           If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
         required: true
@@ -64,10 +65,12 @@ jobs:
       typescript_directory: ${{ steps.generate.outputs.typescript_directory }}
       go_regenerated: ${{ steps.generate.outputs.go_regenerated }}
       go_directory: ${{ steps.generate.outputs.go_directory }}
+      java_regenerated: ${{ steps.generate.outputs.java_regenerated }}
+      java_directory: ${{ steps.generate.outputs.java_directory }}
       commit_hash: ${{ steps.generate.outputs.commit_hash }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v4.1
+        uses: speakeasy-api/sdk-generation-action@v5
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
