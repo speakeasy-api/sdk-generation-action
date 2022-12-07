@@ -105,7 +105,7 @@ func runAction() error {
 
 			fmt.Printf("Generating %s SDK in %s\n", lang, outputDir)
 
-			out, err := runSpeakeasyCommand("generate", "sdk", "-s", docPath, "-l", lang, "-o", outputDir)
+			out, err := runSpeakeasyCommand("generate", "sdk", "-s", docPath, "-l", lang, "-o", outputDir, "-y")
 			if err != nil {
 				return fmt.Errorf("error generating sdk: %w - %s", err, out)
 			}
