@@ -25,7 +25,7 @@ func getSpeakeasyVersion() (string, error) {
 		return "", err
 	}
 
-	r := regexp.MustCompile(`.*?([0-9]+\.[0-9]+\.[0-9])$`)
+	r := regexp.MustCompile(`.*?([0-9]+\.[0-9]+\.[0-9]+)$`)
 
 	return r.FindStringSubmatch(strings.TrimSpace(out))[1], nil
 }
