@@ -67,8 +67,8 @@ func commitAndPush(g *git.Repository, openAPIDocVersion, speakeasyVersion, acces
 
 	commitHash, err := w.Commit(fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeay CLI %s", openAPIDocVersion, speakeasyVersion), &git.CommitOptions{
 		Author: &object.Signature{
-			Name:  "Speakeasy CI",
-			Email: "ci@speakeasyapi.dev",
+			Name:  "speakeasybot",
+			Email: "bot@speakeasyapi.dev",
 			When:  time.Now(),
 		},
 		All: true,
