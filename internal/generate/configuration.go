@@ -1,25 +1,56 @@
-package main
+package generate
 
 import (
 	"fmt"
 	"os"
 	"path"
-	"regexp"
 	"strings"
 
-	"github.com/invopop/yaml"
+	"github.com/oleiade/reflections"
+	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"golang.org/x/exp/slices"
+	"gopkg.in/yaml.v3"
 )
+
+type management struct {
+	OpenAPIChecksum  string `yaml:"openapi-checksum"`
+	OpenAPIVersion   string `yaml:"openapi-version"`
+	SpeakeasyVersion string `yaml:"speakeasy-version"`
+}
+
+type langConfig struct {
+	Version     string         `yaml:"version"`
+	PackageName string         `yaml:"packagename"`
+	Cfg         map[string]any `yaml:",inline"`
+}
+
+type config struct {
+	Management *management    `yaml:"management,omitempty"`
+	Go         *langConfig    `yaml:"go,omitempty"`
+	Typescript *langConfig    `yaml:"typescript,omitempty"`
+	Python     *langConfig    `yaml:"python,omitempty"`
+	Java       *langConfig    `yaml:"java,omitempty"`
+	Cfg        map[string]any `yaml:",inline"`
+}
+
+func (c *config) GetLangConfig(lang string) *langConfig {
+	field, _ := reflections.GetField(c, strings.Title(lang))
+	return field.(*langConfig)
+}
+
+func (c *config) SetLangConfig(lang string, cfg *langConfig) {
+	_ = reflections.SetField(c, strings.Title(lang), cfg)
+}
 
 type genConfig struct {
 	ConfigPath string
-	Config     map[string]any
+	Config     config
 }
 
-func loadGeneratorConfigs(langConfigs map[string]string) map[string]genConfig {
+func loadGeneratorConfigs(baseDir string, langConfigs map[string]string) map[string]genConfig {
 	genConfigs := map[string]genConfig{}
 
-	sharedCache := map[string]map[string]any{}
+	sharedCache := map[string]config{}
 
 	for lang, dir := range langConfigs {
 		configPath := path.Join(baseDir, "repo", dir, "gen.yaml")
@@ -30,8 +61,6 @@ func loadGeneratorConfigs(langConfigs map[string]string) map[string]genConfig {
 
 		cfg, ok := sharedCache[configPath]
 		if !ok {
-			cfg = map[string]any{}
-
 			fmt.Println("Loading generator config: ", configPath)
 
 			data, err := os.ReadFile(configPath)
@@ -39,12 +68,8 @@ func loadGeneratorConfigs(langConfigs map[string]string) map[string]genConfig {
 				_ = yaml.Unmarshal(data, &cfg)
 			}
 
-			if cfg["management"] == nil {
-				cfg["management"] = map[string]any{
-					"openapi-version":   "",
-					"openapi-checksum":  "",
-					"speakeasy-version": "",
-				}
+			if cfg.Management == nil {
+				cfg.Management = &management{}
 			}
 
 			sharedCache[configPath] = cfg
@@ -59,19 +84,6 @@ func loadGeneratorConfigs(langConfigs map[string]string) map[string]genConfig {
 	}
 
 	return genConfigs
-}
-
-func getSupportedLanguages() ([]string, error) {
-	out, err := runSpeakeasyCommand("generate", "sdk", "--help")
-	if err != nil {
-		return nil, err
-	}
-
-	r := regexp.MustCompile(`available options: \[(.*?)\]`)
-
-	langs := r.FindStringSubmatch(strings.TrimSpace(out))[1]
-
-	return strings.Split(langs, ", "), nil
 }
 
 func getAndValidateLanguages(languages string) (map[string]string, error) {
@@ -114,7 +126,7 @@ func getAndValidateLanguages(languages string) (map[string]string, error) {
 		return nil, fmt.Errorf("invalid language configuration: %v", l)
 	}
 
-	supportedLangs, err := getSupportedLanguages()
+	supportedLangs, err := cli.GetSupportedLanguages()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get supported languages: %w", err)
 	}
@@ -126,4 +138,17 @@ func getAndValidateLanguages(languages string) (map[string]string, error) {
 	}
 
 	return langCfgs, nil
+}
+
+func writeConfigFile(cfg genConfig) error {
+	data, err := yaml.Marshal(cfg.Config)
+	if err != nil {
+		return fmt.Errorf("error marshaling config: %w", err)
+	}
+
+	if err := os.WriteFile(cfg.ConfigPath, data, os.ModePerm); err != nil {
+		return fmt.Errorf("error writing config: %w", err)
+	}
+
+	return nil
 }

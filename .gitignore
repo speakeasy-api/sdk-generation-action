@@ -1,6 +1,6 @@
-info.txt
 build/
 .env
 repo/
 speakeasy
 bin/
+output.txt

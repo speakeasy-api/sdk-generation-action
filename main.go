@@ -4,212 +4,137 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
 
-	"github.com/hashicorp/go-version"
-	"github.com/invopop/yaml"
+	"github.com/google/go-github/v48/github"
+	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/sdk-generation-action/internal/generate"
+	"github.com/speakeasy-api/sdk-generation-action/internal/git"
+	"github.com/speakeasy-api/sdk-generation-action/internal/releases"
 )
 
-var baseDir = "/"
-
-func init() {
-	// Allows us to run this locally
-	if os.Getenv("SPEAKEASY_ENVIRONMENT") == "local" {
-		baseDir = "./"
-	}
-}
-
 func main() {
-	if err := runAction(); err != nil {
-		fmt.Printf("::error title=failed::%v\n", err)
-		os.Exit(1)
-	}
-}
-
-func runAction() error {
-	debug := os.Getenv("INPUT_DEBUG") == "true"
-
-	if debug {
+	if environment.IsDebugMode() {
 		for _, env := range os.Environ() {
 			fmt.Println(env)
 		}
 	}
 
-	pinnedSpeakeasyVersion := os.Getenv("INPUT_SPEAKEASY_VERSION")
-	openAPIDocLoc := os.Getenv("INPUT_OPENAPI_DOC_LOCATION")
-	languages := os.Getenv("INPUT_LANGUAGES")
-	createGitRelease := os.Getenv("INPUT_CREATE_RELEASE") == "true"
+	var err error
+	switch environment.GetMode() {
+	case "release":
+		err = releaseAction()
+	default:
+		err = genAction()
+	}
 
-	accessToken := os.Getenv("INPUT_GITHUB_ACCESS_TOKEN")
+	if err != nil {
+		fmt.Printf("::error title=failed::%v\n", err)
+		os.Exit(1)
+	}
+}
+
+func genAction() error {
+	accessToken := environment.GetAccessToken()
 	if accessToken == "" {
 		return errors.New("github access token is required")
 	}
 
-	if err := downloadSpeakeasy(pinnedSpeakeasyVersion); err != nil {
+	g := git.New(accessToken)
+	if err := g.CloneRepo(); err != nil {
 		return err
 	}
 
-	langs, err := getAndValidateLanguages(languages)
-	if err != nil {
-		return err
-	}
+	var branchName string
+	var pr *github.PullRequest
 
-	g, err := cloneRepo(accessToken)
-	if err != nil {
-		return err
-	}
-
-	genConfigs := loadGeneratorConfigs(langs)
-
-	speakeasyVersion, err := getSpeakeasyVersion()
-	if err != nil {
-		return err
-	}
-
-	docPath, docChecksum, docVersion, err := getOpenAPIFileInfo(openAPIDocLoc)
-	if err != nil {
-		return err
-	}
-
-	langGenerated := map[string]bool{}
-	outputs := map[string]string{}
-
-	for lang, cfg := range genConfigs {
-		dir := langs[lang]
-		c, ok := cfg.Config[lang]
-		if !ok {
-			c = map[string]string{
-				"version": "0.0.0",
-			}
-			cfg.Config[lang] = c
+	if environment.GetMode() == "pr" {
+		var err error
+		branchName, pr, err = g.FindOrCreateBranch()
+		if err != nil {
+			return err
 		}
-		langCfg := c.(map[string]any)
+	}
 
-		sdkVersion := langCfg["version"].(string)
+	if err := cli.Download(environment.GetPinnedSpeakeasyVersion()); err != nil {
+		return err
+	}
 
-		mgmtConfig := cfg.Config["management"].(map[string]any)
-		newVersion, err := checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion, mgmtConfig)
+	genInfo, outputs, err := generate.Generate(g)
+	if err != nil {
+		return err
+	}
+
+	if genInfo != nil {
+		docVersion := genInfo.OpenAPIDocVersion
+		speakeasyVersion := genInfo.SpeakeasyVersion
+
+		releaseInfo := releases.ReleasesInfo{
+			ReleaseVersion:    genInfo.ReleaseVersion,
+			OpenAPIDocVersion: docVersion,
+			SpeakeasyVersion:  speakeasyVersion,
+			OpenAPIDocPath:    environment.GetOpenAPIDocLocation(),
+		}
+
+		if genInfo.PackageNames["python"] != "" && outputs["python_regenerated"] == "true" {
+			releaseInfo.PythonPackagePublished = environment.IsPythonPublished()
+			releaseInfo.PythonPackageName = genInfo.PackageNames["python"]
+			releaseInfo.PythonPath = outputs["python_directory"]
+		}
+
+		if genInfo.PackageNames["typescript"] != "" && outputs["typescript_regenerated"] == "true" {
+			releaseInfo.NPMPackagePublished = environment.IsTypescriptPublished()
+			releaseInfo.NPMPackageName = genInfo.PackageNames["typescript"]
+			releaseInfo.TypescriptPath = outputs["typescript_directory"]
+		}
+
+		if outputs["go_regenerated"] == "true" {
+			releaseInfo.GoPackagePublished = environment.CreateGitRelease()
+			releaseInfo.GoPath = outputs["go_directory"]
+		}
+
+		if err := releases.UpdateReleasesFile(releaseInfo); err != nil {
+			return err
+		}
+
+		_, err = g.CommitAndPush(docVersion, speakeasyVersion)
 		if err != nil {
 			return err
 		}
 
-		if newVersion != "" {
-			fmt.Println("New version detected: ", newVersion)
-			outputDir := path.Join(baseDir, "repo", dir)
-
-			langCfg["version"] = newVersion
-			cfg.Config[lang] = langCfg
-			if err := writeConfigFile(cfg); err != nil {
+		switch environment.GetMode() {
+		case "pr":
+			if err := g.CreateOrUpdatePR(branchName, releaseInfo, pr); err != nil {
 				return err
 			}
-
-			fmt.Printf("Generating %s SDK in %s\n", lang, outputDir)
-
-			out, err := runSpeakeasyCommand("generate", "sdk", "-s", docPath, "-l", lang, "-o", outputDir, "-y")
-			if err != nil {
-				return fmt.Errorf("error generating sdk: %w - %s", err, out)
-			}
-			fmt.Println(out)
-
-			dirForOutput := dir
-			if dirForOutput == "" {
-				dirForOutput = "."
-			}
-
-			outputs[fmt.Sprintf("%s_directory", lang)] = dirForOutput
-
-			dirty, err := checkDirDirty(g, dir)
-			if err != nil {
-				return err
-			}
-
-			if dirty {
-				langGenerated[lang] = true
-			} else {
-				langCfg["version"] = sdkVersion
-				cfg.Config[lang] = langCfg
-				if err := writeConfigFile(cfg); err != nil {
+		default:
+			if environment.CreateGitRelease() {
+				if err := g.CreateRelease(releaseInfo); err != nil {
 					return err
 				}
-
-				fmt.Printf("Regenerating %s SDK did not result in any changes\n", lang)
-			}
-		} else {
-			fmt.Println("No changes detected")
-		}
-	}
-
-	regenerated := false
-
-	releaseVersion := ""
-	usingGoVersion := false
-
-	if c, ok := genConfigs["go"]; ok {
-		goCfg := c.Config["go"].(map[string]any)
-
-		releaseVersion = goCfg["version"].(string)
-		usingGoVersion = true
-	}
-
-	for lang, cfg := range genConfigs {
-		if langGenerated[lang] {
-			outputs[lang+"_regenerated"] = "true"
-
-			mgmtConfig := cfg.Config["management"].(map[string]any)
-
-			mgmtConfig["speakeasy-version"] = speakeasyVersion
-			mgmtConfig["openapi-version"] = docVersion
-			mgmtConfig["openapi-checksum"] = docChecksum
-			cfg.Config["management"] = mgmtConfig
-
-			data, err := yaml.Marshal(cfg.Config)
-			if err != nil {
-				return fmt.Errorf("error marshaling config: %w", err)
-			}
-
-			if err := os.WriteFile(cfg.ConfigPath, data, os.ModePerm); err != nil {
-				return fmt.Errorf("error writing config: %w", err)
-			}
-
-			langCfg := cfg.Config[lang].(map[string]any)
-
-			if !usingGoVersion {
-				if releaseVersion == "" {
-					releaseVersion = langCfg["version"].(string)
-				} else {
-					v, err := version.NewVersion(releaseVersion)
-					if err != nil {
-						return fmt.Errorf("error parsing version: %w", err)
-					}
-
-					v2, err := version.NewVersion(langCfg["version"].(string))
-					if err != nil {
-						return fmt.Errorf("error parsing version: %w", err)
-					}
-
-					if v2.GreaterThan(v) {
-						releaseVersion = langCfg["version"].(string)
-					}
-				}
-			}
-
-			regenerated = true
-		}
-	}
-
-	if regenerated {
-		commitHash, err := commitAndPush(g, docVersion, speakeasyVersion, accessToken)
-		if err != nil {
-			return err
-		}
-
-		if createGitRelease {
-			if err := createRelease(releaseVersion, commitHash, openAPIDocLoc, docVersion, speakeasyVersion, accessToken); err != nil {
-				return err
 			}
 		}
 
-		outputs["commit_hash"] = commitHash
+		// TODO if in PR mode
+		//   - clone repo
+		//   - generate sdks
+		//   - create branch
+		//   - create releases file
+		//   - commit changes
+		//   - push branch
+		//   - create PR
+		//   - then when merged into main
+		//	    - create release
+		//	    - publish
+
+		// TODO if in commit to main mode
+		//   - clone repo
+		//   - generate sdks
+		//   - create releases file
+		//   - commit changes
+		//   - push to main
+		//   - create release
+		//   - publish
 	}
 
 	if err := setOutputs(outputs); err != nil {
@@ -219,111 +144,50 @@ func runAction() error {
 	return nil
 }
 
-func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion string, mgmtConfig map[string]any) (string, error) {
-	if speakeasyVersion != mgmtConfig["speakeasy-version"] || docVersion != mgmtConfig["openapi-version"] || docChecksum != mgmtConfig["openapi-checksum"] {
-		bumpMajor := false
-		bumpMinor := false
-		bumpPatch := false
-
-		if mgmtConfig["speakeasy-version"] == "" {
-			bumpMinor = true
-		} else {
-			previousSpeakeasyV, err := version.NewVersion(mgmtConfig["speakeasy-version"].(string))
-			if err != nil {
-				return "", fmt.Errorf("error parsing config speakeasy version: %w", err)
-			}
-
-			currentSpeakeasyV, err := version.NewVersion(speakeasyVersion)
-			if err != nil {
-				return "", fmt.Errorf("error parsing speakeasy version: %w", err)
-			}
-
-			if currentSpeakeasyV.Segments()[0] > previousSpeakeasyV.Segments()[0] {
-				fmt.Printf("Speakeasy version changed detected: %s > %s\n", mgmtConfig["speakeasy-version"], speakeasyVersion)
-				bumpMajor = true
-			} else if currentSpeakeasyV.Segments()[1] > previousSpeakeasyV.Segments()[1] {
-				fmt.Printf("Speakeasy version changed detected: %s > %s\n", mgmtConfig["speakeasy-version"], speakeasyVersion)
-				bumpMinor = true
-			} else if currentSpeakeasyV.Segments()[2] > previousSpeakeasyV.Segments()[2] {
-				fmt.Printf("Speakeasy version changed detected: %s > %s\n", mgmtConfig["speakeasy-version"], speakeasyVersion)
-				bumpPatch = true
-			}
-		}
-
-		docVersionUpdated := false
-
-		if mgmtConfig["openapi-version"] == "" {
-			bumpMinor = true
-		} else {
-			currentDocV, err := version.NewVersion(docVersion)
-			// If not a semver then we just deal with the checksum
-			if err == nil {
-				previousDocV, err := version.NewVersion(mgmtConfig["openapi-version"].(string))
-				if err != nil {
-					return "", fmt.Errorf("error parsing config openapi version: %w", err)
-				}
-
-				if currentDocV.Segments()[0] > previousDocV.Segments()[0] {
-					fmt.Printf("OpenAPI doc version changed detected: %s > %s\n", mgmtConfig["openapi-version"], docVersion)
-					bumpMajor = true
-					docVersionUpdated = true
-				} else if currentDocV.Segments()[1] > previousDocV.Segments()[1] {
-					fmt.Printf("OpenAPI doc version changed detected: %s > %s\n", mgmtConfig["openapi-version"], docVersion)
-					bumpMinor = true
-					docVersionUpdated = true
-				} else if currentDocV.Segments()[2] > previousDocV.Segments()[2] {
-					fmt.Printf("OpenAPI doc version changed detected: %s > %s\n", mgmtConfig["openapi-version"], docVersion)
-					bumpPatch = true
-					docVersionUpdated = true
-				}
-			} else {
-				fmt.Println("::warning title=invalid_version::openapi version is not a semver")
-			}
-		}
-
-		if mgmtConfig["openapi-checksum"] == "" {
-			bumpMinor = true
-		} else if docChecksum != mgmtConfig["openapi-checksum"] {
-			bumpPatch = true
-
-			fmt.Printf("OpenAPI doc checksum changed detected: %s > %s\n", mgmtConfig["openapi-checksum"], docChecksum)
-
-			if !docVersionUpdated {
-				fmt.Println("::warning title=checksum_changed::openapi checksum changed but version did not")
-			}
-		}
-
-		var major, minor, patch int
-
-		if sdkVersion != "" {
-			sdkV, err := version.NewVersion(sdkVersion)
-			if err != nil {
-				return "", fmt.Errorf("error parsing sdk version: %w", err)
-			}
-
-			major = sdkV.Segments()[0]
-			minor = sdkV.Segments()[1]
-			patch = sdkV.Segments()[2]
-		}
-
-		if bumpMajor {
-			fmt.Println("Bumping SDK major version")
-			major++
-			minor = 0
-			patch = 0
-		} else if bumpMinor {
-			fmt.Println("Bumping SDK minor version")
-			minor++
-			patch = 0
-		} else if bumpPatch {
-			fmt.Println("Bumping SDK patch version")
-			patch++
-		}
-
-		return fmt.Sprintf("%d.%d.%d", major, minor, patch), nil
+func releaseAction() error {
+	accessToken := environment.GetAccessToken()
+	if accessToken == "" {
+		return errors.New("github access token is required")
 	}
 
-	return "", nil
+	g := git.New(accessToken)
+	if err := g.CloneRepo(); err != nil {
+		return err
+	}
+
+	latestRelease, err := releases.GetLastReleaseInfo()
+	if err != nil {
+		return err
+	}
+
+	if environment.CreateGitRelease() {
+		if err := g.CreateRelease(*latestRelease); err != nil {
+			return err
+		}
+	}
+
+	outputs := map[string]string{}
+
+	if latestRelease.PythonPackagePublished {
+		outputs["python_regenerated"] = "true"
+		outputs["python_directory"] = latestRelease.PythonPath
+	}
+
+	if latestRelease.NPMPackagePublished {
+		outputs["typescript_regenerated"] = "true"
+		outputs["typescript_directory"] = latestRelease.TypescriptPath
+	}
+
+	if latestRelease.GoPackagePublished {
+		outputs["go_regenerated"] = "true"
+		outputs["go_directory"] = latestRelease.GoPath
+	}
+
+	if err := setOutputs(outputs); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func setOutputs(outputs map[string]string) error {
@@ -344,19 +208,6 @@ func setOutputs(outputs map[string]string) error {
 		if _, err := f.WriteString(out); err != nil {
 			return fmt.Errorf("error writing output: %w", err)
 		}
-	}
-
-	return nil
-}
-
-func writeConfigFile(cfg genConfig) error {
-	data, err := yaml.Marshal(cfg.Config)
-	if err != nil {
-		return fmt.Errorf("error marshaling config: %w", err)
-	}
-
-	if err := os.WriteFile(cfg.ConfigPath, data, os.ModePerm); err != nil {
-		return fmt.Errorf("error writing config: %w", err)
 	}
 
 	return nil

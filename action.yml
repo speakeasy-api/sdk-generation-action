@@ -9,6 +9,14 @@ inputs:
   openapi_doc_location:
     description: The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document
     required: true
+  openapi_doc_auth_header:
+    description: |-
+      The auth header to use when fetching the OpenAPI document if it is not publicly hosted. For example `Authorization`.
+      If using a private speakeasy hosted document use `x-api-key`. This header will be populated with the openapi_doc_auth_token provided.
+    required: false
+  openapi_doc_auth_token:
+    description: The auth token to use when fetching the OpenAPI document if it is not publicly hosted. For example `Bearer <token>` or `<token>`.
+    required: false
   github_access_token:
     description: A GitHub access token with write access to the repo
     required: true
@@ -21,15 +29,34 @@ inputs:
         - typescript # using default output of ./typescript-client-sdk
         - java # using default output of ./java-client-sdk
 
-      If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
+      If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo and generate the sdk
+      in the root of the repo if not path is provided.
     required: true
   create_release:
     description: "Create a Github release on generation"
     default: "true"
     required: false
+  publish_python:
+    description: "Whether the Python SDK will be published to PyPi"
+    default: "false"
+    required: false
+  publish_typescript:
+    description: "Whether the Typescript SDK will be published to NPM"
+    default: "false"
+    required: false
   debug:
     description: "Enable debug logging"
     default: "false"
+  mode:
+    description: |-
+      The mode to run the workflow in, valid options are 'direct' or 'pr', defaults to 'direct'.
+        - 'direct' will create a commit with the changes to the SDKs and push them directly to the branch the workflow is configure to run on (normally 'main' or 'master').
+          If publishing and creating a release are configured this will happen immediately after the commit is created on the branch.
+        - 'pr' will instead create a new branch to commit the changes to the SDKs to and then create a PR from this branch. 
+          The sdk-publish workflow will then need to be configured to run when the PR is merged to publish the SDKs and create a release.
+      See documentation for more details.
+    default: "direct"
+    required: false
 outputs:
   python_regenerated:
     description: "true if the Python SDK was regenerated"
@@ -47,8 +74,6 @@ outputs:
     description: "true if the Java SDK was regenerated"
   java_directory:
     description: "The directory the Java SDK was generated to"
-  commit_hash:
-    description: "The commit hash if the SDK was regenerated"
 runs:
   using: "docker"
   image: "Dockerfile"
@@ -58,3 +83,9 @@ runs:
     - ${{ inputs.github_access_token }}
     - ${{ inputs.languages }}
     - ${{ inputs.create_release }}
+    - ${{ inputs.publish_python }}
+    - ${{ inputs.publish_typescript }}
+    - ${{ inputs.debug }}
+    - ${{ inputs.openapi_doc_auth_header }}
+    - ${{ inputs.openapi_doc_auth_token }}
+    - ${{ inputs.mode }}

@@ -1,12 +1,19 @@
 # Speakeasy SDK Generation Action & Workflows
 
-The `sdk-generation-action` provides both an action and a workflow to generate Client SDKs from an OpenAPI document using the [Speakeasy CLI tool](https://github.com/speakeasy-api/speakeasy). You can use these to manage CI/CD (ie the automatic generation and publishing of Client SDKs) in a repo containing the generated SDKs.
+The `sdk-generation-action` provides both an action and workflows to generate Client SDKs from an OpenAPI document using the [Speakeasy CLI tool](https://github.com/speakeasy-api/speakeasy). You can use these to manage CI/CD (ie the automatic generation and publishing of Client SDKs) in a repo containing the generated SDKs.
 
 You can find more information about our Client SDK Generator for OpenAPI Documents here: https://docs.speakeasyapi.dev/docs/using-speakeasy/client-sdks/index.html
 
-The included workflow provides options for publishing the SDKs to various package managers once the action is successful.
+The included workflows provides option for publishing the SDKs to various package managers once the action is successful, either via PR or directly to the repo.
 
-This action provides a self contained solution for automatically generating new versions of a client SDK either when either the reference OpenAPI doc is updated or the Speakeasy CLI that is used to generate the SDKs is updated.
+This action provides a self contained solution for automatically generating new versions of a client SDK when either the reference OpenAPI doc is updated or the Speakeasy CLI that is used to generate the SDKs is updated.
+
+The action can be used in two ways:
+
+- Configured to generate and commit directly to a branch in the repo (such as `main` or `master`). This mode is known as `direct` mode.
+- Configured to generate and commit to a auto-generated branch, then create a PR to merge the changes back into the main repo. This mode is known as `pr` mode.
+
+## Direct Mode
 
 The action runs through the following steps:
 
@@ -18,7 +25,31 @@ The action runs through the following steps:
 - Creates a commit with the new SDK(s) and pushes it to the repo
 - Optionally creates a Github release for the new commit
 
+## PR Mode
+
+The action runs through the following steps:
+
+- Downloads the latest (or pinned) version of the Speakeasy CLI
+- Clones the associated repo
+- Creates a branch (or updates an existing branch) for the new SDK version
+- Downloads or loads the latest OpenAPI doc from a url or the repo
+- Checks for changes to the OpenAPI doc and the Speakeasy CLI Version
+- Generates a new SDK for the configured languages if necessary
+- Creates a commit with the new SDK(s) and pushes it to the repo
+- Creates a PR from the new branch to the main branch or updates an existing PR
+
+## Publishing
+
+Publishing is provided by using the included reusable workflows. These workflows can be used to publish the SDKs to various package managers. See below for more information.
+
 ## Inputs
+
+### `mode`
+
+The mode to run the action in, valid options are `direct` or `pr`, defaults to `direct`.
+
+- `direct` will create a commit with the changes to the SDKs and push them directly to the branch the workflow is configure to run on (normally 'main' or 'master'). If `create_release` is `true` this will happen immediately after the commit is created on the branch.
+- `pr` will instead create a new branch to commit the changes to the SDKs to and then create a PR from this branch. The sdk-publish workflow will then need to be configured to run when the PR is merged to publish the SDKs and create a release.
 
 ### `speakeasy_version`
 
@@ -27,6 +58,14 @@ The version of the Speakeasy CLI to use or `"latest"`. Default `"latest"`.
 ### `openapi_doc_location`
 
 **Required** The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document.
+
+### `openapi_doc_auth_header`
+
+The auth header to use when fetching the OpenAPI document if it is not publicly hosted. For example `Authorization`. If using a private speakeasy hosted document use `x-api-key`. This header will be populated with the `openapi_doc_auth_token` provided.
+
+### `openapi_doc_auth_token`
+
+The auth token to use when fetching the OpenAPI document if it is not publicly hosted. For example `Bearer <token>` or `<token>`.
 
 ### `github_access_token`
 
@@ -48,7 +87,7 @@ If multiple languages are present we will treat the repo as a mono repo, if a si
 
 ### `create_release`
 
-Whether to create a release for the new SDK version. Default `"true"`.
+Whether to create a release for the new SDK version if using `direct` mode. Default `"true"`.
 This will also create a tag for the release, allowing the Go SDK to be retrieved via a tag with Go modules.
 
 ### `publish_python`
@@ -93,35 +132,9 @@ The directory the Go SDK was generated in
 
 The directory the Java SDK was generated in
 
-## Example Workflow usage
-
-`.github/workflows/speakeasy_sdk_generation.yml`
-
-```yaml
-name: Generate
-
-on:
-  workflow_dispatch: {} # Allows manual triggering of the workflow to generate SDK
-  schedule:
-    - cron: 0 0 * * * # Runs every day at midnight
-
-jobs:
-  generate:
-    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v5.2 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers
-    with:
-      speakeasy_version: latest
-      openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
-      languages: |-
-        - python
-      publish_python: true
-    secrets:
-      github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      pypi_token: ${{ secrets.PYPI_TOKEN }}
-```
-
 ## Example Action usage
 
-`.github/workflows/speakeasy_sdk_generation.yml`
+If just using the action on its own (without the workflow publishing) you can use the action as follows:
 
 ```yaml
 name: Generate
@@ -136,11 +149,70 @@ jobs:
     name: Generate SDK
     runs-on: ubuntu-latest
     steps:
-      - uses: speakeasy-api/sdk-generation-action@v5.2
+      - uses: speakeasy-api/sdk-generation-action@v6
         with:
           speakeasy_version: latest
           openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           languages: |-
             - go
+```
+
+## Workflow usage
+
+### Generation Workflow
+
+The `.github/workflows/speakeasy_sdk_generation.yml` workflow provides a reusable workflow for generating the SDKs. This workflow can be used to generate the SDKs and publish them to various package managers if using the `direct` mode of the action or to generate the SDKs and create a PR to merge the changes back into the main repo if using the `pr` mode of the action. If using `pr` mode you can then use the `.github/workflows/speakeasy_sdk_publish.yml` workflow to publish the SDKs to various package managers on merge into the main branch.
+
+Below is example configuration of a workflow using the `pr` mode of the action:
+
+```yaml
+name: Generate
+
+on:
+  workflow_dispatch: {} # Allows manual triggering of the workflow to generate SDK
+  schedule:
+    - cron: 0 0 * * * # Runs every day at midnight
+
+jobs:
+  generate:
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v6 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers in 'direct' mode.
+    with:
+      speakeasy_version: latest
+      openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
+      languages: |-
+        - python
+      publish_python: true
+      mode: pr
+    secrets:
+      github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      pypi_token: ${{ secrets.PYPI_TOKEN }}
+```
+
+### Publishing Workflow
+
+When using the action or workflow in `pr` mode you can use the `.github/workflows/speakeasy_sdk_publish.yml` workflow to publish the SDKs to various package managers on merge into the main branch, and create a Github release for the new SDK version.
+
+Below is example configuration of a workflow using the `pr` mode of the action:
+
+```yaml
+name: Publish
+
+on:
+  on:
+  push: # Will trigger when the RELEASES.md file is updated by the merged PR from the generation workflow
+    paths:
+      - 'RELEASES.md'
+    branches:
+      - main
+
+jobs:
+  publish:
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-publish.yaml@v6 # Import the sdk publish workflow which will handle the publishing to the package managers
+    with:
+      publish_python: true
+      create_release: true
+    secrets:
+      github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      pypi_token: ${{ secrets.PYPI_TOKEN }}
 ```

@@ -12,6 +12,12 @@ on:
         description: The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document
         required: true
         type: string
+      openapi_doc_auth_header:
+        description: |-
+          The auth header to use when fetching the OpenAPI document if it is not publicly hosted. For example `Authorization`.
+          If using a private speakeasy hosted document use `x-api-key`. This header will be populated with the openapi_doc_auth_token provided.
+        required: false
+        type: string
       languages:
         description: |-
           A yaml string containing a list of languages to generate SDKs for example:
@@ -25,18 +31,29 @@ on:
         required: true
         type: string
       create_release:
-        description: "Create a Github release on generation"
+        description: "Create a Github release on generation if using 'direct' mode or prepare a release if using 'pr' mode"
         default: "true"
         required: false
         type: string
       publish_python:
-        description: "Publish the Python SDK to PyPi"
+        description: "Publish the Python SDK to PyPi if using 'direct' mode or prepare a release if using 'pr' mode"
         default: "false"
         required: false
         type: string
       publish_typescript:
-        description: "Publish the Typescript SDK to NPM"
+        description: "Publish the Typescript SDK to NPM if using 'direct' mode or prepare a release if using 'pr' mode"
         default: "false"
+        required: false
+        type: string
+      mode:
+        description: |-
+          The mode to run the workflow in, valid options are 'direct' or 'pr', defaults to 'direct'.
+            - 'direct' will create a commit with the changes to the SDKs and push them directly to the branch the workflow is configure to run on (normally 'main' or 'master').
+              If publishing and creating a release are configured this will happen immediately after the commit is created on the branch.
+            - 'pr' will instead create a new branch to commit the changes to the SDKs to and then create a PR from this branch. 
+              The sdk-publish workflow will then need to be configured to run when the PR is merged to publish the SDKs and create a release.
+          See documentation for more details.
+        default: "direct"
         required: false
         type: string
       debug:
@@ -53,6 +70,9 @@ on:
       npm_token:
         description: An NPM access token for publishing the package to NPM, include the `npm_` prefix
         required: false
+      openapi_doc_auth_token:
+        description: The auth token to use when fetching the OpenAPI document if it is not publicly hosted. For example `Bearer <token>` or `<token>`.
+        required: false
 
 jobs:
   generate:
@@ -67,18 +87,23 @@ jobs:
       go_directory: ${{ steps.generate.outputs.go_directory }}
       java_regenerated: ${{ steps.generate.outputs.java_regenerated }}
       java_directory: ${{ steps.generate.outputs.java_directory }}
-      commit_hash: ${{ steps.generate.outputs.commit_hash }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v5.2
+        uses: speakeasy-api/sdk-generation-action@v6
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
+          openapi_doc_auth_header: ${{ inputs.openapi_doc_auth_header }}
+          openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
           github_access_token: ${{ secrets.github_access_token }}
           languages: ${{ inputs.languages }}
           create_release: ${{ inputs.create_release }}
+          publish_python: ${{ inputs.publish_python }}
+          publish_typescript: ${{ inputs.publish_typescript }}
+          mode: ${{ inputs.mode }}
+          debug: ${{ inputs.debug }}
   publish-pypi:
-    if: ${{ needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' }}
+    if: ${{ needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' && inputs.mode != 'pr' }}
     name: Publish Python SDK
     runs-on: ubuntu-latest
     needs: generate
@@ -87,8 +112,6 @@ jobs:
         working-directory: ${{ needs.generate.outputs.python_directory }}
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.generate.outputs.commit_hash }}
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -105,7 +128,7 @@ jobs:
           python setup.py sdist bdist_wheel
           twine upload dist/*
   publish-npm:
-    if: ${{ needs.generate.outputs.typescript_regenerated == 'true' && inputs.publish_typescript == 'true' }}
+    if: ${{ needs.generate.outputs.typescript_regenerated == 'true' && inputs.publish_typescript == 'true' && inputs.mode != 'pr' }}
     name: Publish Typescript SDK
     runs-on: ubuntu-latest
     needs: generate
@@ -114,8 +137,6 @@ jobs:
         working-directory: ${{ needs.generate.outputs.typescript_directory }}
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.generate.outputs.commit_hash }}
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
