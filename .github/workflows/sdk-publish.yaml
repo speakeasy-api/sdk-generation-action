@@ -46,7 +46,7 @@ jobs:
       go_directory: ${{ steps.generate.outputs.go_directory }}
     steps:
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v6
+        uses: speakeasy-api/sdk-generation-action@v6.1
         with:
           github_access_token: ${{ secrets.github_access_token }}
           create_release: ${{ inputs.create_release }}
