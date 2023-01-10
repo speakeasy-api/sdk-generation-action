@@ -56,7 +56,7 @@ func genAction() error {
 		}
 	}
 
-	if err := cli.Download(environment.GetPinnedSpeakeasyVersion()); err != nil {
+	if err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
 		return err
 	}
 

@@ -3,7 +3,6 @@ package cli
 import (
 	"archive/tar"
 	"compress/gzip"
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -14,25 +13,21 @@ import (
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/download"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
-
-	"github.com/google/go-github/v48/github"
 )
 
-func Download(pinnedVersion string) error {
+type Git interface {
+	GetLatestTag() (string, error)
+}
+
+func Download(pinnedVersion string, g Git) error {
 	version := pinnedVersion
 
 	if pinnedVersion == "" || pinnedVersion == "latest" {
-		client := github.NewClient(nil)
-		tags, _, err := client.Repositories.ListTags(context.Background(), "speakeasy-api", "speakeasy", nil)
+		latestVersion, err := g.GetLatestTag()
 		if err != nil {
-			return fmt.Errorf("failed to get speakeasy cli tags: %w", err)
+			return err
 		}
-
-		if len(tags) == 0 {
-			return fmt.Errorf("no speakeasy cli tags found")
-		}
-
-		version = tags[0].GetName()
+		version = latestVersion
 	} else {
 		if !strings.HasPrefix(pinnedVersion, "v") {
 			version = "v" + pinnedVersion

@@ -281,6 +281,19 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo) error {
 	return nil
 }
 
+func (g *Git) GetLatestTag() (string, error) {
+	tags, _, err := g.client.Repositories.ListTags(context.Background(), "speakeasy-api", "speakeasy", nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to get speakeasy cli tags: %w", err)
+	}
+
+	if len(tags) == 0 {
+		return "", fmt.Errorf("no speakeasy cli tags found")
+	}
+
+	return tags[0].GetName(), nil
+}
+
 func getGithubAuth(accessToken string) *gitHttp.BasicAuth {
 	return &gitHttp.BasicAuth{
 		Username: "gen",
