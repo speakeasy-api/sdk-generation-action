@@ -38,12 +38,12 @@ jobs:
     name: Create Github Release
     runs-on: ubuntu-latest
     outputs:
-      python_regenerated: ${{ steps.generate.outputs.python_regenerated }}
-      python_directory: ${{ steps.generate.outputs.python_directory }}
-      typescript_regenerated: ${{ steps.generate.outputs.typescript_regenerated }}
-      typescript_directory: ${{ steps.generate.outputs.typescript_directory }}
-      go_regenerated: ${{ steps.generate.outputs.go_regenerated }}
-      go_directory: ${{ steps.generate.outputs.go_directory }}
+      python_regenerated: ${{ steps.release.outputs.python_regenerated }}
+      python_directory: ${{ steps.release.outputs.python_directory }}
+      typescript_regenerated: ${{ steps.release.outputs.typescript_regenerated }}
+      typescript_directory: ${{ steps.release.outputs.typescript_directory }}
+      go_regenerated: ${{ steps.release.outputs.go_regenerated }}
+      go_directory: ${{ steps.release.outputs.go_directory }}
     steps:
       - id: release
         uses: speakeasy-api/sdk-generation-action@v6
