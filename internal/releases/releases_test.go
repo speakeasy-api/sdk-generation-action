@@ -53,3 +53,32 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, r2, *info)
 }
+
+func TestReleases_ParseVesselRelease_Success(t *testing.T) {
+	releases := `
+
+## Version 2.1.2
+### Changes
+Based on:
+- OpenAPI Doc 2.0 https://vesselapi.github.io/yaml/openapi.yaml
+- Speakeasy CLI 0.18.1 https://github.com/speakeasy-api/speakeasy
+### Releases
+- [NPM v2.1.2] https://www.npmjs.com/package/@vesselapi/nodesdk/v/2.1.2 - typescript-client-sdk
+- [PyPI v2.1.2] https://pypi.org/project/vesselapi/2.1.2 - python-client-sdk
+`
+
+	info, err := parseReleases(releases)
+	assert.NoError(t, err)
+	assert.Equal(t, ReleasesInfo{
+		ReleaseVersion:         "2.1.2",
+		OpenAPIDocVersion:      "2.0",
+		OpenAPIDocPath:         "https://vesselapi.github.io/yaml/openapi.yaml",
+		SpeakeasyVersion:       "0.18.1",
+		NPMPackagePublished:    true,
+		NPMPackageName:         "@vesselapi/nodesdk",
+		TypescriptPath:         "typescript-client-sdk",
+		PythonPackagePublished: true,
+		PythonPackageName:      "vesselapi",
+		PythonPath:             "python-client-sdk",
+	}, *info)
+}

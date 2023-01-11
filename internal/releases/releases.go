@@ -70,7 +70,7 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo) error {
 }
 
 var (
-	releaseInfoRegex = regexp.MustCompile(`(?s)## Version (\d+\.\d+\.\d+)\n### Changes\nBased on:\n- OpenAPI Doc (\d+\.\d+\.\d+) (.*?)\n- Speakeasy CLI (\d+\.\d+\.\d+).*?`)
+	releaseInfoRegex = regexp.MustCompile(`(?s)## Version (\d+\.\d+\.\d+)\n### Changes\nBased on:\n- OpenAPI Doc (\d+\.\d+\.*\d*) (.*?)\n- Speakeasy CLI (\d+\.\d+\.\d+).*?`)
 	npmReleaseRegex  = regexp.MustCompile(`- \[NPM v\d+\.\d+\.\d+\] https:\/\/www.npmjs.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+ - (.*)`)
 	pypiReleaseRegex = regexp.MustCompile(`- \[PyPI v\d+\.\d+\.\d+\] https:\/\/pypi.org\/project\/(.*?)\/\d+\.\d+\.\d+ - (.*)`)
 	goReleaseRegex   = regexp.MustCompile(`- \[Go v\d+\.\d+\.\d+\].*? - (.*)`)
@@ -93,6 +93,8 @@ func parseReleases(data string) (*ReleasesInfo, error) {
 	lastRelease := releases[len(releases)-1]
 
 	matches := releaseInfoRegex.FindStringSubmatch(lastRelease)
+
+	fmt.Println(matches)
 
 	if len(matches) != 5 {
 		return nil, fmt.Errorf("error parsing last release info")
