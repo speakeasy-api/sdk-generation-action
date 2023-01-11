@@ -32,6 +32,9 @@ on:
       npm_token:
         description: An NPM access token for publishing the package to NPM, include the `npm_` prefix
         required: false
+      speakeasy_api_key:
+        description: The API key to use to authenticate the Speakeasy CLI
+        required: true
 
 jobs:
   release:
@@ -46,13 +49,14 @@ jobs:
       go_directory: ${{ steps.release.outputs.go_directory }}
     steps:
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v6
+        uses: speakeasy-api/sdk-generation-action@v7
         with:
           github_access_token: ${{ secrets.github_access_token }}
           create_release: ${{ inputs.create_release }}
           publish_python: ${{ inputs.publish_python }}
           publish_typescript: ${{ inputs.publish_typescript }}
           mode: "release"
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
   publish-pypi:
     if: ${{ needs.release.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' }}
     name: Publish Python SDK
