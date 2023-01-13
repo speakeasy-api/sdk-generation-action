@@ -44,6 +44,10 @@ Publishing is provided by using the included reusable workflows. These workflows
 
 ## Inputs
 
+### `speakeasy_api_key`
+
+**Required** The Speakeasy API Key to use to authenticate the CLI run by the action. Create a new API Key in the [Speakeasy Platform](https://app.speakeasyapi.dev).
+
 ### `mode`
 
 The mode to run the action in, valid options are `direct` or `pr`, defaults to `direct`.
@@ -149,8 +153,9 @@ jobs:
     name: Generate SDK
     runs-on: ubuntu-latest
     steps:
-      - uses: speakeasy-api/sdk-generation-action@v6
+      - uses: speakeasy-api/sdk-generation-action@v7
         with:
+          speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
           speakeasy_version: latest
           openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
@@ -176,8 +181,9 @@ on:
 
 jobs:
   generate:
-    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v6 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers in 'direct' mode.
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v7 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers in 'direct' mode.
     with:
+      speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
       speakeasy_version: latest
       openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
       languages: |-
@@ -208,7 +214,7 @@ on:
 
 jobs:
   publish:
-    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-publish.yaml@v6 # Import the sdk publish workflow which will handle the publishing to the package managers
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-publish.yaml@v7 # Import the sdk publish workflow which will handle the publishing to the package managers
     with:
       publish_python: true
       create_release: true

@@ -73,6 +73,9 @@ on:
       openapi_doc_auth_token:
         description: The auth token to use when fetching the OpenAPI document if it is not publicly hosted. For example `Bearer <token>` or `<token>`.
         required: false
+      speakeasy_api_key:
+        description: The API key to use to authenticate the Speakeasy CLI
+        required: true
 
 jobs:
   generate:
@@ -89,7 +92,7 @@ jobs:
       java_directory: ${{ steps.generate.outputs.java_directory }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v6
+        uses: speakeasy-api/sdk-generation-action@v7
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -102,6 +105,7 @@ jobs:
           publish_typescript: ${{ inputs.publish_typescript }}
           mode: ${{ inputs.mode }}
           debug: ${{ inputs.debug }}
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
   publish-pypi:
     if: ${{ needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' && inputs.mode != 'pr' }}
     name: Publish Python SDK
