@@ -97,10 +97,12 @@ func genAction() error {
 			return err
 		}
 
-		_, err = g.CommitAndPush(docVersion, speakeasyVersion)
+		commitHash, err := g.CommitAndPush(docVersion, speakeasyVersion)
 		if err != nil {
 			return err
 		}
+
+		outputs["commit_hash"] = commitHash
 
 		switch environment.GetMode() {
 		case "pr":
@@ -114,27 +116,6 @@ func genAction() error {
 				}
 			}
 		}
-
-		// TODO if in PR mode
-		//   - clone repo
-		//   - generate sdks
-		//   - create branch
-		//   - create releases file
-		//   - commit changes
-		//   - push branch
-		//   - create PR
-		//   - then when merged into main
-		//	    - create release
-		//	    - publish
-
-		// TODO if in commit to main mode
-		//   - clone repo
-		//   - generate sdks
-		//   - create releases file
-		//   - commit changes
-		//   - push to main
-		//   - create release
-		//   - publish
 	}
 
 	if err := setOutputs(outputs); err != nil {

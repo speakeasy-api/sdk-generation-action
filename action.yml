@@ -77,6 +77,8 @@ outputs:
     description: "true if the Java SDK was regenerated"
   java_directory:
     description: "The directory the Java SDK was generated to"
+  commit_hash:
+    description: "The commit hash if the SDK was regenerated"
 runs:
   using: "docker"
   image: "Dockerfile"
