@@ -10,7 +10,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/generate"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
-	"github.com/speakeasy-api/sdk-generation-action/internal/releases"
+	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 )
 
 func main() {
