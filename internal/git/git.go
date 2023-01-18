@@ -15,7 +15,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
-	"github.com/speakeasy-api/sdk-generation-action/internal/releases"
+	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 
 	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
