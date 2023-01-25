@@ -10,6 +10,7 @@ RUN go mod download
 
 COPY *.go ./
 COPY internal/ ./internal/
+COPY pkg/ ./pkg/
 
 RUN go build -o /action
 
