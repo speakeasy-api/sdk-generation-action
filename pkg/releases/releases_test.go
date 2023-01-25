@@ -96,3 +96,37 @@ Based on:
 		PythonPackageURL:       "https://pypi.org/project/vesselapi/2.1.2",
 	}, *info)
 }
+
+func TestReleases_ParseCodatRelease_Success(t *testing.T) {
+	releasesStr := `
+
+## Version 1.1.0
+### Changes
+Based on:
+- OpenAPI Doc v1 https://api.codat.io/swagger/v1/swagger.json
+- Speakeasy CLI 0.21.0 https://github.com/speakeasy-api/speakeasy
+### Releases
+- [NPM v1.1.0] https://www.npmjs.com/package/@codatio/codat-ts/v/1.1.0 - typescript-client-sdk
+- [PyPI v1.1.0] https://pypi.org/project/codatapi/1.1.0 - python-client-sdk
+- [Go v1.1.0] https://github.com/speakeasy-sdks/codat-sdks/releases/tag/v1.1.0 - go-client-sdk`
+
+	info, err := releases.ParseReleases(releasesStr)
+	assert.NoError(t, err)
+	assert.Equal(t, releases.ReleasesInfo{
+		ReleaseVersion:         "1.1.0",
+		OpenAPIDocVersion:      "v1",
+		OpenAPIDocPath:         "https://api.codat.io/swagger/v1/swagger.json",
+		SpeakeasyVersion:       "0.21.0",
+		NPMPackagePublished:    true,
+		NPMPackageName:         "@codatio/codat-ts",
+		NPMPackageUrl:          "https://www.npmjs.com/package/@codatio/codat-ts/v/1.1.0",
+		TypescriptPath:         "typescript-client-sdk",
+		PythonPackagePublished: true,
+		PythonPackageName:      "codatapi",
+		PythonPath:             "python-client-sdk",
+		PythonPackageURL:       "https://pypi.org/project/codatapi/1.1.0",
+		GoPackageURL:           "https://github.com/speakeasy-sdks/codat-sdks/releases/tag/v1.1.0",
+		GoPackagePublished:     true,
+		GoPath:                 "go-client-sdk",
+	}, *info)
+}
