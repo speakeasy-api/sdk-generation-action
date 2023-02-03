@@ -81,7 +81,7 @@ outputs:
     description: "The commit hash if the SDK was regenerated"
 runs:
   using: "docker"
-  image: "Dockerfile"
+  image: "docker://speakeasysagar/sdk-generation-action:v8"
   env:
     SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
   args:
