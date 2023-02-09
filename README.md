@@ -102,6 +102,10 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 
 **(Workflow Only)** Whether to publish the TypeScript SDK to NPM. Default `"false"`.
 
+### `publish_java`
+
+**(Workflow Only)** Whether to publish the Java SDK to Maven Central. Default `"false"`.
+
 ## Outputs
 
 ### `python_regenerated`
