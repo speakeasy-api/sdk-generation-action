@@ -46,7 +46,7 @@ on:
         required: false
         type: string
       publish_java:
-        description: "Publish the Java SDK to Maven Central if using 'direct' mode or prepare a release if using 'pr' mode"
+        description: "Publish the Java SDK to the OSSRH URL configured in gen.yml if using 'direct' mode or prepare a release if using 'pr' mode"
         default: "false"
         required: false
         type: string
