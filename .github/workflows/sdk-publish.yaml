@@ -18,6 +18,11 @@ on:
         default: "false"
         required: false
         type: string
+      publish_java:
+        description: "Publish the Java SDK to Maven Central if using 'direct' mode or prepare a release if using 'pr' mode"
+        default: "false"
+        required: false
+        type: string
       debug:
         description: "Enable debug logging"
         default: "false"
@@ -35,6 +40,12 @@ on:
       speakeasy_api_key:
         description: The API key to use to authenticate the Speakeasy CLI
         required: true
+      ossrh_username:
+        description: A username for publishing the Java package to the OSSRH URL provided in gen.yml
+        required: false
+      ossrh_password:
+        description: The corresponding password for publishing the Java package to the OSSRH URL provided in gen.yml
+        required: false
 
 jobs:
   release:
@@ -47,6 +58,8 @@ jobs:
       typescript_directory: ${{ steps.release.outputs.typescript_directory }}
       go_regenerated: ${{ steps.release.outputs.go_regenerated }}
       go_directory: ${{ steps.release.outputs.go_directory }}
+      java_regenerated: ${{ steps.release.outputs.java_regenerated }}
+      java_directory: ${{ steps.release.outputs.java_directory }}
     steps:
       - id: release
         uses: speakeasy-api/sdk-generation-action@v8
@@ -55,6 +68,7 @@ jobs:
           create_release: ${{ inputs.create_release }}
           publish_python: ${{ inputs.publish_python }}
           publish_typescript: ${{ inputs.publish_typescript }}
+          publish_java: ${{ inputs.publish_java }}
           mode: "release"
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
   publish-pypi:
@@ -103,3 +117,27 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: npm publish --access public
+  publish-java:
+    if: ${{ needs.release.outputs.java_regenerated == 'true' && inputs.publish_java == 'true' }}
+    name: Publish Java SDK
+    runs-on: ubuntu-latest
+    needs: release
+    defaults:
+      run:
+        working-directory: ${{ needs.release.outputs.java_directory }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@e6e38bacfdf1a337459f332974bb2327a31aaf4b
+      - name: Publish package
+        uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
+        with:
+          arguments: publish
+        env:
+          MAVEN_USERNAME: ${{ secrets.ossrh_username }}
+          MAVEN_PASSWORD: ${{ secrets.ossrh_password }}
