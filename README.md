@@ -104,7 +104,7 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 
 ### `publish_java`
 
-**(Workflow Only)** Whether to publish the Java SDK to Maven Central. Default `"false"`.
+**(Workflow Only)** Whether to publish the Java SDK to the OSSRH URL configured in gen.yaml. Default `"false"`.
 
 ## Outputs
 
