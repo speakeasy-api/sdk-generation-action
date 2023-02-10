@@ -30,6 +30,7 @@ type config struct {
 	Typescript *langConfig    `yaml:"typescript,omitempty"`
 	Python     *langConfig    `yaml:"python,omitempty"`
 	Java       *langConfig    `yaml:"java,omitempty"`
+	PHP        *langConfig    `yaml:"php,omitempty"`
 	Cfg        map[string]any `yaml:",inline"`
 }
 

@@ -2,7 +2,7 @@
 
 The `sdk-generation-action` provides both an action and workflows to generate Client SDKs from an OpenAPI document using the [Speakeasy CLI tool](https://github.com/speakeasy-api/speakeasy). You can use these to manage CI/CD (ie the automatic generation and publishing of Client SDKs) in a repo containing the generated SDKs.
 
-You can find more information about our Client SDK Generator for OpenAPI Documents here: https://docs.speakeasyapi.dev/docs/using-speakeasy/client-sdks/index.html
+You can find more information about our Client SDK Generator for OpenAPI Documents here: <https://docs.speakeasyapi.dev/docs/using-speakeasy/client-sdks/index.html>
 
 The included workflows provides option for publishing the SDKs to various package managers once the action is successful, either via PR or directly to the repo.
 
@@ -85,6 +85,7 @@ languages: |
   - python # using default output of ./python-client-sdk
   - typescript # using default output of ./typescript-client-sdk
   - java # using default output of ./java-client-sdk
+  - php # using default output of ./php-client-sdk
 ```
 
 If multiple languages are present we will treat the repo as a mono repo, if a single language is present as a single language repo.
@@ -101,6 +102,10 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 ### `publish_typescript`
 
 **(Workflow Only)** Whether to publish the TypeScript SDK to NPM. Default `"false"`.
+
+### `publish_php`
+
+**(Workflow Only)** Whether to publish the PHP SDK for Composer. Default `"false"`.
 
 ## Outputs
 
@@ -136,6 +141,14 @@ The directory the Go SDK was generated in
 
 The directory the Java SDK was generated in
 
+### `php_regenerated`
+
+`true` if the PHP SDK was regenerated
+
+### `php_directory`
+
+The directory the PHP SDK was generated in
+
 ## Example Action usage
 
 If just using the action on its own (without the workflow publishing) you can use the action as follows:
@@ -153,7 +166,7 @@ jobs:
     name: Generate SDK
     runs-on: ubuntu-latest
     steps:
-      - uses: speakeasy-api/sdk-generation-action@v8
+      - uses: speakeasy-api/sdk-generation-action@v9
         with:
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
           speakeasy_version: latest
@@ -181,7 +194,7 @@ on:
 
 jobs:
   generate:
-    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v8 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers in 'direct' mode.
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v9 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers in 'direct' mode.
     with:
       speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
       speakeasy_version: latest
@@ -214,7 +227,7 @@ on:
 
 jobs:
   publish:
-    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-publish.yaml@v8 # Import the sdk publish workflow which will handle the publishing to the package managers
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-publish.yaml@v9 # Import the sdk publish workflow which will handle the publishing to the package managers
     with:
       publish_python: true
       create_release: true
