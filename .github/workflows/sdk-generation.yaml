@@ -183,4 +183,4 @@ jobs:
       - name: Publish
         uses: wei/curl@v1.1.1
         with:
-          args: -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username=${{ secrets.packagist_username }}&apiToken=${{ secrets.packagist_token }}' -d'{\"repository\":{\"url":\"${{ github.server_url }}/${{ github.repository }}\"}}'
+          args: -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username=${{ secrets.packagist_username }}&apiToken=${{ secrets.packagist_token }}' -d'{\"repository\":{\"url\":\"${{ github.server_url }}/${{ github.repository }}\"}}'
