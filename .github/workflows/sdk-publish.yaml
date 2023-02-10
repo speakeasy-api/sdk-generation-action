@@ -58,8 +58,8 @@ jobs:
       typescript_directory: ${{ steps.release.outputs.typescript_directory }}
       go_regenerated: ${{ steps.release.outputs.go_regenerated }}
       go_directory: ${{ steps.release.outputs.go_directory }}
-      java_regenerated: ${{ steps.generate.outputs.java_regenerated }}
-      java_directory: ${{ steps.generate.outputs.java_directory }}
+      java_regenerated: ${{ steps.release.outputs.java_regenerated }}
+      java_directory: ${{ steps.release.outputs.java_directory }}
       php_regenerated: ${{ steps.release.outputs.php_regenerated }}
       php_directory: ${{ steps.release.outputs.php_directory }}
     steps:
