@@ -35,12 +35,21 @@ type config struct {
 }
 
 func (c *config) GetLangConfig(lang string) *langConfig {
-	field, _ := reflections.GetField(c, strings.Title(lang))
+	field, _ := reflections.GetField(c, getFieldName(lang))
 	return field.(*langConfig)
 }
 
 func (c *config) SetLangConfig(lang string, cfg *langConfig) {
-	_ = reflections.SetField(c, strings.Title(lang), cfg)
+	_ = reflections.SetField(c, getFieldName(lang), cfg)
+}
+
+func getFieldName(lang string) string {
+	fieldName := strings.Title(lang)
+	if strings.ToLower(lang) == "php" {
+		fieldName = "PHP"
+	}
+
+	return fieldName
 }
 
 type genConfig struct {
