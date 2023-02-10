@@ -24,6 +24,9 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 		PythonPackageURL:       "https://pypi.org/project/org-package/1.2.3",
 		GoPackagePublished:     true,
 		GoPackageURL:           "https://github.com/test/repo/releases/tag/v1.2.3",
+		PHPPackagePublished:    true,
+		PHPPackageName:         "org/package",
+		PHPPackageURL:          "https://packagist.org/packages/org/package#v1.2.3",
 	}
 
 	info, err := releases.ParseReleases(r.String())
@@ -44,6 +47,8 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 		PythonPackagePublished: true,
 		PythonPackageName:      "org-package",
 		GoPackagePublished:     true,
+		PHPPackagePublished:    true,
+		PHPPackageName:         "org/package",
 	}
 
 	r2 := releases.ReleasesInfo{
@@ -59,6 +64,9 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 		PythonPackageURL:       "https://pypi.org/project/org-package/1.3.0",
 		GoPackagePublished:     true,
 		GoPackageURL:           "https://github.com/test/repo/releases/tag/v1.3.0",
+		PHPPackagePublished:    true,
+		PHPPackageName:         "org/package",
+		PHPPackageURL:          "https://packagist.org/packages/org/package#v1.3.0",
 	}
 
 	info, err := releases.ParseReleases(r1.String() + r2.String())

@@ -45,6 +45,11 @@ on:
         default: "false"
         required: false
         type: string
+      publish_php:
+        description: "Publish the PHP SDK for Composer if using 'direct' mode or prepare a release if using 'pr' mode"
+        default: "false"
+        required: false
+        type: string
       mode:
         description: |-
           The mode to run the workflow in, valid options are 'direct' or 'pr', defaults to 'direct'.
@@ -70,6 +75,12 @@ on:
       npm_token:
         description: An NPM access token for publishing the package to NPM, include the `npm_` prefix
         required: false
+      packagist_username:
+        description: A Packagist username for publishing the package to Packagist
+        required: false
+      packagist_token:
+        description: A Packagist API token for publishing the package to Packagist
+        required: false
       openapi_doc_auth_token:
         description: The auth token to use when fetching the OpenAPI document if it is not publicly hosted. For example `Bearer <token>` or `<token>`.
         required: false
@@ -90,10 +101,12 @@ jobs:
       go_directory: ${{ steps.generate.outputs.go_directory }}
       java_regenerated: ${{ steps.generate.outputs.java_regenerated }}
       java_directory: ${{ steps.generate.outputs.java_directory }}
+      php_regenerated: ${{ steps.release.outputs.php_regenerated }}
+      php_directory: ${{ steps.release.outputs.php_directory }}
       commit_hash: ${{ steps.generate.outputs.commit_hash }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v8
+        uses: speakeasy-api/sdk-generation-action@v9
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -104,6 +117,7 @@ jobs:
           create_release: ${{ inputs.create_release }}
           publish_python: ${{ inputs.publish_python }}
           publish_typescript: ${{ inputs.publish_typescript }}
+          publish_php: ${{ inputs.publish_php }}
           mode: ${{ inputs.mode }}
           debug: ${{ inputs.debug }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
@@ -157,3 +171,16 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: npm publish --access public
+  publish-packagist:
+    if: ${{ needs.generate.outputs.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
+    name: Publish PHP SDK
+    runs-on: ubuntu-latest
+    needs: generate
+    defaults:
+      run:
+        working-directory: ${{ needs.generate.outputs.php_directory }}
+    steps:
+      - name: Publish
+        uses: wei/curl@v1.1.1
+        with:
+          args: -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username=${{ secrets.packagist_username }}&apiToken=${{ secrets.packagist_token }}' -d'{"repository":{"url":"${{ github.server_url }}/${{ github.repository }}"}}'
