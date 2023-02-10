@@ -42,7 +42,7 @@ func GetLanguages() string {
 }
 
 func CreateGitRelease() bool {
-	return os.Getenv("INPUT_CREATE_RELEASE") == "true"
+	return os.Getenv("INPUT_CREATE_RELEASE") == "true" || IsPHPPublished()
 }
 
 func GetAccessToken() string {
@@ -59,6 +59,10 @@ func IsPythonPublished() bool {
 
 func IsTypescriptPublished() bool {
 	return os.Getenv("INPUT_PUBLISH_TYPESCRIPT") == "true"
+}
+
+func IsPHPPublished() bool {
+	return os.Getenv("INPUT_PUBLISH_PHP") == "true"
 }
 
 func GetOpenAPIDocAuthHeader() string {

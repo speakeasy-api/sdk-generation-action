@@ -26,6 +26,10 @@ type ReleasesInfo struct {
 	GoPackagePublished     bool
 	GoPackageURL           string
 	GoPath                 string
+	PHPPackagePublished    bool
+	PHPPackageName         string
+	PHPPackageURL          string
+	PHPPath                string
 }
 
 func (r ReleasesInfo) String() string {
@@ -42,6 +46,10 @@ func (r ReleasesInfo) String() string {
 	if r.GoPackagePublished {
 		repoPath := os.Getenv("GITHUB_REPOSITORY")
 		releasesOutput = append(releasesOutput, fmt.Sprintf("- [Go v%s] https://github.com/%s/releases/tag/v%s - %s", r.ReleaseVersion, repoPath, r.ReleaseVersion, r.GoPath))
+	}
+
+	if r.PHPPackagePublished {
+		releasesOutput = append(releasesOutput, fmt.Sprintf("- [Composer v%s] https://packagist.org/packages/%s#v%s - %s", r.ReleaseVersion, r.PHPPackageName, r.ReleaseVersion, r.PHPPath))
 	}
 
 	if len(releasesOutput) > 0 {
@@ -73,10 +81,11 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo) error {
 }
 
 var (
-	releaseInfoRegex = regexp.MustCompile(`(?s)## Version (\d+\.\d+\.\d+)\n### Changes\nBased on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) .*?`)
-	npmReleaseRegex  = regexp.MustCompile(`- \[NPM v\d+\.\d+\.\d+\] (https:\/\/www.npmjs.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+) - (.*)`)
-	pypiReleaseRegex = regexp.MustCompile(`- \[PyPI v\d+\.\d+\.\d+\] (https:\/\/pypi.org\/project\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
-	goReleaseRegex   = regexp.MustCompile(`- \[Go v\d+\.\d+\.\d+\] (.*?) - (.*)`)
+	releaseInfoRegex     = regexp.MustCompile(`(?s)## Version (\d+\.\d+\.\d+)\n### Changes\nBased on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) .*?`)
+	npmReleaseRegex      = regexp.MustCompile(`- \[NPM v\d+\.\d+\.\d+\] (https:\/\/www\.npmjs\.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+) - (.*)`)
+	pypiReleaseRegex     = regexp.MustCompile(`- \[PyPI v\d+\.\d+\.\d+\] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
+	goReleaseRegex       = regexp.MustCompile(`- \[Go v\d+\.\d+\.\d+\] (.*?) - (.*)`)
+	composerReleaseRegex = regexp.MustCompile(`- \[Composer v\d+\.\d+\.\d+\] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+) - (.*)`)
 )
 
 func GetLastReleaseInfo() (*ReleasesInfo, error) {
@@ -134,6 +143,15 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 		info.GoPackagePublished = true
 		info.GoPackageURL = goMatches[1]
 		info.GoPath = goMatches[2]
+	}
+
+	composerMatches := composerReleaseRegex.FindStringSubmatch(lastRelease)
+
+	if len(composerMatches) == 4 {
+		info.PHPPackagePublished = true
+		info.PHPPackageURL = composerMatches[1]
+		info.PHPPackageName = composerMatches[2]
+		info.PHPPath = composerMatches[3]
 	}
 
 	return info, nil
