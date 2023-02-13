@@ -97,15 +97,18 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 
 ### `publish_python`
 
-**(Workflow Only)** Whether to publish the Python SDK to PyPi. Default `"false"`.
+**(Workflow Only)** Whether to publish the Python SDK to PyPi. Default `"false"`.  
+**Note**: Needs to be set in the generate and publish workflows if using `pr` mode.
 
 ### `publish_typescript`
 
 **(Workflow Only)** Whether to publish the TypeScript SDK to NPM. Default `"false"`.
+**Note**: Needs to be set in the generate and publish workflows if using `pr` mode.
 
 ### `publish_php`
 
 **(Workflow Only)** Whether to publish the PHP SDK for Composer. Default `"false"`.
+**Note**: Needs to be set in the generate and publish workflows if using `pr` mode.
 
 ## Outputs
 
@@ -201,7 +204,7 @@ jobs:
       openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
       languages: |-
         - python
-      publish_python: true
+      publish_python: true # Tells the generation action to generate artifacts for publishing to PyPi
       mode: pr
     secrets:
       github_access_token: ${{ secrets.GITHUB_TOKEN }}
@@ -229,7 +232,7 @@ jobs:
   publish:
     uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-publish.yaml@v9 # Import the sdk publish workflow which will handle the publishing to the package managers
     with:
-      publish_python: true
+      publish_python: true # Tells the publish action to publish the Python SDK to PyPi
       create_release: true
     secrets:
       github_access_token: ${{ secrets.GITHUB_TOKEN }}
