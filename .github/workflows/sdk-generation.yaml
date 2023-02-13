@@ -114,7 +114,7 @@ jobs:
       commit_hash: ${{ steps.generate.outputs.commit_hash }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v9
+        uses: speakeasy-api/sdk-generation-action@v10
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -180,7 +180,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: npm publish --access public
-<<<<<<< HEAD
   publish-java:
     if: ${{ needs.release.outputs.java_regenerated == 'true' && inputs.publish_java == 'true' && inputs.mode != 'pr' }}
     name: Publish Java SDK
