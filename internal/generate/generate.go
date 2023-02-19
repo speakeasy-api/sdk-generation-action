@@ -71,6 +71,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 			outputDir := path.Join(baseDir, "repo", dir)
 
 			langCfg.Version = newVersion
+			cfg.Config.Languages[lang] = langCfg
 
 			if err := config.Save(cfg.ConfigDir, &cfg.Config); err != nil {
 				return nil, nil, err
@@ -98,6 +99,8 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 				langGenerated[lang] = true
 			} else {
 				langCfg.Version = sdkVersion
+				cfg.Config.Languages[lang] = langCfg
+
 				if err := config.Save(cfg.ConfigDir, &cfg.Config); err != nil {
 					return nil, nil, err
 				}
@@ -130,6 +133,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 			mgmtConfig.SpeakeasyVersion = speakeasyVersion
 			mgmtConfig.DocVersion = docVersion
 			mgmtConfig.DocChecksum = docChecksum
+			cfg.Config.Management = mgmtConfig
 
 			if err := config.Save(cfg.ConfigDir, &cfg.Config); err != nil {
 				return nil, nil, err
