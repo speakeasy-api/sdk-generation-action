@@ -52,9 +52,14 @@ inputs:
   debug:
     description: "Enable debug logging"
     default: "false"
+    required: false
   speakeasy_api_key:
     description: "The Speakeasy API key to authenticate the Speakeasy CLI with"
     required: true
+  force:
+    description: "Force the SDK to be regenerated"
+    default: "false"
+    required: false
   mode:
     description: |-
       The mode to run the workflow in, valid options are 'direct' or 'pr', defaults to 'direct'.
@@ -90,7 +95,7 @@ outputs:
     description: "The commit hash if the SDK was regenerated"
 runs:
   using: "docker"
-  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v9"
+  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v10"
   env:
     SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
   args:

@@ -64,6 +64,12 @@ on:
       debug:
         description: "Enable debug logging"
         default: "false"
+        required: false
+        type: string
+      force:
+        description: "Force the generation of the SDKs"
+        default: "false"
+        required: false
         type: string
     secrets:
       github_access_token:
@@ -106,7 +112,7 @@ jobs:
       commit_hash: ${{ steps.generate.outputs.commit_hash }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v9
+        uses: speakeasy-api/sdk-generation-action@v10
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -120,6 +126,7 @@ jobs:
           publish_php: ${{ inputs.publish_php }}
           mode: ${{ inputs.mode }}
           debug: ${{ inputs.debug }}
+          force: ${{ inputs.force }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
   publish-pypi:
     if: ${{ needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' && inputs.mode != 'pr' }}
