@@ -16,8 +16,8 @@ type genConfig struct {
 	Config    config.Config
 }
 
-func loadGeneratorConfigs(baseDir string, langConfigs map[string]string) (map[string]genConfig, error) {
-	genConfigs := map[string]genConfig{}
+func loadGeneratorConfigs(baseDir string, langConfigs map[string]string) (map[string]*genConfig, error) {
+	genConfigs := map[string]*genConfig{}
 
 	sharedCache := map[string]config.Config{}
 
@@ -46,7 +46,7 @@ func loadGeneratorConfigs(baseDir string, langConfigs map[string]string) (map[st
 			Config:    cfg,
 		}
 
-		genConfigs[lang] = genConfig
+		genConfigs[lang] = &genConfig
 	}
 
 	return genConfigs, nil

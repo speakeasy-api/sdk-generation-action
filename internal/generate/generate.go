@@ -59,6 +59,10 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 			cfg.Config.Languages[lang] = langCfg
 		}
 
+		if cfg.Config.Management == nil {
+			cfg.Config.Management = &config.Management{}
+		}
+
 		sdkVersion := langCfg.Version
 
 		newVersion, err := checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion, cfg.Config.Management)
