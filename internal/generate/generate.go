@@ -5,6 +5,7 @@ import (
 	"path"
 
 	"github.com/hashicorp/go-version"
+	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 )
@@ -33,7 +34,10 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 	baseDir := environment.GetBaseDir()
 
-	genConfigs := loadGeneratorConfigs(baseDir, langs)
+	genConfigs, err := loadGeneratorConfigs(baseDir, langs)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	speakeasyVersion, err := cli.GetSpeakeasyVersion()
 	if err != nil {
@@ -46,14 +50,13 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 	for lang, cfg := range genConfigs {
 		dir := langs[lang]
 
-		var langCfg *langConfig
-
-		langCfg = cfg.Config.GetLangConfig(lang)
-		if langCfg == nil {
-			langCfg = &langConfig{
+		langCfg, ok := cfg.Config.Languages[lang]
+		if !ok {
+			langCfg = config.LanguageConfig{
 				Version: "0.0.0",
 			}
-			cfg.Config.SetLangConfig(lang, langCfg)
+
+			cfg.Config.Languages[lang] = langCfg
 		}
 
 		sdkVersion := langCfg.Version
@@ -68,7 +71,8 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 			outputDir := path.Join(baseDir, "repo", dir)
 
 			langCfg.Version = newVersion
-			if err := writeConfigFile(cfg); err != nil {
+
+			if err := config.Save(cfg.ConfigDir, &cfg.Config); err != nil {
 				return nil, nil, err
 			}
 
@@ -94,7 +98,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 				langGenerated[lang] = true
 			} else {
 				langCfg.Version = sdkVersion
-				if err := writeConfigFile(cfg); err != nil {
+				if err := config.Save(cfg.ConfigDir, &cfg.Config); err != nil {
 					return nil, nil, err
 				}
 
@@ -109,7 +113,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 	usingGoVersion := false
 
 	if c, ok := genConfigs["go"]; ok {
-		releaseVersion = c.Config.Go.Version
+		releaseVersion = c.Config.Languages["go"].Version
 		usingGoVersion = true
 	}
 
@@ -124,16 +128,21 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 			mgmtConfig := cfg.Config.Management
 
 			mgmtConfig.SpeakeasyVersion = speakeasyVersion
-			mgmtConfig.OpenAPIVersion = docVersion
-			mgmtConfig.OpenAPIChecksum = docChecksum
+			mgmtConfig.DocVersion = docVersion
+			mgmtConfig.DocChecksum = docChecksum
 
-			if err := writeConfigFile(cfg); err != nil {
+			if err := config.Save(cfg.ConfigDir, &cfg.Config); err != nil {
 				return nil, nil, err
 			}
 
-			langCfg := cfg.Config.GetLangConfig(lang)
+			langCfg := cfg.Config.Languages[lang]
 
-			packageNames[lang] = langCfg.PackageName
+			switch lang {
+			case "java":
+				packageNames[lang] = fmt.Sprintf("%s.%s", langCfg.Cfg["groupID"], langCfg.Cfg["artifactID"])
+			default:
+				packageNames[lang] = fmt.Sprintf("%s", langCfg.Cfg["packageName"])
+			}
 
 			if !usingGoVersion {
 				if releaseVersion == "" {
@@ -173,8 +182,10 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 	return genInfo, outputs, nil
 }
 
-func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion string, mgmtConfig *management) (string, error) {
-	if speakeasyVersion != mgmtConfig.SpeakeasyVersion || docVersion != mgmtConfig.OpenAPIVersion || docChecksum != mgmtConfig.OpenAPIChecksum {
+func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion string, mgmtConfig *config.Management) (string, error) {
+	force := environment.ForceGeneration()
+
+	if speakeasyVersion != mgmtConfig.SpeakeasyVersion || docVersion != mgmtConfig.DocVersion || docChecksum != mgmtConfig.DocChecksum || force {
 		bumpMajor := false
 		bumpMinor := false
 		bumpPatch := false
@@ -206,27 +217,27 @@ func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion strin
 
 		docVersionUpdated := false
 
-		if mgmtConfig.OpenAPIVersion == "" {
+		if mgmtConfig.DocVersion == "" {
 			bumpMinor = true
 		} else {
 			currentDocV, err := version.NewVersion(docVersion)
 			// If not a semver then we just deal with the checksum
 			if err == nil {
-				previousDocV, err := version.NewVersion(mgmtConfig.OpenAPIVersion)
+				previousDocV, err := version.NewVersion(mgmtConfig.DocVersion)
 				if err != nil {
 					return "", fmt.Errorf("error parsing config openapi version: %w", err)
 				}
 
 				if currentDocV.Segments()[0] > previousDocV.Segments()[0] {
-					fmt.Printf("OpenAPI doc version changed detected: %s > %s\n", mgmtConfig.OpenAPIVersion, docVersion)
+					fmt.Printf("OpenAPI doc version changed detected: %s > %s\n", mgmtConfig.DocVersion, docVersion)
 					bumpMajor = true
 					docVersionUpdated = true
 				} else if currentDocV.Segments()[1] > previousDocV.Segments()[1] {
-					fmt.Printf("OpenAPI doc version changed detected: %s > %s\n", mgmtConfig.OpenAPIVersion, docVersion)
+					fmt.Printf("OpenAPI doc version changed detected: %s > %s\n", mgmtConfig.DocVersion, docVersion)
 					bumpMinor = true
 					docVersionUpdated = true
 				} else if currentDocV.Segments()[2] > previousDocV.Segments()[2] {
-					fmt.Printf("OpenAPI doc version changed detected: %s > %s\n", mgmtConfig.OpenAPIVersion, docVersion)
+					fmt.Printf("OpenAPI doc version changed detected: %s > %s\n", mgmtConfig.DocVersion, docVersion)
 					bumpPatch = true
 					docVersionUpdated = true
 				}
@@ -235,12 +246,12 @@ func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion strin
 			}
 		}
 
-		if mgmtConfig.OpenAPIChecksum == "" {
+		if mgmtConfig.DocChecksum == "" {
 			bumpMinor = true
-		} else if docChecksum != mgmtConfig.OpenAPIChecksum {
+		} else if docChecksum != mgmtConfig.DocChecksum {
 			bumpPatch = true
 
-			fmt.Printf("OpenAPI doc checksum changed detected: %s > %s\n", mgmtConfig.OpenAPIChecksum, docChecksum)
+			fmt.Printf("OpenAPI doc checksum changed detected: %s > %s\n", mgmtConfig.DocChecksum, docChecksum)
 
 			if !docVersionUpdated {
 				fmt.Println("::warning title=checksum_changed::openapi checksum changed but version did not")
@@ -269,7 +280,7 @@ func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion strin
 			fmt.Println("Bumping SDK minor version")
 			minor++
 			patch = 0
-		} else if bumpPatch {
+		} else if bumpPatch || environment.ForceGeneration() {
 			fmt.Println("Bumping SDK patch version")
 			patch++
 		}

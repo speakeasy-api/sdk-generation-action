@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/invopop/yaml"
+	"github.com/pb33f/libopenapi"
 	"github.com/speakeasy-api/sdk-generation-action/internal/download"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 )
@@ -43,18 +43,18 @@ func getOpenAPIFileInfo(openAPIPath string) (string, string, string, error) {
 		return "", "", "", fmt.Errorf("failed to read openapi file: %w", err)
 	}
 
-	var doc struct {
-		Info struct {
-			Version string
-		}
+	doc, err := libopenapi.NewDocument(data)
+	if err != nil {
+		return "", "", "", fmt.Errorf("failed to parse openapi file: %w", err)
 	}
 
-	if err := yaml.Unmarshal(data, &doc); err != nil {
-		return "", "", "", fmt.Errorf("failed to parse openapi file: %w", err)
+	model, errs := doc.BuildV3Model()
+	if len(errs) > 0 {
+		return "", "", "", fmt.Errorf("failed to build openapi model: %w", errs[0])
 	}
 
 	hash := md5.Sum(data)
 	checksum := hex.EncodeToString(hash[:])
 
-	return filePath, checksum, doc.Info.Version, nil
+	return filePath, checksum, model.Model.Info.Version, nil
 }
