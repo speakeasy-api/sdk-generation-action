@@ -49,6 +49,10 @@ inputs:
     description: "Whether the PHP SDK will be published to Packagist this will also create a release on Github"
     default: "false"
     required: false
+  publish_java:
+    description: "Whether the Java SDK will be published to the provided OSSRH URL"
+    default: "false"
+    required: false
   debug:
     description: "Enable debug logging"
     default: "false"
