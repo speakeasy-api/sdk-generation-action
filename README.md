@@ -42,6 +42,10 @@ The action runs through the following steps:
 
 Publishing is provided by using the included reusable workflows. These workflows can be used to publish the SDKs to various package managers. See below for more information.
 
+### Java
+
+Java publishing is supported by publishing to a staging repository provider (OSSRH). In order to publish, you must do the following:
+
 ## Inputs
 
 ### `speakeasy_api_key`
