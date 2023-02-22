@@ -191,7 +191,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: npm publish --access public
   publish-java:
-    if: ${{ needs.release.outputs.java_regenerated == 'true' && inputs.publish_java == 'true' && inputs.mode != 'pr' }}
+    if: ${{ needs.generate.outputs.java_regenerated == 'true' && inputs.publish_java == 'true' && inputs.mode != 'pr' }}
     name: Publish Java SDK
     runs-on: ubuntu-latest
     needs: generate
