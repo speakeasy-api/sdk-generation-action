@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/google/go-github/v48/github"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
@@ -11,11 +12,20 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/generate"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
+	"golang.org/x/exp/slices"
 )
 
 func main() {
 	if environment.IsDebugMode() {
-		for _, env := range os.Environ() {
+		envs := os.Environ()
+		slices.SortFunc(envs, func(i, j string) bool {
+			iKey, iValue, _ := strings.Cut(i, "=")
+			jKey, jValue, _ := strings.Cut(j, "=")
+
+			return iKey < jKey || (iKey == jKey && iValue < jValue)
+		})
+
+		for _, env := range envs {
 			fmt.Println(env)
 		}
 	}
@@ -70,33 +80,28 @@ func genAction() error {
 		speakeasyVersion := genInfo.SpeakeasyVersion
 
 		releaseInfo := releases.ReleasesInfo{
-			ReleaseVersion:    genInfo.ReleaseVersion,
-			OpenAPIDocVersion: docVersion,
-			SpeakeasyVersion:  speakeasyVersion,
-			OpenAPIDocPath:    environment.GetOpenAPIDocLocation(),
+			ReleaseTitle:     environment.GetInvokeTime().Format("2006-01-02 15:04:05"),
+			DocVersion:       docVersion,
+			SpeakeasyVersion: speakeasyVersion,
+			DocLocation:      environment.GetOpenAPIDocLocation(),
+			Languages:        map[string]releases.LanguageReleaseInfo{},
 		}
 
-		if genInfo.PackageNames["python"] != "" && outputs["python_regenerated"] == "true" {
-			releaseInfo.PythonPackagePublished = environment.IsPythonPublished()
-			releaseInfo.PythonPackageName = genInfo.PackageNames["python"]
-			releaseInfo.PythonPath = outputs["python_directory"]
+		supportedLanguages, err := cli.GetSupportedLanguages()
+		if err != nil {
+			return err
 		}
 
-		if genInfo.PackageNames["typescript"] != "" && outputs["typescript_regenerated"] == "true" {
-			releaseInfo.NPMPackagePublished = environment.IsTypescriptPublished()
-			releaseInfo.NPMPackageName = genInfo.PackageNames["typescript"]
-			releaseInfo.TypescriptPath = outputs["typescript_directory"]
-		}
+		for _, lang := range supportedLanguages {
+			langGenInfo, ok := genInfo.Languages[lang]
 
-		if outputs["go_regenerated"] == "true" {
-			releaseInfo.GoPackagePublished = environment.CreateGitRelease()
-			releaseInfo.GoPath = outputs["go_directory"]
-		}
-
-		if genInfo.PackageNames["php"] != "" && outputs["php_regenerated"] == "true" {
-			releaseInfo.PHPPackagePublished = environment.IsPHPPublished()
-			releaseInfo.PHPPackageName = genInfo.PackageNames["php"]
-			releaseInfo.PHPPath = outputs["php_directory"]
+			if ok && outputs[fmt.Sprintf("%s_regenerated", lang)] == "true" && environment.IsLanguagePublished(lang) {
+				releaseInfo.Languages[lang] = releases.LanguageReleaseInfo{
+					PackageName: langGenInfo.PackageName,
+					Version:     langGenInfo.Version,
+					Path:        outputs[fmt.Sprintf("%s_directory", lang)],
+				}
+			}
 		}
 
 		if err := releases.UpdateReleasesFile(releaseInfo); err != nil {
@@ -155,24 +160,9 @@ func releaseAction() error {
 
 	outputs := map[string]string{}
 
-	if latestRelease.PythonPackagePublished {
-		outputs["python_regenerated"] = "true"
-		outputs["python_directory"] = latestRelease.PythonPath
-	}
-
-	if latestRelease.NPMPackagePublished {
-		outputs["typescript_regenerated"] = "true"
-		outputs["typescript_directory"] = latestRelease.TypescriptPath
-	}
-
-	if latestRelease.GoPackagePublished {
-		outputs["go_regenerated"] = "true"
-		outputs["go_directory"] = latestRelease.GoPath
-	}
-
-	if latestRelease.PHPPackagePublished {
-		outputs["php_regenerated"] = "true"
-		outputs["php_directory"] = latestRelease.PHPPath
+	for lang, info := range latestRelease.Languages {
+		outputs[fmt.Sprintf("%s_regenerated", lang)] = "true"
+		outputs[fmt.Sprintf("%s_directory", lang)] = info.Path
 	}
 
 	if err := setOutputs(outputs); err != nil {
