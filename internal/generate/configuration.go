@@ -2,98 +2,54 @@ package generate
 
 import (
 	"fmt"
-	"os"
 	"path"
 	"strings"
 
-	"github.com/oleiade/reflections"
+	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 )
 
-type management struct {
-	OpenAPIChecksum  string `yaml:"openapi-checksum"`
-	OpenAPIVersion   string `yaml:"openapi-version"`
-	SpeakeasyVersion string `yaml:"speakeasy-version"`
-}
-
-type langConfig struct {
-	Version     string         `yaml:"version"`
-	PackageName string         `yaml:"packagename"`
-	Cfg         map[string]any `yaml:",inline"`
-}
-
-type config struct {
-	Management *management    `yaml:"management,omitempty"`
-	Go         *langConfig    `yaml:"go,omitempty"`
-	Typescript *langConfig    `yaml:"typescript,omitempty"`
-	Python     *langConfig    `yaml:"python,omitempty"`
-	Java       *langConfig    `yaml:"java,omitempty"`
-	PHP        *langConfig    `yaml:"php,omitempty"`
-	Cfg        map[string]any `yaml:",inline"`
-}
-
-func (c *config) GetLangConfig(lang string) *langConfig {
-	field, _ := reflections.GetField(c, getFieldName(lang))
-	return field.(*langConfig)
-}
-
-func (c *config) SetLangConfig(lang string, cfg *langConfig) {
-	_ = reflections.SetField(c, getFieldName(lang), cfg)
-}
-
-func getFieldName(lang string) string {
-	fieldName := strings.Title(lang)
-	if strings.ToLower(lang) == "php" {
-		fieldName = "PHP"
-	}
-
-	return fieldName
-}
-
 type genConfig struct {
-	ConfigPath string
-	Config     config
+	ConfigDir string
+	Config    config.Config
 }
 
-func loadGeneratorConfigs(baseDir string, langConfigs map[string]string) map[string]genConfig {
-	genConfigs := map[string]genConfig{}
+func loadGeneratorConfigs(baseDir string, langConfigs map[string]string) (map[string]*genConfig, error) {
+	genConfigs := map[string]*genConfig{}
 
-	sharedCache := map[string]config{}
+	sharedCache := map[string]config.Config{}
 
 	for lang, dir := range langConfigs {
-		configPath := path.Join(baseDir, "repo", dir, "gen.yaml")
+		configDir := path.Join(baseDir, "repo", dir)
 
-		if _, err := os.Stat(configPath); os.IsNotExist(err) {
-			configPath = path.Join(baseDir, "repo", "gen.yaml")
+		if err := cli.ValidateConfig(configDir); err != nil {
+			return nil, err
 		}
 
-		cfg, ok := sharedCache[configPath]
+		cfg, ok := sharedCache[configDir]
 		if !ok {
-			fmt.Println("Loading generator config: ", configPath)
+			fmt.Println("Loading generator config: ", configDir)
 
-			data, err := os.ReadFile(configPath)
-			if err == nil {
-				_ = yaml.Unmarshal(data, &cfg)
+			loaded, err := config.Load(configDir)
+			if err != nil {
+				return nil, err
 			}
 
-			if cfg.Management == nil {
-				cfg.Management = &management{}
-			}
-
-			sharedCache[configPath] = cfg
+			cfg = *loaded
+			sharedCache[configDir] = cfg
 		}
 
 		genConfig := genConfig{
-			ConfigPath: configPath,
-			Config:     cfg,
+			ConfigDir: configDir,
+			Config:    cfg,
 		}
 
-		genConfigs[lang] = genConfig
+		genConfigs[lang] = &genConfig
 	}
 
-	return genConfigs
+	return genConfigs, nil
 }
 
 func getAndValidateLanguages(languages string) (map[string]string, error) {
@@ -148,17 +104,4 @@ func getAndValidateLanguages(languages string) (map[string]string, error) {
 	}
 
 	return langCfgs, nil
-}
-
-func writeConfigFile(cfg genConfig) error {
-	data, err := yaml.Marshal(cfg.Config)
-	if err != nil {
-		return fmt.Errorf("error marshaling config: %w", err)
-	}
-
-	if err := os.WriteFile(cfg.ConfigPath, data, os.ModePerm); err != nil {
-		return fmt.Errorf("error writing config: %w", err)
-	}
-
-	return nil
 }

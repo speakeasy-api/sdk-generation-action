@@ -25,6 +25,10 @@ func IsDebugMode() bool {
 	return os.Getenv("INPUT_DEBUG") == "true"
 }
 
+func ForceGeneration() bool {
+	return os.Getenv("INPUT_FORCE") == "true"
+}
+
 func GetMode() string {
 	return os.Getenv("INPUT_MODE")
 }

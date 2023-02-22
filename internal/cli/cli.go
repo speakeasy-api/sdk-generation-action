@@ -38,3 +38,12 @@ func Generate(docPath, lang, outputDir string) error {
 	fmt.Println(out)
 	return nil
 }
+
+func ValidateConfig(configDir string) error {
+	out, err := runSpeakeasyCommand("validate", "config", "-d", configDir)
+	if err != nil {
+		return fmt.Errorf("error validating config: %w - %s", err, out)
+	}
+	fmt.Println(out)
+	return nil
+}
