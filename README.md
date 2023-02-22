@@ -105,6 +105,10 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 **(Workflow Only)** Whether to publish the TypeScript SDK to NPM. Default `"false"`.
 **Note**: Needs to be set in the generate and publish workflows if using `pr` mode.
 
+### `publish_java`
+
+**(Workflow Only)** Whether to publish the Java SDK to the OSSRH URL configured in gen.yaml. Default `"false"`.
+
 ### `publish_php`
 
 **(Workflow Only)** Whether to publish the PHP SDK for Composer. Default `"false"`.
@@ -169,7 +173,7 @@ jobs:
     name: Generate SDK
     runs-on: ubuntu-latest
     steps:
-      - uses: speakeasy-api/sdk-generation-action@v10
+      - uses: speakeasy-api/sdk-generation-action@v11
         with:
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
           speakeasy_version: latest
@@ -201,7 +205,7 @@ on:
 
 jobs:
   generate:
-    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v10 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers in 'direct' mode.
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v11 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers in 'direct' mode.
     with:
       speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
       speakeasy_version: latest
@@ -235,7 +239,7 @@ on:
 
 jobs:
   publish:
-    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-publish.yaml@v10 # Import the sdk publish workflow which will handle the publishing to the package managers
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-publish.yaml@v11 # Import the sdk publish workflow which will handle the publishing to the package managers
     with:
       publish_python: true # Tells the publish action to publish the Python SDK to PyPi
       create_release: true

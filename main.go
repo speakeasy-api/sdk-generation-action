@@ -93,6 +93,12 @@ func genAction() error {
 			releaseInfo.GoPath = outputs["go_directory"]
 		}
 
+		if genInfo.PackageNames["java"] != "" && outputs["java_regenerated"] == "true" {
+			releaseInfo.JavaPackagePublished = environment.IsJavaPublished()
+			releaseInfo.JavaPackageName = genInfo.PackageNames["java"]
+			releaseInfo.JavaPath = outputs["java_directory"]
+		}
+
 		if genInfo.PackageNames["php"] != "" && outputs["php_regenerated"] == "true" {
 			releaseInfo.PHPPackagePublished = environment.IsPHPPublished()
 			releaseInfo.PHPPackageName = genInfo.PackageNames["php"]
@@ -173,6 +179,11 @@ func releaseAction() error {
 	if latestRelease.PHPPackagePublished {
 		outputs["php_regenerated"] = "true"
 		outputs["php_directory"] = latestRelease.PHPPath
+	}
+
+	if latestRelease.JavaPackagePublished {
+		outputs["java_regenerated"] = "true"
+		outputs["java_directory"] = latestRelease.JavaPath
 	}
 
 	if err := setOutputs(outputs); err != nil {

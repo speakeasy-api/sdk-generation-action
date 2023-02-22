@@ -69,6 +69,10 @@ func IsPHPPublished() bool {
 	return os.Getenv("INPUT_PUBLISH_PHP") == "true"
 }
 
+func IsJavaPublished() bool {
+	return os.Getenv("INPUT_PUBLISH_JAVA") == "true"
+}
+
 func GetOpenAPIDocAuthHeader() string {
 	return os.Getenv("INPUT_OPENAPI_DOC_AUTH_HEADER")
 }

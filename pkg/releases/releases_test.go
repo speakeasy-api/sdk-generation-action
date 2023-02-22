@@ -27,6 +27,9 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 		PHPPackagePublished:    true,
 		PHPPackageName:         "org/package",
 		PHPPackageURL:          "https://packagist.org/packages/org/package#v1.2.3",
+		JavaPackagePublished:   true,
+		JavaPackageName:        "com.group.artifact",
+		JavaPackageURL:         "https://central.sonatype.com/artifact/com.group/artifact/1.2.3",
 	}
 
 	info, err := releases.ParseReleases(r.String())
@@ -49,6 +52,8 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 		GoPackagePublished:     true,
 		PHPPackagePublished:    true,
 		PHPPackageName:         "org/package",
+		JavaPackagePublished:   true,
+		JavaPackageName:        "com.group.artifact",
 	}
 
 	r2 := releases.ReleasesInfo{
@@ -67,6 +72,9 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 		PHPPackagePublished:    true,
 		PHPPackageName:         "org/package",
 		PHPPackageURL:          "https://packagist.org/packages/org/package#v1.3.0",
+		JavaPackagePublished:   true,
+		JavaPackageName:        "com.group.artifact",
+		JavaPackageURL:         "https://central.sonatype.com/artifact/com.group/artifact/1.3.0",
 	}
 
 	info, err := releases.ParseReleases(r1.String() + r2.String())

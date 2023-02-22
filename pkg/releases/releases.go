@@ -30,6 +30,10 @@ type ReleasesInfo struct {
 	PHPPackageName         string
 	PHPPackageURL          string
 	PHPPath                string
+	JavaPackagePublished   bool
+	JavaPackageName        string
+	JavaPackageURL         string
+	JavaPath               string
 }
 
 func (r ReleasesInfo) String() string {
@@ -50,6 +54,13 @@ func (r ReleasesInfo) String() string {
 
 	if r.PHPPackagePublished {
 		releasesOutput = append(releasesOutput, fmt.Sprintf("- [Composer v%s] https://packagist.org/packages/%s#v%s - %s", r.ReleaseVersion, r.PHPPackageName, r.ReleaseVersion, r.PHPPath))
+	}
+
+	if r.JavaPackagePublished {
+		lastDotIndex := strings.LastIndex(r.JavaPackageName, ".")
+		groupID := r.JavaPackageName[:lastDotIndex]    // everything before last occurrence of '.'
+		artifact := r.JavaPackageName[lastDotIndex+1:] // everything after last occurrence of '.'
+		releasesOutput = append(releasesOutput, fmt.Sprintf("- [Maven Central v%s] https://central.sonatype.com/artifact/%s/%s/%s - %s", r.ReleaseVersion, groupID, artifact, r.ReleaseVersion, r.JavaPath))
 	}
 
 	if len(releasesOutput) > 0 {
@@ -86,6 +97,7 @@ var (
 	pypiReleaseRegex     = regexp.MustCompile(`- \[PyPI v\d+\.\d+\.\d+\] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
 	goReleaseRegex       = regexp.MustCompile(`- \[Go v\d+\.\d+\.\d+\] (.*?) - (.*)`)
 	composerReleaseRegex = regexp.MustCompile(`- \[Composer v\d+\.\d+\.\d+\] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+) - (.*)`)
+	mavenReleaseRegex    = regexp.MustCompile(`- \[Maven Central v\d+\.\d+\.\d+\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
 )
 
 func GetLastReleaseInfo() (*ReleasesInfo, error) {
@@ -152,6 +164,18 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 		info.PHPPackageURL = composerMatches[1]
 		info.PHPPackageName = composerMatches[2]
 		info.PHPPath = composerMatches[3]
+	}
+
+	mavenMatches := mavenReleaseRegex.FindStringSubmatch(lastRelease)
+
+	if len(mavenMatches) == 5 {
+		info.JavaPackagePublished = true
+		info.JavaPackageURL = mavenMatches[1]
+		groupID := mavenMatches[2]
+		artifact := mavenMatches[3]
+		info.JavaPath = mavenMatches[4]
+
+		info.JavaPackageName = fmt.Sprintf(`%s.%s`, groupID, artifact)
 	}
 
 	return info, nil

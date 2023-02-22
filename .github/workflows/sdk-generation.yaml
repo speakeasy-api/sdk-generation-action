@@ -45,6 +45,8 @@ on:
         default: "false"
         required: false
         type: string
+      publish_java:
+        description: "Publish the Java SDK to the OSSRH URL configured in gen.yml if using 'direct' mode or prepare a release if using 'pr' mode"
       publish_php:
         description: "Publish the PHP SDK for Composer if using 'direct' mode or prepare a release if using 'pr' mode"
         default: "false"
@@ -93,6 +95,12 @@ on:
       speakeasy_api_key:
         description: The API key to use to authenticate the Speakeasy CLI
         required: true
+      ossrh_username:
+        description: A username for publishing the Java package to the OSSRH URL provided in gen.yml
+        required: false
+      ossrh_password:
+        description: The corresponding password for publishing the Java package to the OSSRH URL provided in gen.yml
+        required: false
 
 jobs:
   generate:
@@ -112,7 +120,7 @@ jobs:
       commit_hash: ${{ steps.generate.outputs.commit_hash }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v10
+        uses: speakeasy-api/sdk-generation-action@v11
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -123,6 +131,7 @@ jobs:
           create_release: ${{ inputs.create_release }}
           publish_python: ${{ inputs.publish_python }}
           publish_typescript: ${{ inputs.publish_typescript }}
+          publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
           mode: ${{ inputs.mode }}
           debug: ${{ inputs.debug }}
@@ -178,6 +187,30 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: npm publish --access public
+  publish-java:
+    if: ${{ needs.release.outputs.java_regenerated == 'true' && inputs.publish_java == 'true' && inputs.mode != 'pr' }}
+    name: Publish Java SDK
+    runs-on: ubuntu-latest
+    needs: release
+    defaults:
+      run:
+        working-directory: ${{ needs.release.outputs.java_directory }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@e6e38bacfdf1a337459f332974bb2327a31aaf4b
+      - name: Publish package
+        uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
+        with:
+          arguments: publish
+        env:
+          MAVEN_USERNAME: ${{ secrets.ossrh_username }}
+          MAVEN_PASSWORD: ${{ secrets.ossrh_password }}
   publish-packagist:
     if: ${{ needs.generate.outputs.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
     name: Publish PHP SDK
