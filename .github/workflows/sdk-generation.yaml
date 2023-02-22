@@ -112,7 +112,7 @@ jobs:
       commit_hash: ${{ steps.generate.outputs.commit_hash }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v10
+        uses: speakeasy-api/sdk-generation-action@v11
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
