@@ -20,6 +20,9 @@ on:
         type: string
       publish_java:
         description: "Publish the Java SDK to the OSSRH URL configured in gen.yml if using 'direct' mode or prepare a release if using 'pr' mode"
+        default: "false"
+        required: false
+        type: string
       publish_php:
         description: "Publish the PHP SDK for Composer if using 'direct' mode or prepare a release if using 'pr' mode"
         default: "false"
