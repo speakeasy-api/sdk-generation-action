@@ -55,9 +55,9 @@ func (r ReleasesInfo) String() string {
 		case "java":
 			pkgID = "Maven Central"
 			lastDotIndex := strings.LastIndex(info.PackageName, ".")
-			groupID := r.JavaPackageName[:lastDotIndex]    // everything before last occurrence of '.'
-			artifactID := r.JavaPackageName[lastDotIndex+1:] // everything after last occurrence of '.'
-			pkgURL = fmt.Sprintf("https://central.sonatype.com/artifact/%s/%s/%s", groupID, artifact, info.Version)
+			groupID := info.PackageName[:lastDotIndex]      // everything before last occurrence of '.'
+			artifactID := info.PackageName[lastDotIndex+1:] // everything after last occurrence of '.'
+			pkgURL = fmt.Sprintf("https://central.sonatype.com/artifact/%s/%s/%s", groupID, artifactID, info.Version)
 		}
 
 		if pkgID != "" {
@@ -189,10 +189,10 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 		groupID := mavenMatches[3]
 		artifact := mavenMatches[4]
 		info.Languages["java"] = LanguageReleaseInfo{
-			Version:     composerMatches[1],
-			URL:         composerMatches[2],
+			Version:     mavenMatches[1],
+			URL:         mavenMatches[2],
 			PackageName: fmt.Sprintf(`%s.%s`, groupID, artifact),
-			Path:        composerMatches[5],
+			Path:        mavenMatches[5],
 		}
 	}
 

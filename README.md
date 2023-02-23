@@ -173,7 +173,7 @@ jobs:
     name: Generate SDK
     runs-on: ubuntu-latest
     steps:
-      - uses: speakeasy-api/sdk-generation-action@v11
+      - uses: speakeasy-api/sdk-generation-action@v12
         with:
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
           speakeasy_version: latest
@@ -205,7 +205,7 @@ on:
 
 jobs:
   generate:
-    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v11 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers in 'direct' mode.
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v12 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers in 'direct' mode.
     with:
       speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
       speakeasy_version: latest
@@ -239,7 +239,7 @@ on:
 
 jobs:
   publish:
-    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-publish.yaml@v11 # Import the sdk publish workflow which will handle the publishing to the package managers
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-publish.yaml@v12 # Import the sdk publish workflow which will handle the publishing to the package managers
     with:
       publish_python: true # Tells the publish action to publish the Python SDK to PyPi
       create_release: true
