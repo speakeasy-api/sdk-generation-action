@@ -42,6 +42,20 @@ The action runs through the following steps:
 
 Publishing is provided by using the included reusable workflows. These workflows can be used to publish the SDKs to various package managers. See below for more information.
 
+### Java
+
+Java publishing is supported by publishing to a staging repository provider (OSSRH). In order to publish, you must do the following:
+- Add your OSSRH (e.g. Sonatype) username and password as GitHub secrets
+- Populate the workflow file with those credentials. For example:
+  - `ossrh_username: ${{ secrets.OSSRH_USERNAME }}`
+  - `ossrh_password: ${{ secrets.OSSRH_PASSWORD }}`
+- In the workflow file, set `publish_java: true`
+- In `gen.yaml`, provide the groupId of your OSSRH org and the artifact name you want. For example:
+  - `groupID: com.example`
+  - `artifactID: example-sdk`
+- In `gen.yaml`, provide the URL to your OSSRH provider. For example:
+  - `ossrhURL: https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/`
+
 ## Inputs
 
 ### `speakeasy_api_key`
