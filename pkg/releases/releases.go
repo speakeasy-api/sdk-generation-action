@@ -52,6 +52,12 @@ func (r ReleasesInfo) String() string {
 		case "php":
 			pkgID = "Composer"
 			pkgURL = fmt.Sprintf("https://packagist.org/packages/%s#v%s", info.PackageName, info.Version)
+		case "java":
+			pkgID = "Maven Central"
+			lastDotIndex := strings.LastIndex(info.PackageName, ".")
+			groupID := r.JavaPackageName[:lastDotIndex]    // everything before last occurrence of '.'
+			artifactID := r.JavaPackageName[lastDotIndex+1:] // everything after last occurrence of '.'
+			pkgURL = fmt.Sprintf("https://central.sonatype.com/artifact/%s/%s/%s", groupID, artifact, info.Version)
 		}
 
 		if pkgID != "" {
@@ -93,6 +99,7 @@ var (
 	pypiReleaseRegex     = regexp.MustCompile(`- \[PyPI v(\d+\.\d+\.\d+)\] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
 	goReleaseRegex       = regexp.MustCompile(`- \[Go v(\d+\.\d+\.\d+)\] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+) - (.*)`)
 	composerReleaseRegex = regexp.MustCompile(`- \[Composer v(\d+\.\d+\.\d+)\] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+) - (.*)`)
+	mavenReleaseRegex    = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+)\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
 )
 
 func GetLastReleaseInfo() (*ReleasesInfo, error) {
@@ -173,6 +180,19 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 			URL:         composerMatches[2],
 			PackageName: composerMatches[3],
 			Path:        composerMatches[4],
+		}
+	}
+
+	mavenMatches := mavenReleaseRegex.FindStringSubmatch(lastRelease)
+
+	if len(mavenMatches) == 6 {
+		groupID := mavenMatches[3]
+		artifact := mavenMatches[4]
+		info.Languages["java"] = LanguageReleaseInfo{
+			Version:     composerMatches[1],
+			URL:         composerMatches[2],
+			PackageName: fmt.Sprintf(`%s.%s`, groupID, artifact),
+			Path:        composerMatches[5],
 		}
 	}
 

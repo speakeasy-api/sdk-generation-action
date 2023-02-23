@@ -41,6 +41,12 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 				Version:     "1.2.3",
 				URL:         "https://packagist.org/packages/org/package#v1.2.3",
 			},
+			"java": {
+				PackageName: "com.group.artifact",
+				Path:        "java",
+				Version:     "1.2.3",
+				URL:         "https://central.sonatype.com/artifact/com.group/artifact/1.2.3",
+			},
 		},
 	}
 
@@ -101,9 +107,13 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 			},
 			"php": {
 				PackageName: "org/package",
-				Path:        "php",
 				Version:     "1.2.3",
-				URL:         "https://packagist.org/packages/org/package#v1.2.3",
+			},
+			"java": {
+				PackageName: "com.group.artifact",
+				Path:        "java",
+				Version:     "1.2.3",
+				URL:         "https://central.sonatype.com/artifact/com.group/artifact/1.2.3",
 			},
 		},
 	}
@@ -137,6 +147,12 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 				Path:        "php",
 				Version:     "1.3.0",
 				URL:         "https://packagist.org/packages/org/package#v1.3.0",
+			},
+			"java": {
+				PackageName: "com.group.artifact",
+				Path:        "java",
+				Version:     "1.3.0",
+				URL:         "https://central.sonatype.com/artifact/com.group/artifact/1.3.0",
 			},
 		},
 	}

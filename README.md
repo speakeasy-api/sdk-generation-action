@@ -105,6 +105,10 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 **(Workflow Only)** Whether to publish the TypeScript SDK to NPM. Default `"false"`.
 **Note**: Needs to be set in the generate and publish workflows if using `pr` mode.
 
+### `publish_java`
+
+**(Workflow Only)** Whether to publish the Java SDK to the OSSRH URL configured in gen.yaml. Default `"false"`.
+
 ### `publish_php`
 
 **(Workflow Only)** Whether to publish the PHP SDK for Composer. Default `"false"`.
