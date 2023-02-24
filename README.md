@@ -178,7 +178,12 @@ If just using the action on its own (without the workflow publishing) you can us
 name: Generate
 
 on:
-  workflow_dispatch: {} # Allows manual triggering of the workflow to generate SDK
+  workflow_dispatch: # Allows manual triggering of the workflow to generate SDK
+    inputs:
+      force:
+        description: "Force generation of SDKs"
+        type: boolean
+        default: false
   schedule:
     - cron: 0 0 * * * # Runs every day at midnight
 
@@ -195,6 +200,7 @@ jobs:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           languages: |-
             - go
+          force: ${{ github.event.inputs.force }}
 ```
 
 ## Workflow usage
@@ -222,7 +228,6 @@ jobs:
   generate:
     uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v12 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers in 'direct' mode.
     with:
-      speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
       speakeasy_version: latest
       openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
       languages: |-
@@ -231,6 +236,7 @@ jobs:
       mode: pr
       force: ${{ github.event.inputs.force }}
     secrets:
+      speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
       github_access_token: ${{ secrets.GITHUB_TOKEN }}
       pypi_token: ${{ secrets.PYPI_TOKEN }}
 ```
