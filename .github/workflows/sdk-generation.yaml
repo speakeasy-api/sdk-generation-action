@@ -272,6 +272,8 @@ jobs:
         working-directory: ${{ needs.generate.outputs.java_directory }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.generate.outputs.commit_hash }}
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
