@@ -212,6 +212,7 @@ on:
   workflow_dispatch: # Allows manual triggering of the workflow to generate SDK
     inputs:
       force:
+        description: "Force generation of SDKs"
         type: boolean
         default: false
   schedule:
