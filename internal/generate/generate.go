@@ -10,11 +10,15 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 )
 
+type LanguageGenInfo struct {
+	PackageName string
+	Version     string
+}
+
 type GenerationInfo struct {
 	SpeakeasyVersion  string
 	OpenAPIDocVersion string
-	ReleaseVersion    string
-	PackageNames      map[string]string
+	Languages         map[string]LanguageGenInfo
 }
 
 type Git interface {
@@ -116,17 +120,9 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 		}
 	}
 
-	releaseVersion := ""
-	usingGoVersion := false
-
-	if c, ok := genConfigs["go"]; ok {
-		releaseVersion = c.Config.Languages["go"].Version
-		usingGoVersion = true
-	}
-
 	regenerated := false
 
-	packageNames := map[string]string{}
+	langGenInfo := map[string]LanguageGenInfo{}
 
 	for lang, cfg := range genConfigs {
 		if langGenerated[lang] {
@@ -147,28 +143,14 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 			switch lang {
 			case "java":
-				packageNames[lang] = fmt.Sprintf("%s.%s", langCfg.Cfg["groupID"], langCfg.Cfg["artifactID"])
+				langGenInfo[lang] = LanguageGenInfo{
+					PackageName: fmt.Sprintf("%s.%s", langCfg.Cfg["groupID"], langCfg.Cfg["artifactID"]),
+					Version:     langCfg.Version,
+				}
 			default:
-				packageNames[lang] = fmt.Sprintf("%s", langCfg.Cfg["packageName"])
-			}
-
-			if !usingGoVersion {
-				if releaseVersion == "" {
-					releaseVersion = langCfg.Version
-				} else {
-					v, err := version.NewVersion(releaseVersion)
-					if err != nil {
-						return nil, nil, fmt.Errorf("error parsing version: %w", err)
-					}
-
-					v2, err := version.NewVersion(langCfg.Version)
-					if err != nil {
-						return nil, nil, fmt.Errorf("error parsing version: %w", err)
-					}
-
-					if v2.GreaterThan(v) {
-						releaseVersion = langCfg.Version
-					}
+				langGenInfo[lang] = LanguageGenInfo{
+					PackageName: fmt.Sprintf("%s", langCfg.Cfg["packageName"]),
+					Version:     langCfg.Version,
 				}
 			}
 
@@ -182,8 +164,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 		genInfo = &GenerationInfo{
 			SpeakeasyVersion:  speakeasyVersion,
 			OpenAPIDocVersion: docVersion,
-			ReleaseVersion:    releaseVersion,
-			PackageNames:      packageNames,
+			Languages:         langGenInfo,
 		}
 	}
 

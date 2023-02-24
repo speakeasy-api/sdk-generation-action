@@ -1,7 +1,9 @@
 package environment
 
 import (
+	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -46,7 +48,7 @@ func GetLanguages() string {
 }
 
 func CreateGitRelease() bool {
-	return os.Getenv("INPUT_CREATE_RELEASE") == "true" || IsPHPPublished()
+	return os.Getenv("INPUT_CREATE_RELEASE") == "true" || IsLanguagePublished("php")
 }
 
 func GetAccessToken() string {
@@ -57,16 +59,12 @@ func GetInvokeTime() time.Time {
 	return invokeTime
 }
 
-func IsPythonPublished() bool {
-	return os.Getenv("INPUT_PUBLISH_PYTHON") == "true"
-}
+func IsLanguagePublished(lang string) bool {
+	if lang == "go" {
+		return os.Getenv("INPUT_CREATE_RELEASE") == "true"
+	}
 
-func IsTypescriptPublished() bool {
-	return os.Getenv("INPUT_PUBLISH_TYPESCRIPT") == "true"
-}
-
-func IsPHPPublished() bool {
-	return os.Getenv("INPUT_PUBLISH_PHP") == "true"
+	return os.Getenv(fmt.Sprintf("INPUT_PUBLISH_%s", strings.ToUpper(lang))) == "true"
 }
 
 func IsJavaPublished() bool {
@@ -79,4 +77,8 @@ func GetOpenAPIDocAuthHeader() string {
 
 func GetOpenAPIDocAuthToken() string {
 	return os.Getenv("INPUT_OPENAPI_DOC_AUTH_TOKEN")
+}
+
+func GetWorkflowName() string {
+	return os.Getenv("GITHUB_WORKFLOW")
 }

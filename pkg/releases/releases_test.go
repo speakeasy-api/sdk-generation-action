@@ -12,24 +12,65 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 	os.Setenv("GITHUB_REPOSITORY", "test/repo")
 
 	r := releases.ReleasesInfo{
-		ReleaseVersion:         "1.2.3",
-		OpenAPIDocVersion:      "9.8.7",
-		OpenAPIDocPath:         "https://example.com",
-		SpeakeasyVersion:       "6.6.6",
-		NPMPackagePublished:    true,
-		NPMPackageName:         "@org/package",
-		NPMPackageUrl:          "https://www.npmjs.com/package/@org/package/v/1.2.3",
-		PythonPackagePublished: true,
-		PythonPackageName:      "org-package",
-		PythonPackageURL:       "https://pypi.org/project/org-package/1.2.3",
-		GoPackagePublished:     true,
-		GoPackageURL:           "https://github.com/test/repo/releases/tag/v1.2.3",
-		PHPPackagePublished:    true,
-		PHPPackageName:         "org/package",
-		PHPPackageURL:          "https://packagist.org/packages/org/package#v1.2.3",
-		JavaPackagePublished:   true,
-		JavaPackageName:        "com.group.artifact",
-		JavaPackageURL:         "https://central.sonatype.com/artifact/com.group/artifact/1.2.3",
+		ReleaseTitle:     "2023-02-22",
+		DocVersion:       "9.8.7",
+		DocLocation:      "https://example.com",
+		SpeakeasyVersion: "6.6.6",
+		Languages: map[string]releases.LanguageReleaseInfo{
+			"typescript": {
+				PackageName: "@org/package",
+				Path:        "typescript",
+				Version:     "1.2.3",
+				URL:         "https://www.npmjs.com/package/@org/package/v/1.2.3",
+			},
+			"python": {
+				PackageName: "org-package",
+				Path:        "python",
+				Version:     "1.2.3",
+				URL:         "https://pypi.org/project/org-package/1.2.3",
+			},
+			"go": {
+				PackageName: "github.com/test/repo/go",
+				Path:        "go",
+				Version:     "1.2.3",
+				URL:         "https://github.com/test/repo/releases/tag/go/v1.2.3",
+			},
+			"php": {
+				PackageName: "org/package",
+				Path:        "php",
+				Version:     "1.2.3",
+				URL:         "https://packagist.org/packages/org/package#v1.2.3",
+			},
+			"java": {
+				PackageName: "com.group.artifact",
+				Path:        "java",
+				Version:     "1.2.3",
+				URL:         "https://central.sonatype.com/artifact/com.group/artifact/1.2.3",
+			},
+		},
+	}
+
+	info, err := releases.ParseReleases(r.String())
+	assert.NoError(t, err)
+	assert.Equal(t, r, *info)
+}
+
+func TestReleases_GoPackageNameConstruction_Success(t *testing.T) {
+	os.Setenv("GITHUB_REPOSITORY", "test/repo")
+
+	r := releases.ReleasesInfo{
+		ReleaseTitle:     "2023-02-22",
+		DocVersion:       "9.8.7",
+		DocLocation:      "https://example.com",
+		SpeakeasyVersion: "6.6.6",
+		Languages: map[string]releases.LanguageReleaseInfo{
+			"go": {
+				PackageName: "github.com/test/repo",
+				Path:        ".",
+				Version:     "1.2.3",
+				URL:         "https://github.com/test/repo/releases/tag/v1.2.3",
+			},
+		},
 	}
 
 	info, err := releases.ParseReleases(r.String())
@@ -41,40 +82,79 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 	os.Setenv("GITHUB_REPOSITORY", "test/repo")
 
 	r1 := releases.ReleasesInfo{
-		ReleaseVersion:         "1.2.3",
-		OpenAPIDocVersion:      "9.8.7",
-		OpenAPIDocPath:         "https://example.com",
-		SpeakeasyVersion:       "6.6.6",
-		NPMPackagePublished:    true,
-		NPMPackageName:         "@org/package",
-		PythonPackagePublished: true,
-		PythonPackageName:      "org-package",
-		GoPackagePublished:     true,
-		PHPPackagePublished:    true,
-		PHPPackageName:         "org/package",
-		JavaPackagePublished:   true,
-		JavaPackageName:        "com.group.artifact",
+		ReleaseTitle:     "Version 1.2.3",
+		DocVersion:       "9.8.7",
+		DocLocation:      "https://example.com",
+		SpeakeasyVersion: "6.6.6",
+		Languages: map[string]releases.LanguageReleaseInfo{
+			"typescript": {
+				PackageName: "@org/package",
+				Path:        "typescript",
+				Version:     "1.2.3",
+				URL:         "https://www.npmjs.com/package/@org/package/v/1.2.3",
+			},
+			"python": {
+				PackageName: "org-package",
+				Path:        "python",
+				Version:     "1.2.3",
+				URL:         "https://pypi.org/project/org-package/1.2.3",
+			},
+			"go": {
+				PackageName: "github.com/test/repo/go",
+				Path:        "go",
+				Version:     "1.2.3",
+				URL:         "https://github.com/test/repo/releases/tag/go/v1.2.3",
+			},
+			"php": {
+				PackageName: "org/package",
+				Version:     "1.2.3",
+			},
+			"java": {
+				PackageName: "com.group.artifact",
+				Path:        "java",
+				Version:     "1.2.3",
+				URL:         "https://central.sonatype.com/artifact/com.group/artifact/1.2.3",
+			},
+		},
 	}
 
 	r2 := releases.ReleasesInfo{
-		ReleaseVersion:         "1.3.0",
-		OpenAPIDocVersion:      "9.8.7",
-		OpenAPIDocPath:         "https://example.com",
-		SpeakeasyVersion:       "7.7.7",
-		NPMPackagePublished:    true,
-		NPMPackageName:         "@org/package",
-		NPMPackageUrl:          "https://www.npmjs.com/package/@org/package/v/1.3.0",
-		PythonPackagePublished: true,
-		PythonPackageName:      "org-package",
-		PythonPackageURL:       "https://pypi.org/project/org-package/1.3.0",
-		GoPackagePublished:     true,
-		GoPackageURL:           "https://github.com/test/repo/releases/tag/v1.3.0",
-		PHPPackagePublished:    true,
-		PHPPackageName:         "org/package",
-		PHPPackageURL:          "https://packagist.org/packages/org/package#v1.3.0",
-		JavaPackagePublished:   true,
-		JavaPackageName:        "com.group.artifact",
-		JavaPackageURL:         "https://central.sonatype.com/artifact/com.group/artifact/1.3.0",
+		ReleaseTitle:     "1.3.0",
+		DocVersion:       "9.8.7",
+		DocLocation:      "https://example.com",
+		SpeakeasyVersion: "7.7.7",
+		Languages: map[string]releases.LanguageReleaseInfo{
+			"typescript": {
+				PackageName: "@org/package",
+				Path:        "typescript",
+				Version:     "1.3.0",
+				URL:         "https://www.npmjs.com/package/@org/package/v/1.3.0",
+			},
+			"python": {
+				PackageName: "org-package",
+				Path:        "python",
+				Version:     "1.3.0",
+				URL:         "https://pypi.org/project/org-package/1.3.0",
+			},
+			"go": {
+				PackageName: "github.com/test/repo/go",
+				Path:        "go",
+				Version:     "1.3.0",
+				URL:         "https://github.com/test/repo/releases/tag/go/v1.3.0",
+			},
+			"php": {
+				PackageName: "org/package",
+				Path:        "php",
+				Version:     "1.3.0",
+				URL:         "https://packagist.org/packages/org/package#v1.3.0",
+			},
+			"java": {
+				PackageName: "com.group.artifact",
+				Path:        "java",
+				Version:     "1.3.0",
+				URL:         "https://central.sonatype.com/artifact/com.group/artifact/1.3.0",
+			},
+		},
 	}
 
 	info, err := releases.ParseReleases(r1.String() + r2.String())
@@ -98,18 +178,24 @@ Based on:
 	info, err := releases.ParseReleases(releasesStr)
 	assert.NoError(t, err)
 	assert.Equal(t, releases.ReleasesInfo{
-		ReleaseVersion:         "2.1.2",
-		OpenAPIDocVersion:      "2.0",
-		OpenAPIDocPath:         "https://vesselapi.github.io/yaml/openapi.yaml",
-		SpeakeasyVersion:       "0.18.1",
-		NPMPackagePublished:    true,
-		NPMPackageName:         "@vesselapi/nodesdk",
-		NPMPackageUrl:          "https://www.npmjs.com/package/@vesselapi/nodesdk/v/2.1.2",
-		TypescriptPath:         "typescript-client-sdk",
-		PythonPackagePublished: true,
-		PythonPackageName:      "vesselapi",
-		PythonPath:             "python-client-sdk",
-		PythonPackageURL:       "https://pypi.org/project/vesselapi/2.1.2",
+		ReleaseTitle:     "Version 2.1.2",
+		DocVersion:       "2.0",
+		DocLocation:      "https://vesselapi.github.io/yaml/openapi.yaml",
+		SpeakeasyVersion: "0.18.1",
+		Languages: map[string]releases.LanguageReleaseInfo{
+			"typescript": {
+				PackageName: "@vesselapi/nodesdk",
+				Path:        "typescript-client-sdk",
+				Version:     "2.1.2",
+				URL:         "https://www.npmjs.com/package/@vesselapi/nodesdk/v/2.1.2",
+			},
+			"python": {
+				PackageName: "vesselapi",
+				Path:        "python-client-sdk",
+				Version:     "2.1.2",
+				URL:         "https://pypi.org/project/vesselapi/2.1.2",
+			},
+		},
 	}, *info)
 }
 
@@ -129,20 +215,29 @@ Based on:
 	info, err := releases.ParseReleases(releasesStr)
 	assert.NoError(t, err)
 	assert.Equal(t, releases.ReleasesInfo{
-		ReleaseVersion:         "1.1.0",
-		OpenAPIDocVersion:      "v1",
-		OpenAPIDocPath:         "https://api.codat.io/swagger/v1/swagger.json",
-		SpeakeasyVersion:       "0.21.0",
-		NPMPackagePublished:    true,
-		NPMPackageName:         "@codatio/codat-ts",
-		NPMPackageUrl:          "https://www.npmjs.com/package/@codatio/codat-ts/v/1.1.0",
-		TypescriptPath:         "typescript-client-sdk",
-		PythonPackagePublished: true,
-		PythonPackageName:      "codatapi",
-		PythonPath:             "python-client-sdk",
-		PythonPackageURL:       "https://pypi.org/project/codatapi/1.1.0",
-		GoPackageURL:           "https://github.com/speakeasy-sdks/codat-sdks/releases/tag/v1.1.0",
-		GoPackagePublished:     true,
-		GoPath:                 "go-client-sdk",
+		ReleaseTitle:     "Version 1.1.0",
+		DocVersion:       "v1",
+		DocLocation:      "https://api.codat.io/swagger/v1/swagger.json",
+		SpeakeasyVersion: "0.21.0",
+		Languages: map[string]releases.LanguageReleaseInfo{
+			"typescript": {
+				PackageName: "@codatio/codat-ts",
+				Path:        "typescript-client-sdk",
+				Version:     "1.1.0",
+				URL:         "https://www.npmjs.com/package/@codatio/codat-ts/v/1.1.0",
+			},
+			"python": {
+				PackageName: "codatapi",
+				Path:        "python-client-sdk",
+				Version:     "1.1.0",
+				URL:         "https://pypi.org/project/codatapi/1.1.0",
+			},
+			"go": {
+				PackageName: "github.com/speakeasy-sdks/codat-sdks/go-client-sdk",
+				Path:        "go-client-sdk",
+				Version:     "1.1.0",
+				URL:         "https://github.com/speakeasy-sdks/codat-sdks/releases/tag/v1.1.0",
+			},
+		},
 	}, *info)
 }

@@ -123,7 +123,7 @@ jobs:
       commit_hash: ${{ steps.generate.outputs.commit_hash }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v11
+        uses: speakeasy-api/sdk-generation-action@v12
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -203,8 +203,8 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v3.10.0
         with:
-          java-version: '18'
-          distribution: 'adopt'
+          java-version: "18"
+          distribution: "adopt"
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@e6e38bacfdf1a337459f332974bb2327a31aaf4b
       - name: Publish package

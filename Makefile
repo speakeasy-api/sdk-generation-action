@@ -1,8 +1,14 @@
-local:
-	./scripts/local.sh
+test-direct-mode:
+	./testing/test.sh ./testing/direct-mode.env
 
-local-pr:
-	./scripts/local.sh pr
+test-direct-mode-multi-sdk:
+	./testing/test.sh ./testing/direct-mode-multi-sdk.env
 
-local-release:
-	INPUT_CREATE_RELEASE=true ./scripts/local.sh release
+test-pr-mode:
+	./testing/test.sh ./testing/pr-mode.env
+
+test-release-mode:
+	./testing/test.sh ./testing/release-mode.env
+
+test-release-mode-multi-sdk:
+	./testing/test.sh ./testing/release-mode-multi-sdk.env

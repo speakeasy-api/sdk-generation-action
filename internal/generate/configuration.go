@@ -3,6 +3,7 @@ package generate
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 	"strings"
 
 	config "github.com/speakeasy-api/sdk-gen-config"
@@ -73,7 +74,9 @@ func getAndValidateLanguages(languages string) (map[string]string, error) {
 		langCfg, ok := l.(map[string]interface{})
 		if ok {
 			for l := range langCfg {
-				langCfgs[l] = langCfg[l].(string)
+				path := langCfg[l].(string)
+
+				langCfgs[l] = filepath.Clean(path)
 			}
 
 			continue

@@ -10,68 +10,70 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 )
 
+type LanguageReleaseInfo struct {
+	PackageName string
+	Path        string
+	Version     string
+	URL         string
+}
+
 type ReleasesInfo struct {
-	ReleaseVersion         string
-	OpenAPIDocVersion      string
-	SpeakeasyVersion       string
-	OpenAPIDocPath         string
-	PythonPackagePublished bool
-	PythonPackageName      string
-	PythonPackageURL       string
-	PythonPath             string
-	NPMPackagePublished    bool
-	NPMPackageName         string
-	NPMPackageUrl          string
-	TypescriptPath         string
-	GoPackagePublished     bool
-	GoPackageURL           string
-	GoPath                 string
-	PHPPackagePublished    bool
-	PHPPackageName         string
-	PHPPackageURL          string
-	PHPPath                string
-	JavaPackagePublished   bool
-	JavaPackageName        string
-	JavaPackageURL         string
-	JavaPath               string
+	ReleaseTitle     string
+	DocVersion       string
+	SpeakeasyVersion string
+	DocLocation      string
+	Languages        map[string]LanguageReleaseInfo
 }
 
 func (r ReleasesInfo) String() string {
 	releasesOutput := []string{}
 
-	if r.NPMPackagePublished {
-		releasesOutput = append(releasesOutput, fmt.Sprintf("- [NPM v%s] https://www.npmjs.com/package/%s/v/%s - %s", r.ReleaseVersion, r.NPMPackageName, r.ReleaseVersion, r.TypescriptPath))
-	}
+	for lang, info := range r.Languages {
+		pkgID := ""
+		pkgURL := ""
 
-	if r.PythonPackagePublished {
-		releasesOutput = append(releasesOutput, fmt.Sprintf("- [PyPI v%s] https://pypi.org/project/%s/%s - %s", r.ReleaseVersion, r.PythonPackageName, r.ReleaseVersion, r.PythonPath))
-	}
+		switch lang {
+		case "go":
+			pkgID = "Go"
+			repoPath := os.Getenv("GITHUB_REPOSITORY")
 
-	if r.GoPackagePublished {
-		repoPath := os.Getenv("GITHUB_REPOSITORY")
-		releasesOutput = append(releasesOutput, fmt.Sprintf("- [Go v%s] https://github.com/%s/releases/tag/v%s - %s", r.ReleaseVersion, repoPath, r.ReleaseVersion, r.GoPath))
-	}
+			tag := fmt.Sprintf("v%s", info.Version)
+			if info.Path != "." {
+				tag = fmt.Sprintf("%s/%s", info.Path, tag)
+			}
 
-	if r.PHPPackagePublished {
-		releasesOutput = append(releasesOutput, fmt.Sprintf("- [Composer v%s] https://packagist.org/packages/%s#v%s - %s", r.ReleaseVersion, r.PHPPackageName, r.ReleaseVersion, r.PHPPath))
-	}
+			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
+		case "typescript":
+			pkgID = "NPM"
+			pkgURL = fmt.Sprintf("https://www.npmjs.com/package/%s/v/%s", info.PackageName, info.Version)
+		case "python":
+			pkgID = "PyPI"
+			pkgURL = fmt.Sprintf("https://pypi.org/project/%s/%s", info.PackageName, info.Version)
+		case "php":
+			pkgID = "Composer"
+			pkgURL = fmt.Sprintf("https://packagist.org/packages/%s#v%s", info.PackageName, info.Version)
+		case "java":
+			pkgID = "Maven Central"
+			lastDotIndex := strings.LastIndex(info.PackageName, ".")
+			groupID := info.PackageName[:lastDotIndex]      // everything before last occurrence of '.'
+			artifactID := info.PackageName[lastDotIndex+1:] // everything after last occurrence of '.'
+			pkgURL = fmt.Sprintf("https://central.sonatype.com/artifact/%s/%s/%s", groupID, artifactID, info.Version)
+		}
 
-	if r.JavaPackagePublished {
-		lastDotIndex := strings.LastIndex(r.JavaPackageName, ".")
-		groupID := r.JavaPackageName[:lastDotIndex]    // everything before last occurrence of '.'
-		artifact := r.JavaPackageName[lastDotIndex+1:] // everything after last occurrence of '.'
-		releasesOutput = append(releasesOutput, fmt.Sprintf("- [Maven Central v%s] https://central.sonatype.com/artifact/%s/%s/%s - %s", r.ReleaseVersion, groupID, artifact, r.ReleaseVersion, r.JavaPath))
+		if pkgID != "" {
+			releasesOutput = append(releasesOutput, fmt.Sprintf("- [%s v%s] %s - %s", pkgID, info.Version, pkgURL, info.Path))
+		}
 	}
 
 	if len(releasesOutput) > 0 {
 		releasesOutput = append([]string{"\n### Releases"}, releasesOutput...)
 	}
 
-	return fmt.Sprintf(`%s## Version %s
+	return fmt.Sprintf(`%s## %s
 ### Changes
 Based on:
 - OpenAPI Doc %s %s
-- Speakeasy CLI %s https://github.com/speakeasy-api/speakeasy%s`, "\n\n", r.ReleaseVersion, r.OpenAPIDocVersion, r.OpenAPIDocPath, r.SpeakeasyVersion, strings.Join(releasesOutput, "\n"))
+- Speakeasy CLI %s https://github.com/speakeasy-api/speakeasy%s`, "\n\n", r.ReleaseTitle, r.DocVersion, r.DocLocation, r.SpeakeasyVersion, strings.Join(releasesOutput, "\n"))
 }
 
 func UpdateReleasesFile(releaseInfo ReleasesInfo) error {
@@ -92,12 +94,12 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo) error {
 }
 
 var (
-	releaseInfoRegex     = regexp.MustCompile(`(?s)## Version (\d+\.\d+\.\d+)\n### Changes\nBased on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) .*?`)
-	npmReleaseRegex      = regexp.MustCompile(`- \[NPM v\d+\.\d+\.\d+\] (https:\/\/www\.npmjs\.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+) - (.*)`)
-	pypiReleaseRegex     = regexp.MustCompile(`- \[PyPI v\d+\.\d+\.\d+\] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
-	goReleaseRegex       = regexp.MustCompile(`- \[Go v\d+\.\d+\.\d+\] (.*?) - (.*)`)
-	composerReleaseRegex = regexp.MustCompile(`- \[Composer v\d+\.\d+\.\d+\] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+) - (.*)`)
-	mavenReleaseRegex    = regexp.MustCompile(`- \[Maven Central v\d+\.\d+\.\d+\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
+	releaseInfoRegex     = regexp.MustCompile(`(?s)## (.*?)\n### Changes\nBased on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) .*?`)
+	npmReleaseRegex      = regexp.MustCompile(`- \[NPM v(\d+\.\d+\.\d+)\] (https:\/\/www\.npmjs\.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+) - (.*)`)
+	pypiReleaseRegex     = regexp.MustCompile(`- \[PyPI v(\d+\.\d+\.\d+)\] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
+	goReleaseRegex       = regexp.MustCompile(`- \[Go v(\d+\.\d+\.\d+)\] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+) - (.*)`)
+	composerReleaseRegex = regexp.MustCompile(`- \[Composer v(\d+\.\d+\.\d+)\] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+) - (.*)`)
+	mavenReleaseRegex    = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+)\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
 )
 
 func GetLastReleaseInfo() (*ReleasesInfo, error) {
@@ -118,64 +120,80 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 
 	matches := releaseInfoRegex.FindStringSubmatch(lastRelease)
 
-	fmt.Println(matches)
-
 	if len(matches) != 5 {
 		return nil, fmt.Errorf("error parsing last release info")
 	}
 
 	info := &ReleasesInfo{
-		ReleaseVersion:    matches[1],
-		OpenAPIDocVersion: matches[2],
-		OpenAPIDocPath:    matches[3],
-		SpeakeasyVersion:  matches[4],
+		ReleaseTitle:     matches[1],
+		DocVersion:       matches[2],
+		DocLocation:      matches[3],
+		SpeakeasyVersion: matches[4],
+		Languages:        map[string]LanguageReleaseInfo{},
 	}
 
 	npmMatches := npmReleaseRegex.FindStringSubmatch(lastRelease)
 
-	if len(npmMatches) == 4 {
-		info.NPMPackagePublished = true
-		info.NPMPackageUrl = npmMatches[1]
-		info.NPMPackageName = npmMatches[2]
-		info.TypescriptPath = npmMatches[3]
+	if len(npmMatches) == 5 {
+		info.Languages["typescript"] = LanguageReleaseInfo{
+			Version:     npmMatches[1],
+			URL:         npmMatches[2],
+			PackageName: npmMatches[3],
+			Path:        npmMatches[4],
+		}
 	}
 
 	pypiMatches := pypiReleaseRegex.FindStringSubmatch(lastRelease)
 
-	if len(pypiMatches) == 4 {
-		info.PythonPackagePublished = true
-		info.PythonPackageURL = pypiMatches[1]
-		info.PythonPackageName = pypiMatches[2]
-		info.PythonPath = pypiMatches[3]
+	if len(pypiMatches) == 5 {
+		info.Languages["python"] = LanguageReleaseInfo{
+			Version:     pypiMatches[1],
+			URL:         pypiMatches[2],
+			PackageName: pypiMatches[3],
+			Path:        pypiMatches[4],
+		}
 	}
 
 	goMatches := goReleaseRegex.FindStringSubmatch(lastRelease)
 
-	if len(goMatches) == 3 {
-		info.GoPackagePublished = true
-		info.GoPackageURL = goMatches[1]
-		info.GoPath = goMatches[2]
+	if len(goMatches) == 5 {
+		packageName := goMatches[3]
+		path := goMatches[4]
+
+		if path != "." {
+			packageName = fmt.Sprintf("%s/%s", packageName, strings.TrimPrefix(path, "./"))
+		}
+
+		info.Languages["go"] = LanguageReleaseInfo{
+			Version:     goMatches[1],
+			URL:         goMatches[2],
+			PackageName: packageName,
+			Path:        path,
+		}
 	}
 
 	composerMatches := composerReleaseRegex.FindStringSubmatch(lastRelease)
 
-	if len(composerMatches) == 4 {
-		info.PHPPackagePublished = true
-		info.PHPPackageURL = composerMatches[1]
-		info.PHPPackageName = composerMatches[2]
-		info.PHPPath = composerMatches[3]
+	if len(composerMatches) == 5 {
+		info.Languages["php"] = LanguageReleaseInfo{
+			Version:     composerMatches[1],
+			URL:         composerMatches[2],
+			PackageName: composerMatches[3],
+			Path:        composerMatches[4],
+		}
 	}
 
 	mavenMatches := mavenReleaseRegex.FindStringSubmatch(lastRelease)
 
-	if len(mavenMatches) == 5 {
-		info.JavaPackagePublished = true
-		info.JavaPackageURL = mavenMatches[1]
-		groupID := mavenMatches[2]
-		artifact := mavenMatches[3]
-		info.JavaPath = mavenMatches[4]
-
-		info.JavaPackageName = fmt.Sprintf(`%s.%s`, groupID, artifact)
+	if len(mavenMatches) == 6 {
+		groupID := mavenMatches[3]
+		artifact := mavenMatches[4]
+		info.Languages["java"] = LanguageReleaseInfo{
+			Version:     mavenMatches[1],
+			URL:         mavenMatches[2],
+			PackageName: fmt.Sprintf(`%s.%s`, groupID, artifact),
+			Path:        mavenMatches[5],
+		}
 	}
 
 	return info, nil

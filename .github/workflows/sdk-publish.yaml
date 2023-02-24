@@ -75,7 +75,7 @@ jobs:
       php_directory: ${{ steps.release.outputs.php_directory }}
     steps:
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v11
+        uses: speakeasy-api/sdk-generation-action@v12
         with:
           github_access_token: ${{ secrets.github_access_token }}
           create_release: ${{ inputs.create_release }}
@@ -144,8 +144,8 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v3.10.0
         with:
-          java-version: '18'
-          distribution: 'adopt'
+          java-version: "18"
+          distribution: "adopt"
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@e6e38bacfdf1a337459f332974bb2327a31aaf4b
       - name: Publish package
