@@ -78,3 +78,7 @@ func GetOpenAPIDocAuthHeader() string {
 func GetOpenAPIDocAuthToken() string {
 	return os.Getenv("INPUT_OPENAPI_DOC_AUTH_TOKEN")
 }
+
+func GetWorkflowName() string {
+	return os.Getenv("GITHUB_WORKFLOW")
+}

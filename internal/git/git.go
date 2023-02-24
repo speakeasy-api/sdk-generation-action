@@ -103,8 +103,6 @@ func (g *Git) CheckDirDirty(dir string) (bool, error) {
 	return false, nil
 }
 
-const speakeasyPRTitle = "chore: speakeasy SDK regeneration"
-
 func (g *Git) FindOrCreateBranch() (string, *github.PullRequest, error) {
 	if g.repo == nil {
 		return "", nil, fmt.Errorf("repo not cloned")
@@ -123,8 +121,7 @@ func (g *Git) FindOrCreateBranch() (string, *github.PullRequest, error) {
 	var pr *github.PullRequest
 
 	for _, p := range prs {
-		fmt.Println("`"+p.GetTitle()+"`", strings.Compare(p.GetTitle(), speakeasyPRTitle))
-		if strings.Compare(p.GetTitle(), speakeasyPRTitle) == 0 {
+		if strings.Compare(p.GetTitle(), getPRTitle()) == 0 {
 			pr = p
 			break
 		}
@@ -231,7 +228,7 @@ Based on:
 		fmt.Println("Creating PR")
 
 		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
-			Title:               github.String(speakeasyPRTitle),
+			Title:               github.String(getPRTitle()),
 			Body:                github.String(body),
 			Head:                github.String(branchName),
 			Base:                github.String(os.Getenv("GITHUB_REF")),
@@ -276,4 +273,10 @@ func getRepo() string {
 	repoPath := os.Getenv("GITHUB_REPOSITORY")
 	parts := strings.Split(repoPath, "/")
 	return parts[len(parts)-1]
+}
+
+const speakeasyPRTitle = "chore: speakeasy sdk regeneration - "
+
+func getPRTitle() string {
+	return speakeasyPRTitle + environment.GetWorkflowName()
 }

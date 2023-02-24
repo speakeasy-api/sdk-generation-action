@@ -10,6 +10,7 @@ export GITHUB_SERVER_URL="https://github.com"
 export GITHUB_REPOSITORY_OWNER="speakeasy-api"
 export GITHUB_REF="refs/heads/main"
 export GITHUB_OUTPUT="./output.txt"
+export GITHUB_WORKFLOW="test"
 
 set -o allexport && source ${ENV_FILE} && set +o allexport
 
