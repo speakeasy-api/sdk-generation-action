@@ -224,6 +224,9 @@ jobs:
         working-directory: ${{ needs.generate.outputs.php_directory }}
     steps:
       - name: Publish
-        uses: wei/curl@v1.1.1
+        uses: speakeasy-api/packagist-update@support-github-creation
         with:
-          args: -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username=${{ secrets.packagist_username }}&apiToken=${{ secrets.packagist_token }}' -d'{\"repository\":{\"url\":\"${{ github.server_url }}/${{ github.repository }}\"}}'
+          username: ${{ secrets.packagist_username }}
+          api_token: ${{ secrets.packagist_token }}
+          package_name: ${{ github.repository }}
+          package_base_url: ${{ github.server_url }}
