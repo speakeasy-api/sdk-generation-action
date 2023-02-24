@@ -153,6 +153,21 @@ jobs:
         with:
           go-version: ">=1.14.0"
       - run: go build ./...
+  compile-java:
+    if: ${{ needs.generate.outputs.java_regenerated == 'true' }}
+    name: Compile Java SDK
+    runs-on: ubuntu-latest
+    needs: generate
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.generate.outputs.commit_hash }}
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "corretto"
+          java-version: "11"
+          cache: "gradle"
+      - run: ./gradlew build --no-daemon
   publish-pypi:
     if: ${{ needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' && inputs.mode != 'pr' }}
     name: Publish Python SDK
