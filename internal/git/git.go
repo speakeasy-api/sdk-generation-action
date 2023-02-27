@@ -265,6 +265,9 @@ func (g *Git) GetLatestTag() (string, error) {
 
 func (g *Git) GetCommitedFiles() ([]string, error) {
 	path := environment.GetWorkflowEventPayloadPath()
+
+	fmt.Printf("Workflow event payload path: %s\n", path)
+
 	if path == "" {
 		return nil, fmt.Errorf("no workflow event payload path")
 	}
@@ -273,6 +276,8 @@ func (g *Git) GetCommitedFiles() ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read workflow event payload: %w", err)
 	}
+
+	fmt.Printf("Workflow event payload: %s\n", string(data))
 
 	var payload struct {
 		Commits []struct {
@@ -285,7 +290,11 @@ func (g *Git) GetCommitedFiles() ([]string, error) {
 		return nil, fmt.Errorf("failed to unmarshal workflow event payload: %w", err)
 	}
 
-	return append(payload.Commits[0].Added, payload.Commits[0].Modified...), nil
+	files := append(payload.Commits[0].Added, payload.Commits[0].Modified...)
+
+	fmt.Printf("Found %d files in commits\n", len(files))
+
+	return files, nil
 }
 
 func getGithubAuth(accessToken string) *gitHttp.BasicAuth {
