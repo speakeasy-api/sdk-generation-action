@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -260,6 +261,31 @@ func (g *Git) GetLatestTag() (string, error) {
 	}
 
 	return tags[0].GetName(), nil
+}
+
+func (g *Git) GetCommitedFiles() ([]string, error) {
+	path := environment.GetWorkflowEventPayloadPath()
+	if path == "" {
+		return nil, fmt.Errorf("no workflow event payload path")
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read workflow event payload: %w", err)
+	}
+
+	var payload struct {
+		Commits []struct {
+			Added    []string `json:"added"`
+			Modified []string `json:"modified"`
+		}
+	}
+
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal workflow event payload: %w", err)
+	}
+
+	return append(payload.Commits[0].Added, payload.Commits[0].Modified...), nil
 }
 
 func getGithubAuth(accessToken string) *gitHttp.BasicAuth {

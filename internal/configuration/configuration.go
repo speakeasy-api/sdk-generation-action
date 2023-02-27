@@ -1,4 +1,4 @@
-package generate
+package configuration
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ type genConfig struct {
 	Config    config.Config
 }
 
-func loadGeneratorConfigs(baseDir string, langConfigs map[string]string) (map[string]*genConfig, error) {
+func LoadGeneratorConfigs(baseDir string, langConfigs map[string]string) (map[string]*genConfig, error) {
 	genConfigs := map[string]*genConfig{}
 
 	sharedCache := map[string]config.Config{}
@@ -53,7 +53,7 @@ func loadGeneratorConfigs(baseDir string, langConfigs map[string]string) (map[st
 	return genConfigs, nil
 }
 
-func getAndValidateLanguages(languages string) (map[string]string, error) {
+func GetAndValidateLanguages(languages string) (map[string]string, error) {
 	languages = strings.ReplaceAll(languages, "\\n", "\n")
 
 	langs := []interface{}{}

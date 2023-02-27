@@ -82,3 +82,7 @@ func GetOpenAPIDocAuthToken() string {
 func GetWorkflowName() string {
 	return os.Getenv("GITHUB_WORKFLOW")
 }
+
+func GetWorkflowEventPayloadPath() string {
+	return os.Getenv("GITHUB_EVENT_PATH")
+}

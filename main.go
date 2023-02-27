@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/go-github/v48/github"
@@ -92,19 +93,28 @@ func genAction() error {
 			return err
 		}
 
+		releasesDir := "."
+
 		for _, lang := range supportedLanguages {
 			langGenInfo, ok := genInfo.Languages[lang]
+
+			dir := outputs[fmt.Sprintf("%s_directory", lang)]
 
 			if ok && outputs[fmt.Sprintf("%s_regenerated", lang)] == "true" && environment.IsLanguagePublished(lang) {
 				releaseInfo.Languages[lang] = releases.LanguageReleaseInfo{
 					PackageName: langGenInfo.PackageName,
 					Version:     langGenInfo.Version,
-					Path:        outputs[fmt.Sprintf("%s_directory", lang)],
+					Path:        dir,
 				}
+			}
+
+			// If we are only generating one language and its not in the root directory we assume this is a multi-sdk repo
+			if len(supportedLanguages) == 1 && dir != "." {
+				releasesDir = dir
 			}
 		}
 
-		if err := releases.UpdateReleasesFile(releaseInfo); err != nil {
+		if err := releases.UpdateReleasesFile(releaseInfo, releasesDir); err != nil {
 			return err
 		}
 
@@ -147,7 +157,22 @@ func releaseAction() error {
 		return err
 	}
 
-	latestRelease, err := releases.GetLastReleaseInfo()
+	files, err := g.GetCommitedFiles()
+	if err != nil {
+		fmt.Printf("Failed to get commited files: %s\n", err.Error())
+	}
+
+	dir := "."
+
+	for _, file := range files {
+		if strings.Contains(file, "RELEASES.md") {
+			dir = filepath.Dir(file)
+			fmt.Printf("Found RELEASES.md in %s\n", file)
+			break
+		}
+	}
+
+	latestRelease, err := releases.GetLastReleaseInfo(dir)
 	if err != nil {
 		return err
 	}

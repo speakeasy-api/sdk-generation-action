@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/go-version"
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
+	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 )
 
@@ -26,7 +27,7 @@ type Git interface {
 }
 
 func Generate(g Git) (*GenerationInfo, map[string]string, error) {
-	langs, err := getAndValidateLanguages(environment.GetLanguages())
+	langs, err := configuration.GetAndValidateLanguages(environment.GetLanguages())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -38,7 +39,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 	baseDir := environment.GetBaseDir()
 
-	genConfigs, err := loadGeneratorConfigs(baseDir, langs)
+	genConfigs, err := configuration.LoadGeneratorConfigs(baseDir, langs)
 	if err != nil {
 		return nil, nil, err
 	}

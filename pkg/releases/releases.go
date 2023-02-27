@@ -76,8 +76,8 @@ Based on:
 - Speakeasy CLI %s https://github.com/speakeasy-api/speakeasy%s`, "\n\n", r.ReleaseTitle, r.DocVersion, r.DocLocation, r.SpeakeasyVersion, strings.Join(releasesOutput, "\n"))
 }
 
-func UpdateReleasesFile(releaseInfo ReleasesInfo) error {
-	releasesPath := getReleasesPath()
+func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
+	releasesPath := getReleasesPath(dir)
 
 	f, err := os.OpenFile(releasesPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
@@ -102,8 +102,8 @@ var (
 	mavenReleaseRegex    = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+)\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
 )
 
-func GetLastReleaseInfo() (*ReleasesInfo, error) {
-	releasesPath := getReleasesPath()
+func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
+	releasesPath := getReleasesPath(dir)
 
 	data, err := os.ReadFile(releasesPath)
 	if err != nil {
@@ -199,8 +199,8 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 	return info, nil
 }
 
-func getReleasesPath() string {
+func getReleasesPath(dir string) string {
 	baseDir := environment.GetBaseDir()
 
-	return path.Join(baseDir, "repo", "RELEASES.md")
+	return path.Join(baseDir, "repo", dir, "RELEASES.md")
 }
