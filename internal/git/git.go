@@ -326,12 +326,7 @@ func (g *Git) GetCommitedFiles() ([]string, error) {
 			continue
 		}
 
-		_, file, err := change.Files()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get change files: %w", err)
-		}
-
-		files = append(files, filepath.Join(change.To.Name, file.Name))
+		files = append(files, change.To.Name)
 	}
 
 	fmt.Printf("Found %d files in commits\n", len(files))
