@@ -15,6 +15,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/go-git/go-git/v5/utils/merkletrie"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 
@@ -266,8 +267,6 @@ func (g *Git) GetLatestTag() (string, error) {
 func (g *Git) GetCommitedFiles() ([]string, error) {
 	path := environment.GetWorkflowEventPayloadPath()
 
-	fmt.Printf("Workflow event payload path: %s\n", path)
-
 	if path == "" {
 		return nil, fmt.Errorf("no workflow event payload path")
 	}
@@ -277,10 +276,9 @@ func (g *Git) GetCommitedFiles() ([]string, error) {
 		return nil, fmt.Errorf("failed to read workflow event payload: %w", err)
 	}
 
-	fmt.Printf("Workflow event payload: %s\n", string(data))
-
 	var payload struct {
-		After string `json:"after"`
+		After  string `json:"after"`
+		Before string `json:"before"`
 	}
 
 	if err := json.Unmarshal(data, &payload); err != nil {
@@ -291,21 +289,48 @@ func (g *Git) GetCommitedFiles() ([]string, error) {
 		return nil, fmt.Errorf("no commit hash found in workflow event payload")
 	}
 
-	commit, err := g.repo.CommitObject(plumbing.NewHash(payload.After))
+	beforeCommit, err := g.repo.CommitObject(plumbing.NewHash(payload.Before))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get commit object: %w", err)
+		return nil, fmt.Errorf("failed to get before commit object: %w", err)
 	}
-	fileIter, err := commit.Files()
+
+	afterCommit, err := g.repo.CommitObject(plumbing.NewHash(payload.After))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get commit files: %w", err)
+		return nil, fmt.Errorf("failed to get after commit object: %w", err)
+	}
+
+	beforeState, err := beforeCommit.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get before commit tree: %w", err)
+	}
+
+	afterState, err := afterCommit.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get after commit tree: %w", err)
+	}
+
+	changes, err := beforeState.Diff(afterState)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get diff between commits: %w", err)
 	}
 
 	files := []string{}
 
-	_ = fileIter.ForEach(func(f *object.File) error {
-		files = append(files, f.Name)
-		return nil
-	})
+	for _, change := range changes {
+		action, err := change.Action()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get change action: %w", err)
+		}
+		if action == merkletrie.Delete {
+			continue
+		}
+		_, file, err := change.Files()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get change files: %w", err)
+		}
+
+		files = append(files, file.Name)
+	}
 
 	fmt.Printf("Found %d files in commits\n", len(files))
 
