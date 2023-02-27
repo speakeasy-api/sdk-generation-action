@@ -153,6 +153,7 @@ jobs:
         with:
           go-version: ">=1.14.0"
       - run: go build ./...
+        working-directory: ${{ needs.generate.outputs.go_directory }}
   compile-java:
     if: ${{ needs.generate.outputs.java_regenerated == 'true' }}
     name: Compile Java SDK
@@ -168,6 +169,7 @@ jobs:
           java-version: "11"
           cache: "gradle"
       - run: ./gradlew build --no-daemon
+        working-directory: ${{ needs.generate.outputs.java_directory }}
   compile-python:
     if: ${{ needs.generate.outputs.python_regenerated == 'true' }}
     name: Compile Python SDK
@@ -182,6 +184,7 @@ jobs:
         with:
           python-version: "3.9"
       - run: python3.9 -m compileall .
+        working-directory: ${{ needs.generate.outputs.python_directory }}
   compile-typescript:
     if: ${{ needs.generate.outputs.typescript_regenerated == 'true' }}
     name: Compile Typescript SDK
@@ -197,6 +200,7 @@ jobs:
           node-version: "16.x"
           registry-url: "https://registry.npmjs.org"
       - run: npm ci --prefer-offline --no-audit && tsc --noEmit --skipLibCheck
+        working-directory: ${{ needs.generate.outputs.typescript_directory }}
   compile-php:
     if: ${{ needs.generate.outputs.php_regenerated == 'true' }}
     name: Compile PHP SDK
@@ -212,6 +216,7 @@ jobs:
           php-version: "8.1"
           tools: composer
       - run: composer install && vendor/bin/phpstan analyse src --level 7 --memory-limit 1G --no-progress
+        working-directory: ${{ needs.generate.outputs.php_directory }}
   publish-pypi:
     if: ${{ needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' && inputs.mode != 'pr' }}
     name: Publish Python SDK
