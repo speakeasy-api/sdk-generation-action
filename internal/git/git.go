@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -324,12 +325,13 @@ func (g *Git) GetCommitedFiles() ([]string, error) {
 		if action == merkletrie.Delete {
 			continue
 		}
+
 		_, file, err := change.Files()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get change files: %w", err)
 		}
 
-		files = append(files, file.Name)
+		files = append(files, filepath.Join(change.To.Name, file.Name))
 	}
 
 	fmt.Printf("Found %d files in commits\n", len(files))
