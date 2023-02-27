@@ -280,17 +280,32 @@ func (g *Git) GetCommitedFiles() ([]string, error) {
 	fmt.Printf("Workflow event payload: %s\n", string(data))
 
 	var payload struct {
-		Commits []struct {
-			Added    []string `json:"added"`
-			Modified []string `json:"modified"`
-		}
+		After string `json:"after"`
 	}
 
 	if err := json.Unmarshal(data, &payload); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal workflow event payload: %w", err)
 	}
 
-	files := append(payload.Commits[0].Added, payload.Commits[0].Modified...)
+	if payload.After == "" {
+		return nil, fmt.Errorf("no commit hash found in workflow event payload")
+	}
+
+	commit, err := g.repo.CommitObject(plumbing.NewHash(payload.After))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get commit object: %w", err)
+	}
+	fileIter, err := commit.Files()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get commit files: %w", err)
+	}
+
+	files := []string{}
+
+	_ = fileIter.ForEach(func(f *object.File) error {
+		files = append(files, f.Name)
+		return nil
+	})
 
 	fmt.Printf("Found %d files in commits\n", len(files))
 
