@@ -93,24 +93,24 @@ func genAction() error {
 			return err
 		}
 
-		releasesDir := "."
-
 		for _, lang := range supportedLanguages {
 			langGenInfo, ok := genInfo.Languages[lang]
-
-			dir := outputs[fmt.Sprintf("%s_directory", lang)]
 
 			if ok && outputs[fmt.Sprintf("%s_regenerated", lang)] == "true" && environment.IsLanguagePublished(lang) {
 				releaseInfo.Languages[lang] = releases.LanguageReleaseInfo{
 					PackageName: langGenInfo.PackageName,
 					Version:     langGenInfo.Version,
-					Path:        dir,
+					Path:        outputs[fmt.Sprintf("%s_directory", lang)],
 				}
 			}
+		}
 
+		releasesDir := "."
+
+		for _, langInfo := range releaseInfo.Languages {
 			// If we are only generating one language and its not in the root directory we assume this is a multi-sdk repo
-			if len(supportedLanguages) == 1 && dir != "." {
-				releasesDir = dir
+			if len(releaseInfo.Languages) == 1 && langInfo.Path != "." {
+				releasesDir = langInfo.Path
 			}
 		}
 
