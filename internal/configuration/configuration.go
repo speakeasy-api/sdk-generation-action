@@ -14,13 +14,13 @@ import (
 
 type genConfig struct {
 	ConfigDir string
-	Config    config.Config
+	Config    *config.Config
 }
 
 func LoadGeneratorConfigs(baseDir string, langConfigs map[string]string) (map[string]*genConfig, error) {
 	genConfigs := map[string]*genConfig{}
 
-	sharedCache := map[string]config.Config{}
+	sharedCache := map[string]*config.Config{}
 
 	for lang, dir := range langConfigs {
 		configDir := path.Join(baseDir, "repo", dir)
@@ -38,7 +38,7 @@ func LoadGeneratorConfigs(baseDir string, langConfigs map[string]string) (map[st
 				return nil, err
 			}
 
-			cfg = *loaded
+			cfg = loaded
 			sharedCache[configDir] = cfg
 		}
 

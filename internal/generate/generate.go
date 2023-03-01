@@ -82,7 +82,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 			langCfg.Version = newVersion
 			cfg.Config.Languages[lang] = langCfg
 
-			if err := config.Save(cfg.ConfigDir, &cfg.Config); err != nil {
+			if err := config.Save(cfg.ConfigDir, cfg.Config); err != nil {
 				return nil, nil, err
 			}
 
@@ -91,6 +91,15 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 			if err := cli.Generate(docPath, lang, outputDir); err != nil {
 				return nil, nil, err
 			}
+
+			// Load the config again as it could have been modified by the generator
+			loadedCfg, err := config.Load(outputDir)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			cfg.Config = loadedCfg
+			genConfigs[lang] = cfg
 
 			dirForOutput := dir
 			if dirForOutput == "" {
@@ -110,7 +119,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 				langCfg.Version = sdkVersion
 				cfg.Config.Languages[lang] = langCfg
 
-				if err := config.Save(cfg.ConfigDir, &cfg.Config); err != nil {
+				if err := config.Save(cfg.ConfigDir, cfg.Config); err != nil {
 					return nil, nil, err
 				}
 
@@ -136,7 +145,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 			mgmtConfig.DocChecksum = docChecksum
 			cfg.Config.Management = mgmtConfig
 
-			if err := config.Save(cfg.ConfigDir, &cfg.Config); err != nil {
+			if err := config.Save(cfg.ConfigDir, cfg.Config); err != nil {
 				return nil, nil, err
 			}
 
