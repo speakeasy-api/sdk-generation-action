@@ -1,5 +1,5 @@
 ## Build
-FROM golang as builder
+FROM golang:alpine as builder
 
 WORKDIR /app
 
@@ -17,10 +17,10 @@ RUN go build -o /action
 ## Deploy
 FROM alpine:latest
 
-WORKDIR /
-
 RUN apk update
 RUN apk add git
+
+WORKDIR /
 
 COPY --from=builder /action /action
 
