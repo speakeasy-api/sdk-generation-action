@@ -27,7 +27,7 @@ type Git interface {
 }
 
 func Generate(g Git) (*GenerationInfo, map[string]string, error) {
-	langs, err := configuration.GetAndValidateLanguages(environment.GetLanguages())
+	langs, err := configuration.GetAndValidateLanguages(true)
 	if err != nil {
 		return nil, nil, err
 	}
