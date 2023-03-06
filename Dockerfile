@@ -15,9 +15,12 @@ COPY pkg/ ./pkg/
 RUN go build -o /action
 
 ## Deploy
-FROM gcr.io/distroless/base-debian11
+FROM alpine:latest
 
 WORKDIR /
+
+RUN apk update
+RUN apk add git
 
 COPY --from=builder /action /action
 
