@@ -1,6 +1,6 @@
 # action.yml
 name: Speakeasy Client SDK Generation Action
-description: The Speakeasy SDK Generation Action is a complex action designed to be run via one of the workflows provided in this repo. It is not intended to be run directly.
+description: The Speakeasy Generation Action isto be run via the workflows provided in this repo and is not intended to be run directly.
 inputs:
   speakeasy_version:
     description: The version of the Speakeasy CLI to use or "latest"
