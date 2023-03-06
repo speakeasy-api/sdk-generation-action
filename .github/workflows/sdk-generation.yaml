@@ -217,6 +217,7 @@ jobs:
       - run: composer install && vendor/bin/phpstan analyse src --level 7 --memory-limit 1G --no-progress
         working-directory: ${{ needs.generate.outputs.php_directory }}
   finalize:
+    name: Finalize SDK
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&
@@ -232,6 +233,7 @@ jobs:
     outputs:
       commit_hash: ${{ steps.finalize.outputs.commit_hash }}
     steps:
+      - run: sudo apt install git
       - id: finalize
         uses: speakeasy-api/sdk-generation-action@v14
         with:
