@@ -7,6 +7,21 @@ import (
 	"time"
 )
 
+type Mode string
+
+const (
+	ModeDirect Mode = "direct"
+	ModePR     Mode = "pr"
+)
+
+type Action string
+
+const (
+	ActionGenerate Action = "generate"
+	ActionFinalize Action = "finalize"
+	ActionRelease  Action = "release"
+)
+
 var (
 	baseDir    = "/"
 	invokeTime = time.Now()
@@ -24,15 +39,29 @@ func GetBaseDir() string {
 }
 
 func IsDebugMode() bool {
-	return os.Getenv("INPUT_DEBUG") == "true"
+	return os.Getenv("INPUT_DEBUG") == "true" || os.Getenv("RUNNER_DEBUG") == "1"
 }
 
 func ForceGeneration() bool {
 	return os.Getenv("INPUT_FORCE") == "true"
 }
 
-func GetMode() string {
-	return os.Getenv("INPUT_MODE")
+func GetMode() Mode {
+	mode := os.Getenv("INPUT_MODE")
+	if mode == "" {
+		return ModeDirect
+	}
+
+	return Mode(mode)
+}
+
+func GetAction() Action {
+	action := os.Getenv("INPUT_ACTION")
+	if action == "" {
+		return ActionGenerate
+	}
+
+	return Action(action)
 }
 
 func GetPinnedSpeakeasyVersion() string {
@@ -85,4 +114,12 @@ func GetWorkflowName() string {
 
 func GetWorkflowEventPayloadPath() string {
 	return os.Getenv("GITHUB_EVENT_PATH")
+}
+
+func GetBranchName() string {
+	return os.Getenv("INPUT_BRANCH_NAME")
+}
+
+func GetRef() string {
+	return os.Getenv("GITHUB_REF")
 }

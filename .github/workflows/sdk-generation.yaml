@@ -66,11 +66,6 @@ on:
         default: "direct"
         required: false
         type: string
-      debug:
-        description: "Enable debug logging"
-        default: "false"
-        required: false
-        type: string
       force:
         description: "Force the generation of the SDKs"
         default: "false"
@@ -120,10 +115,10 @@ jobs:
       java_directory: ${{ steps.generate.outputs.java_directory }}
       php_regenerated: ${{ steps.generate.outputs.php_regenerated }}
       php_directory: ${{ steps.generate.outputs.php_directory }}
-      commit_hash: ${{ steps.generate.outputs.commit_hash }}
+      branch_name: ${{ steps.generate.outputs.branch_name }}
     steps:
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v13
+        uses: speakeasy-api/sdk-generation-action@v14
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -137,7 +132,7 @@ jobs:
           publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
           mode: ${{ inputs.mode }}
-          debug: ${{ inputs.debug }}
+          action: generate
           force: ${{ inputs.force }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
   compile-go:
@@ -148,7 +143,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ needs.generate.outputs.commit_hash }}
+          ref: ${{ needs.generate.outputs.branch_name }}
       - uses: actions/setup-go@v3
         with:
           go-version: ">=1.14.0"
@@ -162,7 +157,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ needs.generate.outputs.commit_hash }}
+          ref: ${{ needs.generate.outputs.branch_name }}
       - uses: actions/setup-java@v3
         with:
           distribution: "corretto"
@@ -178,12 +173,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ needs.generate.outputs.commit_hash }}
+          ref: ${{ needs.generate.outputs.branch_name }}
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-      - run: python3.9 -m compileall .
+      - run: pip install -e .
+        working-directory: ${{ needs.generate.outputs.python_directory }}
+      - run: python3.9 -m compileall -q .
+        working-directory: ${{ needs.generate.outputs.python_directory }}
+      - run: pylint src
         working-directory: ${{ needs.generate.outputs.python_directory }}
   compile-typescript:
     if: ${{ needs.generate.outputs.typescript_regenerated == 'true' }}
@@ -193,7 +192,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ needs.generate.outputs.commit_hash }}
+          ref: ${{ needs.generate.outputs.branch_name }}
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
@@ -209,7 +208,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ needs.generate.outputs.commit_hash }}
+          ref: ${{ needs.generate.outputs.branch_name }}
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -217,18 +216,48 @@ jobs:
           tools: composer
       - run: composer install && vendor/bin/phpstan analyse src --level 7 --memory-limit 1G --no-progress
         working-directory: ${{ needs.generate.outputs.php_directory }}
+  finalize:
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
+    needs:
+      - generate
+      - compile-go
+      - compile-java
+      - compile-python
+      - compile-typescript
+      - compile-php
+    runs-on: ubuntu-latest
+    outputs:
+      commit_hash: ${{ steps.finalize.outputs.commit_hash }}
+    steps:
+      - id: finalize
+        uses: speakeasy-api/sdk-generation-action@v14
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          languages: ${{ inputs.languages }}
+          create_release: ${{ inputs.create_release }}
+          publish_python: ${{ inputs.publish_python }}
+          publish_typescript: ${{ inputs.publish_typescript }}
+          publish_java: ${{ inputs.publish_java }}
+          publish_php: ${{ inputs.publish_php }}
+          mode: ${{ inputs.mode }}
+          action: finalize
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          branch_name: ${{ needs.generate.outputs.branch_name }}
   publish-pypi:
     if: ${{ needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' && inputs.mode != 'pr' }}
     name: Publish Python SDK
     runs-on: ubuntu-latest
-    needs: [generate, compile-python]
+    needs: [generate, compile-python, finalize]
     defaults:
       run:
         working-directory: ${{ needs.generate.outputs.python_directory }}
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ needs.generate.outputs.commit_hash }}
+          ref: ${{ needs.finalize.outputs.commit_hash }}
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -248,14 +277,14 @@ jobs:
     if: ${{ needs.generate.outputs.typescript_regenerated == 'true' && inputs.publish_typescript == 'true' && inputs.mode != 'pr' }}
     name: Publish Typescript SDK
     runs-on: ubuntu-latest
-    needs: [generate, compile-typescript]
+    needs: [generate, compile-typescript, finalize]
     defaults:
       run:
         working-directory: ${{ needs.generate.outputs.typescript_directory }}
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ needs.generate.outputs.commit_hash }}
+          ref: ${{ needs.finalize.outputs.commit_hash }}
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
@@ -268,17 +297,17 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: npm publish --access public
   publish-java:
-    if: ${{ needs.generate.outputs.java_regenerated == 'true' && inputs.publish_java == 'true' && inputs.mode != 'pr' }}
+    if: ${{ needs.finalize.generate.java_regenerated == 'true' && inputs.publish_java == 'true' && inputs.mode != 'pr' }}
     name: Publish Java SDK
     runs-on: ubuntu-latest
-    needs: [generate, compile-java]
+    needs: [generate, compile-java, finalize]
     defaults:
       run:
         working-directory: ${{ needs.generate.outputs.java_directory }}
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ needs.generate.outputs.commit_hash }}
+          ref: ${{ needs.finalize.outputs.commit_hash }}
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
@@ -294,10 +323,10 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.ossrh_username }}
           MAVEN_PASSWORD: ${{ secrets.ossrh_password }}
   publish-packagist:
-    if: ${{ needs.generate.outputs.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
+    if: ${{ needs.generate.generate.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
     name: Publish PHP SDK
     runs-on: ubuntu-latest
-    needs: [generate, compile-php]
+    needs: [generate, compile-php, finalize]
     defaults:
       run:
         working-directory: ${{ needs.generate.outputs.php_directory }}

@@ -170,39 +170,6 @@ The directory the Java SDK was generated in
 
 The directory the PHP SDK was generated in
 
-## Example Action usage
-
-If just using the action on its own (without the workflow publishing) you can use the action as follows:
-
-```yaml
-name: Generate
-
-on:
-  workflow_dispatch: # Allows manual triggering of the workflow to generate SDK
-    inputs:
-      force:
-        description: "Force generation of SDKs"
-        type: boolean
-        default: false
-  schedule:
-    - cron: 0 0 * * * # Runs every day at midnight
-
-jobs:
-  generate:
-    name: Generate SDK
-    runs-on: ubuntu-latest
-    steps:
-      - uses: speakeasy-api/sdk-generation-action@v13
-        with:
-          speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
-          speakeasy_version: latest
-          openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-          languages: |-
-            - go
-          force: ${{ github.event.inputs.force }}
-```
-
 ## Workflow usage
 
 ### Generation Workflow
@@ -226,7 +193,7 @@ on:
 
 jobs:
   generate:
-    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v13 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers in 'direct' mode.
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v14 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers in 'direct' mode.
     with:
       speakeasy_version: latest
       openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
@@ -260,7 +227,7 @@ on:
 
 jobs:
   publish:
-    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-publish.yaml@v13 # Import the sdk publish workflow which will handle the publishing to the package managers
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-publish.yaml@v14 # Import the sdk publish workflow which will handle the publishing to the package managers
     with:
       publish_python: true # Tells the publish action to publish the Python SDK to PyPi
       create_release: true

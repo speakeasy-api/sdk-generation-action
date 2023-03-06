@@ -8,6 +8,7 @@ import (
 
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 )
@@ -53,7 +54,9 @@ func LoadGeneratorConfigs(baseDir string, langConfigs map[string]string) (map[st
 	return genConfigs, nil
 }
 
-func GetAndValidateLanguages(languages string) (map[string]string, error) {
+func GetAndValidateLanguages(checkLangSupported bool) (map[string]string, error) {
+	languages := environment.GetLanguages()
+
 	languages = strings.ReplaceAll(languages, "\\n", "\n")
 
 	langs := []interface{}{}
@@ -93,6 +96,10 @@ func GetAndValidateLanguages(languages string) (map[string]string, error) {
 		}
 
 		return nil, fmt.Errorf("invalid language configuration: %v", l)
+	}
+
+	if !checkLangSupported {
+		return langCfgs, nil
 	}
 
 	supportedLangs, err := cli.GetSupportedLanguages()

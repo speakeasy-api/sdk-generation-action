@@ -28,10 +28,6 @@ on:
         default: "false"
         required: false
         type: string
-      debug:
-        description: "Enable debug logging"
-        default: "false"
-        type: string
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -75,7 +71,7 @@ jobs:
       php_directory: ${{ steps.release.outputs.php_directory }}
     steps:
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v13
+        uses: speakeasy-api/sdk-generation-action@v14
         with:
           github_access_token: ${{ secrets.github_access_token }}
           create_release: ${{ inputs.create_release }}
@@ -83,7 +79,7 @@ jobs:
           publish_typescript: ${{ inputs.publish_typescript }}
           publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
-          mode: "release"
+          action: "release"
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
   publish-pypi:
     if: ${{ needs.release.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' }}

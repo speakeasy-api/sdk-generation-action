@@ -77,7 +77,7 @@ Based on:
 }
 
 func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
-	releasesPath := getReleasesPath(dir)
+	releasesPath := GetReleasesPath(dir)
 
 	f, err := os.OpenFile(releasesPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
@@ -103,7 +103,7 @@ var (
 )
 
 func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
-	releasesPath := getReleasesPath(dir)
+	releasesPath := GetReleasesPath(dir)
 
 	data, err := os.ReadFile(releasesPath)
 	if err != nil {
@@ -199,7 +199,7 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 	return info, nil
 }
 
-func getReleasesPath(dir string) string {
+func GetReleasesPath(dir string) string {
 	baseDir := environment.GetBaseDir()
 
 	return path.Join(baseDir, "repo", dir, "RELEASES.md")

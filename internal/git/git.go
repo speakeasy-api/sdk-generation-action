@@ -1,12 +1,15 @@
 package git
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -17,6 +20,7 @@ import (
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/utils/merkletrie"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 
 	"github.com/google/go-github/v48/github"
@@ -53,7 +57,7 @@ func (g *Git) CloneRepo() error {
 
 	ref := os.Getenv("GITHUB_REF")
 
-	fmt.Printf("Cloning repo: %s from ref: %s\n", repoPath, ref)
+	logging.Info("Cloning repo: %s from ref: %s", repoPath, ref)
 
 	baseDir := environment.GetBaseDir()
 
@@ -105,14 +109,9 @@ func (g *Git) CheckDirDirty(dir string) (bool, error) {
 	return false, nil
 }
 
-func (g *Git) FindOrCreateBranch() (string, *github.PullRequest, error) {
+func (g *Git) FindExistingPR(branchName string) (string, *github.PullRequest, error) {
 	if g.repo == nil {
 		return "", nil, fmt.Errorf("repo not cloned")
-	}
-
-	w, err := g.repo.Worktree()
-	if err != nil {
-		return "", nil, fmt.Errorf("error getting worktree: %w", err)
 	}
 
 	prs, _, err := g.client.PullRequests.List(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), nil)
@@ -120,47 +119,76 @@ func (g *Git) FindOrCreateBranch() (string, *github.PullRequest, error) {
 		return "", nil, fmt.Errorf("error getting pull requests: %w", err)
 	}
 
-	var pr *github.PullRequest
-
 	for _, p := range prs {
 		if strings.Compare(p.GetTitle(), getPRTitle()) == 0 {
-			pr = p
-			break
+			logging.Info("Found existing PR %s", *p.Title)
+
+			if branchName != "" && p.GetHead().GetRef() != branchName {
+				return "", nil, fmt.Errorf("existing PR has different branch name: %s than expected: %s", p.GetHead().GetRef(), branchName)
+			}
+
+			return p.GetHead().GetRef(), p, nil
 		}
 	}
 
-	if pr != nil {
-		branchName := pr.GetHead().GetRef()
+	logging.Info("Existing PR not found")
 
-		fmt.Printf("Found existing branch %s\n", branchName)
+	return branchName, nil, nil
+}
 
-		r, err := g.repo.Remote("origin")
-		if err != nil {
-			return "", nil, fmt.Errorf("error getting remote: %w", err)
-		}
-		if err := r.Fetch(&git.FetchOptions{
-			Auth: getGithubAuth(g.accessToken),
-			RefSpecs: []config.RefSpec{
-				config.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", branchName, branchName)),
-			},
-		}); err != nil && err != git.NoErrAlreadyUpToDate {
-			return "", nil, fmt.Errorf("error fetching remote: %w", err)
-		}
-
-		branchRef := plumbing.NewBranchReferenceName(branchName)
-
-		if err := w.Checkout(&git.CheckoutOptions{
-			Branch: branchRef,
-		}); err != nil {
-			return "", nil, fmt.Errorf("error checking out branch: %w", err)
-		}
-
-		return branchName, pr, nil
+func (g *Git) FindBranch(branchName string) (string, error) {
+	if g.repo == nil {
+		return "", fmt.Errorf("repo not cloned")
 	}
 
-	branchName := fmt.Sprintf("speakeasy-sdk-regen-%d", time.Now().Unix())
+	w, err := g.repo.Worktree()
+	if err != nil {
+		return "", fmt.Errorf("error getting worktree: %w", err)
+	}
 
-	fmt.Printf("Creating branch %s\n", branchName)
+	r, err := g.repo.Remote("origin")
+	if err != nil {
+		return "", fmt.Errorf("error getting remote: %w", err)
+	}
+	if err := r.Fetch(&git.FetchOptions{
+		Auth: getGithubAuth(g.accessToken),
+		RefSpecs: []config.RefSpec{
+			config.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", branchName, branchName)),
+		},
+	}); err != nil && err != git.NoErrAlreadyUpToDate {
+		return "", fmt.Errorf("error fetching remote: %w", err)
+	}
+
+	branchRef := plumbing.NewBranchReferenceName(branchName)
+
+	if err := w.Checkout(&git.CheckoutOptions{
+		Branch: branchRef,
+	}); err != nil {
+		return "", fmt.Errorf("error checking out branch: %w", err)
+	}
+
+	logging.Info("Found existing branch %s", branchName)
+
+	return branchName, nil
+}
+
+func (g *Git) FindOrCreateBranch(branchName string) (string, error) {
+	if g.repo == nil {
+		return "", fmt.Errorf("repo not cloned")
+	}
+
+	w, err := g.repo.Worktree()
+	if err != nil {
+		return "", fmt.Errorf("error getting worktree: %w", err)
+	}
+
+	if branchName != "" {
+		return g.FindBranch(branchName)
+	}
+
+	branchName = fmt.Sprintf("speakeasy-sdk-regen-%d", time.Now().Unix())
+
+	logging.Info("Creating branch %s", branchName)
 
 	localRef := plumbing.NewBranchReferenceName(branchName)
 
@@ -168,10 +196,36 @@ func (g *Git) FindOrCreateBranch() (string, *github.PullRequest, error) {
 		Branch: plumbing.ReferenceName(localRef.String()),
 		Create: true,
 	}); err != nil {
-		return "", nil, fmt.Errorf("error checking out branch: %w", err)
+		return "", fmt.Errorf("error checking out branch: %w", err)
 	}
 
-	return branchName, nil, nil
+	return branchName, nil
+}
+
+func (g *Git) DeleteBranch(branchName string) error {
+	if g.repo == nil {
+		return fmt.Errorf("repo not cloned")
+	}
+
+	logging.Info("Deleting branch %s", branchName)
+
+	r, err := g.repo.Remote("origin")
+	if err != nil {
+		return fmt.Errorf("error getting remote: %w", err)
+	}
+
+	ref := plumbing.NewBranchReferenceName(branchName)
+
+	if err := r.Push(&git.PushOptions{
+		Auth: getGithubAuth(g.accessToken),
+		RefSpecs: []config.RefSpec{
+			config.RefSpec(fmt.Sprintf(":%s", ref.String())),
+		},
+	}); err != nil {
+		return fmt.Errorf("error deleting branch: %w", err)
+	}
+
+	return nil
 }
 
 func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion string) (string, error) {
@@ -184,7 +238,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion string) (string,
 		return "", fmt.Errorf("error getting worktree: %w", err)
 	}
 
-	fmt.Println("Commit and pushing changes to git")
+	logging.Info("Commit and pushing changes to git")
 
 	if _, err := w.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
@@ -219,7 +273,7 @@ Based on:
 - Speakeasy CLI %s https://github.com/speakeasy-api/speakeasy`, releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion)
 
 	if pr != nil {
-		fmt.Println("Updating PR")
+		logging.Info("Updating PR")
 
 		pr.Body = github.String(body)
 		pr, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), pr.GetNumber(), pr)
@@ -227,13 +281,15 @@ Based on:
 			return fmt.Errorf("failed to update PR: %w", err)
 		}
 	} else {
-		fmt.Println("Creating PR")
+		logging.Info("Creating PR")
+
+		fmt.Println(body, branchName, getPRTitle(), environment.GetRef())
 
 		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
 			Title:               github.String(getPRTitle()),
 			Body:                github.String(body),
 			Head:                github.String(branchName),
-			Base:                github.String(os.Getenv("GITHUB_REF")),
+			Base:                github.String(environment.GetRef()),
 			MaintainerCanModify: github.Bool(true),
 		})
 		if err != nil {
@@ -246,9 +302,50 @@ Based on:
 		url = *pr.HTMLURL
 	}
 
-	fmt.Printf("PR: %s\n", url)
+	logging.Info("PR: %s", url)
 
 	return nil
+}
+
+func (g *Git) MergeBranch(branchName string) (string, error) {
+	if g.repo == nil {
+		return "", fmt.Errorf("repo not cloned")
+	}
+
+	w, err := g.repo.Worktree()
+	if err != nil {
+		return "", fmt.Errorf("error getting worktree: %w", err)
+	}
+
+	logging.Info("Merging branch %s", branchName)
+
+	// Checkout target branch
+	if err := w.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.ReferenceName(environment.GetRef()),
+		Create: false,
+	}); err != nil {
+		return "", fmt.Errorf("error checking out branch: %w", err)
+	}
+
+	output, err := runGitCommand("merge", branchName)
+	if err != nil {
+		return "", fmt.Errorf("error merging branch: %w", err)
+	}
+
+	logging.Debug("Merge output: %s", output)
+
+	headRef, err := g.repo.Head()
+	if err != nil {
+		return "", fmt.Errorf("error getting head ref: %w", err)
+	}
+
+	if err := g.repo.Push(&git.PushOptions{
+		Auth: getGithubAuth(g.accessToken),
+	}); err != nil {
+		return "", fmt.Errorf("error pushing changes: %w", err)
+	}
+
+	return headRef.Hash().String(), nil
 }
 
 func (g *Git) GetLatestTag() (string, error) {
@@ -328,7 +425,7 @@ func (g *Git) GetCommitedFiles() ([]string, error) {
 		files = append(files, change.To.Name)
 	}
 
-	fmt.Printf("Found %d files in commits\n", len(files))
+	logging.Info("Found %d files in commits", len(files))
 
 	return files, nil
 }
@@ -350,4 +447,17 @@ const speakeasyPRTitle = "chore: speakeasy sdk regeneration - "
 
 func getPRTitle() string {
 	return speakeasyPRTitle + environment.GetWorkflowName()
+}
+
+func runGitCommand(args ...string) (string, error) {
+	cmd := exec.Command("git", args...)
+	cmd.Dir = filepath.Join(environment.GetBaseDir(), "repo")
+	var outb, errb bytes.Buffer
+	cmd.Stdout = &outb
+	cmd.Stderr = &errb
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("failed to run git command: %w - %s", err, errb.String())
+	}
+
+	return outb.String(), nil
 }
