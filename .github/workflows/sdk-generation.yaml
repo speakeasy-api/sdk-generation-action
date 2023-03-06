@@ -234,7 +234,7 @@ jobs:
       commit_hash: ${{ steps.finalize.outputs.commit_hash }}
     steps:
       - run: sudo apt install git
-      - id: finalize
+      - id: Finalize
         uses: speakeasy-api/sdk-generation-action@v14
         with:
           github_access_token: ${{ secrets.github_access_token }}
