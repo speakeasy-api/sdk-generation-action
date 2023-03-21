@@ -12,10 +12,11 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 	os.Setenv("GITHUB_REPOSITORY", "test/repo")
 
 	r := releases.ReleasesInfo{
-		ReleaseTitle:     "2023-02-22",
-		DocVersion:       "9.8.7",
-		DocLocation:      "https://example.com",
-		SpeakeasyVersion: "6.6.6",
+		ReleaseTitle:      "2023-02-22",
+		DocVersion:        "9.8.7",
+		DocLocation:       "https://example.com",
+		SpeakeasyVersion:  "6.6.6",
+		GenerationVersion: "v7.7.7",
 		Languages: map[string]releases.LanguageReleaseInfo{
 			"typescript": {
 				PackageName: "@org/package",

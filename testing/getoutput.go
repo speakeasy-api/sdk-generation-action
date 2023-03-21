@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -8,6 +9,9 @@ import (
 )
 
 func main() {
+	outputName := flag.String("output", "", "output name")
+	flag.Parse()
+
 	data, err := os.ReadFile("./output.txt")
 	if err != nil {
 		log.Fatal(err)
@@ -19,7 +23,7 @@ func main() {
 		if len(parts) != 2 {
 			continue
 		}
-		if parts[0] == "branch_name" {
+		if parts[0] == *outputName {
 			fmt.Print(parts[1])
 			break
 		}

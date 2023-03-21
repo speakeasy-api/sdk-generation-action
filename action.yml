@@ -79,6 +79,9 @@ inputs:
   branch_name:
     description: "The name of the branch to finalize, only used for the 'finalize' action step."
     required: false
+  previous_gen_version:
+    description: "The version of the previous generation, only used for the 'finalize' action step."
+    required: false
 outputs:
   python_regenerated:
     description: "true if the Python SDK was regenerated"
@@ -104,6 +107,8 @@ outputs:
     description: "The name of the branch the SDK was generated on"
   commit_hash:
     description: "The commit hash of the merge commit into main if using 'direct' mode"
+  previous_gen_version:
+    description: "The version of the previous generation"
 runs:
   using: "docker"
   image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v14"
@@ -123,3 +128,4 @@ runs:
     - ${{ inputs.mode }}
     - ${{ inputs.action }}
     - ${{ inputs.branch_name }}
+    - ${{ inputs.previous_gen_version }}
