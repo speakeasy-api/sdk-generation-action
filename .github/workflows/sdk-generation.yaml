@@ -100,6 +100,12 @@ on:
       ossrh_password:
         description: The corresponding password for publishing the Java package to the OSSRH URL provided in gen.yml
         required: false
+      pgp_secret:
+        description: The PGP secret key to use for signing the Java package
+        required: false
+      pgp_passphrase:
+        description: The passphrase for the PGP secret key
+        required: false
 
 jobs:
   generate:
@@ -331,6 +337,8 @@ jobs:
         env:
           MAVEN_USERNAME: ${{ secrets.ossrh_username }}
           MAVEN_PASSWORD: ${{ secrets.ossrh_password }}
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.pgp_secret }}
+          ORG_GRADLE_PROJECT_signingPassphrase: ${{ secrets.pgp_passphrase }}
   publish-packagist:
     if: ${{ always() && needs.generate.generate.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
     name: Publish PHP SDK
