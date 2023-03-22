@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
@@ -81,19 +80,9 @@ func Generate() error {
 			}
 		}
 
-		releasesDir := "."
-
-		for _, langInfo := range releaseInfo.Languages {
-			// If we are only generating one language and its not in the root directory we assume this is a multi-sdk repo
-			if len(releaseInfo.Languages) == 1 && langInfo.Path != "." {
-				releasesDir = langInfo.Path
-			}
-		}
-
-		if environment.IsDebugMode() {
-			j, _ := json.Marshal(releaseInfo)
-			logging.Debug("release info: %s", string(j))
-			logging.Debug("releases dir: %s", releasesDir)
+		releasesDir, err := getReleasesDir()
+		if err != nil {
+			return err
 		}
 
 		if err := releases.UpdateReleasesFile(releaseInfo, releasesDir); err != nil {

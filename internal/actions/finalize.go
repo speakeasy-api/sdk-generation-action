@@ -2,10 +2,8 @@ package actions
 
 import (
 	"errors"
-	"os"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
-	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
@@ -88,26 +86,12 @@ func Finalize() error {
 }
 
 func getReleasesInfo() (*releases.ReleasesInfo, error) {
-	// Find releases file
-	langs, err := configuration.GetAndValidateLanguages(false)
+	releasesDir, err := getReleasesDir()
 	if err != nil {
 		return nil, err
 	}
 
-	releasesDir := "."
-	for _, dir := range langs {
-		// If we are only generating one language and its not in the root directory we assume this is a multi-sdk repo
-		if len(langs) == 1 && dir != "." {
-			releasesDir = dir
-		}
-	}
-
-	data, err := os.ReadFile(releases.GetReleasesPath(releasesDir))
-	if err != nil {
-		return nil, err
-	}
-
-	releasesInfo, err := releases.ParseReleases(string(data))
+	releasesInfo, err := releases.GetLastReleaseInfo(releasesDir)
 	if err != nil {
 		return nil, err
 	}
