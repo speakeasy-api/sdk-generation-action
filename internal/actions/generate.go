@@ -55,11 +55,12 @@ func Generate() error {
 		speakeasyVersion := genInfo.SpeakeasyVersion
 
 		releaseInfo := releases.ReleasesInfo{
-			ReleaseTitle:     environment.GetInvokeTime().Format("2006-01-02 15:04:05"),
-			DocVersion:       docVersion,
-			SpeakeasyVersion: speakeasyVersion,
-			DocLocation:      environment.GetOpenAPIDocLocation(),
-			Languages:        map[string]releases.LanguageReleaseInfo{},
+			ReleaseTitle:      environment.GetInvokeTime().Format("2006-01-02 15:04:05"),
+			DocVersion:        docVersion,
+			SpeakeasyVersion:  speakeasyVersion,
+			GenerationVersion: genInfo.GenerationVersion,
+			DocLocation:       environment.GetOpenAPIDocLocation(),
+			Languages:         map[string]releases.LanguageReleaseInfo{},
 		}
 
 		supportedLanguages, err := cli.GetSupportedLanguages()

@@ -18,6 +18,7 @@ type LanguageGenInfo struct {
 
 type GenerationInfo struct {
 	SpeakeasyVersion  string
+	GenerationVersion string
 	OpenAPIDocVersion string
 	Languages         map[string]LanguageGenInfo
 }
@@ -48,9 +49,15 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	generationVersion, err := cli.GetGenerationVersion()
+	if err != nil {
+		return nil, nil, err
+	}
 
 	langGenerated := map[string]bool{}
 	outputs := map[string]string{}
+
+	globalPreviousGenVersion := ""
 
 	for lang, cfg := range genConfigs {
 		dir := langs[lang]
@@ -70,7 +77,31 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 		sdkVersion := langCfg.Version
 
-		newVersion, err := checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion, cfg.Config.Management)
+		// Older versions of the gen.yaml won't have a generation version
+		previousGenVersion := cfg.Config.Management.GenerationVersion
+		if previousGenVersion == "" {
+			previousGenVersion = cfg.Config.Management.SpeakeasyVersion
+		}
+
+		if globalPreviousGenVersion == "" {
+			globalPreviousGenVersion = previousGenVersion
+		} else if previousGenVersion != "" {
+			global, err := version.NewVersion(globalPreviousGenVersion)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			previous, err := version.NewVersion(previousGenVersion)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			if previous.LessThan(global) {
+				globalPreviousGenVersion = previousGenVersion
+			}
+		}
+
+		newVersion, err := checkForChanges(generationVersion, previousGenVersion, docVersion, docChecksum, sdkVersion, cfg.Config.Management)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -130,6 +161,8 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 		}
 	}
 
+	outputs["previous_gen_version"] = globalPreviousGenVersion
+
 	regenerated := false
 
 	langGenInfo := map[string]LanguageGenInfo{}
@@ -140,7 +173,8 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 			mgmtConfig := cfg.Config.Management
 
-			mgmtConfig.SpeakeasyVersion = speakeasyVersion
+			mgmtConfig.SpeakeasyVersion = speakeasyVersion.String()
+			mgmtConfig.GenerationVersion = generationVersion.String()
 			mgmtConfig.DocVersion = docVersion
 			mgmtConfig.DocChecksum = docChecksum
 			cfg.Config.Management = mgmtConfig
@@ -172,7 +206,8 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 	if regenerated {
 		genInfo = &GenerationInfo{
-			SpeakeasyVersion:  speakeasyVersion,
+			SpeakeasyVersion:  speakeasyVersion.String(),
+			GenerationVersion: generationVersion.String(),
 			OpenAPIDocVersion: docVersion,
 			Languages:         langGenInfo,
 		}
@@ -181,35 +216,50 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 	return genInfo, outputs, nil
 }
 
-func checkForChanges(speakeasyVersion, docVersion, docChecksum, sdkVersion string, mgmtConfig *config.Management) (string, error) {
+func normalizeGenVersion(v string) (*version.Version, error) {
+	genVersion, err := version.NewVersion(v)
+	if err != nil {
+		return nil, err
+	}
+
+	// To avoid a major version bump to SDKs when this feature is released we need to normalize the major version to 1
+	// The reason for this is that prior to this we were using the speakeasy version which had a major version of 1 while the generation version had a major version of 2
+	// If the generation version is bumped in the future we will just start using that version
+	if genVersion.Segments()[0] == 2 {
+		return version.NewVersion(fmt.Sprintf("%d.%d.%d", 1, genVersion.Segments()[1], genVersion.Segments()[2]))
+	}
+
+	return genVersion, nil
+}
+
+func checkForChanges(generationVersion *version.Version, previousGenVersion, docVersion, docChecksum, sdkVersion string, mgmtConfig *config.Management) (string, error) {
 	force := environment.ForceGeneration()
 
-	if speakeasyVersion != mgmtConfig.SpeakeasyVersion || docVersion != mgmtConfig.DocVersion || docChecksum != mgmtConfig.DocChecksum || force {
+	genVersion, err := normalizeGenVersion(generationVersion.String())
+	if err != nil {
+		return "", err
+	}
+	previousGenerationVersion, err := normalizeGenVersion(previousGenVersion)
+	if err != nil {
+		return "", err
+	}
+
+	if !genVersion.Equal(previousGenerationVersion) || docVersion != mgmtConfig.DocVersion || docChecksum != mgmtConfig.DocChecksum || force {
 		bumpMajor := false
 		bumpMinor := false
 		bumpPatch := false
 
-		if mgmtConfig.SpeakeasyVersion == "" {
+		if previousGenVersion == "" {
 			bumpMinor = true
 		} else {
-			previousSpeakeasyV, err := version.NewVersion(mgmtConfig.SpeakeasyVersion)
-			if err != nil {
-				return "", fmt.Errorf("error parsing config speakeasy version: %w", err)
-			}
-
-			currentSpeakeasyV, err := version.NewVersion(speakeasyVersion)
-			if err != nil {
-				return "", fmt.Errorf("error parsing speakeasy version: %w", err)
-			}
-
-			if currentSpeakeasyV.Segments()[0] > previousSpeakeasyV.Segments()[0] {
-				fmt.Printf("Speakeasy version changed detected: %s > %s\n", mgmtConfig.SpeakeasyVersion, speakeasyVersion)
+			if genVersion.Segments()[0] > previousGenerationVersion.Segments()[0] {
+				fmt.Printf("Generation version changed detected: %s > %s\n", previousGenVersion, generationVersion)
 				bumpMajor = true
-			} else if currentSpeakeasyV.Segments()[1] > previousSpeakeasyV.Segments()[1] {
-				fmt.Printf("Speakeasy version changed detected: %s > %s\n", mgmtConfig.SpeakeasyVersion, speakeasyVersion)
+			} else if genVersion.Segments()[1] > previousGenerationVersion.Segments()[1] {
+				fmt.Printf("Generation version changed detected: %s > %s\n", previousGenVersion, generationVersion)
 				bumpMinor = true
-			} else if currentSpeakeasyV.Segments()[2] > previousSpeakeasyV.Segments()[2] {
-				fmt.Printf("Speakeasy version changed detected: %s > %s\n", mgmtConfig.SpeakeasyVersion, speakeasyVersion)
+			} else if genVersion.Segments()[2] > previousGenerationVersion.Segments()[2] {
+				fmt.Printf("Generation version changed detected: %s > %s\n", previousGenVersion, generationVersion)
 				bumpPatch = true
 			}
 		}

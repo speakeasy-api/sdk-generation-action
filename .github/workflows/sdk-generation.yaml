@@ -26,6 +26,7 @@ on:
             - python # using default output of ./python-client-sdk
             - typescript # using default output of ./typescript-client-sdk
             - java # using default output of ./java-client-sdk
+            - php # using default output of ./php-client-sdk
 
           If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
         required: true
@@ -116,6 +117,7 @@ jobs:
       php_regenerated: ${{ steps.generate.outputs.php_regenerated }}
       php_directory: ${{ steps.generate.outputs.php_directory }}
       branch_name: ${{ steps.generate.outputs.branch_name }}
+      previous_gen_version: ${{ steps.generate.outputs.previous_gen_version }}
     steps:
       - id: generate
         uses: speakeasy-api/sdk-generation-action@v14
@@ -252,6 +254,7 @@ jobs:
           action: finalize
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           branch_name: ${{ needs.generate.outputs.branch_name }}
+          previous_gen_version: ${{ needs.generate.outputs.previous_gen_version }}
   publish-pypi:
     if: ${{ always() && needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' && inputs.mode != 'pr' }}
     name: Publish Python SDK

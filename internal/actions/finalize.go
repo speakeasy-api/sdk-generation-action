@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 
+	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
@@ -38,6 +39,10 @@ func Finalize() error {
 
 	switch environment.GetMode() {
 	case environment.ModePR:
+		if err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
+			return err
+		}
+
 		branchName, pr, err := g.FindExistingPR(branchName)
 		if err != nil {
 			return err
@@ -48,7 +53,7 @@ func Finalize() error {
 			return err
 		}
 
-		if err := g.CreateOrUpdatePR(branchName, *releaseInfo, pr); err != nil {
+		if err := g.CreateOrUpdatePR(branchName, *releaseInfo, environment.GetPreviousGenVersion(), pr); err != nil {
 			return err
 		}
 	case environment.ModeDirect:
