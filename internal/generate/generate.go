@@ -245,6 +245,11 @@ func checkForChanges(generationVersion *version.Version, previousGenVersion, doc
 	if err != nil {
 		return "", err
 	}
+
+	if previousGenVersion == "" {
+		previousGenVersion = "0.0.0"
+	}
+
 	previousGenerationVersion, err := normalizeGenVersion(previousGenVersion)
 	if err != nil {
 		return "", err
