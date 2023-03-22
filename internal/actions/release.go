@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 )
 
@@ -26,12 +27,18 @@ func Release() error {
 		fmt.Printf("Failed to get commited files: %s\n", err.Error())
 	}
 
+	if environment.IsDebugMode() {
+		for _, file := range files {
+			logging.Debug("Found commited file: %s", file)
+		}
+	}
+
 	dir := "."
 
 	for _, file := range files {
 		if strings.Contains(file, "RELEASES.md") {
 			dir = filepath.Dir(file)
-			fmt.Printf("Found RELEASES.md in %s\n", file)
+			logging.Info("Found RELEASES.md in %s\n", dir)
 			break
 		}
 	}

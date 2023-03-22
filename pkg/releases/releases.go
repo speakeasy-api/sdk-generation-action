@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 )
 
 type LanguageReleaseInfo struct {
@@ -80,6 +81,8 @@ Based on:
 func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
 	releasesPath := GetReleasesPath(dir)
 
+	logging.Debug("Updating releases file at %s", releasesPath)
+
 	f, err := os.OpenFile(releasesPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
 		return fmt.Errorf("error opening releases file: %w", err)
@@ -105,6 +108,8 @@ var (
 
 func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
 	releasesPath := GetReleasesPath(dir)
+
+	logging.Debug("Reading releases file at %s", releasesPath)
 
 	data, err := os.ReadFile(releasesPath)
 	if err != nil {

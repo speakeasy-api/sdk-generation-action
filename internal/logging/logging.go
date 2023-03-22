@@ -12,6 +12,6 @@ func Info(msg string, args ...interface{}) {
 
 func Debug(msg string, args ...interface{}) {
 	if environment.IsDebugMode() {
-		fmt.Println("DEBUG: ", fmt.Sprintf(msg, args...))
+		fmt.Println("::debug::", fmt.Sprintf(msg, args...))
 	}
 }
