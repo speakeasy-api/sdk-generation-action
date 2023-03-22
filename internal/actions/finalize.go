@@ -25,7 +25,7 @@ func Finalize() error {
 	success := false
 
 	defer func() {
-		if !success || environment.GetMode() == environment.ModeDirect {
+		if (!success || environment.GetMode() == environment.ModeDirect) && !environment.IsDebugMode() {
 			if err := g.DeleteBranch(branchName); err != nil {
 				logging.Debug("failed to delete branch %s: %v", branchName, err)
 			}
