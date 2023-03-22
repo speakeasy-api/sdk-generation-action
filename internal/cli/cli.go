@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-version"
+	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 )
 
 var ChangeLogVersion = version.Must(version.NewVersion("1.12.7"))
@@ -28,6 +29,8 @@ func GetSpeakeasyVersion() (*version.Version, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	logging.Debug(out)
 
 	r := regexp.MustCompile(`.*?([0-9]+\.[0-9]+\.[0-9]+)$`)
 
@@ -56,6 +59,8 @@ func GetGenerationVersion() (*version.Version, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	logging.Debug(out)
 
 	r := regexp.MustCompile(`^Version:.*?v([0-9]+\.[0-9]+\.[0-9]+)`)
 
