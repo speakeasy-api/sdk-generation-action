@@ -98,16 +98,40 @@ func (g *Git) CheckDirDirty(dir string) (bool, error) {
 	}
 
 	changesFound := false
+	fileChangesFound := false
 
 	for f, s := range status {
 		if strings.Contains(f, "gen.yaml") {
 			continue
 		}
 
-		if strings.HasPrefix(f, cleanedDir) && s.Worktree != git.Unmodified {
-			changesFound = true
-			break
+		if strings.HasPrefix(f, cleanedDir) {
+			switch s.Worktree {
+			case git.Added:
+				fallthrough
+			case git.Deleted:
+				fallthrough
+			case git.Untracked:
+				fileChangesFound = true
+			case git.Modified:
+				fallthrough
+			case git.Renamed:
+				fallthrough
+			case git.Copied:
+				fallthrough
+			case git.UpdatedButUnmerged:
+				changesFound = true
+			case git.Unmodified:
+			}
+
+			if changesFound && fileChangesFound {
+				break
+			}
 		}
+	}
+
+	if fileChangesFound {
+		return true, nil
 	}
 
 	if !changesFound {

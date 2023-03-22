@@ -9,7 +9,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 )
 
-var ChangeLogVersion = version.Must(version.NewVersion("1.12.7"))
+var ChangeLogVersion = version.Must(version.NewVersion("1.14.2"))
 
 func GetSupportedLanguages() ([]string, error) {
 	out, err := runSpeakeasyCommand("generate", "sdk", "--help")
@@ -50,7 +50,7 @@ func GetGenerationVersion() (*version.Version, error) {
 		return nil, err
 	}
 
-	// speakeasy versions before 1.12.7 don't support the generate sdk version command
+	// speakeasy versions before 1.14.2 don't support the generate sdk version command
 	if sv.LessThan(ChangeLogVersion) {
 		return sv, nil
 	}
@@ -80,23 +80,27 @@ func GetChangelog(genVersion, previousGenVersion string) (string, error) {
 		return "", err
 	}
 
-	// speakeasy versions before 1.12.7 don't support the generate sdk changelog command
+	// speakeasy versions before 1.14.2 don't support the generate sdk changelog command
 	if sv.LessThan(ChangeLogVersion) {
 		return "", nil
 	}
 
-	args := []string{
+	args := []string{}
+	startVersionFlag := "-s"
+
+	if previousGenVersion != "" {
+		startVersionFlag = "-t"
+		args = append(args, "-p", "v"+previousGenVersion)
+	}
+
+	args = append([]string{
 		"generate",
 		"sdk",
 		"changelog",
 		"-r",
-		"-t",
+		startVersionFlag,
 		"v" + genVersion,
-	}
-
-	if previousGenVersion != "" {
-		args = append(args, "-p", "v"+previousGenVersion)
-	}
+	}, args...)
 
 	out, err := runSpeakeasyCommand(args...)
 	if err != nil {
