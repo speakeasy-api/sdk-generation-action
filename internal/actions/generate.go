@@ -38,7 +38,7 @@ func Generate() error {
 	}
 	success := false
 	defer func() {
-		if !success {
+		if !success && !environment.IsDebugMode() {
 			if err := g.DeleteBranch(branchName); err != nil {
 				logging.Debug("failed to delete branch %s: %v", branchName, err)
 			}
