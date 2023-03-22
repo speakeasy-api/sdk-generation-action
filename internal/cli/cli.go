@@ -31,7 +31,14 @@ func GetSpeakeasyVersion() (*version.Version, error) {
 
 	r := regexp.MustCompile(`.*?([0-9]+\.[0-9]+\.[0-9]+)$`)
 
-	return version.NewVersion(r.FindStringSubmatch(strings.TrimSpace(out))[1])
+	v := r.FindStringSubmatch(strings.TrimSpace(out))[1]
+
+	ver, err := version.NewVersion(v)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse speakeasy version %s: %w", v, err)
+	}
+
+	return ver, nil
 }
 
 func GetGenerationVersion() (*version.Version, error) {
@@ -52,9 +59,11 @@ func GetGenerationVersion() (*version.Version, error) {
 
 	r := regexp.MustCompile(`^Version:.*?v([0-9]+\.[0-9]+\.[0-9]+)`)
 
-	genVersion, err := version.NewVersion(r.FindStringSubmatch(strings.TrimSpace(out))[1])
+	v := r.FindStringSubmatch(strings.TrimSpace(out))[1]
+
+	genVersion, err := version.NewVersion(v)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse generation version %s: %w", v, err)
 	}
 
 	return genVersion, nil

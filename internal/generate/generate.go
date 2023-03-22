@@ -47,11 +47,11 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 	speakeasyVersion, err := cli.GetSpeakeasyVersion()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to get speakeasy version: %w", err)
 	}
 	generationVersion, err := cli.GetGenerationVersion()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to get generation version: %w", err)
 	}
 
 	langGenerated := map[string]bool{}
@@ -88,12 +88,12 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 		} else if previousGenVersion != "" {
 			global, err := version.NewVersion(globalPreviousGenVersion)
 			if err != nil {
-				return nil, nil, err
+				return nil, nil, fmt.Errorf("failed to parse global previous gen version %s: %w", globalPreviousGenVersion, err)
 			}
 
 			previous, err := version.NewVersion(previousGenVersion)
 			if err != nil {
-				return nil, nil, err
+				return nil, nil, fmt.Errorf("failed to parse previous gen version %s: %w", previousGenVersion, err)
 			}
 
 			if previous.LessThan(global) {
@@ -219,14 +219,20 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 func normalizeGenVersion(v string) (*version.Version, error) {
 	genVersion, err := version.NewVersion(v)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse generation version %s for normalization: %w", v, err)
 	}
 
 	// To avoid a major version bump to SDKs when this feature is released we need to normalize the major version to 1
 	// The reason for this is that prior to this we were using the speakeasy version which had a major version of 1 while the generation version had a major version of 2
 	// If the generation version is bumped in the future we will just start using that version
 	if genVersion.Segments()[0] == 2 {
-		return version.NewVersion(fmt.Sprintf("%d.%d.%d", 1, genVersion.Segments()[1], genVersion.Segments()[2]))
+		v = fmt.Sprintf("%d.%d.%d", 1, genVersion.Segments()[1], genVersion.Segments()[2])
+		genVersion, err := version.NewVersion(v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse normalized generation version %s for normalization: %w", v, err)
+		}
+
+		return genVersion, nil
 	}
 
 	return genVersion, nil
@@ -274,7 +280,7 @@ func checkForChanges(generationVersion *version.Version, previousGenVersion, doc
 			if err == nil {
 				previousDocV, err := version.NewVersion(mgmtConfig.DocVersion)
 				if err != nil {
-					return "", fmt.Errorf("error parsing config openapi version: %w", err)
+					return "", fmt.Errorf("error parsing config openapi version %s: %w", mgmtConfig.DocVersion, err)
 				}
 
 				if currentDocV.Segments()[0] > previousDocV.Segments()[0] {
@@ -312,7 +318,7 @@ func checkForChanges(generationVersion *version.Version, previousGenVersion, doc
 		if sdkVersion != "" {
 			sdkV, err := version.NewVersion(sdkVersion)
 			if err != nil {
-				return "", fmt.Errorf("error parsing sdk version: %w", err)
+				return "", fmt.Errorf("error parsing sdk version %s: %w", sdkVersion, err)
 			}
 
 			major = sdkV.Segments()[0]
