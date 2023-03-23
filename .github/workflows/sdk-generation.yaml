@@ -104,7 +104,7 @@ on:
         description: The GPG secret key to use for signing the Java package
         required: false
       java_gpg_passphrase:
-        description: The passphrase for the PGP secret key
+        description: The passphrase for the GPG secret key
         required: false
 
 jobs:

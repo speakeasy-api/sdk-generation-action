@@ -54,10 +54,10 @@ on:
         description: The corresponding password for publishing the Java package to the OSSRH URL provided in gen.yml
         required: false
       java_gpg_secret_key:
-        description: The PGP secret key to use for signing the Java package
+        description: The GPG secret key to use for signing the Java package
         required: false
       java_passphrase:
-        description: The passphrase for the PGP secret key
+        description: The passphrase for the GPG secret key
         required: false
 
 jobs:
