@@ -111,7 +111,7 @@ outputs:
     description: "The version of the previous generation"
 runs:
   using: "docker"
-  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v14"
+  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v14.2"
   env:
     SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
   args:
