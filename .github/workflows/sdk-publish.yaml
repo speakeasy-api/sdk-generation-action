@@ -71,7 +71,7 @@ jobs:
       php_directory: ${{ steps.release.outputs.php_directory }}
     steps:
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v14.2
+        uses: speakeasy-api/sdk-generation-action@v14
         with:
           github_access_token: ${{ secrets.github_access_token }}
           create_release: ${{ inputs.create_release }}
