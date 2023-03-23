@@ -3,6 +3,7 @@ package generate
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 
 	"github.com/hashicorp/go-version"
 	config "github.com/speakeasy-api/sdk-gen-config"
@@ -119,7 +120,13 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 			fmt.Printf("Generating %s SDK in %s\n", lang, outputDir)
 
-			if err := cli.Generate(docPath, lang, outputDir); err != nil {
+			published := environment.IsLanguagePublished(lang)
+			installationURL := getInstallationURL(lang, dir)
+			if installationURL == "" {
+				published = true // Treat as published if we don't have an installation URL
+			}
+
+			if err := cli.Generate(docPath, lang, outputDir, installationURL, published); err != nil {
 				return nil, nil, err
 			}
 
@@ -349,4 +356,41 @@ func checkForChanges(generationVersion *version.Version, previousGenVersion, doc
 	}
 
 	return "", nil
+}
+
+func getInstallationURL(lang, subdirectory string) string {
+	subdirectory = filepath.Clean(subdirectory)
+
+	switch lang {
+	case "go":
+		base := fmt.Sprintf("%s/%s", environment.GetGithubServerURL(), environment.GetRepo())
+
+		if subdirectory == "." {
+			return base
+		}
+
+		return base + "/" + subdirectory
+	case "typescript":
+		if subdirectory == "." {
+			return fmt.Sprintf("%s/%s", environment.GetGithubServerURL(), environment.GetRepo())
+		} else {
+			return fmt.Sprintf("https://gitpkg.now.sh/%s/%s", environment.GetRepo(), subdirectory)
+		}
+	case "python":
+		base := fmt.Sprintf("%s/%s.git", environment.GetGithubServerURL(), environment.GetRepo())
+
+		if subdirectory == "." {
+			return base
+		}
+
+		return base + "#subdirectory=" + subdirectory
+	case "php":
+		// PHP doesn't support subdirectories
+		if subdirectory == "." {
+			return fmt.Sprintf("%s/%s", environment.GetGithubServerURL(), environment.GetRepo())
+		}
+	}
+
+	// Java doesn't support pulling directly from git
+	return ""
 }

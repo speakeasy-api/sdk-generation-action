@@ -9,7 +9,10 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 )
 
-var ChangeLogVersion = version.Must(version.NewVersion("1.14.2"))
+var (
+	ChangeLogVersion               = version.Must(version.NewVersion("1.14.2"))
+	UnpublishedInstallationVersion = version.Must(version.NewVersion("1.16.0"))
+)
 
 func GetSupportedLanguages() ([]string, error) {
 	out, err := runSpeakeasyCommand("generate", "sdk", "--help")
@@ -110,8 +113,32 @@ func GetChangelog(genVersion, previousGenVersion string) (string, error) {
 	return out, nil
 }
 
-func Generate(docPath, lang, outputDir string) error {
-	out, err := runSpeakeasyCommand("generate", "sdk", "-s", docPath, "-l", lang, "-o", outputDir, "-y")
+func Generate(docPath, lang, outputDir, installationURL string, published bool) error {
+	args := []string{
+		"generate",
+		"sdk",
+		"-s",
+		docPath,
+		"-l",
+		lang,
+		"-o",
+		outputDir,
+		"-y",
+	}
+
+	version, err := GetSpeakeasyVersion()
+	if err != nil {
+		return err
+	}
+
+	if version.GreaterThanOrEqual(UnpublishedInstallationVersion) {
+		args = append(args, "-i", installationURL)
+		if published {
+			args = append(args, "-p")
+		}
+	}
+
+	out, err := runSpeakeasyCommand(args...)
 	if err != nil {
 		return fmt.Errorf("error generating sdk: %w - %s", err, out)
 	}

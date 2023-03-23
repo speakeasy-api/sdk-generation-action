@@ -123,6 +123,7 @@ runs:
     - ${{ inputs.publish_python }}
     - ${{ inputs.publish_typescript }}
     - ${{ inputs.publish_php }}
+    - ${{ inputs.publish_java }}
     - ${{ inputs.openapi_doc_auth_header }}
     - ${{ inputs.openapi_doc_auth_token }}
     - ${{ inputs.mode }}

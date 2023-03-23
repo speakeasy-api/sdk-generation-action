@@ -127,3 +127,11 @@ func GetRef() string {
 func GetPreviousGenVersion() string {
 	return os.Getenv("INPUT_PREVIOUS_GEN_VERSION")
 }
+
+func GetRepo() string {
+	return os.Getenv("GITHUB_REPOSITORY")
+}
+
+func GetGithubServerURL() string {
+	return os.Getenv("GITHUB_SERVER_URL")
+}
