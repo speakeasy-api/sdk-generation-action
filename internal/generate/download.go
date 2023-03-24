@@ -52,9 +52,16 @@ func getOpenAPIFileInfo(openAPIPath string) (string, string, string, error) {
 	if len(errs) > 0 {
 		return "", "", "", fmt.Errorf("failed to build openapi model: %w", errs[0])
 	}
+	if model == nil {
+		return "", "", "", fmt.Errorf("failed to build openapi model: model is nil")
+	}
 
 	hash := md5.Sum(data)
 	checksum := hex.EncodeToString(hash[:])
+	version := "0.0.0"
+	if model.Model.Info != nil {
+		version = model.Model.Info.Version
+	}
 
-	return filePath, checksum, model.Model.Info.Version, nil
+	return filePath, checksum, version, nil
 }
