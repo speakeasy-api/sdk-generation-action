@@ -125,6 +125,7 @@ jobs:
   generate:
     name: Generate SDK
     runs-on: ubuntu-latest
+    needs: validate
     outputs:
       python_regenerated: ${{ steps.generate.outputs.python_regenerated }}
       python_directory: ${{ steps.generate.outputs.python_directory }}
