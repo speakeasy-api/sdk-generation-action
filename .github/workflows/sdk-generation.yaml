@@ -108,6 +108,20 @@ on:
         required: false
 
 jobs:
+  validate:
+    name: Validate OpenAPI Document
+    runs-on: ubuntu-latest
+    steps:
+      - id: validate
+        uses: speakeasy-api/sdk-generation-action@v14
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          openapi_doc_location: ${{ inputs.openapi_doc_location }}
+          openapi_doc_auth_header: ${{ inputs.openapi_doc_auth_header }}
+          openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: validate
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
   generate:
     name: Generate SDK
     runs-on: ubuntu-latest

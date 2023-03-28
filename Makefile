@@ -12,3 +12,6 @@ test-release-mode:
 
 test-release-mode-multi-sdk:
 	./testing/test.sh ./testing/release-mode-multi-sdk.env
+
+test-validate-action:
+	./testing/test.sh ./testing/validate-action.env

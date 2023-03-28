@@ -27,6 +27,8 @@ func main() {
 
 	var err error
 	switch environment.GetAction() {
+	case environment.ActionValidate:
+		err = actions.Validate()
 	case environment.ActionGenerate:
 		err = actions.Generate()
 	case environment.ActionFinalize:

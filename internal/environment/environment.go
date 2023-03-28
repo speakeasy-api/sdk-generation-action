@@ -17,6 +17,7 @@ const (
 type Action string
 
 const (
+	ActionValidate Action = "validate"
 	ActionGenerate Action = "generate"
 	ActionFinalize Action = "finalize"
 	ActionRelease  Action = "release"

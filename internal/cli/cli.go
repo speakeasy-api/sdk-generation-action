@@ -113,6 +113,15 @@ func GetChangelog(genVersion, previousGenVersion string) (string, error) {
 	return out, nil
 }
 
+func Validate(docPath string) error {
+	out, err := runSpeakeasyCommand("validate", "openapi", "-s", docPath)
+	if err != nil {
+		return fmt.Errorf("error validating openapi: %w - %s", err, out)
+	}
+	fmt.Println(out)
+	return nil
+}
+
 func Generate(docPath, lang, outputDir, installationURL string, published bool) error {
 	args := []string{
 		"generate",

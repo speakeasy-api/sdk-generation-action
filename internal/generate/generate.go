@@ -9,6 +9,7 @@ import (
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
+	"github.com/speakeasy-api/sdk-generation-action/internal/document"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 )
 
@@ -34,7 +35,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 		return nil, nil, err
 	}
 
-	docPath, docChecksum, docVersion, err := getOpenAPIFileInfo(environment.GetOpenAPIDocLocation())
+	docPath, docChecksum, docVersion, err := document.GetOpenAPIFileInfo(environment.GetOpenAPIDocLocation())
 	if err != nil {
 		return nil, nil, err
 	}

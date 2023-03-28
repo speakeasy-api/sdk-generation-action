@@ -1,4 +1,4 @@
-package generate
+package document
 
 import (
 	"crypto/md5"
@@ -13,7 +13,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 )
 
-func getOpenAPIFileInfo(openAPIPath string) (string, string, string, error) {
+func GetOpenAPIFileInfo(openAPIPath string) (string, string, string, error) {
 	var filePath string
 
 	baseDir := environment.GetBaseDir()
