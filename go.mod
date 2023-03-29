@@ -40,5 +40,3 @@ require (
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
-
-replace "github.com/speakeasy-api/sdk-gen-config" => "../sdk-gen-config"
