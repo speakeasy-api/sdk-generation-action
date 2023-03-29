@@ -15,12 +15,15 @@ const (
 	securityConfigKey = "secrets"
 )
 
-var securityConfigFieldPrefixToLanguage = map[string]string{
-	"npm":       "typescript",
-	"pypi":      "python",
-	"packagist": "php",
-	"java":      "java",
-	"ossrh":     "java",
+var secretConfigFieldToLanguage = map[string]string{
+	"npm_token":           "typescript",
+	"pypi_token":          "python",
+	"packagist_username":  "php",
+	"packagist_token":     "php",
+	"java_gpg_secret_key": "java",
+	"java_gpg_passphrase": "java",
+	"ossrh_username":      "java",
+	"ossrh_password":      "java",
 }
 
 //go:embed workflows/sdk-generation.yaml
@@ -72,9 +75,9 @@ func GenerateActionSecurityConfig() (*config.SdkGenConfig, error) {
 			securityConfigField.RequiredForPublishing = new(bool)
 			*securityConfigField.RequiredForPublishing = true
 		}
-		prefix := strings.Split(securityConfigField.Name, "_")[0]
-		if _, ok := securityConfigFieldPrefixToLanguage[prefix]; ok {
-			lang := securityConfigFieldPrefixToLanguage[prefix]
+
+		if _, ok := secretConfigFieldToLanguage[securityConfigField.Name]; ok {
+			lang := secretConfigFieldToLanguage[securityConfigField.Name]
 			if sdkGenConfig.SdkGenLanguageConfig == nil {
 				sdkGenConfig.SdkGenLanguageConfig = make(map[string][]config.SdkGenConfigField)
 			}
