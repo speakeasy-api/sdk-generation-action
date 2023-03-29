@@ -6,7 +6,7 @@
   },
   {
     "name": "openapi_doc_location",
-    "validation_regex": "/(^(https?):\\/\\/([\\w\\-]+\\.)+\\w+(\\/.*)?$)?^[\\w.\\-\\/]+$/i.source",
+    "validation_regex": "/^((https?):\\/\\/([\\w\\-]+\\.)+\\w+(\\/.*)?|[\\w.\\-\\/]+)$/i.source",
     "validation_message": "Must be a valid server URL or file path containing letters, numbers, or .-_/ only"
   },
   {

@@ -1,10 +1,5 @@
 [
   {
-    "name": "github_access_token",
-    "validation_regex": "/^[\\w.\\-]+$/.source",
-    "validation_message": "Letters, numbers, or .-_ only"
-  },
-  {
     "name": "pypi_token",
     "validation_regex": "/^[\\w.\\-]+$/.source",
     "validation_message": "Letters, numbers, or .-_ only"
@@ -40,18 +35,14 @@
     "validation_message": "Letters, numbers, or .-_ only"
   },
   {
-    "name": "ossrh_password",
-    "validation_regex": "/^[\\w.\\-]+$/.source",
-    "validation_message": "Letters, numbers, or .-_ only"
+    "name": "ossrh_password"
   },
   {
     "name": "java_gpg_secret_key",
-    "validation_regex": "/^[\\w.\\-]+$/.source",
-    "validation_message": "Letters, numbers, or .-_ only"
+    "validation_regex": "/^[\\w.\\-\\t \\r\\n]+$/.source",
+    "validation_message": "Letters, numbers, tabs, spaces, newlines, or .-_ only"
   },
   {
-    "name": "java_gpg_passphrase",
-    "validation_regex": "/^[\\w.\\-]+$/.source",
-    "validation_message": "Letters, numbers, or .-_ only"
+    "name": "java_gpg_passphrase"
   }
 ]
