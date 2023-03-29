@@ -40,13 +40,17 @@ func GenerateActionInputsConfig() (*config.SdkGenConfig, error) {
 
 	for _, inputConfigField := range inputConfigFields {
 		if strings.Contains(inputConfigField.Name, publishIdentifier) || inputConfigField.Name == "create_release" {
+			inputConfigField.RequiredForPublishing = new(bool)
 			*inputConfigField.RequiredForPublishing = true
 			if strings.Contains(inputConfigField.Name, publishIdentifier) {
 				lang := strings.Split(inputConfigField.Name, "_")[1]
-				sdkGenConfig.SdkGenLanguageConfig[lang] = append(sdkGenConfig.SdkGenLanguageConfig[lang], inputConfigField)
+				if sdkGenConfig.SdkGenLanguageConfig == nil {
+					sdkGenConfig.SdkGenLanguageConfig = make(map[string][]config.SdkGenConfigField)
+				}
+				sdkGenConfig.SdkGenLanguageConfig[lang] = append(sdkGenConfig.SdkGenLanguageConfig[lang], *inputConfigField)
 			}
 		} else {
-			sdkGenConfig.SdkGenCommonConfig = append(sdkGenConfig.SdkGenCommonConfig, inputConfigField)
+			sdkGenConfig.SdkGenCommonConfig = append(sdkGenConfig.SdkGenCommonConfig, *inputConfigField)
 		}
 	}
 
@@ -63,21 +67,25 @@ func GenerateActionSecurityConfig() (*config.SdkGenConfig, error) {
 
 	for _, securityConfigField := range securityConfigFields {
 		if securityConfigField.Name != "openapi_doc_auth_token" {
+			securityConfigField.RequiredForPublishing = new(bool)
 			*securityConfigField.RequiredForPublishing = true
 		}
 		prefix := strings.Split(securityConfigField.Name, "_")[0]
 		if _, ok := securityConfigFieldPrefixToLanguage[prefix]; ok {
 			lang := securityConfigFieldPrefixToLanguage[prefix]
-			sdkGenConfig.SdkGenLanguageConfig[lang] = append(sdkGenConfig.SdkGenLanguageConfig[lang], securityConfigField)
+			if sdkGenConfig.SdkGenLanguageConfig == nil {
+				sdkGenConfig.SdkGenLanguageConfig = make(map[string][]config.SdkGenConfigField)
+			}
+			sdkGenConfig.SdkGenLanguageConfig[lang] = append(sdkGenConfig.SdkGenLanguageConfig[lang], *securityConfigField)
 		} else {
-			sdkGenConfig.SdkGenCommonConfig = append(sdkGenConfig.SdkGenCommonConfig, securityConfigField)
+			sdkGenConfig.SdkGenCommonConfig = append(sdkGenConfig.SdkGenCommonConfig, *securityConfigField)
 		}
 	}
 
 	return &sdkGenConfig, nil
 }
 
-func generateConfigFieldsFromGenAction(security bool) ([]config.SdkGenConfigField, error) {
+func generateConfigFieldsFromGenAction(security bool) ([]*config.SdkGenConfigField, error) {
 	configKey := "inputs"
 	configFile := actionInputsConfig
 
@@ -91,25 +99,31 @@ func generateConfigFieldsFromGenAction(security bool) ([]config.SdkGenConfigFiel
 		return nil, fmt.Errorf("failed to parse generation action yaml: %w", err)
 	}
 
-	var configFields []config.SdkGenConfigField
+	var configFields []*config.SdkGenConfigField
+	if err := json.Unmarshal([]byte(configFile), &configFields); err != nil {
+		return nil, fmt.Errorf("failed to parse action config json: %w", err)
+	}
 
-	for _, configVal := range actionConfigMap["on"].(map[string]interface{})["workflow_call"].(map[string]interface{})[configKey].(map[string]interface{}) {
-		sdkGenConfigEntry := config.SdkGenConfigField{}
-		if err := json.Unmarshal([]byte(configFile), &sdkGenConfigEntry); err != nil {
-			return nil, fmt.Errorf("failed to parse action config json: , err: %w", err)
+	for configName, configVal := range actionConfigMap["on"].(map[string]interface{})["workflow_call"].(map[string]interface{})[configKey].(map[string]interface{}) {
+		sdkGenConfigEntry := &config.SdkGenConfigField{}
+		for _, configField := range configFields {
+			if configField.Name == configName {
+				sdkGenConfigEntry = configField
+			}
 		}
 
 		for configFieldKey, configFieldVal := range configVal.(map[string]interface{}) {
 			switch configFieldKey {
 			case "description":
+				sdkGenConfigEntry.Description = new(string)
 				*sdkGenConfigEntry.Description = configFieldVal.(string)
 			case "required":
 				sdkGenConfigEntry.Required = configFieldVal.(bool)
 			case "default":
+				sdkGenConfigEntry.DefaultValue = new(string)
 				*sdkGenConfigEntry.DefaultValue = configFieldVal.(string)
 			}
 		}
-		configFields = append(configFields, sdkGenConfigEntry)
 	}
 
 	return configFields, nil
