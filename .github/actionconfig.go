@@ -11,6 +11,8 @@ import (
 
 const (
 	publishIdentifier = "publish_"
+	inputConfigKey    = "inputs"
+	securityConfigKey = "secrets"
 )
 
 var securityConfigFieldPrefixToLanguage = map[string]string{
@@ -86,11 +88,11 @@ func GenerateActionSecurityConfig() (*config.SdkGenConfig, error) {
 }
 
 func generateConfigFieldsFromGenAction(security bool) ([]*config.SdkGenConfigField, error) {
-	configKey := "inputs"
+	configKey := inputConfigKey
 	configFile := actionInputsConfig
 
 	if security {
-		configKey = "security"
+		configKey = securityConfigKey
 		configFile = actionSecurityConfig
 	}
 
