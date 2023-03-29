@@ -1,4 +1,4 @@
-package main
+package actionconfig
 
 import (
 	_ "embed"
@@ -21,7 +21,7 @@ var securityConfigFieldPrefixToLanguage = map[string]string{
 	"ossrh":     "java",
 }
 
-//go:embed .github/workflows/sdk-generation.yaml
+//go:embed workflows/sdk-generation.yaml
 var genActionYml string
 
 //go:embed action-inputs-config.json
