@@ -1,0 +1,57 @@
+[
+  {
+    "name": "github_access_token",
+    "validationRegex": "/^[\\w.\\-]+$/.source",
+    "validationMessage": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "pypi_token",
+    "validationRegex": "/^[\\w.\\-]+$/.source",
+    "validationMessage": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "npm_token",
+    "validationRegex": "/^[\\w.\\-]+$/.source",
+    "validationMessage": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "packagist_username",
+    "validationRegex": "/^[\\w.\\-]+$/.source",
+    "validationMessage": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "packagist_token",
+    "validationRegex": "/^[\\w.\\-]+$/.source",
+    "validationMessage": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "openapi_doc_auth_token",
+    "validationRegex": "/^[\\w.\\-]+$/.source",
+    "validationMessage": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "speakeasy_api_key",
+    "validationRegex": "/^[\\w.\\-]+$/.source",
+    "validationMessage": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "ossrh_username",
+    "validationRegex": "/^[\\w.\\-]+$/.source",
+    "validationMessage": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "ossrh_password",
+    "validationRegex": "/^[\\w.\\-]+$/.source",
+    "validationMessage": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "java_gpg_secret_key",
+    "validationRegex": "/^[\\w.\\-]+$/.source",
+    "validationMessage": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "java_gpg_passphrase",
+    "validationRegex": "/^[\\w.\\-]+$/.source",
+    "validationMessage": "Letters, numbers, or .-_ only"
+  }
+]
