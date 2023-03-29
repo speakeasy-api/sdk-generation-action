@@ -125,8 +125,7 @@ func generateConfigFieldsFromGenAction(security bool) ([]*config.SdkGenConfigFie
 			case "required":
 				sdkGenConfigEntry.Required = configFieldVal.(bool)
 			case "default":
-				sdkGenConfigEntry.DefaultValue = new(string)
-				*sdkGenConfigEntry.DefaultValue = configFieldVal.(string)
+				sdkGenConfigEntry.DefaultValue = configFieldVal
 			}
 		}
 	}
