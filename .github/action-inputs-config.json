@@ -1,5 +1,10 @@
 [
   {
+    "name": "mode",
+    "validation_regex": "/^(direct|pr)$/.source",
+    "validation_message": "Must be `direct` or `pr`"
+  },
+  {
     "name": "speakeasy_version",
     "validation_regex": "/^[\\w.\\-]+$/.source",
     "validation_message": "Letters, numbers, or .-_ only"
