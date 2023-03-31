@@ -1,0 +1,47 @@
+[
+  {
+    "name": "mode",
+    "validation_regex": "/^(direct|pr)$/.source",
+    "validation_message": "Must be `direct` or `pr`"
+  },
+  {
+    "name": "speakeasy_version",
+    "validation_regex": "/^[\\w.\\-]+$/.source",
+    "validation_message": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "openapi_doc_location",
+    "validation_regex": "/^((https?):\\/\\/([\\w\\-]+\\.)+\\w+(\\/.*)?|[\\w.\\-\\/]+)$/i.source",
+    "validation_message": "Must be a valid server URL or file path containing letters, numbers, or .-_/ only"
+  },
+  {
+    "name": "openapi_doc_auth_header",
+    "validation_regex": "/^[A-Za-z\\-]+$/.source",
+    "validation_message": "Letters or - only"
+  },
+  {
+    "name": "create_release",
+    "validation_regex": "/^(true|false)$/.source",
+    "validation_message": "Must be `true` or `false`"
+  },
+  {
+    "name": "publish_python",
+    "validation_regex": "/^(true|false)$/.source",
+    "validation_message": "Must be `true` or `false`"
+  },
+  {
+    "name": "publish_typescript",
+    "validation_regex": "/^(true|false)$/.source",
+    "validation_message": "Must be `true` or `false`"
+  },
+  {
+    "name": "publish_java",
+    "validation_regex": "/^(true|false)$/.source",
+    "validation_message": "Must be `true` or `false`"
+  },
+  {
+    "name": "publish_php",
+    "validation_regex": "/^(true|false)$/.source",
+    "validation_message": "Must be `true` or `false`"
+  }
+]

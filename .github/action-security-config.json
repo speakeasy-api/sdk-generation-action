@@ -1,0 +1,48 @@
+[
+  {
+    "name": "pypi_token",
+    "validation_regex": "/^[\\w.\\-]+$/.source",
+    "validation_message": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "npm_token",
+    "validation_regex": "/^[\\w.\\-]+$/.source",
+    "validation_message": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "packagist_username",
+    "validation_regex": "/^[\\w.\\-]+$/.source",
+    "validation_message": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "packagist_token",
+    "validation_regex": "/^[\\w.\\-]+$/.source",
+    "validation_message": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "openapi_doc_auth_token",
+    "validation_regex": "/^[\\w.\\-]+$/.source",
+    "validation_message": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "speakeasy_api_key",
+    "validation_regex": "/^[\\w.\\-]+$/.source",
+    "validation_message": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "ossrh_username",
+    "validation_regex": "/^[\\w.\\-]+$/.source",
+    "validation_message": "Letters, numbers, or .-_ only"
+  },
+  {
+    "name": "ossrh_password"
+  },
+  {
+    "name": "java_gpg_secret_key",
+    "validation_regex": "/^[\\w.\\-\\t \\r\\n]+$/.source",
+    "validation_message": "Letters, numbers, tabs, spaces, newlines, or .-_ only"
+  },
+  {
+    "name": "java_gpg_passphrase"
+  }
+]
