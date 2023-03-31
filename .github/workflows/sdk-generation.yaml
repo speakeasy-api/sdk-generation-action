@@ -221,7 +221,7 @@ jobs:
         with:
           node-version: "16.x"
           registry-url: "https://registry.npmjs.org"
-      - run: npm ci --prefer-offline --no-audit && tsc --noEmit --skipLibCheck
+      - run: npm ci --prefer-offline --no-audit && tsc --noEmit --skipLibCheck && npx eslint --max-warnings=0 src/**
         working-directory: ${{ needs.generate.outputs.typescript_directory }}
   compile-php:
     if: ${{ needs.generate.outputs.php_regenerated == 'true' }}
