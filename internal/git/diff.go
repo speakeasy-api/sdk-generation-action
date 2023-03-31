@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"regexp"
 	"strings"
 )
@@ -13,6 +14,10 @@ var (
 )
 
 func IsGitDiffSignificant(diff string) bool {
+	if environment.ForceGeneration() {
+		return true
+	}
+
 	diffs := fileBoundaryRegex.Split(diff, -1)
 
 	significantChanges := false
