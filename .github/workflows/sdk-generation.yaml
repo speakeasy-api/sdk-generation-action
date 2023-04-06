@@ -1,5 +1,9 @@
 name: Speakeasy SDK Generation Workflow
-
+permissions:
+  checks: write
+  contents: write
+  pull-requests: write
+  statuses: write
 on:
   workflow_call:
     inputs:
