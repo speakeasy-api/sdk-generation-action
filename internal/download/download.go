@@ -26,6 +26,19 @@ func DownloadFile(url string, file string, header string, token string) (string,
 	}
 	defer res.Body.Close()
 
+	switch res.StatusCode {
+	case 204:
+		fallthrough
+	case 404:
+		return "", fmt.Errorf("file not found")
+	case 401:
+		return "", fmt.Errorf("unauthorized, please ensure openapi_doc_auth_header and openapi_doc_auth_token inputs are set correctly and a valid token has been provided")
+	default:
+		if res.StatusCode/100 != 2 {
+			return "", fmt.Errorf("failed to download file: %s", res.Status)
+		}
+	}
+
 	out, err := os.CreateTemp(os.TempDir(), file)
 	if err != nil {
 		return "", fmt.Errorf("failed to create temp file for download: %w", err)
