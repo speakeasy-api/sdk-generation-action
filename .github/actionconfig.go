@@ -76,8 +76,7 @@ func GenerateActionSecurityConfig() (*config.SdkGenConfig, error) {
 			*securityConfigField.RequiredForPublishing = true
 		}
 
-		if _, ok := secretConfigFieldToLanguage[securityConfigField.Name]; ok {
-			lang := secretConfigFieldToLanguage[securityConfigField.Name]
+		if lang, ok := secretConfigFieldToLanguage[securityConfigField.Name]; ok {
 			if sdkGenConfig.SdkGenLanguageConfig == nil {
 				sdkGenConfig.SdkGenLanguageConfig = make(map[string][]config.SdkGenConfigField)
 			}
