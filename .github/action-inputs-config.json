@@ -2,12 +2,16 @@
   {
     "name": "mode",
     "validation_regex": "/^(direct|pr)$/.source",
-    "validation_message": "Must be `direct` or `pr`"
+    "validation_message": "Must be `direct` or `pr`",
+    "default_value": "pr",
+    "required": true
   },
   {
     "name": "speakeasy_version",
     "validation_regex": "/^[\\w.\\-]+$/.source",
-    "validation_message": "Letters, numbers, or .-_ only"
+    "validation_message": "Letters, numbers, or .-_ only",
+    "default_value": "latest",
+    "required": true
   },
   {
     "name": "openapi_doc_location",
@@ -21,27 +25,27 @@
   },
   {
     "name": "create_release",
-    "validation_regex": "/^(true|false)$/.source",
-    "validation_message": "Must be `true` or `false`"
+    "default_value": false,
+    "required": true
   },
   {
     "name": "publish_python",
-    "validation_regex": "/^(true|false)$/.source",
-    "validation_message": "Must be `true` or `false`"
+    "default_value": false,
+    "required": true
   },
   {
     "name": "publish_typescript",
-    "validation_regex": "/^(true|false)$/.source",
-    "validation_message": "Must be `true` or `false`"
+    "default_value": false,
+    "required": true
   },
   {
     "name": "publish_java",
-    "validation_regex": "/^(true|false)$/.source",
-    "validation_message": "Must be `true` or `false`"
+    "default_value": false,
+    "required": true
   },
   {
     "name": "publish_php",
-    "validation_regex": "/^(true|false)$/.source",
-    "validation_message": "Must be `true` or `false`"
+    "default_value": false,
+    "required": true
   }
 ]
