@@ -73,6 +73,10 @@ func GetOpenAPIDocLocation() string {
 	return os.Getenv("INPUT_OPENAPI_DOC_LOCATION")
 }
 
+func GetOpenAPIDocs() string {
+	return os.Getenv("INPUT_OPENAPI_DOCS")
+}
+
 func GetLanguages() string {
 	return os.Getenv("INPUT_LANGUAGES")
 }

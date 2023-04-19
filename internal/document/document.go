@@ -9,32 +9,41 @@ import (
 	"path/filepath"
 
 	"github.com/pb33f/libopenapi"
+	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/download"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"gopkg.in/yaml.v3"
 )
 
-func GetOpenAPIFileInfo(openAPIPath string) (string, string, string, error) {
-	var filePath string
+type file struct {
+	Location string `yaml:"location"`
+	Header   string `yaml:"auth_header"`
+	Token    string `yaml:"auth_token"`
+}
 
-	baseDir := environment.GetBaseDir()
+func GetOpenAPIFileInfo() (string, string, string, error) {
+	files, err := getFiles()
+	if err != nil {
+		return "", "", "", err
+	}
 
-	localPath := filepath.Join(baseDir, "repo", openAPIPath)
+	if len(files) > 1 && !cli.IsAtLeastVersion(cli.MergeVersion) {
+		return "", "", "", fmt.Errorf("multiple openapi files are only supported in speakeasy version %s or higher", cli.MergeVersion.String())
+	}
 
-	if _, err := os.Stat(localPath); err == nil {
-		fmt.Println("Using local OpenAPI file: ", localPath)
+	filePaths, err := resolveFiles(files)
+	if err != nil {
+		return "", "", "", err
+	}
 
-		filePath = localPath
+	filePath := ""
+
+	if len(filePaths) == 1 {
+		filePath = filePaths[0]
 	} else {
-		u, err := url.Parse(openAPIPath)
+		filePath, err = mergeFiles(filePaths)
 		if err != nil {
-			return "", "", "", fmt.Errorf("failed to parse openapi url: %w", err)
-		}
-
-		fmt.Println("Downloading openapi file from: ", u.String())
-
-		filePath, err = download.DownloadFile(u.String(), "openapi", environment.GetOpenAPIDocAuthHeader(), environment.GetOpenAPIDocAuthToken())
-		if err != nil {
-			return "", "", "", fmt.Errorf("failed to download openapi file: %w", err)
+			return "", "", "", err
 		}
 	}
 
@@ -64,4 +73,73 @@ func GetOpenAPIFileInfo(openAPIPath string) (string, string, string, error) {
 	}
 
 	return filePath, checksum, version, nil
+}
+
+func mergeFiles(files []string) (string, error) {
+	outPath := filepath.Join(os.TempDir(), "openapi_merged")
+
+	if err := cli.MergeDocuments(files, outPath); err != nil {
+		return "", fmt.Errorf("failed to merge openapi files: %w", err)
+	}
+
+	return outPath, nil
+}
+
+func resolveFiles(files []file) ([]string, error) {
+	baseDir := environment.GetBaseDir()
+
+	outFiles := []string{}
+
+	for i, file := range files {
+		localPath := filepath.Join(baseDir, "repo", file.Location)
+
+		if _, err := os.Stat(localPath); err == nil {
+			fmt.Println("Found local OpenAPI file: ", localPath)
+
+			outFiles = append(outFiles, localPath)
+		} else {
+			u, err := url.Parse(file.Location)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse openapi url: %w", err)
+			}
+
+			fmt.Println("Downloading openapi file from: ", u.String())
+
+			filePath, err := download.DownloadFile(u.String(), fmt.Sprintf("openapi_%d", i), file.Header, file.Token)
+			if err != nil {
+				return nil, fmt.Errorf("failed to download openapi file: %w", err)
+			}
+
+			outFiles = append(outFiles, filePath)
+		}
+	}
+
+	return outFiles, nil
+}
+
+func getFiles() ([]file, error) {
+	docsYaml := environment.GetOpenAPIDocs()
+
+	var files []file
+	if err := yaml.Unmarshal([]byte(docsYaml), &files); err != nil {
+		return nil, fmt.Errorf("failed to parse openapi_docs input: %w", err)
+	}
+
+	if len(files) > 0 {
+		return files, nil
+	}
+
+	// TODO below inputs are deprecated and should be removed in the future
+	fileLoc := environment.GetOpenAPIDocLocation()
+	if fileLoc == "" {
+		return nil, fmt.Errorf("no openapi files found")
+	}
+
+	return []file{
+		{
+			Location: fileLoc,
+			Header:   environment.GetOpenAPIDocAuthHeader(),
+			Token:    environment.GetOpenAPIDocAuthToken(),
+		},
+	}, nil
 }

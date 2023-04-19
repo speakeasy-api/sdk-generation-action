@@ -35,29 +35,31 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 		return nil, nil, err
 	}
 
-	docPath, docChecksum, docVersion, err := document.GetOpenAPIFileInfo(environment.GetOpenAPIDocLocation())
+	outputs := map[string]string{}
+
+	docPath, docChecksum, docVersion, err := document.GetOpenAPIFileInfo()
 	if err != nil {
 		return nil, nil, err
 	}
+	outputs["openapi_doc"] = docPath
 
 	baseDir := environment.GetBaseDir()
 
 	genConfigs, err := configuration.LoadGeneratorConfigs(baseDir, langs)
 	if err != nil {
-		return nil, nil, err
+		return nil, outputs, err
 	}
 
 	speakeasyVersion, err := cli.GetSpeakeasyVersion()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get speakeasy version: %w", err)
+		return nil, outputs, fmt.Errorf("failed to get speakeasy version: %w", err)
 	}
 	generationVersion, err := cli.GetGenerationVersion()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get generation version: %w", err)
+		return nil, outputs, fmt.Errorf("failed to get generation version: %w", err)
 	}
 
 	langGenerated := map[string]bool{}
-	outputs := map[string]string{}
 
 	globalPreviousGenVersion := ""
 
@@ -90,12 +92,12 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 		} else if previousGenVersion != "" {
 			global, err := version.NewVersion(globalPreviousGenVersion)
 			if err != nil {
-				return nil, nil, fmt.Errorf("failed to parse global previous gen version %s: %w", globalPreviousGenVersion, err)
+				return nil, outputs, fmt.Errorf("failed to parse global previous gen version %s: %w", globalPreviousGenVersion, err)
 			}
 
 			previous, err := version.NewVersion(previousGenVersion)
 			if err != nil {
-				return nil, nil, fmt.Errorf("failed to parse previous gen version %s: %w", previousGenVersion, err)
+				return nil, outputs, fmt.Errorf("failed to parse previous gen version %s: %w", previousGenVersion, err)
 			}
 
 			if previous.LessThan(global) {
@@ -105,7 +107,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 		newVersion, err := checkForChanges(generationVersion, previousGenVersion, docVersion, docChecksum, sdkVersion, cfg.Config.Management)
 		if err != nil {
-			return nil, nil, err
+			return nil, outputs, err
 		}
 
 		if newVersion != "" {
@@ -116,7 +118,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 			cfg.Config.Languages[lang] = langCfg
 
 			if err := config.Save(cfg.ConfigDir, cfg.Config); err != nil {
-				return nil, nil, err
+				return nil, outputs, err
 			}
 
 			fmt.Printf("Generating %s SDK in %s\n", lang, outputDir)
@@ -128,13 +130,13 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 			}
 
 			if err := cli.Generate(docPath, lang, outputDir, installationURL, published); err != nil {
-				return nil, nil, err
+				return nil, outputs, err
 			}
 
 			// Load the config again as it could have been modified by the generator
 			loadedCfg, err := config.Load(outputDir)
 			if err != nil {
-				return nil, nil, err
+				return nil, outputs, err
 			}
 
 			cfg.Config = loadedCfg
@@ -149,7 +151,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 			dirty, err := g.CheckDirDirty(dir)
 			if err != nil {
-				return nil, nil, err
+				return nil, outputs, err
 			}
 
 			if dirty {
@@ -159,7 +161,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 				cfg.Config.Languages[lang] = langCfg
 
 				if err := config.Save(cfg.ConfigDir, cfg.Config); err != nil {
-					return nil, nil, err
+					return nil, outputs, err
 				}
 
 				fmt.Printf("Regenerating %s SDK did not result in any changes\n", lang)
@@ -188,7 +190,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 			cfg.Config.Management = mgmtConfig
 
 			if err := config.Save(cfg.ConfigDir, cfg.Config); err != nil {
-				return nil, nil, err
+				return nil, outputs, err
 			}
 
 			langCfg := cfg.Config.Languages[lang]

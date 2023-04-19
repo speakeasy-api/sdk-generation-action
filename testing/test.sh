@@ -10,7 +10,12 @@ function run_action() {
 
 # Default environment variables not subject to change by different tests
 export INPUT_DEBUG=true
-export INPUT_OPENAPI_DOC_LOCATION="https://docs.speakeasyapi.dev/openapi.yaml"
+#export INPUT_OPENAPI_DOC_LOCATION="https://docs.speakeasyapi.dev/openapi.yaml" # Uncomment to test deprecated input and comment out INPUT_OPENAPI_DOCS
+export INPUT_OPENAPI_DOCS=$(cat <<EOF
+- location: https://docs.speakeasyapi.dev/openapi.yaml
+- location: https://docs.speakeasyapi.dev/openapi.yaml
+EOF
+)
 export INPUT_GITHUB_ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
 export GITHUB_SERVER_URL="https://github.com"
 export GITHUB_REPOSITORY_OWNER="speakeasy-api"

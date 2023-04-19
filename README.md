@@ -42,7 +42,8 @@ jobs:
     uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-generation.yaml@v14 # Import the sdk generation workflow which will handle the generation of the SDKs and publishing to the package managers in 'direct' mode.
     with:
       speakeasy_version: latest
-      openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
+      openapi_docs: |
+        - location: https://docs.speakeasyapi.dev/openapi.yaml
       languages: |-
         - python
       publish_python: true # Tells the generation action to generate artifacts for publishing to PyPi
@@ -101,7 +102,8 @@ jobs:
     uses: speakeasy-api/sdk-generation-action@v14 # Use the action directly which will handle the validation of the OpenAPI doc
     with:
       speakeasy_version: latest
-      openapi_doc_location: https://docs.speakeasyapi.dev/openapi.yaml
+      openapi_docs: |
+        - location: https://docs.speakeasyapi.dev/openapi.yaml
       speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
       github_access_token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -199,17 +201,24 @@ The mode to run the action in, valid options are `direct` or `pr`, defaults to `
 
 The version of the Speakeasy CLI to use or `"latest"`. Default `"latest"`.
 
-### `openapi_doc_location`
+### `openapi_docs`
 
-**Required** The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document.
+**Required** A yaml string containing a list of OpenAPI documents to use, if multiple documents are provided they will be merged together, prior to generation.
 
-### `openapi_doc_auth_header`
+If the document lives within the repo a relative path can be provided, if the document is hosted publicly a URL can be provided.
 
-The auth header to use when fetching the OpenAPI document if it is not publicly hosted. For example `Authorization`. If using a private speakeasy hosted document use `x-api-key`. This header will be populated with the `openapi_doc_auth_token` provided.
+If the document is hosted privately a URL can be provided along with an `auth_header` and `auth_token` to use when fetching the document.
+If using a private speakeasy hosted document use `x-api-key` as the `auth_header` value.
 
-### `openapi_doc_auth_token`
+Example:
 
-The auth token to use when fetching the OpenAPI document if it is not publicly hosted. For example `Bearer <token>` or `<token>`.
+```yaml
+openapi_docs: |
+  - location: ./openapi.yaml
+  - location: https://example.com/openapi.json
+    auth_header: Authorization
+    auth_token: Bearer <token>
+```
 
 ### `github_access_token`
 

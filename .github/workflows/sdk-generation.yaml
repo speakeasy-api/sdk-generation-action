@@ -12,10 +12,29 @@ on:
         description: The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document
         required: true
         type: string
+        deprecationMessage: "This input is deprecated, please use the `openapi_docs` input instead."
       openapi_doc_auth_header:
         description: |-
           The auth header to use when fetching the OpenAPI document if it is not publicly hosted. For example `Authorization`.
           If using a private speakeasy hosted document use `x-api-key`. This header will be populated with the openapi_doc_auth_token provided.
+        required: false
+        type: string
+        deprecationMessage: "This input is deprecated, please use the `openapi_docs` input instead."
+      openapi_docs:
+        description: |-
+          A yaml string containing a list of OpenAPI documents to use, if multiple documents are provided they will be merged together, prior to generation.
+
+          If the document lives within the repo a relative path can be provided, if the document is hosted publicly a URL can be provided.
+
+          If the document is hosted privately a URL can be provided along with an auth_header and auth_token to use when fetching the document.
+          If using a private speakeasy hosted document use `x-api-key` as the `auth_header` value.
+
+          For example:
+          openapi_docs: |
+            - location: ./openapi.yaml
+            - location: https://example.com/openapi.json
+              auth_header: Authorization
+              auth_token: Bearer <token>
         required: false
         type: string
       languages:
@@ -119,6 +138,7 @@ jobs:
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
           openapi_doc_auth_header: ${{ inputs.openapi_doc_auth_header }}
           openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
+          openapi_docs: ${{ inputs.openapi_docs }}
           github_access_token: ${{ secrets.github_access_token }}
           action: validate
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
@@ -147,6 +167,7 @@ jobs:
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
           openapi_doc_auth_header: ${{ inputs.openapi_doc_auth_header }}
           openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
+          openapi_docs: ${{ inputs.openapi_docs }}
           github_access_token: ${{ secrets.github_access_token }}
           languages: ${{ inputs.languages }}
           create_release: ${{ inputs.create_release }}
@@ -158,6 +179,10 @@ jobs:
           action: generate
           force: ${{ inputs.force }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: openapi-doc
+          path: ${{ steps.generate.outputs.openapi_doc }}
   compile-go:
     if: ${{ needs.generate.outputs.go_regenerated == 'true' }}
     name: Compile Go SDK
