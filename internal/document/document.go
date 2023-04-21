@@ -76,7 +76,11 @@ func GetOpenAPIFileInfo() (string, string, string, error) {
 }
 
 func mergeFiles(files []string) (string, error) {
-	outPath := filepath.Join(os.TempDir(), "openapi_merged")
+	outPath := filepath.Join(environment.GetWorkspace(), "openapi", "openapi_merged")
+
+	if err := os.MkdirAll(filepath.Dir(outPath), os.ModePerm); err != nil {
+		return "", fmt.Errorf("failed to create openapi directory: %w", err)
+	}
 
 	if err := cli.MergeDocuments(files, outPath); err != nil {
 		return "", fmt.Errorf("failed to merge openapi files: %w", err)
@@ -86,12 +90,12 @@ func mergeFiles(files []string) (string, error) {
 }
 
 func resolveFiles(files []file) ([]string, error) {
-	baseDir := environment.GetBaseDir()
+	workspace := environment.GetWorkspace()
 
 	outFiles := []string{}
 
 	for i, file := range files {
-		localPath := filepath.Join(baseDir, "repo", file.Location)
+		localPath := filepath.Join(workspace, "repo", file.Location)
 
 		if _, err := os.Stat(localPath); err == nil {
 			fmt.Println("Found local OpenAPI file: ", localPath)
@@ -105,8 +109,13 @@ func resolveFiles(files []file) ([]string, error) {
 
 			fmt.Println("Downloading openapi file from: ", u.String())
 
-			filePath, err := download.DownloadFile(u.String(), fmt.Sprintf("openapi_%d", i), file.Header, file.Token)
-			if err != nil {
+			filePath := filepath.Join(environment.GetWorkspace(), "openapi", fmt.Sprintf("openapi_%d", i))
+
+			if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+				return nil, fmt.Errorf("failed to create openapi directory: %w", err)
+			}
+
+			if err := download.DownloadFile(u.String(), filePath, file.Header, file.Token); err != nil {
 				return nil, fmt.Errorf("failed to download openapi file: %w", err)
 			}
 

@@ -140,3 +140,7 @@ func GetRepo() string {
 func GetGithubServerURL() string {
 	return os.Getenv("GITHUB_SERVER_URL")
 }
+
+func GetWorkspace() string {
+	return os.Getenv("GITHUB_WORKSPACE")
+}

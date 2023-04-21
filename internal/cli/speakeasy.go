@@ -38,18 +38,18 @@ func Download(pinnedVersion string, g Git) error {
 
 	speakeasyCLIPath := fmt.Sprintf("https://github.com/speakeasy-api/speakeasy/releases/download/%s/speakeasy_%s_Linux_x86_64.tar.gz", version, strings.TrimPrefix(version, "v"))
 
-	fileName, err := download.DownloadFile(speakeasyCLIPath, "speakeasy*.tar.gz", "", "")
-	if err != nil {
+	tarPath := filepath.Join(os.TempDir(), "speakeasy*.tar.gz")
+	if err := download.DownloadFile(speakeasyCLIPath, tarPath, "", ""); err != nil {
 		return fmt.Errorf("failed to download speakeasy cli: %w", err)
 	}
 
 	baseDir := environment.GetBaseDir()
 
-	if err := extract(fileName, filepath.Join(baseDir, "bin")); err != nil {
+	if err := extract(tarPath, filepath.Join(baseDir, "bin")); err != nil {
 		return fmt.Errorf("failed to extract speakeasy cli: %w", err)
 	}
 
-	os.Remove(fileName)
+	os.Remove(tarPath)
 
 	return nil
 }

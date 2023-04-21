@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 	config "github.com/speakeasy-api/sdk-gen-config"
@@ -35,17 +36,20 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 		return nil, nil, err
 	}
 
+	workspace := environment.GetWorkspace()
 	outputs := map[string]string{}
 
 	docPath, docChecksum, docVersion, err := document.GetOpenAPIFileInfo()
 	if err != nil {
 		return nil, nil, err
 	}
-	outputs["openapi_doc"] = docPath
+	docPathPrefix := workspace
+	if !strings.HasSuffix(docPathPrefix, "/") {
+		docPathPrefix += "/"
+	}
+	outputs["openapi_doc"] = strings.TrimPrefix(docPath, docPathPrefix)
 
-	baseDir := environment.GetBaseDir()
-
-	genConfigs, err := configuration.LoadGeneratorConfigs(baseDir, langs)
+	genConfigs, err := configuration.LoadGeneratorConfigs(workspace, langs)
 	if err != nil {
 		return nil, outputs, err
 	}
@@ -112,7 +116,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 		if newVersion != "" {
 			fmt.Println("New version detected: ", newVersion)
-			outputDir := path.Join(baseDir, "repo", dir)
+			outputDir := path.Join(workspace, "repo", dir)
 
 			langCfg.Version = newVersion
 			cfg.Config.Languages[lang] = langCfg

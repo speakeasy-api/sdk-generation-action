@@ -60,9 +60,9 @@ func (g *Git) CloneRepo() error {
 
 	logging.Info("Cloning repo: %s from ref: %s", repoPath, ref)
 
-	baseDir := environment.GetBaseDir()
+	workspace := environment.GetWorkspace()
 
-	r, err := git.PlainClone(path.Join(baseDir, "repo"), false, &git.CloneOptions{
+	r, err := git.PlainClone(path.Join(workspace, "repo"), false, &git.CloneOptions{
 		URL:           repoPath,
 		Progress:      os.Stdout,
 		Auth:          getGithubAuth(g.accessToken),
@@ -495,7 +495,7 @@ func getPRTitle() string {
 
 func runGitCommand(args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
-	cmd.Dir = filepath.Join(environment.GetBaseDir(), "repo")
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo")
 	var outb, errb bytes.Buffer
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb

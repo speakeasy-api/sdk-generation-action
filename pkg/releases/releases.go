@@ -214,7 +214,5 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 }
 
 func GetReleasesPath(dir string) string {
-	baseDir := environment.GetBaseDir()
-
-	return path.Join(baseDir, "repo", dir, "RELEASES.md")
+	return path.Join(environment.GetWorkspace(), "repo", dir, "RELEASES.md")
 }

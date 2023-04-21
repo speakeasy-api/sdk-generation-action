@@ -5,3 +5,4 @@ speakeasy
 bin/
 .idea/
 output.txt
+openapi/

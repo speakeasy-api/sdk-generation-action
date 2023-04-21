@@ -22,6 +22,7 @@ export GITHUB_REPOSITORY_OWNER="speakeasy-api"
 export GITHUB_REF="refs/heads/main"
 export GITHUB_OUTPUT="./output.txt"
 export GITHUB_WORKFLOW="test"
+export GITHUB_WORKSPACE="./"
 
 set -o allexport && source ${ENV_FILE} && set +o allexport
 
