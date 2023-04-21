@@ -16,7 +16,7 @@ func Validate() error {
 		return err
 	}
 
-	docPath, _, _, err := document.GetOpenAPIFileInfo(environment.GetOpenAPIDocLocation())
+	docPath, _, _, err := document.GetOpenAPIFileInfo()
 	if err != nil {
 		return err
 	}

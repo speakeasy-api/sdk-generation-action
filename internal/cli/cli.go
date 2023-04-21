@@ -12,7 +12,17 @@ import (
 var (
 	ChangeLogVersion               = version.Must(version.NewVersion("1.14.2"))
 	UnpublishedInstallationVersion = version.Must(version.NewVersion("1.16.0"))
+	MergeVersion                   = version.Must(version.NewVersion("1.21.3"))
 )
+
+func IsAtLeastVersion(version *version.Version) bool {
+	sv, err := GetSpeakeasyVersion()
+	if err != nil {
+		return false
+	}
+
+	return sv.GreaterThanOrEqual(version)
+}
 
 func GetSupportedLanguages() ([]string, error) {
 	out, err := runSpeakeasyCommand("generate", "sdk", "--help")
@@ -78,13 +88,7 @@ func GetGenerationVersion() (*version.Version, error) {
 }
 
 func GetChangelog(genVersion, previousGenVersion string) (string, error) {
-	sv, err := GetSpeakeasyVersion()
-	if err != nil {
-		return "", err
-	}
-
-	// speakeasy versions before 1.14.2 don't support the generate sdk changelog command
-	if sv.LessThan(ChangeLogVersion) {
+	if !IsAtLeastVersion(ChangeLogVersion) {
 		return "", nil
 	}
 
@@ -135,12 +139,7 @@ func Generate(docPath, lang, outputDir, installationURL string, published bool) 
 		"-y",
 	}
 
-	version, err := GetSpeakeasyVersion()
-	if err != nil {
-		return err
-	}
-
-	if version.GreaterThanOrEqual(UnpublishedInstallationVersion) {
+	if IsAtLeastVersion(UnpublishedInstallationVersion) {
 		args = append(args, "-i", installationURL)
 		if published {
 			args = append(args, "-p")
@@ -159,6 +158,29 @@ func ValidateConfig(configDir string) error {
 	out, err := runSpeakeasyCommand("validate", "config", "-d", configDir)
 	if err != nil {
 		return fmt.Errorf("error validating config: %w - %s", err, out)
+	}
+	fmt.Println(out)
+	return nil
+}
+
+func MergeDocuments(files []string, output string) error {
+	if !IsAtLeastVersion(MergeVersion) {
+		return fmt.Errorf("speakeasy version %s does not support merging documents", MergeVersion)
+	}
+
+	args := []string{
+		"merge",
+		"-o",
+		output,
+	}
+
+	for _, f := range files {
+		args = append(args, "-s", f)
+	}
+
+	out, err := runSpeakeasyCommand(args...)
+	if err != nil {
+		return fmt.Errorf("error merging documents: %w - %s", err, out)
 	}
 	fmt.Println(out)
 	return nil
