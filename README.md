@@ -207,18 +207,28 @@ The version of the Speakeasy CLI to use or `"latest"`. Default `"latest"`.
 
 If the document lives within the repo a relative path can be provided, if the document is hosted publicly a URL can be provided.
 
-If the document is hosted privately a URL can be provided along with an `auth_header` and `auth_token` to use when fetching the document.
-If using a private speakeasy hosted document use `x-api-key` as the `auth_header` value.
+If the documents are hosted privately a URL can be provided along with the `openapi_doc_auth_header` and `openapi_doc_auth_token` inputs.
+Each document will be fetched using the provided auth header and token, so they need to be valid for all documents.
 
 Example:
 
 ```yaml
 openapi_docs: |
-  - location: ./openapi.yaml
-  - location: https://example.com/openapi.json
-    auth_header: Authorization
-    auth_token: Bearer <token>
+  - https://example.com/openapi1.json
+  - https://example.com/openapi2.json
 ```
+
+### `openapi_doc_location`
+
+**Required** The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document.
+
+### `openapi_doc_auth_header`
+
+The auth header to use when fetching the OpenAPI document if it is not publicly hosted. For example `Authorization`. If using a private speakeasy hosted document use `x-api-key`. This header will be populated with the `openapi_doc_auth_token` provided.
+
+### `openapi_doc_auth_token`
+
+The auth token to use when fetching the OpenAPI document if it is not publicly hosted. For example `Bearer <token>` or `<token>`.
 
 ### `github_access_token`
 

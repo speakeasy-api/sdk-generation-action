@@ -15,26 +15,22 @@ inputs:
       The auth header to use when fetching the OpenAPI document if it is not publicly hosted. For example `Authorization`.
       If using a private speakeasy hosted document use `x-api-key`. This header will be populated with the openapi_doc_auth_token provided.
     required: false
-    deprecationMessage: "This input is deprecated, please use the `openapi_docs` input instead."
   openapi_doc_auth_token:
     description: The auth token to use when fetching the OpenAPI document if it is not publicly hosted. For example `Bearer <token>` or `<token>`.
     required: false
-    deprecationMessage: "This input is deprecated, please use the `openapi_docs` input instead."
   openapi_docs:
     description: |-
       A yaml string containing a list of OpenAPI documents to use, if multiple documents are provided they will be merged together, prior to generation.
 
       If the document lives within the repo a relative path can be provided, if the document is hosted publicly a URL can be provided.
 
-      If the document is hosted privately a URL can be provided along with an auth_header and auth_token to use when fetching the document.
-      If using a private speakeasy hosted document use `x-api-key` as the `auth_header` value.
+      If the documents are hosted privately a URL can be provided along with the `openapi_doc_auth_header` and `openapi_doc_auth_token` inputs.
+      Each document will be fetched using the provided auth header and token, so they need to be valid for all documents.
 
       For example:
       openapi_docs: |
-        - location: ./openapi.yaml
-        - location: https://example.com/openapi.json
-          auth_header: Authorization
-          auth_token: Bearer <token>
+        - https://example.com/openapi1.json
+        - https://example.com/openapi2.json
     required: false
   github_access_token:
     description: A GitHub access token with write access to the repo

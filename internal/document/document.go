@@ -129,26 +129,25 @@ func resolveFiles(files []file) ([]string, error) {
 func getFiles() ([]file, error) {
 	docsYaml := environment.GetOpenAPIDocs()
 
-	var files []file
-	if err := yaml.Unmarshal([]byte(docsYaml), &files); err != nil {
+	var fileLocations []string
+	if err := yaml.Unmarshal([]byte(docsYaml), &fileLocations); err != nil {
 		return nil, fmt.Errorf("failed to parse openapi_docs input: %w", err)
 	}
 
-	if len(files) > 0 {
-		return files, nil
+	// TODO OPENAPI_DOC_LOCATION is deprecated and should be removed in the future
+	if len(fileLocations) == 0 {
+		fileLocations = append(fileLocations, environment.GetOpenAPIDocLocation())
 	}
 
-	// TODO below inputs are deprecated and should be removed in the future
-	fileLoc := environment.GetOpenAPIDocLocation()
-	if fileLoc == "" {
-		return nil, fmt.Errorf("no openapi files found")
-	}
+	files := []file{}
 
-	return []file{
-		{
+	for _, fileLoc := range fileLocations {
+		files = append(files, file{
 			Location: fileLoc,
 			Header:   environment.GetOpenAPIDocAuthHeader(),
 			Token:    environment.GetOpenAPIDocAuthToken(),
-		},
-	}, nil
+		})
+	}
+
+	return files, nil
 }
