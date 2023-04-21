@@ -12,14 +12,12 @@ on:
         description: The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document
         required: true
         type: string
-        deprecationMessage: "This input is deprecated, please use the `openapi_docs` input instead."
       openapi_doc_auth_header:
         description: |-
           The auth header to use when fetching the OpenAPI document if it is not publicly hosted. For example `Authorization`.
           If using a private speakeasy hosted document use `x-api-key`. This header will be populated with the openapi_doc_auth_token provided.
         required: false
         type: string
-        deprecationMessage: "This input is deprecated, please use the `openapi_docs` input instead."
       openapi_docs:
         description: |-
           A yaml string containing a list of OpenAPI documents to use, if multiple documents are provided they will be merged together, prior to generation.
