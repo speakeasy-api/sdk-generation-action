@@ -27,6 +27,11 @@ export GITHUB_WORKSPACE="./"
 set -o allexport && source ${ENV_FILE} && set +o allexport
 
 rm output.txt || true
+INPUT_ACTION="validate"
+run_action
+
+rm output.txt || true
+INPUT_ACTION="generate"
 run_action
 
 if [ "$RUN_FINALIZE" = "true" ]; then

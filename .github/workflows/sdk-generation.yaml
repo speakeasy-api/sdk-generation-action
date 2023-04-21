@@ -138,6 +138,10 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: validate
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: openapi-doc
+          path: ${{ steps.validate.outputs.openapi_doc }}
   generate:
     name: Generate SDK
     runs-on: ubuntu-latest
@@ -175,10 +179,6 @@ jobs:
           action: generate
           force: ${{ inputs.force }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
-      - uses: actions/upload-artifact@v3
-        with:
-          name: openapi-doc
-          path: ${{ steps.generate.outputs.openapi_doc }}
   compile-go:
     if: ${{ needs.generate.outputs.go_regenerated == 'true' }}
     name: Compile Go SDK

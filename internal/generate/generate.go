@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/hashicorp/go-version"
 	config "github.com/speakeasy-api/sdk-gen-config"
@@ -43,11 +42,6 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	docPathPrefix := workspace
-	if !strings.HasSuffix(docPathPrefix, "/") {
-		docPathPrefix += "/"
-	}
-	outputs["openapi_doc"] = strings.TrimPrefix(docPath, docPathPrefix)
 
 	genConfigs, err := configuration.LoadGeneratorConfigs(workspace, langs)
 	if err != nil {
