@@ -139,6 +139,7 @@ jobs:
           action: validate
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
       - uses: actions/upload-artifact@v3
+        if: always()
         with:
           name: openapi-doc
           path: ${{ steps.validate.outputs.openapi_doc }}
