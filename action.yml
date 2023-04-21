@@ -8,7 +8,7 @@ inputs:
     required: false
   openapi_doc_location:
     description: The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document
-    required: true
+    required: false
     deprecationMessage: "This input is deprecated, please use the `openapi_docs` input instead."
   openapi_doc_auth_header:
     description: |-
