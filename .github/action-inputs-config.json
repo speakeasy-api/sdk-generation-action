@@ -31,21 +31,25 @@
   {
     "name": "publish_python",
     "default_value": false,
-    "required": true
+    "required": true,
+    "language": "python"
   },
   {
     "name": "publish_typescript",
     "default_value": false,
-    "required": true
+    "required": true,
+    "language": "typescript"
   },
   {
     "name": "publish_java",
     "default_value": false,
-    "required": true
+    "required": true,
+    "language": "java"
   },
   {
     "name": "publish_php",
     "default_value": false,
-    "required": true
+    "required": true,
+    "language": "php"
   }
 ]

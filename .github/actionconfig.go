@@ -13,18 +13,13 @@ const (
 	publishIdentifier = "publish_"
 	inputConfigKey    = "inputs"
 	securityConfigKey = "secrets"
+	langTypescript    = "typescript"
+	langPython        = "python"
+	langPhp           = "php"
+	langJava          = "java"
+	createRelease     = "create_release"
+	schemaTokenKey    = "openapi_doc_auth_token"
 )
-
-var secretConfigFieldToLanguage = map[string]string{
-	"npm_token":           "typescript",
-	"pypi_token":          "python",
-	"packagist_username":  "php",
-	"packagist_token":     "php",
-	"java_gpg_secret_key": "java",
-	"java_gpg_passphrase": "java",
-	"ossrh_username":      "java",
-	"ossrh_password":      "java",
-}
 
 //go:embed workflows/sdk-generation.yaml
 var genActionYml string
@@ -44,11 +39,11 @@ func GenerateActionInputsConfig() (*config.SdkGenConfig, error) {
 	}
 
 	for _, inputConfigField := range inputConfigFields {
-		if strings.Contains(inputConfigField.Name, publishIdentifier) || inputConfigField.Name == "create_release" {
+		if strings.Contains(inputConfigField.Name, publishIdentifier) || inputConfigField.Name == createRelease {
 			inputConfigField.RequiredForPublishing = new(bool)
 			*inputConfigField.RequiredForPublishing = true
-			if strings.Contains(inputConfigField.Name, publishIdentifier) {
-				lang := strings.Split(inputConfigField.Name, "_")[1]
+			if inputConfigField.Language != nil && *inputConfigField.Language != "" {
+				lang := *inputConfigField.Language
 				if sdkGenConfig.SdkGenLanguageConfig == nil {
 					sdkGenConfig.SdkGenLanguageConfig = make(map[string][]config.SdkGenConfigField)
 				}
@@ -71,12 +66,13 @@ func GenerateActionSecurityConfig() (*config.SdkGenConfig, error) {
 	}
 
 	for _, securityConfigField := range securityConfigFields {
-		if securityConfigField.Name != "openapi_doc_auth_token" {
+		if securityConfigField.Name != schemaTokenKey {
 			securityConfigField.RequiredForPublishing = new(bool)
 			*securityConfigField.RequiredForPublishing = true
 		}
 
-		if lang, ok := secretConfigFieldToLanguage[securityConfigField.Name]; ok {
+		if securityConfigField.Language != nil && *securityConfigField.Language != "" {
+			lang := *securityConfigField.Language
 			if sdkGenConfig.SdkGenLanguageConfig == nil {
 				sdkGenConfig.SdkGenLanguageConfig = make(map[string][]config.SdkGenConfigField)
 			}
