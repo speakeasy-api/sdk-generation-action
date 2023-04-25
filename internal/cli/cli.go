@@ -13,6 +13,7 @@ var (
 	ChangeLogVersion               = version.Must(version.NewVersion("1.14.2"))
 	UnpublishedInstallationVersion = version.Must(version.NewVersion("1.16.0"))
 	MergeVersion                   = version.Must(version.NewVersion("1.21.3"))
+	RepoDetailsVersion             = version.Must(version.NewVersion("1.23.1"))
 )
 
 func IsAtLeastVersion(version *version.Version) bool {
@@ -126,7 +127,7 @@ func Validate(docPath string) error {
 	return nil
 }
 
-func Generate(docPath, lang, outputDir, installationURL string, published bool) error {
+func Generate(docPath, lang, outputDir, installationURL string, published bool, repoURL, repoSubDirectory string) error {
 	args := []string{
 		"generate",
 		"sdk",
@@ -143,6 +144,15 @@ func Generate(docPath, lang, outputDir, installationURL string, published bool) 
 		args = append(args, "-i", installationURL)
 		if published {
 			args = append(args, "-p")
+		}
+	}
+
+	if IsAtLeastVersion(RepoDetailsVersion) {
+		if repoURL != "" {
+			args = append(args, "-r", repoURL)
+		}
+		if repoSubDirectory != "" {
+			args = append(args, "-b", repoSubDirectory)
 		}
 	}
 

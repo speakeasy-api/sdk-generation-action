@@ -127,7 +127,9 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 				published = true // Treat as published if we don't have an installation URL
 			}
 
-			if err := cli.Generate(docPath, lang, outputDir, installationURL, published); err != nil {
+			repoURL, repoSubdirectory := getRepoDetails(dir)
+
+			if err := cli.Generate(docPath, lang, outputDir, installationURL, published, repoURL, repoSubdirectory); err != nil {
 				return nil, outputs, err
 			}
 
@@ -394,4 +396,10 @@ func getInstallationURL(lang, subdirectory string) string {
 
 	// Java doesn't support pulling directly from git
 	return ""
+}
+
+func getRepoDetails(subdirectory string) (string, string) {
+	subdirectory = filepath.Clean(subdirectory)
+
+	return fmt.Sprintf("%s/%s.git", environment.GetGithubServerURL(), environment.GetRepo()), subdirectory
 }
