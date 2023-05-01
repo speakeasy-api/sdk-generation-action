@@ -20,28 +20,22 @@
     "validation_message": "Letters or - only"
   },
   {
-    "name": "create_release",
-    "validation_regex": "/^(true|false)$/.source",
-    "validation_message": "Must be `true` or `false`"
+    "name": "create_release"
   },
   {
     "name": "publish_python",
-    "validation_regex": "/^(true|false)$/.source",
-    "validation_message": "Must be `true` or `false`"
+    "language": "python"
   },
   {
     "name": "publish_typescript",
-    "validation_regex": "/^(true|false)$/.source",
-    "validation_message": "Must be `true` or `false`"
+    "language": "typescript"
   },
   {
     "name": "publish_java",
-    "validation_regex": "/^(true|false)$/.source",
-    "validation_message": "Must be `true` or `false`"
+    "language": "java"
   },
   {
     "name": "publish_php",
-    "validation_regex": "/^(true|false)$/.source",
-    "validation_message": "Must be `true` or `false`"
+    "language": "php"
   }
 ]

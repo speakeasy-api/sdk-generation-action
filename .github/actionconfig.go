@@ -6,6 +6,7 @@ import (
 	"fmt"
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"gopkg.in/yaml.v3"
+	"strconv"
 	"strings"
 )
 
@@ -13,18 +14,9 @@ const (
 	publishIdentifier = "publish_"
 	inputConfigKey    = "inputs"
 	securityConfigKey = "secrets"
+	createRelease     = "create_release"
+	schemaTokenKey    = "openapi_doc_auth_token"
 )
-
-var secretConfigFieldToLanguage = map[string]string{
-	"npm_token":           "typescript",
-	"pypi_token":          "python",
-	"packagist_username":  "php",
-	"packagist_token":     "php",
-	"java_gpg_secret_key": "java",
-	"java_gpg_passphrase": "java",
-	"ossrh_username":      "java",
-	"ossrh_password":      "java",
-}
 
 //go:embed workflows/sdk-generation.yaml
 var genActionYml string
@@ -44,11 +36,11 @@ func GenerateActionInputsConfig() (*config.SdkGenConfig, error) {
 	}
 
 	for _, inputConfigField := range inputConfigFields {
-		if strings.Contains(inputConfigField.Name, publishIdentifier) || inputConfigField.Name == "create_release" {
-			inputConfigField.RequiredForPublishing = new(bool)
-			*inputConfigField.RequiredForPublishing = true
-			if strings.Contains(inputConfigField.Name, publishIdentifier) {
-				lang := strings.Split(inputConfigField.Name, "_")[1]
+		if strings.Contains(inputConfigField.Name, publishIdentifier) || inputConfigField.Name == createRelease {
+			reqForPublishing := true
+			inputConfigField.RequiredForPublishing = &reqForPublishing
+			if inputConfigField.Language != nil && *inputConfigField.Language != "" {
+				lang := *inputConfigField.Language
 				if sdkGenConfig.SdkGenLanguageConfig == nil {
 					sdkGenConfig.SdkGenLanguageConfig = make(map[string][]config.SdkGenConfigField)
 				}
@@ -71,13 +63,13 @@ func GenerateActionSecurityConfig() (*config.SdkGenConfig, error) {
 	}
 
 	for _, securityConfigField := range securityConfigFields {
-		if securityConfigField.Name != "openapi_doc_auth_token" {
+		if securityConfigField.Name != schemaTokenKey {
 			securityConfigField.RequiredForPublishing = new(bool)
 			*securityConfigField.RequiredForPublishing = true
 		}
 
-		if _, ok := secretConfigFieldToLanguage[securityConfigField.Name]; ok {
-			lang := secretConfigFieldToLanguage[securityConfigField.Name]
+		if securityConfigField.Language != nil && *securityConfigField.Language != "" {
+			lang := *securityConfigField.Language
 			if sdkGenConfig.SdkGenLanguageConfig == nil {
 				sdkGenConfig.SdkGenLanguageConfig = make(map[string][]config.SdkGenConfigField)
 			}
@@ -120,13 +112,23 @@ func generateConfigFieldsFromGenAction(security bool) ([]*config.SdkGenConfigFie
 		for configFieldKey, configFieldVal := range configVal.(map[string]interface{}) {
 			switch configFieldKey {
 			case "description":
-				sdkGenConfigEntry.Description = new(string)
-				*sdkGenConfigEntry.Description = configFieldVal.(string)
+				description := configFieldVal.(string)
+				sdkGenConfigEntry.Description = &description
 			case "required":
 				sdkGenConfigEntry.Required = configFieldVal.(bool)
 			case "default":
-				sdkGenConfigEntry.DefaultValue = new(string)
-				*sdkGenConfigEntry.DefaultValue = configFieldVal.(string)
+				var defaultValue any
+				if sdkGenConfigEntry.Language != nil && *sdkGenConfigEntry.Language != "" {
+					defaultValueBool, err := strconv.ParseBool(configFieldVal.(string))
+					if err != nil {
+						defaultValue = configFieldVal
+					} else {
+						defaultValue = defaultValueBool
+					}
+				} else {
+					defaultValue = configFieldVal
+				}
+				sdkGenConfigEntry.DefaultValue = &defaultValue
 			}
 		}
 	}
