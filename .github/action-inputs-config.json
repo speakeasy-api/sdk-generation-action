@@ -2,16 +2,12 @@
   {
     "name": "mode",
     "validation_regex": "/^(direct|pr)$/.source",
-    "validation_message": "Must be `direct` or `pr`",
-    "default_value": "pr",
-    "required": true
+    "validation_message": "Must be `direct` or `pr`"
   },
   {
     "name": "speakeasy_version",
     "validation_regex": "/^[\\w.\\-]+$/.source",
-    "validation_message": "Letters, numbers, or .-_ only",
-    "default_value": "latest",
-    "required": true
+    "validation_message": "Letters, numbers, or .-_ only"
   },
   {
     "name": "openapi_doc_location",
@@ -24,32 +20,22 @@
     "validation_message": "Letters or - only"
   },
   {
-    "name": "create_release",
-    "default_value": false,
-    "required": true
+    "name": "create_release"
   },
   {
     "name": "publish_python",
-    "default_value": false,
-    "required": true,
     "language": "python"
   },
   {
     "name": "publish_typescript",
-    "default_value": false,
-    "required": true,
     "language": "typescript"
   },
   {
     "name": "publish_java",
-    "default_value": false,
-    "required": true,
     "language": "java"
   },
   {
     "name": "publish_php",
-    "default_value": false,
-    "required": true,
     "language": "php"
   }
 ]

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"gopkg.in/yaml.v3"
+	"strconv"
 	"strings"
 )
 
@@ -13,10 +14,6 @@ const (
 	publishIdentifier = "publish_"
 	inputConfigKey    = "inputs"
 	securityConfigKey = "secrets"
-	langTypescript    = "typescript"
-	langPython        = "python"
-	langPhp           = "php"
-	langJava          = "java"
 	createRelease     = "create_release"
 	schemaTokenKey    = "openapi_doc_auth_token"
 )
@@ -40,8 +37,8 @@ func GenerateActionInputsConfig() (*config.SdkGenConfig, error) {
 
 	for _, inputConfigField := range inputConfigFields {
 		if strings.Contains(inputConfigField.Name, publishIdentifier) || inputConfigField.Name == createRelease {
-			inputConfigField.RequiredForPublishing = new(bool)
-			*inputConfigField.RequiredForPublishing = true
+			reqForPublishing := true
+			inputConfigField.RequiredForPublishing = &reqForPublishing
 			if inputConfigField.Language != nil && *inputConfigField.Language != "" {
 				lang := *inputConfigField.Language
 				if sdkGenConfig.SdkGenLanguageConfig == nil {
@@ -115,12 +112,23 @@ func generateConfigFieldsFromGenAction(security bool) ([]*config.SdkGenConfigFie
 		for configFieldKey, configFieldVal := range configVal.(map[string]interface{}) {
 			switch configFieldKey {
 			case "description":
-				sdkGenConfigEntry.Description = new(string)
-				*sdkGenConfigEntry.Description = configFieldVal.(string)
+				description := configFieldVal.(string)
+				sdkGenConfigEntry.Description = &description
 			case "required":
 				sdkGenConfigEntry.Required = configFieldVal.(bool)
 			case "default":
-				sdkGenConfigEntry.DefaultValue = configFieldVal
+				var defaultValue any
+				if sdkGenConfigEntry.Language != nil && *sdkGenConfigEntry.Language != "" {
+					defaultValueBool, err := strconv.ParseBool(configFieldVal.(string))
+					if err != nil {
+						defaultValue = configFieldVal
+					} else {
+						defaultValue = defaultValueBool
+					}
+				} else {
+					defaultValue = configFieldVal
+				}
+				sdkGenConfigEntry.DefaultValue = &defaultValue
 			}
 		}
 	}

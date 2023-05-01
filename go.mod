@@ -41,4 +41,4 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
 
-replace github.com/speakeasy-api/sdk-gen-config v0.3.2 => ../sdk-gen-config
+replace github.com/speakeasy-api/sdk-gen-config v0.4.0 => ../sdk-gen-config
