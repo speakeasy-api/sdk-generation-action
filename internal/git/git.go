@@ -405,6 +405,27 @@ func (g *Git) GetLatestTag() (string, error) {
 	return tags[0].GetName(), nil
 }
 
+func (g *Git) GetLatestDownloadLink() (string, string, error) {
+	releases, _, err := g.client.Repositories.ListReleases(context.Background(), "speakeasy-api", "speakeasy", nil)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get speakeasy cli releases: %w", err)
+	}
+
+	if len(releases) == 0 {
+		return "", "", fmt.Errorf("no speakeasy cli releases found")
+	}
+
+	for _, release := range releases {
+		for _, asset := range release.Assets {
+			if strings.HasSuffix(strings.ToLower(asset.GetName()), "_linux_x86_64.tar.gz") {
+				return asset.GetBrowserDownloadURL(), *release.TagName, nil
+			}
+		}
+	}
+
+	return "", "", fmt.Errorf("no speakeasy cli release found for linux x86_64")
+}
+
 func (g *Git) GetCommitedFiles() ([]string, error) {
 	path := environment.GetWorkflowEventPayloadPath()
 

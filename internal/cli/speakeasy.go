@@ -17,29 +17,32 @@ import (
 
 type Git interface {
 	GetLatestTag() (string, error)
+	GetLatestDownloadLink() (string, string, error)
 }
 
 func Download(pinnedVersion string, g Git) error {
 	version := pinnedVersion
 
+	var link string
+
 	if pinnedVersion == "" || pinnedVersion == "latest" {
-		latestVersion, err := g.GetLatestTag()
+		var err error
+		link, version, err = g.GetLatestDownloadLink()
 		if err != nil {
 			return err
 		}
-		version = latestVersion
 	} else {
 		if !strings.HasPrefix(pinnedVersion, "v") {
 			version = "v" + pinnedVersion
 		}
+
+		link = fmt.Sprintf("https://github.com/speakeasy-api/speakeasy/releases/download/%s/speakeasy_%s_Linux_x86_64.tar.gz", version, strings.TrimPrefix(version, "v"))
 	}
 
 	fmt.Println("Downloading speakeasy cli version: ", version)
 
-	speakeasyCLIPath := fmt.Sprintf("https://github.com/speakeasy-api/speakeasy/releases/download/%s/speakeasy_%s_Linux_x86_64.tar.gz", version, strings.TrimPrefix(version, "v"))
-
 	tarPath := filepath.Join(os.TempDir(), "speakeasy*.tar.gz")
-	if err := download.DownloadFile(speakeasyCLIPath, tarPath, "", ""); err != nil {
+	if err := download.DownloadFile(link, tarPath, "", ""); err != nil {
 		return fmt.Errorf("failed to download speakeasy cli: %w", err)
 	}
 
