@@ -54,6 +54,12 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 				Version:     "0.0.5",
 				URL:         "https://registry.terraform.io/providers/speakeasy-api/speakeasy/0.0.5",
 			},
+			"ruby": {
+				PackageName: "org-package",
+				Path:				 "ruby",
+				Version:		 "1.2.3",
+				URL:				 "https://rubygems.org/gems/org-package/versions/1.2.3"
+			}
 		},
 	}
 
@@ -128,6 +134,12 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 				Version:     "1.2.3",
 				URL:         "https://central.sonatype.com/artifact/com.group/artifact/1.2.3",
 			},
+			"ruby": {
+				PackageName: "org-package",
+				Path:				 "ruby",
+				Version:		 "1.2.3",
+				URL:				 "https://rubygems.org/gems/org-package/versions/1.2.3"
+			}
 		},
 	}
 
@@ -167,6 +179,7 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 				Version:     "1.3.0",
 				URL:         "https://central.sonatype.com/artifact/com.group/artifact/1.3.0",
 			},
+<<<<<<< HEAD
 			"terraform": {
 				PreviousVersion: "1.2.3",
 				PackageName:     "speakeasy-api/speakeasy",
@@ -174,6 +187,14 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 				Version:         "1.3.0",
 				URL:             "https://registry.terraform.io/providers/speakeasy-api/speakeasy/1.3.0",
 			},
+=======
+			"ruby": {
+				PackageName: "org-package",
+				Path:				 "ruby",
+				Version:		 "1.3.0",
+				URL:				 "https://rubygems.org/gems/org-package/versions/1.3.0"
+			}
+>>>>>>> b56dcd7 (prepare ruby)
 		},
 	}
 

@@ -130,6 +130,10 @@ outputs:
     description: "true if the PHP SDK was regenerated"
   php_directory:
     description: "The directory the PHP SDK was generated to"
+  ruby_regenerated:
+    description: "true if the Ruby SDK was regenerated"
+  ruby_directory:
+    description: "The directory the Ruby SDK was generated to"
   branch_name:
     description: "The name of the branch the SDK was generated on"
   commit_hash:
