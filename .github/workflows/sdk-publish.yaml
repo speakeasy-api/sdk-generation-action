@@ -94,7 +94,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Failed to create Github Release"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -130,7 +130,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Failed to publish Python SDK"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -162,7 +162,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Failed to publish Typescript SDK"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -199,7 +199,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Failed to publish Java SDK"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -223,7 +223,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Failed to publish PHP SDK"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"

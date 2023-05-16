@@ -155,7 +155,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "OpenAPI Document Validation Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -204,7 +204,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "SDK Generation Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -229,7 +229,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Compilation of Go SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -256,7 +256,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Compilation of Java SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -286,7 +286,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Compilation of Python SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -316,7 +316,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Compilation of Typescript SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -343,7 +343,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Compilation of PHP SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -391,7 +391,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "SDK Finalization Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -429,7 +429,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Publishing of Python SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -463,7 +463,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Publishing of Typescript SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -502,7 +502,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Publishing of Java SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
@@ -529,7 +529,7 @@ jobs:
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Publishing of PHP SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
