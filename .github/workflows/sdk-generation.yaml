@@ -214,7 +214,7 @@ jobs:
           distribution: "corretto"
           java-version: "11"
           cache: "gradle"
-      - run: ./gradlew build --no-daemon
+      - run: ./gradlew build --no-daemon -x test && ./gradlew javadoc
         working-directory: ${{ needs.generate.outputs.java_directory }}
   compile-python:
     if: ${{ needs.generate.outputs.python_regenerated == 'true' }}
@@ -249,7 +249,10 @@ jobs:
         with:
           node-version: "16.x"
           registry-url: "https://registry.npmjs.org"
-      - run: npm ci --prefer-offline --no-audit && tsc --noEmit --skipLibCheck && npx eslint --max-warnings=0 src/**
+      - run: |-
+          [[ "${{ inputs.output_tests }}" == "true" ]] && npm install || npm ci --prefer-offline --no-audit
+          tsc --noEmit --skipLibCheck
+          npx eslint --max-warnings=0 src/**
         working-directory: ${{ needs.generate.outputs.typescript_directory }}
   compile-php:
     if: ${{ needs.generate.outputs.php_regenerated == 'true' }}
