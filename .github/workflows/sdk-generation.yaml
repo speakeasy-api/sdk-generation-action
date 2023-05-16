@@ -126,6 +126,9 @@ on:
       java_gpg_passphrase:
         description: The passphrase for the GPG secret key
         required: false
+      slack_webhook_url:
+        description: A Slack webhook URL that pipeline failures will be posted to
+        required: false
 
 jobs:
   validate:
@@ -148,6 +151,17 @@ jobs:
         with:
           name: openapi-doc
           path: ${{ steps.validate.outputs.openapi_doc }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && secrets.slack_webhook_url != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          notify_when: "failure"
+          notification_title: "OpenAPI Document Validation Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
   generate:
     name: Generate SDK
     runs-on: ubuntu-latest
@@ -186,6 +200,17 @@ jobs:
           force: ${{ inputs.force }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           output_tests: ${{ inputs.output_tests }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && secrets.slack_webhook_url != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          notify_when: "failure"
+          notification_title: "SDK Generation Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
   compile-go:
     if: ${{ needs.generate.outputs.go_regenerated == 'true' }}
     name: Compile Go SDK
@@ -200,6 +225,17 @@ jobs:
           go-version: ">=1.14.0"
       - run: go build ./...
         working-directory: ${{ needs.generate.outputs.go_directory }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && secrets.slack_webhook_url != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          notify_when: "failure"
+          notification_title: "Compilation of Go SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
   compile-java:
     if: ${{ needs.generate.outputs.java_regenerated == 'true' }}
     name: Compile Java SDK
@@ -216,6 +252,17 @@ jobs:
           cache: "gradle"
       - run: ./gradlew build --no-daemon -x test && ./gradlew javadoc
         working-directory: ${{ needs.generate.outputs.java_directory }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && secrets.slack_webhook_url != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          notify_when: "failure"
+          notification_title: "Compilation of Java SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
   compile-python:
     if: ${{ needs.generate.outputs.python_regenerated == 'true' }}
     name: Compile Python SDK
@@ -235,6 +282,17 @@ jobs:
         working-directory: ${{ needs.generate.outputs.python_directory }}
       - run: pylint src
         working-directory: ${{ needs.generate.outputs.python_directory }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && secrets.slack_webhook_url != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          notify_when: "failure"
+          notification_title: "Compilation of Python SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
   compile-typescript:
     if: ${{ needs.generate.outputs.typescript_regenerated == 'true' }}
     name: Compile Typescript SDK
@@ -254,6 +312,17 @@ jobs:
           tsc --noEmit --skipLibCheck
           npx eslint --max-warnings=0 src/**
         working-directory: ${{ needs.generate.outputs.typescript_directory }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && secrets.slack_webhook_url != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          notify_when: "failure"
+          notification_title: "Compilation of Typescript SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
   compile-php:
     if: ${{ needs.generate.outputs.php_regenerated == 'true' }}
     name: Compile PHP SDK
@@ -270,6 +339,17 @@ jobs:
           tools: composer
       - run: composer install && vendor/bin/phpstan analyse src --level 7 --memory-limit 1G --no-progress
         working-directory: ${{ needs.generate.outputs.php_directory }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && secrets.slack_webhook_url != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          notify_when: "failure"
+          notification_title: "Compilation of PHP SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
   finalize:
     name: Finalize SDK
     if: |
@@ -307,6 +387,17 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           branch_name: ${{ needs.generate.outputs.branch_name }}
           previous_gen_version: ${{ needs.generate.outputs.previous_gen_version }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && secrets.slack_webhook_url != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          notify_when: "failure"
+          notification_title: "SDK Finalization Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
   publish-pypi:
     if: ${{ always() && needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' && inputs.mode != 'pr' }}
     name: Publish Python SDK
@@ -334,6 +425,17 @@ jobs:
         run: |
           python setup.py sdist bdist_wheel
           twine upload dist/*
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && secrets.slack_webhook_url != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          notify_when: "failure"
+          notification_title: "Publishing of Python SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
   publish-npm:
     if: ${{ always() && needs.generate.outputs.typescript_regenerated == 'true' && inputs.publish_typescript == 'true' && inputs.mode != 'pr' }}
     name: Publish Typescript SDK
@@ -357,6 +459,17 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: npm publish --access public
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && secrets.slack_webhook_url != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          notify_when: "failure"
+          notification_title: "Publishing of Typescript SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
   publish-java:
     if: ${{ always() && needs.finalize.generate.java_regenerated == 'true' && inputs.publish_java == 'true' && inputs.mode != 'pr' }}
     name: Publish Java SDK
@@ -385,6 +498,17 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.ossrh_password }}
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.java_gpg_secret_key }}
           ORG_GRADLE_PROJECT_signingPassphrase: ${{ secrets.java_passphrase }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && secrets.slack_webhook_url != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          notify_when: "failure"
+          notification_title: "Publishing of Java SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
   publish-packagist:
     if: ${{ always() && needs.generate.generate.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
     name: Publish PHP SDK
@@ -401,3 +525,14 @@ jobs:
           api_token: ${{ secrets.packagist_token }}
           package_name: ${{ github.repository }}
           package_base_url: ${{ github.server_url }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && secrets.slack_webhook_url != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          notify_when: "failure"
+          notification_title: "Publishing of PHP SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
