@@ -152,7 +152,7 @@ jobs:
           name: openapi-doc
           path: ${{ steps.validate.outputs.openapi_doc }}
       - uses: ravsamhq/notify-slack-action@v2
-        if: always() && secrets.slack_webhook_url != ''
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -161,7 +161,7 @@ jobs:
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+          SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK_URL }}
   generate:
     name: Generate SDK
     runs-on: ubuntu-latest
@@ -201,7 +201,7 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           output_tests: ${{ inputs.output_tests }}
       - uses: ravsamhq/notify-slack-action@v2
-        if: always() && secrets.slack_webhook_url != ''
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -210,7 +210,7 @@ jobs:
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+          SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK_URL }}
   compile-go:
     if: ${{ needs.generate.outputs.go_regenerated == 'true' }}
     name: Compile Go SDK
@@ -226,7 +226,7 @@ jobs:
       - run: go build ./...
         working-directory: ${{ needs.generate.outputs.go_directory }}
       - uses: ravsamhq/notify-slack-action@v2
-        if: always() && secrets.slack_webhook_url != ''
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -235,7 +235,7 @@ jobs:
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+          SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK_URL }}
   compile-java:
     if: ${{ needs.generate.outputs.java_regenerated == 'true' }}
     name: Compile Java SDK
@@ -253,7 +253,7 @@ jobs:
       - run: ./gradlew build --no-daemon -x test && ./gradlew javadoc
         working-directory: ${{ needs.generate.outputs.java_directory }}
       - uses: ravsamhq/notify-slack-action@v2
-        if: always() && secrets.slack_webhook_url != ''
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -262,7 +262,7 @@ jobs:
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+          SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK_URL }}
   compile-python:
     if: ${{ needs.generate.outputs.python_regenerated == 'true' }}
     name: Compile Python SDK
@@ -283,7 +283,7 @@ jobs:
       - run: pylint src
         working-directory: ${{ needs.generate.outputs.python_directory }}
       - uses: ravsamhq/notify-slack-action@v2
-        if: always() && secrets.slack_webhook_url != ''
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -292,7 +292,7 @@ jobs:
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+          SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK_URL }}
   compile-typescript:
     if: ${{ needs.generate.outputs.typescript_regenerated == 'true' }}
     name: Compile Typescript SDK
@@ -313,7 +313,7 @@ jobs:
           npx eslint --max-warnings=0 src/**
         working-directory: ${{ needs.generate.outputs.typescript_directory }}
       - uses: ravsamhq/notify-slack-action@v2
-        if: always() && secrets.slack_webhook_url != ''
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -322,7 +322,7 @@ jobs:
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+          SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK_URL }}
   compile-php:
     if: ${{ needs.generate.outputs.php_regenerated == 'true' }}
     name: Compile PHP SDK
@@ -340,7 +340,7 @@ jobs:
       - run: composer install && vendor/bin/phpstan analyse src --level 7 --memory-limit 1G --no-progress
         working-directory: ${{ needs.generate.outputs.php_directory }}
       - uses: ravsamhq/notify-slack-action@v2
-        if: always() && secrets.slack_webhook_url != ''
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -349,7 +349,7 @@ jobs:
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+          SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK_URL }}
   finalize:
     name: Finalize SDK
     if: |
@@ -388,7 +388,7 @@ jobs:
           branch_name: ${{ needs.generate.outputs.branch_name }}
           previous_gen_version: ${{ needs.generate.outputs.previous_gen_version }}
       - uses: ravsamhq/notify-slack-action@v2
-        if: always() && secrets.slack_webhook_url != ''
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -397,7 +397,7 @@ jobs:
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+          SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK_URL }}
   publish-pypi:
     if: ${{ always() && needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' && inputs.mode != 'pr' }}
     name: Publish Python SDK
@@ -426,7 +426,7 @@ jobs:
           python setup.py sdist bdist_wheel
           twine upload dist/*
       - uses: ravsamhq/notify-slack-action@v2
-        if: always() && secrets.slack_webhook_url != ''
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -435,7 +435,7 @@ jobs:
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+          SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK_URL }}
   publish-npm:
     if: ${{ always() && needs.generate.outputs.typescript_regenerated == 'true' && inputs.publish_typescript == 'true' && inputs.mode != 'pr' }}
     name: Publish Typescript SDK
@@ -460,7 +460,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: npm publish --access public
       - uses: ravsamhq/notify-slack-action@v2
-        if: always() && secrets.slack_webhook_url != ''
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -469,7 +469,7 @@ jobs:
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+          SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK_URL }}
   publish-java:
     if: ${{ always() && needs.finalize.generate.java_regenerated == 'true' && inputs.publish_java == 'true' && inputs.mode != 'pr' }}
     name: Publish Java SDK
@@ -499,7 +499,7 @@ jobs:
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.java_gpg_secret_key }}
           ORG_GRADLE_PROJECT_signingPassphrase: ${{ secrets.java_passphrase }}
       - uses: ravsamhq/notify-slack-action@v2
-        if: always() && secrets.slack_webhook_url != ''
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -508,7 +508,7 @@ jobs:
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+          SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK_URL }}
   publish-packagist:
     if: ${{ always() && needs.generate.generate.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
     name: Publish PHP SDK
@@ -526,7 +526,7 @@ jobs:
           package_name: ${{ github.repository }}
           package_base_url: ${{ github.server_url }}
       - uses: ravsamhq/notify-slack-action@v2
-        if: always() && secrets.slack_webhook_url != ''
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -535,4 +535,4 @@ jobs:
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+          SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK_URL }}
