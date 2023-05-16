@@ -98,7 +98,7 @@ jobs:
           notify_when: "failure"
           notification_title: "Failed to create Github Release"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-pypi:
@@ -134,7 +134,7 @@ jobs:
           notify_when: "failure"
           notification_title: "Failed to publish Python SDK"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-npm:
@@ -166,7 +166,7 @@ jobs:
           notify_when: "failure"
           notification_title: "Failed to publish Typescript SDK"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-java:
@@ -203,7 +203,7 @@ jobs:
           notify_when: "failure"
           notification_title: "Failed to publish Java SDK"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-packagist:
@@ -227,6 +227,6 @@ jobs:
           notify_when: "failure"
           notification_title: "Failed to publish PHP SDK"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

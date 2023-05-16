@@ -159,7 +159,7 @@ jobs:
           notify_when: "failure"
           notification_title: "OpenAPI Document Validation Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   generate:
@@ -208,7 +208,7 @@ jobs:
           notify_when: "failure"
           notification_title: "SDK Generation Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   compile-go:
@@ -233,7 +233,7 @@ jobs:
           notify_when: "failure"
           notification_title: "Compilation of Go SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   compile-java:
@@ -260,7 +260,7 @@ jobs:
           notify_when: "failure"
           notification_title: "Compilation of Java SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   compile-python:
@@ -290,7 +290,7 @@ jobs:
           notify_when: "failure"
           notification_title: "Compilation of Python SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   compile-typescript:
@@ -320,7 +320,7 @@ jobs:
           notify_when: "failure"
           notification_title: "Compilation of Typescript SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   compile-php:
@@ -347,7 +347,7 @@ jobs:
           notify_when: "failure"
           notification_title: "Compilation of PHP SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   finalize:
@@ -395,7 +395,7 @@ jobs:
           notify_when: "failure"
           notification_title: "SDK Finalization Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-pypi:
@@ -433,7 +433,7 @@ jobs:
           notify_when: "failure"
           notification_title: "Publishing of Python SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-npm:
@@ -467,7 +467,7 @@ jobs:
           notify_when: "failure"
           notification_title: "Publishing of Typescript SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-java:
@@ -506,7 +506,7 @@ jobs:
           notify_when: "failure"
           notification_title: "Publishing of Java SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-packagist:
@@ -533,6 +533,6 @@ jobs:
           notify_when: "failure"
           notification_title: "Publishing of PHP SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
-          footer: "Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
