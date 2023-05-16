@@ -6,7 +6,7 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/google/go-github/v48 v48.0.0
 	github.com/hashicorp/go-version v1.6.0
-	github.com/pb33f/libopenapi v0.5.2
+	github.com/pb33f/libopenapi v0.8.1
 	github.com/speakeasy-api/sdk-gen-config v0.4.2
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/exp v0.0.0-20221031165847-c99f073a8326
@@ -35,6 +35,7 @@ require (
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect

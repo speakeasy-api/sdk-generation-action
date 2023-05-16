@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/pb33f/libopenapi"
+	"github.com/pb33f/libopenapi/datamodel"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/download"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
@@ -36,11 +37,14 @@ func GetOpenAPIFileInfo() (string, string, string, error) {
 		return "", "", "", err
 	}
 
+	basePath := ""
 	filePath := ""
 
 	if len(filePaths) == 1 {
 		filePath = filePaths[0]
+		basePath = filepath.Dir(filePath)
 	} else {
+		basePath = filepath.Dir(filePaths[0])
 		filePath, err = mergeFiles(filePaths)
 		if err != nil {
 			return "", "", "", err
@@ -52,7 +56,11 @@ func GetOpenAPIFileInfo() (string, string, string, error) {
 		return "", "", "", fmt.Errorf("failed to read openapi file: %w", err)
 	}
 
-	doc, err := libopenapi.NewDocument(data)
+	doc, err := libopenapi.NewDocumentWithConfiguration(data, &datamodel.DocumentConfiguration{
+		AllowRemoteReferences: true,
+		AllowFileReferences:   true,
+		BasePath:              basePath, // TODO possiblity this is set incorrectly for multiple input files but it is assumed currently any local references are relative to the first file
+	})
 	if err != nil {
 		return "", "", "", fmt.Errorf("failed to parse openapi file: %w", err)
 	}
