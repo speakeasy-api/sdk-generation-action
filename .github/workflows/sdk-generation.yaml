@@ -87,6 +87,11 @@ on:
         default: "false"
         required: false
         type: string
+      output_tests:
+        required: false
+        description: "Internal use only"
+        default: "false"
+        type: string
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -180,6 +185,7 @@ jobs:
           action: generate
           force: ${{ inputs.force }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          output_tests: ${{ inputs.output_tests }}
   compile-go:
     if: ${{ needs.generate.outputs.go_regenerated == 'true' }}
     name: Compile Go SDK

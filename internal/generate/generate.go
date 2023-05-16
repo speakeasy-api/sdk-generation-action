@@ -129,7 +129,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 			repoURL, repoSubdirectory := getRepoDetails(dir)
 
-			if err := cli.Generate(docPath, lang, outputDir, installationURL, published, repoURL, repoSubdirectory); err != nil {
+			if err := cli.Generate(docPath, lang, outputDir, installationURL, published, environment.ShouldOutputTests(), repoURL, repoSubdirectory); err != nil {
 				return nil, outputs, err
 			}
 

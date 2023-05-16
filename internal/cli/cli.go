@@ -14,6 +14,7 @@ var (
 	UnpublishedInstallationVersion = version.Must(version.NewVersion("1.16.0"))
 	MergeVersion                   = version.Must(version.NewVersion("1.21.3"))
 	RepoDetailsVersion             = version.Must(version.NewVersion("1.23.1"))
+	OutputTestsVersion             = version.Must(version.NewVersion("1.33.2"))
 )
 
 func IsAtLeastVersion(version *version.Version) bool {
@@ -127,7 +128,7 @@ func Validate(docPath string) error {
 	return nil
 }
 
-func Generate(docPath, lang, outputDir, installationURL string, published bool, repoURL, repoSubDirectory string) error {
+func Generate(docPath, lang, outputDir, installationURL string, published, outputTests bool, repoURL, repoSubDirectory string) error {
 	args := []string{
 		"generate",
 		"sdk",
@@ -154,6 +155,10 @@ func Generate(docPath, lang, outputDir, installationURL string, published bool, 
 		if repoSubDirectory != "" {
 			args = append(args, "-b", repoSubDirectory)
 		}
+	}
+
+	if IsAtLeastVersion(OutputTestsVersion) && outputTests {
+		args = append(args, "-t")
 	}
 
 	out, err := runSpeakeasyCommand(args...)

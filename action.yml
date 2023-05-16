@@ -98,6 +98,9 @@ inputs:
   previous_gen_version:
     description: "The version of the previous generation, only used for the 'finalize' action step."
     required: false
+  output_tests:
+    description: "Internal use only"
+    required: false
 outputs:
   python_regenerated:
     description: "true if the Python SDK was regenerated"
@@ -149,3 +152,4 @@ runs:
     - ${{ inputs.branch_name }}
     - ${{ inputs.previous_gen_version }}
     - ${{ inputs.openapi_docs }}
+    - ${{ inputs.output_tests }}

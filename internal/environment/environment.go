@@ -144,3 +144,7 @@ func GetGithubServerURL() string {
 func GetWorkspace() string {
 	return os.Getenv("GITHUB_WORKSPACE")
 }
+
+func ShouldOutputTests() bool {
+	return os.Getenv("INPUT_OUTPUT_TESTS") == "true"
+}
