@@ -72,6 +72,8 @@ jobs:
       python_directory: ${{ steps.release.outputs.python_directory }}
       typescript_regenerated: ${{ steps.release.outputs.typescript_regenerated }}
       typescript_directory: ${{ steps.release.outputs.typescript_directory }}
+      terraform_regenerated: ${{ steps.release.outputs.terraform_regenerated }}
+      terraform_directory: ${{ steps.release.outputs.terraform_directory }}
       go_regenerated: ${{ steps.release.outputs.go_regenerated }}
       go_directory: ${{ steps.release.outputs.go_directory }}
       java_regenerated: ${{ steps.release.outputs.java_regenerated }}
@@ -86,6 +88,7 @@ jobs:
           create_release: ${{ inputs.create_release }}
           publish_python: ${{ inputs.publish_python }}
           publish_typescript: ${{ inputs.publish_typescript }}
+          publish_terraform: ${{ inputs.publish_terraform }}
           publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
           action: "release"

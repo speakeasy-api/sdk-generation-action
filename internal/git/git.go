@@ -497,6 +497,10 @@ func (g *Git) GetCommitedFiles() ([]string, error) {
 	return files, nil
 }
 
+func (g *Git) CreateGoRelease(tag string, hash string, name string) {
+
+}
+
 func getGithubAuth(accessToken string) *gitHttp.BasicAuth {
 	return &gitHttp.BasicAuth{
 		Username: "gen",

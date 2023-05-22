@@ -30,6 +30,11 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo) error {
 			tag = fmt.Sprintf("%s/%s", info.Path, tag)
 		}
 
+		if lang == "terraform" {
+			g.CreateGoRelease(tag, commitHash, fmt.Sprintf("%s - %s - %s", lang, tag, environment.GetInvokeTime().Format("2006-01-02 15:04:05")))
+			continue
+		}
+
 		_, _, err = g.client.Repositories.CreateRelease(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.RepositoryRelease{
 			TagName:         github.String(tag),
 			TargetCommitish: github.String(commitHash),
