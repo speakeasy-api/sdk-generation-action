@@ -497,8 +497,17 @@ func (g *Git) GetCommitedFiles() ([]string, error) {
 	return files, nil
 }
 
-func (g *Git) CreateGoRelease(tag string, hash string, name string) {
+func (g *Git) CreateTag(tag string, hash string) error {
+	logging.Info("Creating Tag %s from commit %s", tag, hash)
 
+	if _, err := g.repo.CreateTag(tag, plumbing.NewHash(hash), &git.CreateTagOptions{
+		Message: tag,
+	}); err != nil {
+		logging.Info("Failed to create tag: %s", err)
+		return err
+	}
+
+	logging.Info("Tag %s created for commit %s", tag, hash)
 }
 
 func getGithubAuth(accessToken string) *gitHttp.BasicAuth {
