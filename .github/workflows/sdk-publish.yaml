@@ -62,7 +62,6 @@ on:
       slack_webhook_url:
         description: A Slack webhook URL that pipeline failures will be posted to
         required: false
-
 jobs:
   release:
     name: Create Github Release
