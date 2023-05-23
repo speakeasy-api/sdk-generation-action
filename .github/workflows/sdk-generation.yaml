@@ -425,6 +425,17 @@ jobs:
         run: |
           python setup.py sdist bdist_wheel
           twine upload dist/*
+      - uses: actions/posthog-github-action
+        with:
+          posthog-token: ${{ secrets.POSTHOG_API_KEY }}
+          event: 'publish_sdk'
+          properties: |
+            {
+              "event_type": "github action",
+              "github_repository": "${{ env.GITHUB_REPOSITORY }}"
+              "language": "python",
+              "package_manager": "pypi"
+            }
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
