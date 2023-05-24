@@ -417,7 +417,7 @@ func (g *Git) GetDownloadLink(version string) (string, string, error) {
 
 	for _, release := range releases {
 		for _, asset := range release.Assets {
-			if strings.HasSuffix(strings.ToLower(asset.GetName()), "_linux_x86_64.tar.gz") || strings.HasSuffix(strings.ToLower(asset.GetName()), "_linux_amd64.tar.gz") {
+			if strings.Contains(strings.ToLower(asset.GetName()), "_linux_x86_64") || strings.Contains(strings.ToLower(asset.GetName()), "_linux_amd64") {
 				if version == "latest" || version == release.GetTagName() {
 					return asset.GetBrowserDownloadURL(), *release.TagName, nil
 				}
