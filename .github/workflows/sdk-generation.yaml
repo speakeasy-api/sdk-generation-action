@@ -446,7 +446,7 @@ jobs:
               "api_key": "${{ env.POSTHOG_API_KEY }}",
               "event": "publish_sdk",
               "properties": {
-                "event_type": "github_action"
+                "event_type": "github_action",
                 "distinct_id": "speakeasy_github_action",
                 "language": "python",
                 "status": "${{ needs.publish_sdk.result }}",
