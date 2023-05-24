@@ -77,7 +77,7 @@ func extract(archive, dest string) error {
 	switch filepath.Ext(archive) {
 	case ".zip":
 		return extractZip(archive, dest)
-	case ".tar.gz":
+	case ".gz":
 		return extractTarGZ(archive, dest)
 	default:
 		return fmt.Errorf("unsupported archive type: %s", filepath.Ext(archive))
