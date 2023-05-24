@@ -53,6 +53,10 @@ func Download(pinnedVersion string, g Git) error {
 		return fmt.Errorf("failed to extract speakeasy cli: %w", err)
 	}
 
+	if err := os.Chmod(filepath.Join(baseDir, "bin", "speakeasy"), 0o755); err != nil {
+		return fmt.Errorf("failed to set permissions on speakeasy cli: %w", err)
+	}
+
 	return nil
 }
 
