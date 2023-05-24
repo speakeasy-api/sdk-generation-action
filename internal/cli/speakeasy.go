@@ -2,6 +2,7 @@ package cli
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -40,18 +41,17 @@ func Download(pinnedVersion string, g Git) error {
 
 	fmt.Println("Downloading speakeasy cli version: ", version)
 
-	tarPath := filepath.Join(os.TempDir(), "speakeasy*.tar.gz")
-	if err := download.DownloadFile(link, tarPath, "", ""); err != nil {
+	downloadPath := filepath.Join(os.TempDir(), "speakeasy*"+path.Ext(link))
+	if err := download.DownloadFile(link, downloadPath, "", ""); err != nil {
 		return fmt.Errorf("failed to download speakeasy cli: %w", err)
 	}
+	defer os.Remove(downloadPath)
 
 	baseDir := environment.GetBaseDir()
 
-	if err := extract(tarPath, filepath.Join(baseDir, "bin")); err != nil {
+	if err := extract(downloadPath, filepath.Join(baseDir, "bin")); err != nil {
 		return fmt.Errorf("failed to extract speakeasy cli: %w", err)
 	}
-
-	os.Remove(tarPath)
 
 	return nil
 }
@@ -69,50 +69,105 @@ func runSpeakeasyCommand(args ...string) (string, error) {
 	return string(output), nil
 }
 
-func extract(fileName string, outDir string) error {
-	if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
-		return fmt.Errorf("failed to create output directory: %s - %w", outDir, err)
+func extract(archive, dest string) error {
+	if err := os.MkdirAll(dest, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
-	f, err := os.Open(fileName)
+	switch filepath.Ext(archive) {
+	case ".zip":
+		return extractZip(archive, dest)
+	case ".tar.gz":
+		return extractTarGZ(archive, dest)
+	default:
+		return fmt.Errorf("unsupported archive type: %s", filepath.Ext(archive))
+	}
+}
+
+func extractZip(archive, dest string) error {
+	z, err := zip.OpenReader(archive)
+	if err != nil {
+		return fmt.Errorf("failed to open zip archive: %w", err)
+	}
+	defer z.Close()
+
+	for _, file := range z.File {
+		filePath := path.Join(dest, file.Name)
+
+		if file.FileInfo().IsDir() {
+			if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
+				return fmt.Errorf("failed to create extracted directory: %s - %w", filePath, err)
+			}
+			continue
+		}
+
+		if err := os.MkdirAll(path.Dir(filePath), os.ModePerm); err != nil {
+			return fmt.Errorf("failed to create extracted directory: %s - %w", path.Dir(filePath), err)
+		}
+
+		outFile, err := os.Create(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to create extracted file: %s - %w", filePath, err)
+		}
+
+		f, err := file.Open()
+		if err != nil {
+			return fmt.Errorf("failed to open file in archive: %w", err)
+		}
+
+		_, err = io.Copy(outFile, f)
+		f.Close()
+		outFile.Close()
+		if err != nil {
+			return fmt.Errorf("failed to copy file from archive: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func extractTarGZ(archive, dest string) error {
+	file, err := os.OpenFile(archive, os.O_RDONLY, 0)
 	if err != nil {
 		return fmt.Errorf("failed to open archive: %w", err)
 	}
-	defer f.Close()
+	defer file.Close()
 
-	uncompressedStream, err := gzip.NewReader(f)
+	gz, err := gzip.NewReader(file)
 	if err != nil {
-		return fmt.Errorf("failed to read archive: %w", err)
+		return fmt.Errorf("failed to create gzip reader: %w", err)
 	}
 
-	tarReader := tar.NewReader(uncompressedStream)
+	t := tar.NewReader(gz)
 
 	for {
-		header, err := tarReader.Next()
+		header, err := t.Next()
+
 		if err == io.EOF {
 			break
 		}
+
 		if err != nil {
-			return fmt.Errorf("failed to read tar: %w", err)
+			return fmt.Errorf("failed to read archive: %w", err)
 		}
 
 		switch header.Typeflag {
-		case tar.TypeReg:
-			outFile, err := os.Create(path.Join(outDir, header.Name))
-			if err != nil {
-				return fmt.Errorf("failed to create file from archive: %w", err)
+		case tar.TypeDir:
+			if err := os.MkdirAll(path.Join(dest, header.Name), os.ModePerm); err != nil {
+				return fmt.Errorf("failed to create extracted directory: %s - %w", path.Join(dest, header.Name), err)
 			}
-			if _, err := io.Copy(outFile, tarReader); err != nil {
+		case tar.TypeReg:
+			outFile, err := os.Create(path.Join(dest, header.Name))
+			if err != nil {
+				return fmt.Errorf("failed to create extracted file: %s - %w", path.Join(dest, header.Name), err)
+			}
+			_, err = io.Copy(outFile, t)
+			outFile.Close()
+			if err != nil {
 				return fmt.Errorf("failed to copy file from archive: %w", err)
 			}
-
-			if err := outFile.Chmod(0o755); err != nil {
-				return fmt.Errorf("failed to set file permissions: %w", err)
-			}
-
-			outFile.Close()
 		default:
-			return fmt.Errorf("unsupported type: %v in %s", header.Typeflag, header.Name)
+			return fmt.Errorf("unknown type: %b in %s", header.Typeflag, header.Name)
 		}
 	}
 
