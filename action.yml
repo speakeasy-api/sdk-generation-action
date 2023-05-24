@@ -132,7 +132,7 @@ outputs:
     description: "The location of the OpenAPI document used for generation"
 runs:
   using: "docker"
-  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v14"
+  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v14.10"
   env:
     SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
   args:
