@@ -438,7 +438,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - name: Send Publish Event to Posthog
-        if: always() && env.POSTHOG_API_KEY != ''
+        if: always()
         run: |
           curl -X POST https://app.posthog.com/capture/ \
             -H 'Content-Type: application/json' \
