@@ -419,6 +419,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install setuptools wheel twine
       - name: Build and publish
+        id: publish_sdk
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi_token }}
@@ -436,6 +437,24 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Send Publish Event to Posthog
+        if: needs.publish_sdk.result != 'skipped' && env.POSTHOG_API_KEY != ''
+        run: |
+          curl -X POST https://app.posthog.com/capture/ \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "api_key": "${{ env.POSTHOG_API_KEY }}",
+              "event": "publish_sdk",
+              "properties": {
+                "event_type": "github_action"
+                "distinct_id": "speakeasy_github_action",
+                "language": "python",
+                "status": "${{ needs.publish_sdk.result }}",
+                "repository": "${{ env.GITHUB_REPOSITORY }}"
+              }
+            }'
+        env:
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
   publish-npm:
     if: ${{ always() && needs.generate.outputs.typescript_regenerated == 'true' && inputs.publish_typescript == 'true' && inputs.mode != 'pr' }}
     name: Publish Typescript SDK
