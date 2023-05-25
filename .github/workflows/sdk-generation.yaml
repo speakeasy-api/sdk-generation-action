@@ -129,6 +129,9 @@ on:
       slack_webhook_url:
         description: A Slack webhook URL that pipeline failures will be posted to
         required: false
+      posthog_api_key:
+        description: A PostHog API key that sdk publishing events will be posted to
+        required: false
 
 jobs:
   validate:
@@ -438,7 +441,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - name: Send Publish Event to Posthog
-        if: always()
+        if: always() && env.POSTHOG_API_KEY != ''
         run: |
           curl -X POST https://app.posthog.com/capture/ \
             -H 'Content-Type: application/json' \
