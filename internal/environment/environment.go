@@ -89,6 +89,10 @@ func GetAccessToken() string {
 	return os.Getenv("INPUT_GITHUB_ACCESS_TOKEN")
 }
 
+func GetGPGFingerprint() string {
+	return os.Getenv("GPG_FINGERPRINT")
+}
+
 func GetInvokeTime() time.Time {
 	return invokeTime
 }

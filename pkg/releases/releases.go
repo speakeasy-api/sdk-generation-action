@@ -12,10 +12,11 @@ import (
 )
 
 type LanguageReleaseInfo struct {
-	PackageName string
-	Path        string
-	Version     string
-	URL         string
+	PackageName     string
+	Path            string
+	Version         string
+	PreviousVersion string
+	URL             string
 }
 
 type ReleasesInfo struct {
@@ -127,6 +128,10 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 	releases := strings.Split(data, "\n\n")
 
 	lastRelease := releases[len(releases)-1]
+	var previousRelease *string = nil
+	if len(releases) > 1 {
+		previousRelease = &releases[len(releases)-2]
+	}
 
 	matches := releaseInfoRegex.FindStringSubmatch(lastRelease)
 
@@ -216,12 +221,21 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 
 	terraformMatches := terraformReleaseRegex.FindStringSubmatch(lastRelease)
 	if len(terraformMatches) == 6 {
-		info.Languages["terraform"] = LanguageReleaseInfo{
+		languageInfo := LanguageReleaseInfo{
 			Version:     terraformMatches[1],
 			URL:         terraformMatches[2],
 			PackageName: fmt.Sprintf("%s/%s", terraformMatches[3], terraformMatches[4]),
 			Path:        terraformMatches[5],
 		}
+
+		if previousRelease != nil {
+			previousReleaseTerraform := terraformReleaseRegex.FindStringSubmatch(*previousRelease)
+			if len(previousReleaseTerraform) == 6 {
+				languageInfo.PreviousVersion = previousReleaseTerraform[1]
+			}
+		}
+		info.Languages["terraform"] = languageInfo
+
 	}
 
 	return info, nil

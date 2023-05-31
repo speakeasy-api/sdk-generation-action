@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,6 +12,9 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 )
+
+//go:embed goreleaser.yml
+var tfGoReleaserConfig string
 
 func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo) error {
 	if g.repo == nil {
@@ -38,10 +42,18 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo) error {
 			if err != nil {
 				return fmt.Errorf("failed to create tag: %w", err)
 			}
-			cmd := exec.Command("goreleaser", "release", "--clean")
-			cmd.Dir = filepath.Join(environment.GetWorkspace())
+			// Copy our standard terraform config into /tmp/.goreleaser.yml
+			err = os.WriteFile("/tmp/.goreleaser.yml", []byte(tfGoReleaserConfig), 0644)
+			if err != nil {
+				return fmt.Errorf("failed to write goreleaser config: %w", err)
+			}
+			cmd := exec.Command("goreleaser", "release", "--clean", "--config", "/tmp/.goreleaser.yml")
+			cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo")
 			cmd.Env = append(os.Environ(),
+				"GORELEASER_PREVIOUS_TAG="+info.PreviousVersion,
 				"GORELEASER_CURRENT_TAG="+tag,
+				"GITHUB_TOKEN="+environment.GetAccessToken(),
+				"GPG_FINGERPRINT="+environment.GetGPGFingerprint(),
 			)
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
