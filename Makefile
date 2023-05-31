@@ -1,3 +1,5 @@
+.PHONY: *
+
 test-direct-mode:
 	./testing/test.sh ./testing/direct-mode.env
 
