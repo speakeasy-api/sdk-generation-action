@@ -48,6 +48,12 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 				Version:     "1.2.3",
 				URL:         "https://central.sonatype.com/artifact/com.group/artifact/1.2.3",
 			},
+			"terraform": {
+				PackageName: "speakeasy-api/speakeasy",
+				Path:        "terraform",
+				Version:     "0.0.5",
+				URL:         "https://registry.terraform.io/providers/speakeasy-api/speakeasy/0.0.5",
+			},
 		},
 	}
 
