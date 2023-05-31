@@ -6,3 +6,4 @@ bin/
 .idea/
 output.txt
 openapi/
+*.iml
