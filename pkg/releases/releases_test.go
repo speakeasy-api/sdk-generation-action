@@ -116,6 +116,12 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 				PackageName: "org/package",
 				Version:     "1.2.3",
 			},
+			"terraform": {
+				PackageName: "speakeasy-api/speakeasy",
+				Path:        "terraform",
+				Version:     "0.0.5",
+				URL:         "https://registry.terraform.io/providers/speakeasy-api/speakeasy/0.0.5",
+			},
 			"java": {
 				PackageName: "com.group.artifact",
 				Path:        "java",
@@ -160,6 +166,12 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 				Path:        "java",
 				Version:     "1.3.0",
 				URL:         "https://central.sonatype.com/artifact/com.group/artifact/1.3.0",
+			},
+			"terraform": {
+				PackageName: "speakeasy-api/speakeasy",
+				Path:        "terraform",
+				Version:     "0.0.5",
+				URL:         "https://registry.terraform.io/providers/speakeasy-api/speakeasy/0.0.5",
 			},
 		},
 	}
