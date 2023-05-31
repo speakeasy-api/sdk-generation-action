@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 
 	"github.com/google/go-github/v48/github"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
@@ -35,6 +37,16 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo) error {
 			err = g.CreateTag("v"+info.Version, commitHash)
 			if err != nil {
 				return fmt.Errorf("failed to create tag: %w", err)
+			}
+			cmd := exec.Command("goreleaser", "release", "--clean")
+			cmd.Dir = filepath.Join(environment.GetWorkspace())
+			cmd.Env = append(os.Environ(),
+				"GORELEASER_CURRENT_TAG="+tag,
+			)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return fmt.Errorf("failed to run goreleaser: %w", err)
 			}
 		} else {
 			_, _, err = g.client.Repositories.CreateRelease(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.RepositoryRelease{

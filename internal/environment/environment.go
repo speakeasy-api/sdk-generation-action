@@ -82,7 +82,7 @@ func GetLanguages() string {
 }
 
 func CreateGitRelease() bool {
-	return os.Getenv("INPUT_CREATE_RELEASE") == "true" || IsLanguagePublished("php")
+	return os.Getenv("INPUT_CREATE_RELEASE") == "true" || IsLanguagePublished("php") || IsLanguagePublished("terraform")
 }
 
 func GetAccessToken() string {
