@@ -106,7 +106,7 @@ var (
 	pypiReleaseRegex      = regexp.MustCompile(`- \[PyPI v(\d+\.\d+\.\d+)\] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
 	goReleaseRegex        = regexp.MustCompile(`- \[Go v(\d+\.\d+\.\d+)\] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+) - (.*)`)
 	composerReleaseRegex  = regexp.MustCompile(`- \[Composer v(\d+\.\d+\.\d+)\] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+) - (.*)`)
-	mavenReleaseRegex     = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+)\] (https:\/\/central\.sonatype\.com\/artifact\/((.*?)\/(.*?))\/.*?) - (.*)`)
+	mavenReleaseRegex     = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+)\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
 	terraformReleaseRegex = regexp.MustCompile(`- \[Terraform v(\d+\.\d+\.\d+)\] (https:\/\/registry\.terraform\.io\/providers\/(.*?)\/(.*?)\/.*?) - (.*)`)
 )
 

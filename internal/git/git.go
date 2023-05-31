@@ -508,6 +508,7 @@ func (g *Git) CreateTag(tag string, hash string) error {
 	}
 
 	logging.Info("Tag %s created for commit %s", tag, hash)
+	return nil
 }
 
 func getGithubAuth(accessToken string) *gitHttp.BasicAuth {
