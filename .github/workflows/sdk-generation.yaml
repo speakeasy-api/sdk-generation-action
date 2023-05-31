@@ -276,7 +276,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-      - run: pip install -e .
+      - run: pip install -e .[dev]
         working-directory: ${{ needs.generate.outputs.python_directory }}
       - run: python3.9 -m compileall -q .
         working-directory: ${{ needs.generate.outputs.python_directory }}
