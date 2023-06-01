@@ -201,6 +201,11 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 					PackageName: fmt.Sprintf("%s.%s", langCfg.Cfg["groupID"], langCfg.Cfg["artifactID"]),
 					Version:     langCfg.Version,
 				}
+			case "terraform":
+				langGenInfo[lang] = LanguageGenInfo{
+					PackageName: fmt.Sprintf("%s/%s", langCfg.Cfg["author"], langCfg.Cfg["packageName"]),
+					Version:     langCfg.Version,
+				}
 			default:
 				langGenInfo[lang] = LanguageGenInfo{
 					PackageName: fmt.Sprintf("%s", langCfg.Cfg["packageName"]),

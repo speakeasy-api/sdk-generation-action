@@ -63,7 +63,7 @@ func Download(pinnedVersion string, g Git) error {
 func runSpeakeasyCommand(args ...string) (string, error) {
 	baseDir := environment.GetBaseDir()
 
-	cmdPath := strings.Join([]string{baseDir, "bin", "speakeasy"}, string(os.PathSeparator))
+	cmdPath := path.Join(baseDir, "bin", "speakeasy")
 
 	output, err := exec.Command(cmdPath, args...).CombinedOutput()
 	if err != nil {

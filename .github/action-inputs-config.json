@@ -38,4 +38,8 @@
     "name": "publish_php",
     "language": "php"
   }
+  {
+    "name": "publish_terraform",
+    "language": "terraform"
+  }
 ]

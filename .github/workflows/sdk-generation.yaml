@@ -42,6 +42,7 @@ on:
             - typescript # using default output of ./typescript-client-sdk
             - java # using default output of ./java-client-sdk
             - php # using default output of ./php-client-sdk
+            - terraform # (single language repo only)
 
           If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
         required: true
@@ -58,6 +59,11 @@ on:
         type: string
       publish_typescript:
         description: "Publish the Typescript SDK to NPM if using 'direct' mode or prepare a release if using 'pr' mode"
+        default: "false"
+        required: false
+        type: string
+      publish_terraform:
+        description: "Create a Github release compatible with the terraform registry of the provider"
         default: "false"
         required: false
         type: string
@@ -129,7 +135,12 @@ on:
       slack_webhook_url:
         description: A Slack webhook URL that pipeline failures will be posted to
         required: false
-
+      terraform_gpg_secret_key:
+        description: The GPG secret key to use for signing the Terraform provider
+        required: false
+      terraform_gpg_passphrase:
+        description: The passphrase for the Terraform GPG secret key
+        required: false
 jobs:
   validate:
     name: Validate OpenAPI Document
@@ -173,6 +184,8 @@ jobs:
       typescript_directory: ${{ steps.generate.outputs.typescript_directory }}
       go_regenerated: ${{ steps.generate.outputs.go_regenerated }}
       go_directory: ${{ steps.generate.outputs.go_directory }}
+      terraform_regenerated: ${{ steps.generate.outputs.terraform_regenerated }}
+      terraform_directory: ${{ steps.generate.outputs.terraform_directory }}
       java_regenerated: ${{ steps.generate.outputs.java_regenerated }}
       java_directory: ${{ steps.generate.outputs.java_directory }}
       php_regenerated: ${{ steps.generate.outputs.php_regenerated }}
@@ -193,6 +206,7 @@ jobs:
           create_release: ${{ inputs.create_release }}
           publish_python: ${{ inputs.publish_python }}
           publish_typescript: ${{ inputs.publish_typescript }}
+          publish_terraform: ${{ inputs.publish_terraform }}
           publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
           mode: ${{ inputs.mode }}
@@ -232,6 +246,33 @@ jobs:
           token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Compilation of Go SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  compile-terraform:
+    if: ${{ needs.generate.outputs.terraform_regenerated == 'true' }}
+    name: Compile Terraform Provider
+    runs-on: ubuntu-latest
+    needs: generate
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.generate.outputs.branch_name }}
+          fetch-depth: 0
+      - run: git fetch --force --tags
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ">=1.14.0"
+      - run: go build ./...
+        working-directory: ${{ needs.generate.outputs.terraform_directory }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "Compilation of Terraform Provider Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
@@ -357,6 +398,7 @@ jobs:
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
       (needs.compile-go.result != 'skipped' ||
+      needs.compile-terraform.result != 'skipped' ||
       needs.compile-java.result != 'skipped' ||
       needs.compile-python.result != 'skipped' ||
       needs.compile-typescript.result != 'skipped' ||
@@ -364,6 +406,7 @@ jobs:
     needs:
       - generate
       - compile-go
+      - compile-terraform
       - compile-java
       - compile-python
       - compile-typescript
@@ -380,6 +423,7 @@ jobs:
           create_release: ${{ inputs.create_release }}
           publish_python: ${{ inputs.publish_python }}
           publish_typescript: ${{ inputs.publish_typescript }}
+          publish_terraform: ${{ inputs.publish_terraform }}
           publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
           mode: ${{ inputs.mode }}

@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -417,8 +418,15 @@ func (g *Git) GetDownloadLink(version string) (string, string, error) {
 
 	for _, release := range releases {
 		for _, asset := range release.Assets {
-			if strings.Contains(strings.ToLower(asset.GetName()), "_linux_x86_64") || strings.Contains(strings.ToLower(asset.GetName()), "_linux_amd64") {
-				if version == "latest" || version == release.GetTagName() {
+			if version == "latest" || version == release.GetTagName() {
+				curOS := runtime.GOOS
+				curArch := runtime.GOARCH
+
+				// https://github.com/speakeasy-api/sdk-generation-action/pull/28#discussion_r1213129634
+				if curOS == "linux" && (strings.Contains(strings.ToLower(asset.GetName()), "_linux_x86_64") || strings.Contains(strings.ToLower(asset.GetName()), "_linux_amd64")) {
+					return asset.GetBrowserDownloadURL(), *release.TagName, nil
+				} else if strings.Contains(strings.ToLower(asset.GetName()), curOS) &&
+					strings.Contains(strings.ToLower(asset.GetName()), curArch) {
 					return asset.GetBrowserDownloadURL(), *release.TagName, nil
 				}
 			}
@@ -495,6 +503,20 @@ func (g *Git) GetCommitedFiles() ([]string, error) {
 	logging.Info("Found %d files in commits", len(files))
 
 	return files, nil
+}
+
+func (g *Git) CreateTag(tag string, hash string) error {
+	logging.Info("Creating Tag %s from commit %s", tag, hash)
+
+	if _, err := g.repo.CreateTag(tag, plumbing.NewHash(hash), &git.CreateTagOptions{
+		Message: tag,
+	}); err != nil {
+		logging.Info("Failed to create tag: %s", err)
+		return err
+	}
+
+	logging.Info("Tag %s created for commit %s", tag, hash)
+	return nil
 }
 
 func getGithubAuth(accessToken string) *gitHttp.BasicAuth {

@@ -58,5 +58,17 @@
   {
     "name": "java_gpg_passphrase",
     "language": "java"
+  },
+  {
+    "name": "terraform_gpg_secret_key",
+    "secret_name": "TERRAFORM_GPG_SECRET_KEY",
+    "validation_regex": "/^[\\w.\\-\\t \\r\\n]+$/.source",
+    "validation_message": "Letters, numbers, tabs, spaces, newlines, or .-_ only",
+    "language": "terraform"
+  },
+  {
+    "name": "terraform_gpg_passphrase",
+    "secret_name": "TERRAFORM_GPG_PASSPHRASE",
+    "language": "terraform"
   }
 ]

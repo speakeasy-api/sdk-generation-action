@@ -170,6 +170,21 @@ Java publishing is supported by publishing to a staging repository provider (OSS
   - `companyURL: https://www.mycompany.com`
   - `companyEmail: info@mycompany.com`
 
+#### Terraform Registry
+
+Publishing a generated terraform provider is possible through the configuration of this action. In order to publish, you must do the following:
+
+1. Ensure that the repository you made is called `terraform-provider-{NAME}`, where `NAME` is lowercase. The repository must be public. For this reason, terraform provider generation does not support operating in monorepo mode.
+2. Create and export a signing key to sign your provider releases with. See [Github's documentation](https://docs.github.com/en/authentication/managing-commit-signature-verification/generating-a-new-gpg-key) for more information. This will need to be generated using either RSA or DSA algorithms. Take note of the following values
+  1. The GPG private key.
+  2. The GPG passphrase.
+  3. The GPG Public Key
+3. Add the ASCII-armored public key to the terraform registry.
+4. Ensure that the following secrets are available to your repository. These will be configured automatically if entered into the speakeasy UI.
+  1. `TERRAFORM_GPG_PRIVATE_KEY`: The GPG private key.
+  2. `TERRAFORM_GPG_PASSPHRASE`: The GPG passphrase.
+5. Once the initial release of your provider is complete (after executing this github action), you will need to manually add the provider to the terraform registry. Follow [the terraform registry instructions](https://registry.terraform.io/publish/provider) to begin this process, and agree to any Terraform Terms and Conditions. You will need to be an organizational admin to complete this step. This step needs only be performed once: subsequent updates will happen automatically.
+
 ## Validation
 
 The action runs through the following steps:
@@ -245,6 +260,7 @@ languages: |
   - typescript # using default output of ./typescript-client-sdk
   - java # using default output of ./java-client-sdk
   - php # using default output of ./php-client-sdk
+  - terraform # (single language repo only)
 ```
 
 If multiple languages are present we will treat the repo as a mono repo, if a single language is present as a single language repo.
@@ -263,6 +279,10 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 
 **(Workflow Only)** Whether to publish the TypeScript SDK to NPM. Default `"false"`.
 **Note**: Needs to be set in the generate and publish workflows if using `pr` mode.
+
+### `publish_terraform`
+
+**(Workflow Only)** Whether to publish the Terraform Provider to the Terraform Registry. Default `"false"`.
 
 ### `publish_java`
 
@@ -314,3 +334,11 @@ The directory the Java SDK was generated in
 ### `php_directory`
 
 The directory the PHP SDK was generated in
+
+### `terraform_regenerated`
+
+`true` if the Terraform Provider was regenerated
+
+### `terraform_directory`
+
+The directory the Terraform Provider was generated in

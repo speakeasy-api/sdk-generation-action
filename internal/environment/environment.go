@@ -82,11 +82,15 @@ func GetLanguages() string {
 }
 
 func CreateGitRelease() bool {
-	return os.Getenv("INPUT_CREATE_RELEASE") == "true" || IsLanguagePublished("php")
+	return os.Getenv("INPUT_CREATE_RELEASE") == "true" || IsLanguagePublished("php") || IsLanguagePublished("terraform")
 }
 
 func GetAccessToken() string {
 	return os.Getenv("INPUT_GITHUB_ACCESS_TOKEN")
+}
+
+func GetGPGFingerprint() string {
+	return os.Getenv("INPUT_GPG_FINGERPRINT")
 }
 
 func GetInvokeTime() time.Time {

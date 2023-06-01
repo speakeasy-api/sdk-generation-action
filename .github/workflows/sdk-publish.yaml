@@ -62,7 +62,6 @@ on:
       slack_webhook_url:
         description: A Slack webhook URL that pipeline failures will be posted to
         required: false
-
 jobs:
   release:
     name: Create Github Release
@@ -72,6 +71,8 @@ jobs:
       python_directory: ${{ steps.release.outputs.python_directory }}
       typescript_regenerated: ${{ steps.release.outputs.typescript_regenerated }}
       typescript_directory: ${{ steps.release.outputs.typescript_directory }}
+      terraform_regenerated: ${{ steps.release.outputs.terraform_regenerated }}
+      terraform_directory: ${{ steps.release.outputs.terraform_directory }}
       go_regenerated: ${{ steps.release.outputs.go_regenerated }}
       go_directory: ${{ steps.release.outputs.go_directory }}
       java_regenerated: ${{ steps.release.outputs.java_regenerated }}
@@ -86,6 +87,7 @@ jobs:
           create_release: ${{ inputs.create_release }}
           publish_python: ${{ inputs.publish_python }}
           publish_typescript: ${{ inputs.publish_typescript }}
+          publish_terraform: ${{ inputs.publish_terraform }}
           publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
           action: "release"
@@ -226,6 +228,42 @@ jobs:
           token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Failed to publish PHP SDK"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  publish-terraform:
+    if: ${{ inputs.publish_terraform == 'true' }}
+    name: Publish Terraform Provider
+    runs-on: ubuntu-latest
+    needs: [generate, compile-terraform, finalize]
+    steps:
+      - name: Install GoReleaser
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          install-only: true
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549 # v5.2.0
+        id: import_gpg
+        with:
+          gpg_private_key: ${{ secrets.TERRAFORM_GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.TERRAFORM_GPG_PASSPHRASE }}
+      - id: release
+        uses: speakeasy-api/sdk-generation-action@v14
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          gpg_fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}
+          action: "release"
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_access_token }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "Publishing of Terraform Provider Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:

@@ -60,6 +60,10 @@ inputs:
     description: "Whether the Typescript SDK will be published to NPM"
     default: "false"
     required: false
+  publish_terraform:
+    description: "Whether the Terraform Provider will be published to the Terraform Registry"
+    default: "false"
+    required: false
   publish_php:
     description: "Whether the PHP SDK will be published to Packagist this will also create a release on Github"
     default: "false"
@@ -118,6 +122,10 @@ outputs:
     description: "true if the Java SDK was regenerated"
   java_directory:
     description: "The directory the Java SDK was generated to"
+  terraform_regenerated:
+    description: "true if the Terraform Provider was regenerated"
+  terraform_directory:
+    description: "The directory the Terraform Provider was generated to"
   php_regenerated:
     description: "true if the PHP SDK was regenerated"
   php_directory:
@@ -145,6 +153,7 @@ runs:
     - ${{ inputs.publish_typescript }}
     - ${{ inputs.publish_php }}
     - ${{ inputs.publish_java }}
+    - ${{ inputs.publish_terraform }}
     - ${{ inputs.openapi_doc_auth_header }}
     - ${{ inputs.openapi_doc_auth_token }}
     - ${{ inputs.mode }}

@@ -12,10 +12,11 @@ import (
 )
 
 type LanguageReleaseInfo struct {
-	PackageName string
-	Path        string
-	Version     string
-	URL         string
+	PackageName     string
+	Path            string
+	Version         string
+	PreviousVersion string
+	URL             string
 }
 
 type ReleasesInfo struct {
@@ -54,6 +55,9 @@ func (r ReleasesInfo) String() string {
 		case "php":
 			pkgID = "Composer"
 			pkgURL = fmt.Sprintf("https://packagist.org/packages/%s#v%s", info.PackageName, info.Version)
+		case "terraform":
+			pkgID = "Terraform"
+			pkgURL = fmt.Sprintf("https://registry.terraform.io/providers/%s/%s", info.PackageName, info.Version)
 		case "java":
 			pkgID = "Maven Central"
 			lastDotIndex := strings.LastIndex(info.PackageName, ".")
@@ -98,12 +102,13 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
 }
 
 var (
-	releaseInfoRegex     = regexp.MustCompile(`(?s)## (.*?)\n### Changes\nBased on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) (\((.*?)\))?.*?`)
-	npmReleaseRegex      = regexp.MustCompile(`- \[NPM v(\d+\.\d+\.\d+)\] (https:\/\/www\.npmjs\.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+) - (.*)`)
-	pypiReleaseRegex     = regexp.MustCompile(`- \[PyPI v(\d+\.\d+\.\d+)\] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
-	goReleaseRegex       = regexp.MustCompile(`- \[Go v(\d+\.\d+\.\d+)\] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+) - (.*)`)
-	composerReleaseRegex = regexp.MustCompile(`- \[Composer v(\d+\.\d+\.\d+)\] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+) - (.*)`)
-	mavenReleaseRegex    = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+)\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
+	releaseInfoRegex      = regexp.MustCompile(`(?s)## (.*?)\n### Changes\nBased on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) (\((.*?)\))?.*?`)
+	npmReleaseRegex       = regexp.MustCompile(`- \[NPM v(\d+\.\d+\.\d+)\] (https:\/\/www\.npmjs\.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+) - (.*)`)
+	pypiReleaseRegex      = regexp.MustCompile(`- \[PyPI v(\d+\.\d+\.\d+)\] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
+	goReleaseRegex        = regexp.MustCompile(`- \[Go v(\d+\.\d+\.\d+)\] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+) - (.*)`)
+	composerReleaseRegex  = regexp.MustCompile(`- \[Composer v(\d+\.\d+\.\d+)\] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+) - (.*)`)
+	mavenReleaseRegex     = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+)\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
+	terraformReleaseRegex = regexp.MustCompile(`- \[Terraform v(\d+\.\d+\.\d+)\] (https:\/\/registry\.terraform\.io\/providers\/(.*?)\/(.*?)\/.*?) - (.*)`)
 )
 
 func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
@@ -123,6 +128,10 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 	releases := strings.Split(data, "\n\n")
 
 	lastRelease := releases[len(releases)-1]
+	var previousRelease *string = nil
+	if len(releases) > 1 {
+		previousRelease = &releases[len(releases)-2]
+	}
 
 	matches := releaseInfoRegex.FindStringSubmatch(lastRelease)
 
@@ -208,6 +217,25 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 			PackageName: fmt.Sprintf(`%s.%s`, groupID, artifact),
 			Path:        mavenMatches[5],
 		}
+	}
+
+	terraformMatches := terraformReleaseRegex.FindStringSubmatch(lastRelease)
+	if len(terraformMatches) == 6 {
+		languageInfo := LanguageReleaseInfo{
+			Version:     terraformMatches[1],
+			URL:         terraformMatches[2],
+			PackageName: fmt.Sprintf("%s/%s", terraformMatches[3], terraformMatches[4]),
+			Path:        terraformMatches[5],
+		}
+
+		if previousRelease != nil {
+			previousReleaseTerraform := terraformReleaseRegex.FindStringSubmatch(*previousRelease)
+			if len(previousReleaseTerraform) == 6 {
+				languageInfo.PreviousVersion = previousReleaseTerraform[1]
+			}
+		}
+		info.Languages["terraform"] = languageInfo
+
 	}
 
 	return info, nil
