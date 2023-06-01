@@ -236,7 +236,7 @@ jobs:
     if: ${{ inputs.publish_terraform == 'true' }}
     name: Publish Terraform Provider
     runs-on: ubuntu-latest
-    needs: [generate, compile-terraform, finalize]
+    needs: release
     steps:
       - name: Install GoReleaser
         uses: goreleaser/goreleaser-action@v4
