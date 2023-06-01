@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/sys/unix"
 	"net/url"
 	"os"
 	"os/exec"
@@ -420,13 +419,14 @@ func (g *Git) GetDownloadLink(version string) (string, string, error) {
 	for _, release := range releases {
 		for _, asset := range release.Assets {
 			if version == "latest" || version == release.GetTagName() {
-				var utsname unix.Utsname
-				err = unix.Uname(&utsname)
-				if err != nil {
-					return "", "", fmt.Errorf("failed to get uname: %w", err)
-				}
+				curOS := runtime.GOOS
+				curArch := runtime.GOARCH
 
-				if strings.Contains(strings.ToLower(asset.GetName()), strings.ToLower(runtime.GOOS)) && strings.Contains(strings.ToLower(asset.GetName()), strings.ToLower(strings.Trim(string(utsname.Machine[:]), "\x00"))) {
+				// https://github.com/speakeasy-api/sdk-generation-action/pull/28#discussion_r1213129634
+				if curOS == "linux" && (strings.Contains(strings.ToLower(asset.GetName()), "_linux_x86_64") || strings.Contains(strings.ToLower(asset.GetName()), "_linux_amd64")) {
+					return asset.GetBrowserDownloadURL(), *release.TagName, nil
+				} else if strings.Contains(strings.ToLower(asset.GetName()), curOS) &&
+					strings.Contains(strings.ToLower(asset.GetName()), curArch) {
 					return asset.GetBrowserDownloadURL(), *release.TagName, nil
 				}
 			}

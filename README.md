@@ -260,7 +260,7 @@ languages: |
   - typescript # using default output of ./typescript-client-sdk
   - java # using default output of ./java-client-sdk
   - php # using default output of ./php-client-sdk
-  - terraform # using default output of ./terraform-provider
+  - terraform # (single language repo only)
 ```
 
 If multiple languages are present we will treat the repo as a mono repo, if a single language is present as a single language repo.
