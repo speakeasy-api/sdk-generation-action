@@ -90,7 +90,7 @@ func GetAccessToken() string {
 }
 
 func GetGPGFingerprint() string {
-	return os.Getenv("GPG_FINGERPRINT")
+	return os.Getenv("INPUT_GPG_FINGERPRINT")
 }
 
 func GetInvokeTime() time.Time {

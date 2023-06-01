@@ -253,11 +253,10 @@ jobs:
         with:
           github_access_token: ${{ secrets.github_access_token }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
-          goreleaser: true
+          gpg_fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}
           action: "release"
         env:
           GITHUB_TOKEN: ${{ secrets.github_access_token }}
-          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:

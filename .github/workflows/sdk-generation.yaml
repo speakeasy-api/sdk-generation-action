@@ -206,6 +206,7 @@ jobs:
           create_release: ${{ inputs.create_release }}
           publish_python: ${{ inputs.publish_python }}
           publish_typescript: ${{ inputs.publish_typescript }}
+          publish_terraform: ${{ inputs.publish_terraform }}
           publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
           mode: ${{ inputs.mode }}
