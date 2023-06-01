@@ -233,7 +233,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-terraform:
-    if: ${{ inputs.publish_terraform == 'true' }}
+    if: ${{ needs.release.outputs.terraform_regenerated == 'true' && inputs.publish_terraform == 'true' }}
     name: Publish Terraform Provider
     runs-on: ubuntu-latest
     needs: release
