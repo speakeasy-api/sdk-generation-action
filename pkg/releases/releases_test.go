@@ -59,7 +59,7 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 				Path:				 "ruby",
 				Version:		 "1.2.3",
 				URL:				 "https://rubygems.org/gems/org-package/versions/1.2.3"
-			}
+			},
 		},
 	}
 

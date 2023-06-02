@@ -105,7 +105,6 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
 }
 
 var (
-<<<<<<< HEAD
 	releaseInfoRegex      = regexp.MustCompile(`(?s)## (.*?)\n### Changes\nBased on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) (\((.*?)\))?.*?`)
 	npmReleaseRegex       = regexp.MustCompile(`- \[NPM v(\d+\.\d+\.\d+)\] (https:\/\/www\.npmjs\.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+) - (.*)`)
 	pypiReleaseRegex      = regexp.MustCompile(`- \[PyPI v(\d+\.\d+\.\d+)\] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
@@ -113,15 +112,7 @@ var (
 	composerReleaseRegex  = regexp.MustCompile(`- \[Composer v(\d+\.\d+\.\d+)\] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+) - (.*)`)
 	mavenReleaseRegex     = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+)\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
 	terraformReleaseRegex = regexp.MustCompile(`- \[Terraform v(\d+\.\d+\.\d+)\] (https:\/\/registry\.terraform\.io\/providers\/(.*?)\/(.*?)\/.*?) - (.*)`)
-=======
-	releaseInfoRegex     = regexp.MustCompile(`(?s)## (.*?)\n### Changes\nBased on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) (\((.*?)\))?.*?`)
-	npmReleaseRegex      = regexp.MustCompile(`- \[NPM v(\d+\.\d+\.\d+)\] (https:\/\/www\.npmjs\.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+) - (.*)`)
-	pypiReleaseRegex     = regexp.MustCompile(`- \[PyPI v(\d+\.\d+\.\d+)\] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
-	goReleaseRegex       = regexp.MustCompile(`- \[Go v(\d+\.\d+\.\d+)\] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+) - (.*)`)
-	composerReleaseRegex = regexp.MustCompile(`- \[Composer v(\d+\.\d+\.\d+)\] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+) - (.*)`)
-	mavenReleaseRegex    = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+)\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
 	rubyGemReleaseRegex  = regexp.MustCompile(`- \[Ruby Gems v(\d+\.\d+\.\d+)\] (https:\/\/rubygems\.org\/gems\/(.*?)\/versions\/(.*?)) - (.*)`)
->>>>>>> b56dcd7 (prepare ruby)
 )
 
 func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
