@@ -77,6 +77,11 @@ on:
         default: "false"
         required: false
         type: string
+      publish_ruby:
+        description: "Publish the Ruby SDK for RubyGems if using 'direct' mode or prepare a release if using 'pr' mode"
+        default: "false"
+        required: false
+        type: string
       mode:
         description: |-
           The mode to run the workflow in, valid options are 'direct' or 'pr', defaults to 'direct'.
@@ -190,6 +195,8 @@ jobs:
       java_directory: ${{ steps.generate.outputs.java_directory }}
       php_regenerated: ${{ steps.generate.outputs.php_regenerated }}
       php_directory: ${{ steps.generate.outputs.php_directory }}
+      ruby_regenerated: ${{ steps.generate.outputs.php_regenerated }}
+      ruby_directory: ${{ steps.generate.outputs.php_directory }}
       branch_name: ${{ steps.generate.outputs.branch_name }}
       previous_gen_version: ${{ steps.generate.outputs.previous_gen_version }}
     steps:
@@ -209,6 +216,7 @@ jobs:
           publish_terraform: ${{ inputs.publish_terraform }}
           publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
+          publish_ruby: ${{ inputs.publish_ruby}}
           mode: ${{ inputs.mode }}
           action: generate
           force: ${{ inputs.force }}
