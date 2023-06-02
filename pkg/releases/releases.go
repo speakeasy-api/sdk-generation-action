@@ -159,7 +159,6 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 		Languages:         map[string]LanguageReleaseInfo{},
 	}
 
-
 	npmMatches := npmReleaseRegex.FindStringSubmatch(lastRelease)
 
 	if len(npmMatches) == 5 {
@@ -241,6 +240,7 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 		}
 		info.Languages["terraform"] = languageInfo
 
+	}
 	rubyGemsMatches := rubyGemReleaseRegex.FindStringSubmatch(lastRelease)
 
 	if len(rubyGemsMatches) == 5 {
@@ -251,7 +251,6 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 			Path:        rubyGemsMatches[4],
 		}
 	}
-
 	return info, nil
 }
 
