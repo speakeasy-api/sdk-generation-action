@@ -2,9 +2,10 @@ package git
 
 import (
 	"fmt"
-	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"regexp"
 	"strings"
+
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 )
 
 var (
@@ -24,6 +25,11 @@ func IsGitDiffSignificant(diff string) bool {
 
 	for _, diff := range diffs {
 		if strings.TrimSpace(diff) == "" {
+			continue
+		}
+
+		matches := fileNameRegex.FindStringSubmatch(diff)
+		if len(matches) != 2 {
 			continue
 		}
 
