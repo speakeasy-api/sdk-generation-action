@@ -296,7 +296,7 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 
 ### `publish_ruby`
 
-**(Workflow Only)** Whether to publish the Ruby SDK to Rubygems. Default `"flase"`
+**(Workflow Only)** Whether to publish the Ruby SDK to Rubygems. Default `"false"`
 **Note**: Needs to be set in the generate and publish workflows if using `pr` mode.
 
 ## Outputs

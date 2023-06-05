@@ -280,7 +280,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-gems:
-    if: ${{ needs.generate.outputs.ruby_regenerated == 'true' && inputs.publish_ruby == 'true' }}
+    if: ${{ needs.release.outputs.ruby_regenerated == 'true' && inputs.publish_ruby == 'true' }}
     name: Publish Ruby SDK
     runs-on: ubuntu-latest
     needs: release
@@ -295,7 +295,7 @@ jobs:
         uses: ruby/setup-ruby@ec02537da5712d66d4d50a0f33b7eb52773b5ed1
         with:
           ruby-version: "3.1"
-        working-directory: ${{ needs.generate.outputs.ruby_directory }}
+        working-directory: ${{ needs.release.outputs.ruby_directory }}
       - name: Install dependencies
         run: gem build && bundle install && rake rubocop
       - name: Publish
