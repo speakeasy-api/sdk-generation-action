@@ -28,6 +28,11 @@ on:
         default: "false"
         required: false
         type: string
+      publish_ruby:
+        description: "Publish the Ruby SDK for RubyGems if using 'direct' mode or prepare a release if using 'pr' mode"
+        default: "false"
+        required: false
+        type: string
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -62,6 +67,9 @@ on:
       slack_webhook_url:
         description: A Slack webhook URL that pipeline failures will be posted to
         required: false
+      rubygems_auth_token:
+        description: The auth token (api key) for publishing to RubyGems
+        required: false
 jobs:
   release:
     name: Create Github Release
@@ -79,6 +87,8 @@ jobs:
       java_directory: ${{ steps.release.outputs.java_directory }}
       php_regenerated: ${{ steps.release.outputs.php_regenerated }}
       php_directory: ${{ steps.release.outputs.php_directory }}
+      ruby_regenerated: ${{ steps.release.outputs.ruby_regenerated }}
+      ruby_directory: ${{ steps.release.outputs.ruby_directory }}
     steps:
       - id: release
         uses: speakeasy-api/sdk-generation-action@v14
@@ -90,6 +100,7 @@ jobs:
           publish_terraform: ${{ inputs.publish_terraform }}
           publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
+          publish_ruby: ${{ inputs.publish_ruby }}
           action: "release"
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
       - uses: ravsamhq/notify-slack-action@v2
@@ -264,6 +275,46 @@ jobs:
           token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Publishing of Terraform Provider Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  publish-gems:
+    if: ${{ needs.generate.outputs.ruby_regenerated == 'true' && inputs.publish_ruby == 'true' }}
+    name: Publish Ruby SDK
+    runs-on: ubuntu-latest
+    needs: release
+    defaults:
+      run:
+        working-directory: ${{ needs.generate.outputs.ruby_directory }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.finalize.outputs.commit_hash }}
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@ec02537da5712d66d4d50a0f33b7eb52773b5ed1
+        with:
+          ruby-version: "3.1"
+        working-directory: ${{ needs.generate.outputs.ruby_directory }}
+      - name: Install dependencies
+        run: gem build && bundle install && rake rubocop
+      - name: Publish
+        env:
+          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_AUTH_TOKEN }}
+        run: |
+          mkdir -p $HOME/.gem
+          touch $HOME/.gem/credentials
+          chmod 0600 $HOME/.gem/credentials
+          printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
+          gem build *.gemspec
+          gem push *.gem
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "Publishing of Ruby SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:

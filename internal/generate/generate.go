@@ -397,6 +397,14 @@ func getInstallationURL(lang, subdirectory string) string {
 		if subdirectory == "." {
 			return fmt.Sprintf("%s/%s", environment.GetGithubServerURL(), environment.GetRepo())
 		}
+	case "ruby":
+		base := fmt.Sprintf("%s/%s", environment.GetGithubServerURL(), environment.GetRepo())
+
+		if subdirectory == "." {
+			return base
+		}
+
+		return base + " -d " + subdirectory
 	}
 
 	// Java doesn't support pulling directly from git

@@ -146,6 +146,9 @@ on:
       terraform_gpg_passphrase:
         description: The passphrase for the Terraform GPG secret key
         required: false
+      rubygems_auth_token:
+        description: The auth token (api key) for publishing to RubyGems
+        required: false
 jobs:
   validate:
     name: Validate OpenAPI Document
@@ -412,7 +415,7 @@ jobs:
         uses: ruby/setup-ruby@ec02537da5712d66d4d50a0f33b7eb52773b5ed1
         with:
           ruby-version: "3.1"
-      - run: bundle install
+      - run: gem build && bundle install && rake rubocop
         working-directory: ${{ needs.generate.outputs.ruby_directory }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
@@ -608,10 +611,10 @@ jobs:
           ruby-version: "3.1"
         working-directory: ${{ needs.generate.outputs.ruby_directory }}
       - name: Install dependencies
-        run: bundle install
+        run: gem build && bundle install && rake rubocop
       - name: Publish
         env:
-          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_AUTH_TOKEN }}
+          GEM_HOST_API_KEY: ${{ secrets.rubygems_auth_token }}
         run: |
           mkdir -p $HOME/.gem
           touch $HOME/.gem/credentials
