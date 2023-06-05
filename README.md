@@ -260,6 +260,7 @@ languages: |
   - typescript # using default output of ./typescript-client-sdk
   - java # using default output of ./java-client-sdk
   - php # using default output of ./php-client-sdk
+  - ruby # using default output of ./ruby-client-sdk
   - terraform # (single language repo only)
 ```
 
@@ -291,6 +292,11 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 ### `publish_php`
 
 **(Workflow Only)** Whether to publish the PHP SDK for Composer. Default `"false"`.
+**Note**: Needs to be set in the generate and publish workflows if using `pr` mode.
+
+### `publish_ruby`
+
+**(Workflow Only)** Whether to publish the Ruby SDK to Rubygems. Default `"flase"`
 **Note**: Needs to be set in the generate and publish workflows if using `pr` mode.
 
 ## Outputs
@@ -342,3 +348,11 @@ The directory the PHP SDK was generated in
 ### `terraform_directory`
 
 The directory the Terraform Provider was generated in
+
+### `ruby_regenerated`
+
+`true` if the Ruby SDK was regenerated
+
+### `ruby_directory`
+
+The directory the Ruby SDK was generated in

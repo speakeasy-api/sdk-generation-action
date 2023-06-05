@@ -300,7 +300,7 @@ jobs:
         run: gem build && bundle install && rake rubocop
       - name: Publish
         env:
-          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_AUTH_TOKEN }}
+          GEM_HOST_API_KEY: ${{ secrets.rubygems_auth_token }}
         run: |
           mkdir -p $HOME/.gem
           touch $HOME/.gem/credentials
