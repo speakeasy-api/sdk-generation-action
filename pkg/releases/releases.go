@@ -192,7 +192,7 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 		}
 
 		info.Languages["go"] = LanguageReleaseInfo{
-			Version:     goMatches[1], 
+			Version:     goMatches[1],
 			URL:         goMatches[2],
 			PackageName: packageName,
 			Path:        path,

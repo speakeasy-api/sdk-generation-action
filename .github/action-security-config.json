@@ -70,5 +70,10 @@
     "name": "terraform_gpg_passphrase",
     "secret_name": "TERRAFORM_GPG_PASSPHRASE",
     "language": "terraform"
+  },
+  {
+    "name": "rubygems_auth_token",
+    "secret_name": "RUBYGEMS_AUTH_TOKEN",
+    "language": "ruby"
   }
 ]

@@ -37,7 +37,11 @@
   {
     "name": "publish_php",
     "language": "php"
-  }
+  },
+  {
+    "name": "publish_ruby",
+    "language": "ruby"
+  },
   {
     "name": "publish_terraform",
     "language": "terraform"
