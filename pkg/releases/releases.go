@@ -64,6 +64,9 @@ func (r ReleasesInfo) String() string {
 			groupID := info.PackageName[:lastDotIndex]      // everything before last occurrence of '.'
 			artifactID := info.PackageName[lastDotIndex+1:] // everything after last occurrence of '.'
 			pkgURL = fmt.Sprintf("https://central.sonatype.com/artifact/%s/%s/%s", groupID, artifactID, info.Version)
+		case "ruby":
+			pkgID = "Ruby Gems"
+			pkgURL = fmt.Sprintf("https://rubygems.org/gems/%s/versions/%s", info.PackageName, info.Version)
 		}
 
 		if pkgID != "" {
@@ -109,6 +112,7 @@ var (
 	composerReleaseRegex  = regexp.MustCompile(`- \[Composer v(\d+\.\d+\.\d+)\] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+) - (.*)`)
 	mavenReleaseRegex     = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+)\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
 	terraformReleaseRegex = regexp.MustCompile(`- \[Terraform v(\d+\.\d+\.\d+)\] (https:\/\/registry\.terraform\.io\/providers\/(.*?)\/(.*?)\/.*?) - (.*)`)
+	rubyGemReleaseRegex  = regexp.MustCompile(`- \[Ruby Gems v(\d+\.\d+\.\d+)\] (https:\/\/rubygems\.org\/gems\/(.*?)\/versions\/.*?) - (.*)`)
 )
 
 func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
@@ -237,7 +241,16 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 		info.Languages["terraform"] = languageInfo
 
 	}
+	rubyGemsMatches := rubyGemReleaseRegex.FindStringSubmatch(lastRelease)
 
+	if len(rubyGemsMatches) == 5 {
+		info.Languages["ruby"] = LanguageReleaseInfo{
+			Version:     rubyGemsMatches[1],
+			URL:         rubyGemsMatches[2],
+			PackageName: rubyGemsMatches[3],
+			Path:        rubyGemsMatches[4],
+		}
+	}
 	return info, nil
 }
 

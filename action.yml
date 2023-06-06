@@ -44,6 +44,7 @@ inputs:
         - typescript # using default output of ./typescript-client-sdk
         - java # using default output of ./java-client-sdk
         - php # using default output of ./php-client-sdk
+        - ruby # using default output of ./ruby-client-sdk
 
       If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo and generate the sdk
       in the root of the repo if not path is provided.
@@ -66,6 +67,10 @@ inputs:
     required: false
   publish_php:
     description: "Whether the PHP SDK will be published to Packagist this will also create a release on Github"
+    default: "false"
+    required: false
+  publish_ruby:
+    description: "Whether the Ruby SDK will be published to Rubygems"
     default: "false"
     required: false
   publish_java:
@@ -130,6 +135,10 @@ outputs:
     description: "true if the PHP SDK was regenerated"
   php_directory:
     description: "The directory the PHP SDK was generated to"
+  ruby_regenerated:
+    description: "true if the Ruby SDK was regenerated"
+  ruby_directory:
+    description: "The directory the Ruby SDK was generated to"
   branch_name:
     description: "The name of the branch the SDK was generated on"
   commit_hash:
@@ -152,6 +161,7 @@ runs:
     - ${{ inputs.publish_python }}
     - ${{ inputs.publish_typescript }}
     - ${{ inputs.publish_php }}
+    - ${{ inputs.publish_ruby }}
     - ${{ inputs.publish_java }}
     - ${{ inputs.publish_terraform }}
     - ${{ inputs.openapi_doc_auth_header }}
