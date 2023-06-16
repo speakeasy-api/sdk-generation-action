@@ -33,6 +33,10 @@ on:
         default: "false"
         required: false
         type: string
+      speakeasy_server_url:
+        required: false
+        description: "Internal use only"
+        type: string
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
