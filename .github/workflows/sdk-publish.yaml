@@ -103,6 +103,7 @@ jobs:
           publish_ruby: ${{ inputs.publish_ruby }}
           action: "release"
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -266,6 +267,7 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           gpg_fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}
           action: "release"
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GITHUB_TOKEN: ${{ secrets.github_access_token }}
       - uses: ravsamhq/notify-slack-action@v2

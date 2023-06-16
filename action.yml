@@ -110,6 +110,9 @@ inputs:
   output_tests:
     description: "Internal use only"
     required: false
+  speakeasy_server_url:
+    description: "Internal use only"
+    required: false
 outputs:
   python_regenerated:
     description: "true if the Python SDK was regenerated"
@@ -152,6 +155,7 @@ runs:
   image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v14"
   env:
     SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
+    SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
   args:
     - ${{ inputs.speakeasy_version }}
     - ${{ inputs.openapi_doc_location }}
