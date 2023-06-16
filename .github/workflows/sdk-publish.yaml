@@ -94,6 +94,8 @@ jobs:
       ruby_regenerated: ${{ steps.release.outputs.ruby_regenerated }}
       ruby_directory: ${{ steps.release.outputs.ruby_directory }}
     steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: release
         uses: speakeasy-api/sdk-generation-action@v14
         with:
@@ -128,6 +130,8 @@ jobs:
       run:
         working-directory: ${{ needs.release.outputs.python_directory }}
     steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
       - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -164,6 +168,8 @@ jobs:
       run:
         working-directory: ${{ needs.release.outputs.typescript_directory }}
     steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
       - uses: actions/checkout@v3
       - name: Set up Node
         uses: actions/setup-node@v3
@@ -196,6 +202,8 @@ jobs:
       run:
         working-directory: ${{ needs.release.outputs.java_directory }}
     steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
       - uses: actions/checkout@v3
       - name: Set up Java
         uses: actions/setup-java@v3
@@ -233,6 +241,8 @@ jobs:
       run:
         working-directory: ${{ needs.release.outputs.php_directory }}
     steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
       - name: Publish
         uses: wei/curl@v1.1.1
         with:
@@ -254,6 +264,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: release
     steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
       - name: Install GoReleaser
         uses: goreleaser/goreleaser-action@v4
         with:
@@ -294,6 +306,8 @@ jobs:
       run:
         working-directory: ${{ needs.release.outputs.ruby_directory }}
     steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
       - uses: actions/checkout@v3
       - name: Set up Ruby
         uses: ruby/setup-ruby@ec02537da5712d66d4d50a0f33b7eb52773b5ed1
