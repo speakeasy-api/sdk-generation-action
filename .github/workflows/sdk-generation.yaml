@@ -103,6 +103,10 @@ on:
         description: "Internal use only"
         default: "false"
         type: string
+      speakeasy_server_url:
+        required: false
+        description: "Internal use only"
+        type: string
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -165,6 +169,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: validate
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
       - uses: actions/upload-artifact@v3
         if: always()
         with:
@@ -225,6 +230,7 @@ jobs:
           force: ${{ inputs.force }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           output_tests: ${{ inputs.output_tests }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -471,6 +477,7 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           branch_name: ${{ needs.generate.outputs.branch_name }}
           previous_gen_version: ${{ needs.generate.outputs.previous_gen_version }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
