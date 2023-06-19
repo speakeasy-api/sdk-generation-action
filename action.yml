@@ -113,6 +113,9 @@ inputs:
   speakeasy_server_url:
     description: "Internal use only"
     required: false
+  write_suggestions:
+      description: "Set to 'True' if you want to receive PRs with OpenAPI suggestions"
+      required: false
 outputs:
   python_regenerated:
     description: "true if the Python SDK was regenerated"
