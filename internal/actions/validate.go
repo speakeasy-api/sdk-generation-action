@@ -42,6 +42,7 @@ func Validate() error {
 		isLocalFile = true
 	}
 
+	// We will write suggestions to a new PR if the input flag is set and we are dealing with a local OpenAPI file
 	if os.Getenv("INPUT_WRITE_SUGGESTIONS") == "true" && cli.IsAtLeastVersion(cli.LLMSuggestionVersion) && isLocalFile {
 		out, suggestionErr := cli.Suggest(docPath)
 		output := suggestions.ParseOutput(out)
