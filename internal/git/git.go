@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -241,7 +242,6 @@ func (g *Git) FindOrCreateBranch(branchName string) (string, error) {
 	return branchName, nil
 }
 
-// TODO: Merge create branch logic
 func (g *Git) CreateSuggestionBranch() (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
@@ -331,7 +331,6 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion string) (string,
 	return commitHash.String(), nil
 }
 
-// TODO: Merge with existing CommitAndPush
 func (g *Git) CommitAndPushSuggestions(doc string) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
@@ -418,40 +417,43 @@ Based on:
 	return nil
 }
 
-// TODO: Merge PR creation logic
-func (g *Git) CreateSuggestionPR(branchName string) (*int, error) {
-	body := fmt.Sprintf(`# Generated OpenAPI Suggestions by Speakeasy CLI
-Based on:
-- OpenAPI Doc %s
-- Speakeasy CLI %s`, "", "")
+func (g *Git) CreateSuggestionPR(branchName string, doc string) (*int, string, error) {
+	body := fmt.Sprintf(`Generated OpenAPI Suggestions by Speakeasy CLI based on the given OpenAPI Doc: *%s*. 
+    Merge accepted changes back into your original doc when finished.`, doc)
 
 	logging.Info("Creating PR")
 
 	fmt.Println(body, branchName, getPRTitle(), environment.GetRef())
 
 	pr, _, err := g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
-		Title:               github.String("speakeasy openapi suggestions -" + environment.GetWorkflowName()),
+		Title:               github.String("Speakeasy OpenAPI Suggestions -" + environment.GetWorkflowName()),
 		Body:                github.String(body),
 		Head:                github.String(branchName),
 		Base:                github.String(environment.GetRef()),
 		MaintainerCanModify: github.Bool(true),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create PR: %w", err)
+		return nil, "", fmt.Errorf("failed to create PR: %w", err)
 	}
 
-	return pr.Number, nil
+	return pr.Number, pr.GetHead().GetSHA(), nil
 }
 
-func (g *Git) WriteSuggestionComments(fileName string, prNumber *int, annotations []suggestions.GithubAnnotation) error {
+func (g *Git) WriteSuggestionComments(fileName string, prNumber *int, headCommit string, annotations []suggestions.GithubAnnotation) error {
 	for _, annotation := range annotations {
-		body := annotation.Error + "\n\n" + strings.Join(annotation.Suggestion, "\n") +
-			"\n\n" + strings.Join(annotation.Explanation, "\n")
+		// Bold
+		errorLine := fmt.Sprintf("**%s**", annotation.Error)
+		// Code Block
+		suggestion := fmt.Sprintf("```\n%s\n```", strings.Join(annotation.Suggestion, "\n"))
+		// Italics
+		explanation := fmt.Sprintf("*%s*", strings.Join(annotation.Explanation, "\n"))
+		body := errorLine + "\n\n" + suggestion + "\n\n" + explanation
 
 		comment := &github.PullRequestComment{
-			Body:     &body,
-			Path:     &fileName,
-			Position: &annotation.LineNumber,
+			Body:     github.String(removeANSISequences(body)),
+			Path:     github.String(fileName),
+			Line:     github.Int(annotation.LineNumber),
+			CommitID: github.String(headCommit),
 		}
 
 		_, _, err := g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, comment)
@@ -461,6 +463,12 @@ func (g *Git) WriteSuggestionComments(fileName string, prNumber *int, annotation
 	}
 
 	return nil
+}
+
+func removeANSISequences(str string) string {
+	ansiEscape := regexp.MustCompile(`\x1b[^m]*m`)
+	str = ansiEscape.ReplaceAllString(str, "")
+	return str
 }
 
 func (g *Git) MergeBranch(branchName string) (string, error) {

@@ -116,6 +116,9 @@ inputs:
   write_suggestions:
       description: "Set to 'True' if you want to receive PRs with OpenAPI suggestions"
       required: false
+  openai_api_key:
+    description: "The OpenAI API key to authenticate to access LLM suggestions"
+    required: true
 outputs:
   python_regenerated:
     description: "true if the Python SDK was regenerated"
@@ -159,6 +162,7 @@ runs:
   env:
     SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
     SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
+    OPENAI_API_KEY: ${{ inputs.openai_api_key }}
   args:
     - ${{ inputs.speakeasy_version }}
     - ${{ inputs.openapi_doc_location }}
@@ -179,3 +183,4 @@ runs:
     - ${{ inputs.previous_gen_version }}
     - ${{ inputs.openapi_docs }}
     - ${{ inputs.output_tests }}
+    - ${{ inputs.write_suggestions }}
