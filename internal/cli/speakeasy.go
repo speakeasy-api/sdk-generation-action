@@ -67,7 +67,7 @@ func runSpeakeasyCommand(args ...string) (string, error) {
 
 	output, err := exec.Command(cmdPath, args...).CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("error running speakeasy command: speakeasy %s - %w\n %s", strings.Join(args, " "), err, string(output))
+		return string(output), fmt.Errorf("error running speakeasy command: speakeasy %s - %w\n %s", strings.Join(args, " "), err, string(output))
 	}
 
 	return string(output), nil

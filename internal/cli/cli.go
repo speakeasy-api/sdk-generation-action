@@ -15,6 +15,7 @@ var (
 	MergeVersion                   = version.Must(version.NewVersion("1.21.3"))
 	RepoDetailsVersion             = version.Must(version.NewVersion("1.23.1"))
 	OutputTestsVersion             = version.Must(version.NewVersion("1.33.2"))
+	LLMSuggestionVersion           = version.Must(version.NewVersion("1.47.1"))
 )
 
 func IsAtLeastVersion(version *version.Version) bool {
@@ -126,6 +127,15 @@ func Validate(docPath string) error {
 	}
 	fmt.Println(out)
 	return nil
+}
+
+func Suggest(docPath string) (string, error) {
+	out, err := runSpeakeasyCommand("suggest", "--schema", docPath, "--auto-approve", "--max-suggestions", "20")
+	if err != nil {
+		return out, fmt.Errorf("error suggesting openapi fixes: %w - %s", err, "")
+	}
+
+	return out, nil
 }
 
 func Generate(docPath, lang, outputDir, installationURL string, published, outputTests bool, repoURL, repoSubDirectory string) error {

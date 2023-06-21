@@ -5,11 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/speakeasy-api/sdk-generation-action/internal/suggestions"
 	"net/url"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -240,6 +242,32 @@ func (g *Git) FindOrCreateBranch(branchName string) (string, error) {
 	return branchName, nil
 }
 
+func (g *Git) CreateSuggestionBranch() (string, error) {
+	if g.repo == nil {
+		return "", fmt.Errorf("repo not cloned")
+	}
+
+	w, err := g.repo.Worktree()
+	if err != nil {
+		return "", fmt.Errorf("error getting worktree: %w", err)
+	}
+
+	branchName := fmt.Sprintf("speakeasy-openapi-suggestion-%d", time.Now().Unix())
+
+	logging.Info("Creating branch %s", branchName)
+
+	localRef := plumbing.NewBranchReferenceName(branchName)
+
+	if err := w.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.ReferenceName(localRef.String()),
+		Create: true,
+	}); err != nil {
+		return "", fmt.Errorf("error checking out branch: %w", err)
+	}
+
+	return branchName, nil
+}
+
 func (g *Git) DeleteBranch(branchName string) error {
 	if g.repo == nil {
 		return fmt.Errorf("repo not cloned")
@@ -283,6 +311,43 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion string) (string,
 	}
 
 	commitHash, err := w.Commit(fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeay CLI %s", openAPIDocVersion, speakeasyVersion), &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  "speakeasybot",
+			Email: "bot@speakeasyapi.dev",
+			When:  time.Now(),
+		},
+		All: true,
+	})
+	if err != nil {
+		return "", fmt.Errorf("error committing changes: %w", err)
+	}
+
+	if err := g.repo.Push(&git.PushOptions{
+		Auth: getGithubAuth(g.accessToken),
+	}); err != nil {
+		return "", fmt.Errorf("error pushing changes: %w", err)
+	}
+
+	return commitHash.String(), nil
+}
+
+func (g *Git) CommitAndPushSuggestions(doc string) (string, error) {
+	if g.repo == nil {
+		return "", fmt.Errorf("repo not cloned")
+	}
+
+	w, err := g.repo.Worktree()
+	if err != nil {
+		return "", fmt.Errorf("error getting worktree: %w", err)
+	}
+
+	logging.Info("Commit and pushing changes to git")
+
+	if _, err := w.Add("."); err != nil {
+		return "", fmt.Errorf("error adding changes: %w", err)
+	}
+
+	commitHash, err := w.Commit(fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc), &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "speakeasybot",
 			Email: "bot@speakeasyapi.dev",
@@ -350,6 +415,60 @@ Based on:
 	logging.Info("PR: %s", url)
 
 	return nil
+}
+
+func (g *Git) CreateSuggestionPR(branchName string, doc string) (*int, string, error) {
+	body := fmt.Sprintf(`Generated OpenAPI Suggestions by Speakeasy CLI based on the given OpenAPI Doc: *%s*. 
+    Merge accepted changes back into your original doc when finished.`, doc)
+
+	logging.Info("Creating PR")
+
+	fmt.Println(body, branchName, getPRTitle(), environment.GetRef())
+
+	pr, _, err := g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
+		Title:               github.String("Speakeasy OpenAPI Suggestions -" + environment.GetWorkflowName()),
+		Body:                github.String(body),
+		Head:                github.String(branchName),
+		Base:                github.String(environment.GetRef()),
+		MaintainerCanModify: github.Bool(true),
+	})
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create PR: %w", err)
+	}
+
+	return pr.Number, pr.GetHead().GetSHA(), nil
+}
+
+func (g *Git) WriteSuggestionComments(fileName string, prNumber *int, headCommit string, annotations []suggestions.GithubAnnotation) error {
+	for _, annotation := range annotations {
+		// Bold
+		errorLine := fmt.Sprintf("**%s**", annotation.Error)
+		// Code Block
+		suggestion := fmt.Sprintf("```\n%s\n```", strings.Join(annotation.Suggestion, "\n"))
+		// Italics
+		explanation := fmt.Sprintf("*%s*", strings.Join(annotation.Explanation, "\n"))
+		body := errorLine + "\n\n" + suggestion + "\n\n" + explanation
+
+		comment := &github.PullRequestComment{
+			Body:     github.String(removeANSISequences(body)),
+			Path:     github.String(fileName),
+			Line:     github.Int(annotation.LineNumber),
+			CommitID: github.String(headCommit),
+		}
+
+		_, _, err := g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, comment)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func removeANSISequences(str string) string {
+	ansiEscape := regexp.MustCompile(`\x1b[^m]*m`)
+	str = ansiEscape.ReplaceAllString(str, "")
+	return str
 }
 
 func (g *Git) MergeBranch(branchName string) (string, error) {
