@@ -172,6 +172,7 @@ jobs:
           action: validate
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          working_directory: ${{ inputs.working_directory }}
       - uses: actions/upload-artifact@v3
         if: always()
         with:
@@ -235,6 +236,7 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           output_tests: ${{ inputs.output_tests }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          working_directory: ${{ inputs.working_directory }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
