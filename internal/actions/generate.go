@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
@@ -14,6 +15,12 @@ func Generate() error {
 	g, err := initAction()
 	if err != nil {
 		return err
+	}
+
+	if environment.GetWorkingDirectory() != "" {
+		if err := os.Chdir(environment.GetWorkingDirectory()); err != nil {
+			return err
+		}
 	}
 
 	if err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {

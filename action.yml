@@ -118,7 +118,10 @@ inputs:
       required: false
   openai_api_key:
     description: "The OpenAI API key to authenticate to access LLM suggestions"
-    required: true
+    required: false
+  working_directory:
+    description: 'The working directory for the action'
+    required: false
 outputs:
   python_regenerated:
     description: "true if the Python SDK was regenerated"
@@ -184,3 +187,4 @@ runs:
     - ${{ inputs.openapi_docs }}
     - ${{ inputs.output_tests }}
     - ${{ inputs.write_suggestions }}
+    - ${{ inputs.working_directory }}

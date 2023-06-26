@@ -21,6 +21,12 @@ func Validate() error {
 		return err
 	}
 
+	if environment.GetWorkingDirectory() != "" {
+		if err := os.Chdir(environment.GetWorkingDirectory()); err != nil {
+			return err
+		}
+	}
+
 	if err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
 		return err
 	}
