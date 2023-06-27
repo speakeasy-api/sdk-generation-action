@@ -107,6 +107,10 @@ on:
         required: false
         description: "Internal use only"
         type: string
+      working_directory:
+        description: "The working directory for running Speakeasy CLI commands in the action"
+        required: false
+        type: string
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo

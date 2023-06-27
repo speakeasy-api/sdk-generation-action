@@ -299,6 +299,10 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 **(Workflow Only)** Whether to publish the Ruby SDK to Rubygems. Default `"false"`
 **Note**: Needs to be set in the generate and publish workflows if using `pr` mode.
 
+### `working_directory`
+The working directory to use when running Speakeasy CLI commands in the action. If not specified, 
+the root of the repo will be used.
+
 ## Outputs
 
 ### `python_regenerated`
