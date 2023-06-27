@@ -24,7 +24,9 @@ func Validate() error {
 
 	if environment.GetWorkingDirectory() != "" {
 		repo := path.Join(environment.GetWorkspace(), "repo")
+		fmt.Println("GITHUB_WORKSPACE: ", environment.GetWorkspace())
 		workingDir := path.Join(repo, environment.GetWorkingDirectory())
+		fmt.Println("Working directory: ", workingDir)
 		if err := os.Chdir(workingDir); err != nil {
 			return err
 		}
