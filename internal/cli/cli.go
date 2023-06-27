@@ -46,6 +46,8 @@ func GetSpeakeasyVersion() (*version.Version, error) {
 		return nil, err
 	}
 
+	fmt.Println("speakeasy version: ", out)
+
 	logging.Debug(out)
 
 	r := regexp.MustCompile(`speakeasy version ([0-9]+\.[0-9]+\.[0-9]+)`)
