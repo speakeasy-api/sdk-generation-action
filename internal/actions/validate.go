@@ -6,7 +6,6 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/suggestions"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -20,18 +19,6 @@ func Validate() error {
 	g, err := initAction()
 	if err != nil {
 		return err
-	}
-
-	if environment.GetWorkingDirectory() != "" {
-		workingDir := path.Join(environment.GetWorkspace(), environment.GetWorkingDirectory())
-		fmt.Println("Working directory: ", workingDir)
-		if err := os.Chdir(workingDir); err != nil {
-			return err
-		}
-		fmt.Println("Changed working directory to: ", workingDir)
-	} else {
-		fmt.Println("No working directory provided, using default")
-		fmt.Println("env vars: ", os.Environ())
 	}
 
 	if err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
