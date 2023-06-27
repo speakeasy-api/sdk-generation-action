@@ -65,7 +65,9 @@ func runSpeakeasyCommand(args ...string) (string, error) {
 
 	cmdPath := path.Join(baseDir, "bin", "speakeasy")
 
-	output, err := exec.Command(cmdPath, args...).CombinedOutput()
+	cmd := exec.Command(cmdPath, args...)
+	cmd.Dir = path.Join(environment.GetWorkspace(), environment.GetWorkingDirectory())
+	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return string(output), fmt.Errorf("error running speakeasy command: speakeasy %s - %w\n %s", strings.Join(args, " "), err, string(output))
 	}

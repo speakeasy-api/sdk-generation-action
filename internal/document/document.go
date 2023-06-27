@@ -103,7 +103,7 @@ func resolveFiles(files []file) ([]string, error) {
 	outFiles := []string{}
 
 	for i, file := range files {
-		localPath := filepath.Join(workspace, "repo", environment.GetWorkingDirectory(), file.Location)
+		localPath := filepath.Join(workspace, "repo", file.Location)
 
 		if _, err := os.Stat(localPath); err == nil {
 			fmt.Println("Found local OpenAPI file: ", localPath)
