@@ -120,7 +120,7 @@ inputs:
     description: "The OpenAI API key to authenticate to access LLM suggestions"
     required: false
   working_directory:
-    description: "The working directory for the action"
+    description: "The working directory for running Speakeasy CLI commands in the action"
     required: false
 outputs:
   python_regenerated:
@@ -161,7 +161,7 @@ outputs:
     description: "The location of the OpenAPI document used for generation"
 runs:
   using: "docker"
-  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v14.16"
+  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v14"
   env:
     SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
     SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}

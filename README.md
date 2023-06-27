@@ -300,7 +300,7 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 **Note**: Needs to be set in the generate and publish workflows if using `pr` mode.
 
 ### `working_directory`
-The working directory to use when running the action for validate/generate steps. If not specified,
+The working directory to use when running Speakeasy CLI commands in the action. If not specified, 
 the root of the repo will be used.
 
 ## Outputs
