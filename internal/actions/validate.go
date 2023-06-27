@@ -6,6 +6,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/suggestions"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -22,7 +23,8 @@ func Validate() error {
 	}
 
 	if environment.GetWorkingDirectory() != "" {
-		workingDir := environment.GetWorkingDirectory()
+		repo := path.Join(environment.GetWorkspace(), "repo")
+		workingDir := path.Join(repo, environment.GetWorkingDirectory())
 		if err := os.Chdir(workingDir); err != nil {
 			return err
 		}
