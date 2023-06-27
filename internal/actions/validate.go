@@ -27,6 +27,9 @@ func Validate() error {
 			return err
 		}
 		fmt.Println("Changed working directory to: ", workingDir)
+	} else {
+		fmt.Println("No working directory provided, using default")
+		fmt.Println("env vars: ", os.Environ())
 	}
 
 	if err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
