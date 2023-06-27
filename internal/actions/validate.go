@@ -22,9 +22,11 @@ func Validate() error {
 	}
 
 	if environment.GetWorkingDirectory() != "" {
-		if err := os.Chdir(environment.GetWorkingDirectory()); err != nil {
+		workingDir := environment.GetWorkingDirectory()
+		if err := os.Chdir(workingDir); err != nil {
 			return err
 		}
+		fmt.Println("Changed working directory to: ", workingDir)
 	}
 
 	if err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
