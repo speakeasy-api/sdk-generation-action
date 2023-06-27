@@ -43,6 +43,7 @@ func GetSupportedLanguages() ([]string, error) {
 func GetSpeakeasyVersion() (*version.Version, error) {
 	out, err := runSpeakeasyCommand("--version")
 	if err != nil {
+		fmt.Println("failed to get speakeasy version: ", err)
 		return nil, err
 	}
 
