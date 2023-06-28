@@ -135,6 +135,8 @@ func Suggest(docPath string) (string, error) {
 		return out, fmt.Errorf("error suggesting openapi fixes: %w - %s", err, "")
 	}
 
+	fmt.Println(out)
+
 	return out, nil
 }
 

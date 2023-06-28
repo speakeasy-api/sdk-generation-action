@@ -118,7 +118,7 @@ inputs:
       required: false
   openai_api_key:
     description: "The OpenAI API key to authenticate to access LLM suggestions"
-    required: true
+    required: false
 outputs:
   python_regenerated:
     description: "true if the Python SDK was regenerated"

@@ -47,6 +47,12 @@ on:
           If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
         required: true
         type: string
+      write_suggestions:
+        description: "Set to 'True' if you want to receive PRs with OpenAPI suggestions"
+        required: false
+      openai_api_key:
+        description: "The OpenAI API key to authenticate to access LLM suggestions"
+        required: false
       create_release:
         description: "Create a Github release on generation if using 'direct' mode or prepare a release if using 'pr' mode"
         default: "true"
@@ -168,9 +174,11 @@ jobs:
           openapi_doc_auth_header: ${{ inputs.openapi_doc_auth_header }}
           openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
           openapi_docs: ${{ inputs.openapi_docs }}
+          write_suggestions: ${{ inputs.write_suggestions }}
           github_access_token: ${{ secrets.github_access_token }}
           action: validate
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          openai_api_key: ${{ secrets.openai_api_key }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
       - uses: actions/upload-artifact@v3
         if: always()

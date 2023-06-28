@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/pb33f/libopenapi"
@@ -118,6 +119,12 @@ func resolveFiles(files []file) ([]string, error) {
 			fmt.Println("Downloading openapi file from: ", u.String())
 
 			filePath := filepath.Join(environment.GetWorkspace(), "openapi", fmt.Sprintf("openapi_%d", i))
+
+			if environment.GetAction() == environment.ActionValidate {
+				if extension := path.Ext(u.Path); extension != "" {
+					filePath = filePath + extension
+				}
+			}
 
 			if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 				return nil, fmt.Errorf("failed to create openapi directory: %w", err)

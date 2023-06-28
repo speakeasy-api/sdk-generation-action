@@ -29,6 +29,7 @@ func Validate() error {
 	if err != nil {
 		return err
 	}
+
 	docPathPrefix := environment.GetWorkspace()
 	if !strings.HasSuffix(docPathPrefix, "/") {
 		docPathPrefix += "/"
@@ -39,15 +40,10 @@ func Validate() error {
 		logging.Debug("failed to set outputs: %v", err)
 	}
 
-	isLocalFile := false
-	if _, err := os.Stat(docPath); err == nil {
-		isLocalFile = true
-	}
-
 	// We will write suggestions to a new PR if the input flag is set to true, and we are parsing a local OpenAPI file.
-	if os.Getenv("INPUT_WRITE_SUGGESTIONS") == "true" && cli.IsAtLeastVersion(cli.LLMSuggestionVersion) && isLocalFile {
+	if os.Getenv("INPUT_WRITE_SUGGESTIONS") == "true" && cli.IsAtLeastVersion(cli.LLMSuggestionVersion) {
 		out, suggestionErr := cli.Suggest(docPath)
-		if err := writeSuggestions(g, out, docPath, docPathPrefix); err != nil {
+		if err := writeSuggestions(g, out, docPath); err != nil {
 			logging.Info("error writing suggestions to PR %s", err.Error())
 		}
 
@@ -61,8 +57,16 @@ func Validate() error {
 	return nil
 }
 
-func writeSuggestions(g *git.Git, out string, docPath string, docPathPrefix string) error {
-	output := suggestions.ParseOutput(out)
+func writeSuggestions(g *git.Git, out string, docPath string) error {
+	//output := suggestions.ParseOutput(out)
+	output := []suggestions.GithubAnnotation{
+		{
+			Error:       "blah",
+			LineNumber:  1,
+			Suggestion:  []string{"a"},
+			Explanation: []string{"b"},
+		},
+	}
 	if len(output) > 0 {
 		// creates a branch for our suggestion PR
 		branch, err := g.CreateSuggestionBranch()
@@ -77,20 +81,20 @@ func writeSuggestions(g *git.Git, out string, docPath string, docPathPrefix stri
 		}
 
 		// commits and pushes our new OpenAPI doc to the new branch
-		_, err = g.CommitAndPushSuggestions(strings.Replace(docPath, "repo/", "", 1))
+		_, err = g.CommitAndPushSuggestions(strings.Join(strings.Split(docPath, "/")[1:], "/"))
 		if err != nil {
 			return err
 		}
 
 		// Creates a PR to layer OpenAPI suggestions on to the new branch
-		prNumber, commitSha, err := g.CreateSuggestionPR(branch, strings.Replace(docPath, "repo/", "", 1))
+		prNumber, commitSha, err := g.CreateSuggestionPR(branch, strings.Join(strings.Split(docPath, "/")[1:], "/"))
 		if err != nil {
 			return err
 		}
 
 		// Writes suggestion comments inline on the PR
 		if prNumber != nil {
-			fileName := strings.Replace(file, "repo/", "", 1)
+			fileName := strings.Join(strings.Split(file, "/")[1:], "/")
 			return g.WriteSuggestionComments(fileName, prNumber, commitSha, output)
 		}
 	}
@@ -105,6 +109,12 @@ func createTempSuggestionFile(doc string) (string, error) {
 		return "", err
 	}
 	defer srcFile.Close()
+
+	// Handle the case where the file comes from a remote URL
+	doc = strings.TrimPrefix(doc, "openapi/")
+	if !strings.HasPrefix(doc, "repo/") {
+		doc = "repo/" + doc
+	}
 
 	fileName := strings.TrimSuffix(doc, filepath.Ext(doc)) + "-speakeasytemp" + filepath.Ext(doc)
 	dstFile, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
