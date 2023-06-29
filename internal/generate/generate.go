@@ -407,7 +407,7 @@ func getInstallationURL(lang, subdirectory string) string {
 		return base + " -d " + subdirectory
 	}
 
-	// Java doesn't support pulling directly from git
+	// Neither Java nor C# doesn't support pulling directly from git
 	return ""
 }
 
