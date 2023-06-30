@@ -157,8 +157,8 @@ Java publishing is supported by publishing to a staging repository provider (OSS
 - Populate the `secrets` section of the workflow file with your secrets. For example:
   - `ossrh_username: ${{ secrets.OSSRH_USERNAME }}`
   - `ossrh_password: ${{ secrets.OSSRH_PASSWORD }}`
-  - `java_gpg_secret_key: ${{ secrets.GPG_SECRET_KEY }}`
-  - `java_passphrase: ${{ secrets.GPG_PASSPHRASE }}`
+  - `java_gpg_secret_key: ${{ secrets.JAVA_GPG_SECRET_KEY }}`
+  - `java_gpg_passphrase: ${{ secrets.JAVA_GPG_PASSPHRASE }}`
 - In the workflow file, set `publish_java: true`
 - In the `java` section of `gen.yaml`, ensure the groupId you've provided matches your OSSRH org and the artifact name you want. For example:
   - `groupID: com.example`
