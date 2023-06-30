@@ -50,9 +50,12 @@ on:
       write_suggestions:
         description: "Set to 'True' if you want to receive PRs with OpenAPI suggestions"
         required: false
+        default: "false"
+        type: string
       openai_api_key:
         description: "The OpenAI API key to authenticate to access LLM suggestions"
         required: false
+        type: string
       create_release:
         description: "Create a Github release on generation if using 'direct' mode or prepare a release if using 'pr' mode"
         default: "true"
