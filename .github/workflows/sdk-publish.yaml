@@ -33,6 +33,11 @@ on:
         default: "false"
         required: false
         type: string
+      publish_csharp:
+        description: "Publish the C# SDK for nuget if using 'direct' mode or prepare a release if using 'pr' mode"
+        default: "false"
+        required: false
+        type: string
       speakeasy_server_url:
         required: false
         description: "Internal use only"
@@ -74,6 +79,9 @@ on:
       rubygems_auth_token:
         description: The auth token (api key) for publishing to RubyGems
         required: false
+      nuget_api_key:
+        description: The api key for publishing to Nuget
+        required: false
 jobs:
   release:
     name: Create Github Release
@@ -93,6 +101,8 @@ jobs:
       php_directory: ${{ steps.release.outputs.php_directory }}
       ruby_regenerated: ${{ steps.release.outputs.ruby_regenerated }}
       ruby_directory: ${{ steps.release.outputs.ruby_directory }}
+      csharp_regenerated: ${{ steps.release.outputs.csharp_regenerated }}
+      csharp_directory: ${{ steps.release.outputs.csharp_directory }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
@@ -107,6 +117,7 @@ jobs:
           publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
           publish_ruby: ${{ inputs.publish_ruby }}
+          publish_csharp: ${{ inputs.publish_csharp }}
           action: "release"
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
