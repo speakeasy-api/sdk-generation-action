@@ -499,7 +499,7 @@ jobs:
           dotnet-version: "5.x"
 
       - run: dotnet format && dotnet build
-        working-directory: ${{ needs.generate.outputs.csharp_directory }}
+        working-directory: ${{ needs.generate.outputs.csharp_directory }}/src
 
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
@@ -737,7 +737,7 @@ jobs:
     needs: [ generate, compile-csharp, finalize ]
     defaults:
       run:
-        working-directory: ${{ needs.generate.outputs.csharp_directory }}
+        working-directory: ${{ needs.generate.outputs.csharp_directory }}/src
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
