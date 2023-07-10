@@ -75,5 +75,10 @@
     "name": "rubygems_auth_token",
     "secret_name": "RUBYGEMS_AUTH_TOKEN",
     "language": "ruby"
+  },
+  {
+    "name": "nuget_api_key",
+    "secret_name": "NUGET_API_KEY",
+    "language": "csharp"
   }
 ]

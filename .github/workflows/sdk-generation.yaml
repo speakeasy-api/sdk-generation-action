@@ -42,6 +42,7 @@ on:
             - typescript # using default output of ./typescript-client-sdk
             - java # using default output of ./java-client-sdk
             - php # using default output of ./php-client-sdk
+            - csharp # using default output of ./csharp-client-sdk
             - terraform # (single language repo only)
 
           If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
@@ -88,6 +89,11 @@ on:
         type: string
       publish_ruby:
         description: "Publish the Ruby SDK for RubyGems if using 'direct' mode or prepare a release if using 'pr' mode"
+        default: "false"
+        required: false
+        type: string
+      publish_csharp:
+        description: "Publish the C# SDK for Nuget if using 'direct' mode or prepare a release if using 'pr' mode"
         default: "false"
         required: false
         type: string
@@ -166,6 +172,9 @@ on:
       rubygems_auth_token:
         description: The auth token (api key) for publishing to RubyGems
         required: false
+      nuget_api_key:
+        description: The api key for publishing to the Nuget registry
+        required: false
 jobs:
   validate:
     name: Validate OpenAPI Document
@@ -223,6 +232,8 @@ jobs:
       php_directory: ${{ steps.generate.outputs.php_directory }}
       ruby_regenerated: ${{ steps.generate.outputs.ruby_regenerated }}
       ruby_directory: ${{ steps.generate.outputs.ruby_directory }}
+      csharp_regenerated: ${{ steps.generate.outputs.csharp_regenerated }}
+      csharp_directory: ${{ steps.generate.outputs.csharp_directory }}
       branch_name: ${{ steps.generate.outputs.branch_name }}
       previous_gen_version: ${{ steps.generate.outputs.previous_gen_version }}
     steps:
@@ -245,6 +256,7 @@ jobs:
           publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
           publish_ruby: ${{ inputs.publish_ruby }}
+          publish_csharp: ${{ inputs.publish_csharp }}
           mode: ${{ inputs.mode }}
           action: generate
           force: ${{ inputs.force }}
@@ -469,6 +481,37 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  compile-csharp:
+    if: ${{ needs.generate.outputs.csharp_regenerated == 'true' }}
+    name: Compile C# SDK
+    runs-on: ubuntu-latest
+    needs: generate
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.generate.outputs.branch_name }}
+
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "5.x"
+
+      - run: dotnet format && dotnet build
+        working-directory: ${{ needs.generate.outputs.csharp_directory }}
+
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "Compilation of C# SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   finalize:
     name: Finalize SDK
     if: |
@@ -481,7 +524,8 @@ jobs:
       needs.compile-python.result != 'skipped' ||
       needs.compile-typescript.result != 'skipped' ||
       needs.compile-php.result != 'skipped' ||
-      needs.compile-ruby.result != 'skipped')
+      needs.compile-ruby.result != 'skipped' ||
+      needs.compile-csharp.result != 'skipped')
     needs:
       - generate
       - compile-go
@@ -491,6 +535,7 @@ jobs:
       - compile-typescript
       - compile-php
       - compile-ruby
+      - compile-csharp
     runs-on: ubuntu-latest
     outputs:
       commit_hash: ${{ steps.finalize.outputs.commit_hash }}
@@ -509,6 +554,7 @@ jobs:
           publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
           publish_ruby: ${{ inputs.publish_ruby }}
+          publish_csharp: ${{ inputs.publish_csharp }}
           mode: ${{ inputs.mode }}
           action: finalize
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
@@ -680,6 +726,37 @@ jobs:
           token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Publishing of Ruby SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  publish-nuget:
+    if: ${{ always() && needs.generate.outputs.csharp_regenerated == 'true' && inputs.publish_csharp == 'true' && inputs.mode != 'pr' }}
+    name: Publish C# SDK
+    runs-on: ubuntu-latest
+    needs: [ generate, compile-csharp, finalize ]
+    defaults:
+      run:
+        working-directory: ${{ needs.generate.outputs.csharp_directory }}
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.finalize.outputs.commit_hash }}
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "5.x"
+      - name: Publish
+        run: dotnet pack && dotnet nuget push --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "Publishing of C# SDK Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:

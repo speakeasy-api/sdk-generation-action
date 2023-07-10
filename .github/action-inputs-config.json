@@ -43,6 +43,10 @@
     "language": "ruby"
   },
   {
+    "name": "publish_csharp",
+    "language": "csharp"
+  },
+  {
     "name": "publish_terraform",
     "language": "terraform"
   }
