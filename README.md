@@ -175,7 +175,7 @@ Java publishing is supported by publishing to a staging repository provider (OSS
 C# publishing is supported by Nuget, an can be configured by following these instructions:
 
 - You will need a Nuget API key to publish to nuget. 
-  - Populate the `secrets` section of the workflow with `nuget_api_key: ${{ secrets.NUGET_API_KEY }}`
+  - Populate the `secrets` section of the workflow with `nuget_api_key: ${{ secrets.NUGET_API_KEY }}` (note: this assumes that the api key is set as a github action secret named `NUGET_API_KEY`).
   - A Nuget API key can be obtained by creating an account at [nuget.org](https://www.nuget.org).
     - When creating your Nuget API key, ensure that the `Package Owner` field is set to the user or organization that you would like to "own" your SDK artifact.
     - Ensure that the API key has the relevant `Push` scoped (if the package already exists, the api key may not need `Push new packages and package versions` permissions).
