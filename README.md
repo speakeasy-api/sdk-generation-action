@@ -141,7 +141,7 @@ The action runs through the following steps:
 
 Publishing is provided by using the included reusable workflows. These workflows can be used to publish the SDKs to various package managers. See below for more information.
 
-#### Java
+#### Java (Maven)
 
 Java publishing is supported by publishing to a staging repository provider (OSSRH). In order to publish, you must do the following:
 
@@ -169,6 +169,18 @@ Java publishing is supported by publishing to a staging repository provider (OSS
   - `companyName: My Company`
   - `companyURL: https://www.mycompany.com`
   - `companyEmail: info@mycompany.com`
+
+#### C# (Nuget)
+
+C# publishing is supported by Nuget, an can be configured by following these instructions:
+
+- You will need a Nuget API key to publish to nuget. 
+  - Populate the `secrets` section of the workflow with `nuget_api_key: ${{ secrets.NUGET_API_KEY }}` (note: this assumes that the api key is set as a github action secret named `NUGET_API_KEY`).
+  - A Nuget API key can be obtained by creating an account at [nuget.org](https://www.nuget.org).
+    - When creating your Nuget API key, ensure that the `Package Owner` field is set to the user or organization that you would like to "own" your SDK artifact.
+    - Ensure that the API key has the relevant `Push` scoped (if the package already exists, the api key may not need `Push new packages and package versions` permissions).
+    - Ensure that the `Glob Pattern` and `Available Packages` fields are populated in a way that will permit publishing of your SDK (the `packageName` specified in `gen.yaml` is used).
+- Add `publish_csharp: true` to the `with` section of both the `generation.yaml` and `publish.yaml` (if using in `pr` mode).
 
 #### Terraform Registry
 
