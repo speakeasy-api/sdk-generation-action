@@ -180,6 +180,7 @@ C# publishing is supported by Nuget, an can be configured by following these ins
     - When creating your Nuget API key, ensure that the `Package Owner` field is set to the user or organization that you would like to "own" your SDK artifact.
     - Ensure that the API key has the relevant `Push` scoped (if the package already exists, the api key may not need `Push new packages and package versions` permissions).
     - Ensure that the `Glob Pattern` and `Available Packages` fields are populated in a way that will permit publishing of your SDK (the `packageName` specified in `gen.yaml` is used).
+- Add `publish_csharp: true` to the `with` section of both the `generation.yaml` and `publish.yaml` (if using in `pr` mode).
 
 #### Terraform Registry
 
