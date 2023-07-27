@@ -41,7 +41,7 @@ func Finalize() error {
 			return err
 		}
 
-		branchName, pr, err := g.FindExistingPR(branchName)
+		branchName, pr, err := g.FindExistingPR(branchName, environment.ActionFinalize)
 		if err != nil {
 			return err
 		}

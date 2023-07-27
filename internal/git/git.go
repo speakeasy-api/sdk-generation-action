@@ -149,7 +149,7 @@ func (g *Git) CheckDirDirty(dir string) (bool, error) {
 	return IsGitDiffSignificant(diffOutput), nil
 }
 
-func (g *Git) FindExistingPR(branchName string) (string, *github.PullRequest, error) {
+func (g *Git) FindExistingPR(branchName string, action environment.Action) (string, *github.PullRequest, error) {
 	if g.repo == nil {
 		return "", nil, fmt.Errorf("repo not cloned")
 	}
@@ -159,8 +159,15 @@ func (g *Git) FindExistingPR(branchName string) (string, *github.PullRequest, er
 		return "", nil, fmt.Errorf("error getting pull requests: %w", err)
 	}
 
+	var prTitle string
+	if action == environment.ActionGenerate || action == environment.ActionFinalize {
+		prTitle = getGenPRTitle()
+	} else if action == environment.ActionFinalize || action == environment.ActionFinalizeSuggestion {
+		prTitle = getSuggestPRTitle()
+	}
+
 	for _, p := range prs {
-		if strings.Compare(p.GetTitle(), getPRTitle()) == 0 {
+		if strings.Compare(p.GetTitle(), prTitle) == 0 {
 			logging.Info("Found existing PR %s", *p.Title)
 
 			if branchName != "" && p.GetHead().GetRef() != branchName {
@@ -212,7 +219,7 @@ func (g *Git) FindBranch(branchName string) (string, error) {
 	return branchName, nil
 }
 
-func (g *Git) FindOrCreateBranch(branchName string) (string, error) {
+func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
@@ -226,33 +233,11 @@ func (g *Git) FindOrCreateBranch(branchName string) (string, error) {
 		return g.FindBranch(branchName)
 	}
 
-	branchName = fmt.Sprintf("speakeasy-sdk-regen-%d", time.Now().Unix())
-
-	logging.Info("Creating branch %s", branchName)
-
-	localRef := plumbing.NewBranchReferenceName(branchName)
-
-	if err := w.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.ReferenceName(localRef.String()),
-		Create: true,
-	}); err != nil {
-		return "", fmt.Errorf("error checking out branch: %w", err)
+	if action == environment.ActionGenerate {
+		branchName = fmt.Sprintf("speakeasy-sdk-regen-%d", time.Now().Unix())
+	} else if action == environment.ActionSuggest {
+		branchName = fmt.Sprintf("speakeasy-openapi-suggestion-%d", time.Now().Unix())
 	}
-
-	return branchName, nil
-}
-
-func (g *Git) CreateSuggestionBranch() (string, error) {
-	if g.repo == nil {
-		return "", fmt.Errorf("repo not cloned")
-	}
-
-	w, err := g.repo.Worktree()
-	if err != nil {
-		return "", fmt.Errorf("error getting worktree: %w", err)
-	}
-
-	branchName := fmt.Sprintf("speakeasy-openapi-suggestion-%d", time.Now().Unix())
 
 	logging.Info("Creating branch %s", branchName)
 
@@ -294,7 +279,7 @@ func (g *Git) DeleteBranch(branchName string) error {
 	return nil
 }
 
-func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion string) (string, error) {
+func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
@@ -310,44 +295,13 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion string) (string,
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
-	commitHash, err := w.Commit(fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeay CLI %s", openAPIDocVersion, speakeasyVersion), &git.CommitOptions{
-		Author: &object.Signature{
-			Name:  "speakeasybot",
-			Email: "bot@speakeasyapi.dev",
-			When:  time.Now(),
-		},
-		All: true,
-	})
-	if err != nil {
-		return "", fmt.Errorf("error committing changes: %w", err)
+	var commitMessage string
+	if action == environment.ActionGenerate {
+		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeay CLI %s", openAPIDocVersion, speakeasyVersion)
+	} else if action == environment.ActionSuggest {
+		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
 	}
-
-	if err := g.repo.Push(&git.PushOptions{
-		Auth: getGithubAuth(g.accessToken),
-	}); err != nil {
-		return "", fmt.Errorf("error pushing changes: %w", err)
-	}
-
-	return commitHash.String(), nil
-}
-
-func (g *Git) CommitAndPushSuggestions(doc string) (string, error) {
-	if g.repo == nil {
-		return "", fmt.Errorf("repo not cloned")
-	}
-
-	w, err := g.repo.Worktree()
-	if err != nil {
-		return "", fmt.Errorf("error getting worktree: %w", err)
-	}
-
-	logging.Info("Commit and pushing changes to git")
-
-	if _, err := w.Add("."); err != nil {
-		return "", fmt.Errorf("error adding changes: %w", err)
-	}
-
-	commitHash, err := w.Commit(fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc), &git.CommitOptions{
+	commitHash, err := w.Commit(commitMessage, &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "speakeasybot",
 			Email: "bot@speakeasyapi.dev",
@@ -393,10 +347,10 @@ Based on:
 	} else {
 		logging.Info("Creating PR")
 
-		fmt.Println(body, branchName, getPRTitle(), environment.GetRef())
+		fmt.Println(body, branchName, getGenPRTitle(), environment.GetRef())
 
 		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
-			Title:               github.String(getPRTitle()),
+			Title:               github.String(getGenPRTitle()),
 			Body:                github.String(body),
 			Head:                github.String(branchName),
 			Base:                github.String(environment.GetRef()),
@@ -417,13 +371,13 @@ Based on:
 	return nil
 }
 
-func (g *Git) CreateSuggestionPR(branchName string, doc string) (*int, string, error) {
+func (g *Git) CreateSuggestionPR(branchName, doc, output string) (*int, string, error) {
 	body := fmt.Sprintf(`Generated OpenAPI Suggestions by Speakeasy CLI based on the given OpenAPI Doc: *%s*. 
-    Merge accepted changes back into your original doc when finished.`, doc)
+    Outputs changes to *%s*.`, doc, output)
 
 	logging.Info("Creating PR")
 
-	fmt.Println(body, branchName, getPRTitle(), environment.GetRef())
+	fmt.Println(body, branchName, getSuggestPRTitle(), environment.GetRef())
 
 	pr, _, err := g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
 		Title:               github.String("Speakeasy OpenAPI Suggestions -" + environment.GetWorkflowName()),
@@ -651,10 +605,15 @@ func getRepo() string {
 	return parts[len(parts)-1]
 }
 
-const speakeasyPRTitle = "chore: speakeasy sdk regeneration - "
+const speakeasyGenPRTitle = "chore: speakeasy sdk regeneration - "
+const speakeasySuggestPRTitle = "chore: speakeasy suggest regeneration - "
 
-func getPRTitle() string {
-	return speakeasyPRTitle + environment.GetWorkflowName()
+func getGenPRTitle() string {
+	return speakeasyGenPRTitle + environment.GetWorkflowName()
+}
+
+func getSuggestPRTitle() string {
+	return speakeasySuggestPRTitle + environment.GetWorkflowName()
 }
 
 func runGitCommand(args ...string) (string, error) {

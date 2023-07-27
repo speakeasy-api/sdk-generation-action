@@ -2,6 +2,8 @@ package suggestions
 
 import (
 	"fmt"
+	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"strconv"
 	"strings"
 )
@@ -11,6 +13,13 @@ type GithubAnnotation struct {
 	LineNumber  int
 	Suggestion  []string
 	Explanation []string
+}
+
+func Suggest() error {
+	if _, err := cli.Suggest(environment.GetOpenAPIDocs(), environment.GetOpenAPIDocOutput()); err != nil {
+		return err
+	}
+	return nil
 }
 
 func ParseOutput(out string) []GithubAnnotation {

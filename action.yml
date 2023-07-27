@@ -32,6 +32,10 @@ inputs:
         - https://example.com/openapi1.json
         - https://example.com/openapi2.json
     required: false
+  openapi_doc_output:
+    description: "The path to output the modified OpenAPI spec"
+    required: false
+    default: "./openapi.yaml"
   github_access_token:
     description: A GitHub access token with write access to the repo
     required: true
@@ -95,11 +99,13 @@ inputs:
     required: false
   action:
     description: |-
-      The current action step to run, valid options are 'validate', 'generate', 'finalize' or 'release', defaults to 'generate'.
+      The current action step to run, valid options are 'validate', 'generate', 'suggest', 'finalize', 'finalize-suggestion', or 'release', defaults to 'generate'.
       This is intended to be used along with the `mode` input to determine the current action step to run.
         - 'validate' will validate the OpenAPI document and return addressable warnings and errors.
         - 'generate' will generate the SDK and commit the changes to the branch.
+        - 'suggest' will apply suggestions to the OpenAPI document and commit the changes to the branch.
         - 'finalize' depending on mode will either merge the branch to the branch the workflow is configure to run on (normally 'main' or 'master') or create a pull request.
+        - 'finalize-suggestion' will create a pull request with the suggestions from the LLM model.
         - 'release' will create a release on Github.
   branch_name:
     description: "The name of the branch to finalize, only used for the 'finalize' action step."
@@ -113,9 +119,6 @@ inputs:
   speakeasy_server_url:
     description: "Internal use only"
     required: false
-  write_suggestions:
-      description: "Set to 'True' if you want to receive PRs with OpenAPI suggestions"
-      required: false
   openai_api_key:
     description: "The OpenAI API key to authenticate to access LLM suggestions"
     required: false
@@ -185,6 +188,6 @@ runs:
     - ${{ inputs.branch_name }}
     - ${{ inputs.previous_gen_version }}
     - ${{ inputs.openapi_docs }}
+    - ${{ inputs.openapi_doc_output }}
     - ${{ inputs.output_tests }}
-    - ${{ inputs.write_suggestions }}
     - ${{ inputs.working_directory }}

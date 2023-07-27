@@ -17,10 +17,12 @@ const (
 type Action string
 
 const (
-	ActionValidate Action = "validate"
-	ActionGenerate Action = "generate"
-	ActionFinalize Action = "finalize"
-	ActionRelease  Action = "release"
+	ActionValidate           Action = "validate"
+	ActionGenerate           Action = "generate"
+	ActionSuggest            Action = "suggest"
+	ActionFinalize           Action = "finalize"
+	ActionFinalizeSuggestion Action = "finalize-suggestion"
+	ActionRelease            Action = "release"
 )
 
 var (
@@ -75,6 +77,10 @@ func GetOpenAPIDocLocation() string {
 
 func GetOpenAPIDocs() string {
 	return os.Getenv("INPUT_OPENAPI_DOCS")
+}
+
+func GetOpenAPIDocOutput() string {
+	return os.Getenv("INPUT_OPENAPI_DOC_OUTPUT")
 }
 
 func GetLanguages() string {
