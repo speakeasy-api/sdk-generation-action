@@ -14,7 +14,8 @@ func Suggest() error {
 		return err
 	}
 
-	if err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
+	err = cli.Download(environment.GetPinnedSpeakeasyVersion(), g)
+	if err != nil {
 		return err
 	}
 
