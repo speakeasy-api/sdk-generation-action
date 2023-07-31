@@ -9,6 +9,10 @@ import (
 )
 
 func Suggest() error {
+	if err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
+		return err
+	}
+
 	if !cli.IsAtLeastVersion(cli.LLMSuggestionVersion) {
 		return fmt.Errorf("suggestion action requires at least version %s of the speakeasy CLI", cli.LLMSuggestionVersion)
 	}
@@ -19,10 +23,6 @@ func Suggest() error {
 	}
 
 	var outputs map[string]string
-
-	if err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
-		return err
-	}
 
 	branchName := ""
 
