@@ -45,10 +45,12 @@ func Suggest() error {
 		}
 	}()
 
-	err = suggestions.Suggest()
+	out, err := suggestions.Suggest()
 	if err != nil {
 		return err
 	}
+
+	outputs["cli_output"] = out
 
 	if _, err := g.CommitAndPush("", "", environment.GetOpenAPIDocOutput(), environment.ActionSuggest); err != nil {
 		return err

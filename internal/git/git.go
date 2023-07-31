@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/speakeasy-api/sdk-generation-action/internal/suggestions"
 	"net/url"
 	"os"
 	"os/exec"
@@ -393,31 +392,46 @@ func (g *Git) CreateSuggestionPR(branchName, doc, output string) (*int, string, 
 	return pr.Number, pr.GetHead().GetSHA(), nil
 }
 
-func (g *Git) WriteSuggestionComments(fileName string, prNumber *int, headCommit string, annotations []suggestions.GithubAnnotation) error {
-	for _, annotation := range annotations {
-		// Bold
-		errorLine := fmt.Sprintf("**%s**", annotation.Error)
-		// Code Block
-		suggestion := fmt.Sprintf("```\n%s\n```", strings.Join(annotation.Suggestion, "\n"))
-		// Italics
-		explanation := fmt.Sprintf("*%s*", strings.Join(annotation.Explanation, "\n"))
-		body := errorLine + "\n\n" + suggestion + "\n\n" + explanation
+func (g *Git) WritePRBody(prNumber *int, body string) error {
+	pr, _, err := g.client.PullRequests.Get(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber)
+	if err != nil {
+		return fmt.Errorf("failed to get PR: %w", err)
+	}
 
-		comment := &github.PullRequestComment{
-			Body:     github.String(removeANSISequences(body)),
-			Path:     github.String(fileName),
-			Line:     github.Int(annotation.LineNumber),
-			CommitID: github.String(headCommit),
-		}
-
-		_, _, err := g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, comment)
-		if err != nil {
-			return err
-		}
+	pr.Body = github.String(body)
+	pr, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, pr)
+	if err != nil {
+		return fmt.Errorf("failed to update PR: %w", err)
 	}
 
 	return nil
 }
+
+//func (g *Git) WriteSuggestionComments(fileName string, prNumber *int, headCommit string, annotations []suggestions.GithubAnnotation) error {
+//	for _, annotation := range annotations {
+//		// Bold
+//		errorLine := fmt.Sprintf("**%s**", annotation.Error)
+//		// Code Block
+//		suggestion := fmt.Sprintf("```\n%s\n```", strings.Join(annotation.Suggestion, "\n"))
+//		// Italics
+//		explanation := fmt.Sprintf("*%s*", strings.Join(annotation.Explanation, "\n"))
+//		body := errorLine + "\n\n" + suggestion + "\n\n" + explanation
+//
+//		comment := &github.PullRequestComment{
+//			Body:     github.String(removeANSISequences(body)),
+//			Path:     github.String(fileName),
+//			Line:     github.Int(annotation.LineNumber),
+//			CommitID: github.String(headCommit),
+//		}
+//
+//		_, _, err := g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, comment)
+//		if err != nil {
+//			return err
+//		}
+//	}
+//
+//	return nil
+//}
 
 func removeANSISequences(str string) string {
 	ansiEscape := regexp.MustCompile(`\x1b[^m]*m`)

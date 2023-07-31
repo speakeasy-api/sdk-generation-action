@@ -1,87 +1,90 @@
 package suggestions
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
-	"strconv"
+	"github.com/speakeasy-api/sdk-generation-action/internal/git"
 	"strings"
 )
 
-type GithubAnnotation struct {
-	Error       string
-	LineNumber  int
-	Suggestion  []string
-	Explanation []string
+type prBodyInfo struct {
+	suggestions  []string
+	explanations []string
 }
 
-func Suggest() error {
-	if _, err := cli.Suggest(environment.GetOpenAPIDocs(), environment.GetOpenAPIDocOutput()); err != nil {
-		return err
+func Suggest() (string, error) {
+	out, err := cli.Suggest(environment.GetOpenAPIDocs(), environment.GetOpenAPIDocOutput())
+	if err != nil {
+		return "", err
 	}
+	return out, nil
+}
+
+func WriteSuggestions(g *git.Git, prNumber *int, out string) error {
+	body := parseOutput(out)
+	output := formatSuggestionsAndExplanations(body)
+	if len(output) > 0 {
+		// Writes suggestions and explanations in PR body
+		if err := g.WritePRBody(prNumber, output); err != nil {
+			return fmt.Errorf("error writing PR body: %w", err)
+		}
+	}
+
 	return nil
 }
 
-func ParseOutput(out string) []GithubAnnotation {
-	lines := strings.Split(out, "\n")
-	var fix, explanation []string
-	var errorMessage string
-	lineNumber := -1
-	isFix, isExplanation := false, false
-	outAnnotations := make([]GithubAnnotation, 0)
-
-	for _, line := range lines {
-		if strings.Contains(line, "[line") { // Grab line number
-			isFix, isExplanation = false, false
-			lineNumber, _ = getLineNumber(line)
-			errorMessage = line
-		} else if strings.Contains(line, "Suggested Fix:") { // Start tracking fix
-			isFix = true
-			fix = append(fix, strings.TrimPrefix(line, "Suggested Fix:"))
-			continue
-		} else if strings.Contains(line, "Explanation:") { // Start tracking explanation
-			isFix = false
-			isExplanation = true
-			explanation = append(explanation, strings.TrimPrefix(line, "Explanation:"))
-			continue
-		}
-
-		if line == "" {
-			isFix, isExplanation = false, false
-		}
-
-		if isFix { // add to fix
-			fix = append(fix, line)
-		}
-		if isExplanation { // add to explanation
-			explanation = append(explanation, line)
-		}
-
-		if !isFix && !isExplanation && len(fix) != 0 && len(explanation) != 0 && lineNumber != -1 {
-			outAnnotations = append(outAnnotations, GithubAnnotation{
-				Error:       errorMessage,
-				LineNumber:  lineNumber,
-				Suggestion:  fix,
-				Explanation: explanation,
-			})
-			fix, explanation, lineNumber, errorMessage = nil, nil, -1, ""
-		}
+func formatSuggestionsAndExplanations(body prBodyInfo) string {
+	var output string
+	for i := 0; i < len(body.suggestions); i++ {
+		output += fmt.Sprintf("Suggestion %d: %s\n", i+1, body.suggestions[i])
+		output += fmt.Sprintf("\nExplanation %d: %s", i+1, body.explanations[i])
 	}
-
-	return outAnnotations
+	return output
 }
 
-func getLineNumber(errStr string) (int, error) {
-	lineStr := strings.Split(errStr, "[line ")
-	if len(lineStr) < 2 {
-		return -1, fmt.Errorf("line number cannot be found in err %s", errStr)
+func parseOutput(out string) prBodyInfo {
+	var suggestions, explanations []string
+
+	// Split the stdout into lines
+	scanner := bufio.NewScanner(strings.NewReader(out))
+	var suggestion, explanation string
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if strings.HasPrefix(line, "Suggestion:") {
+			// Save the previous annotation (if any) before starting a new one
+			if suggestion != "" || explanation != "" {
+				suggestions = append(suggestions, suggestion)
+				explanations = append(explanations, explanation)
+			}
+
+			// Reset the suggestion and explanation for the new block
+			suggestion = strings.TrimSpace(strings.TrimPrefix(line, "Suggestion:"))
+			explanation = ""
+		} else if strings.HasPrefix(line, "Explanation:") {
+			// Capture the Explanation block
+			explanation = strings.TrimSpace(strings.TrimPrefix(line, "Explanation:"))
+		} else {
+			// If there are empty lines or other text in between, add them to the current explanation
+			if explanation != "" {
+				explanation += "\n" + line
+			} else if suggestion != "" {
+				suggestion += "\n" + line
+			}
+		}
 	}
 
-	lineNumStr := strings.Split(lineStr[1], "]")[0]
-	lineNum, err := strconv.Atoi(lineNumStr)
-	if err != nil {
-		return -1, err
+	// Save the last annotation, if any
+	if suggestion != "" || explanation != "" {
+		suggestions = append(suggestions, suggestion)
+		explanations = append(explanations, explanation)
 	}
 
-	return lineNum, nil
+	return prBodyInfo{
+		suggestions:  suggestions,
+		explanations: explanations,
+	}
 }

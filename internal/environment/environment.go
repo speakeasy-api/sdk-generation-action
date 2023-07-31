@@ -135,6 +135,10 @@ func GetBranchName() string {
 	return os.Getenv("INPUT_BRANCH_NAME")
 }
 
+func GetCliOutput() string {
+	return os.Getenv("INPUT_CLI_OUTPUT")
+}
+
 func GetRef() string {
 	return os.Getenv("GITHUB_REF")
 }

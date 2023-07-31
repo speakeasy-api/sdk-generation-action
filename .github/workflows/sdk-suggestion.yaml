@@ -56,6 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       branch_name: ${{ steps.suggest.outputs.branch_name }}
+      cli_output: ${{ steps.suggest.outputs.cli_output }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
@@ -100,6 +101,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: finalize-suggestion
           branch_name: ${{ needs.suggest.outputs.branch_name }}
+          cli_output: ${{ needs.suggest.outputs.cli_output }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
