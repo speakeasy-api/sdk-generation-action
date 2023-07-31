@@ -9,17 +9,17 @@ import (
 )
 
 func Suggest() error {
+	g, err := initAction()
+	if err != nil {
+		return err
+	}
+
 	if err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
 		return err
 	}
 
 	if !cli.IsAtLeastVersion(cli.LLMSuggestionVersion) {
 		return fmt.Errorf("suggestion action requires at least version %s of the speakeasy CLI", cli.LLMSuggestionVersion)
-	}
-
-	g, err := initAction()
-	if err != nil {
-		return err
 	}
 
 	var outputs map[string]string
