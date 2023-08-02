@@ -23,7 +23,7 @@ func Suggest() error {
 		return fmt.Errorf("suggestion action requires at least version %s of the speakeasy CLI", cli.LLMSuggestionVersion)
 	}
 
-	var outputs map[string]string
+	outputs := make(map[string]string)
 
 	branchName := ""
 
