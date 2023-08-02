@@ -67,9 +67,9 @@ func Suggest() error {
 
 	printOutputs(outputs)
 
-	//if err := setOutputs(outputs); err != nil {
-	//	return err
-	//}
+	if err := setOutputs(outputs); err != nil {
+		return err
+	}
 
 	success = true
 

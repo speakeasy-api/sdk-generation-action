@@ -22,11 +22,11 @@ func setOutputs(outputs map[string]string) error {
 
 	for k, v := range outputs {
 		if k == "cli_output" {
-			delimiter := randomDelimiter()
-			err = printAndWriteString(f, fmt.Sprintf("%s<<%s\n%s\n%s", k, delimiter, v, delimiter))
-			if err != nil {
-				return err
-			}
+			//delimiter := randomDelimiter()
+			//err = printAndWriteString(f, fmt.Sprintf("%s<<%s\n%s\n%s", k, delimiter, v, delimiter))
+			//if err != nil {
+			//	return err
+			//}
 			continue
 		}
 		err = printAndWriteString(f, fmt.Sprintf("%s=%s\n", k, v))
