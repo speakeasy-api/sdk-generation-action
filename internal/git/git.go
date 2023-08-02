@@ -370,9 +370,9 @@ Based on:
 	return nil
 }
 
-func (g *Git) CreateSuggestionPR(branchName, doc, output string) (*int, string, error) {
-	body := fmt.Sprintf(`Generated OpenAPI Suggestions by Speakeasy CLI based on the given OpenAPI Doc: *%s*. 
-    Outputs changes to *%s*.`, doc, output)
+func (g *Git) CreateSuggestionPR(branchName, output string) (*int, string, error) {
+	body := fmt.Sprintf(`Generated OpenAPI Suggestions by Speakeasy CLI for the given OpenAPI Doc(s). 
+    Outputs changes to *%s*.`, output)
 
 	logging.Info("Creating PR")
 

@@ -3,6 +3,7 @@ package actions
 import (
 	"fmt"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
+	"github.com/speakeasy-api/sdk-generation-action/internal/document"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/suggestions"
@@ -21,6 +22,11 @@ func Suggest() error {
 
 	if !cli.IsAtLeastVersion(cli.LLMSuggestionVersion) {
 		return fmt.Errorf("suggestion action requires at least version %s of the speakeasy CLI", cli.LLMSuggestionVersion)
+	}
+
+	docPath, _, _, err := document.GetOpenAPIFileInfo()
+	if err != nil {
+		return err
 	}
 
 	outputs := make(map[string]string)
@@ -46,7 +52,7 @@ func Suggest() error {
 		}
 	}()
 
-	out, err := suggestions.Suggest()
+	out, err := suggestions.Suggest(docPath)
 	if err != nil {
 		return err
 	}
@@ -72,6 +78,6 @@ func Suggest() error {
 
 func printOutputs(outputs map[string]string) {
 	for key, value := range outputs {
-		fmt.Printf("%s::%s\n", key, value)
+		fmt.Printf("Output Key::%s\n\nOutput Value::%s\n", key, value)
 	}
 }
