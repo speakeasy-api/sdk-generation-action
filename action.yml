@@ -88,6 +88,10 @@ inputs:
     description: "Force the SDK to be regenerated"
     default: "false"
     required: false
+  max_suggestions:
+    description: "The maximum number of suggestions to apply when using the 'suggest' action step."
+    default: "5"
+    required: false
   mode:
     description: |-
       The mode to run the workflow in when using the 'generate' action, valid options are 'direct' or 'pr', defaults to 'direct'.
@@ -186,6 +190,7 @@ runs:
     - ${{ inputs.publish_terraform }}
     - ${{ inputs.openapi_doc_auth_header }}
     - ${{ inputs.openapi_doc_auth_token }}
+    - ${{ inputs.max_suggestions }}
     - ${{ inputs.mode }}
     - ${{ inputs.action }}
     - ${{ inputs.branch_name }}

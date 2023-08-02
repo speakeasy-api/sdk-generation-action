@@ -52,7 +52,7 @@ func Suggest() error {
 		}
 	}()
 
-	out, err := suggestions.Suggest(docPath)
+	out, err := suggestions.Suggest(docPath, environment.GetMaxSuggestions())
 	if err != nil {
 		return err
 	}

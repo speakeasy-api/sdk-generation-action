@@ -14,8 +14,8 @@ type prBodyInfo struct {
 	explanations []string
 }
 
-func Suggest(docPath string) (string, error) {
-	out, err := cli.Suggest(docPath, environment.GetOpenAPIDocOutput())
+func Suggest(docPath, maxSuggestions string) (string, error) {
+	out, err := cli.Suggest(docPath, maxSuggestions, environment.GetOpenAPIDocOutput())
 	if err != nil {
 		return "", err
 	}

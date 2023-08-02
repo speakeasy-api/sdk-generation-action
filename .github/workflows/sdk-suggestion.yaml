@@ -34,6 +34,11 @@ on:
         required: false
         default: "./openapi.yaml"
         type: string
+      max_suggestions:
+        description: "The maximum number of suggestions to apply"
+        required: false
+        default: "5"
+        type: string
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -68,6 +73,7 @@ jobs:
           openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
           openapi_docs: ${{ inputs.openapi_docs }}
           openapi_doc_output: ${{ inputs.openapi_doc_output }}
+          max_suggestions: ${{ inputs.max_suggestions }}
           github_access_token: ${{ secrets.github_access_token }}
           action: suggest
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}

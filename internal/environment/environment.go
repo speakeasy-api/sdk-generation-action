@@ -71,6 +71,10 @@ func GetPinnedSpeakeasyVersion() string {
 	return os.Getenv("INPUT_SPEAKEASY_VERSION")
 }
 
+func GetMaxSuggestions() string {
+	return os.Getenv("INPUT_MAX_SUGGESTIONS")
+}
+
 func GetOpenAPIDocLocation() string {
 	return os.Getenv("INPUT_OPENAPI_DOC_LOCATION")
 }
