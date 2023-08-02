@@ -59,11 +59,19 @@ func Suggest() error {
 
 	outputs["branch_name"] = branchName
 
-	if err := setOutputs(outputs); err != nil {
-		return err
-	}
+	printOutputs(outputs)
+
+	//if err := setOutputs(outputs); err != nil {
+	//	return err
+	//}
 
 	success = true
 
 	return nil
+}
+
+func printOutputs(outputs map[string]string) {
+	for key, value := range outputs {
+		fmt.Printf("%s::%s\n", key, value)
+	}
 }
