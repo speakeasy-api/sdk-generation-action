@@ -27,7 +27,7 @@ func setOutputs(outputs map[string]string) error {
 				return err
 			}
 
-			err = printAndWriteString(f, fmt.Sprintf("%s<<%s\n%s\n%s", k, delimiter, v, delimiter))
+			err = printAndWriteString(f, fmt.Sprintf("%s<<%s\n%s\n%s\n", k, delimiter, v, delimiter))
 			if err != nil {
 				return err
 			}
