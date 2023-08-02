@@ -54,5 +54,7 @@ func FinalizeSuggestion() error {
 	//	}
 	//}
 
+	success = true
+
 	return nil
 }

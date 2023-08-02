@@ -22,7 +22,10 @@ func setOutputs(outputs map[string]string) error {
 
 	for k, v := range outputs {
 		if k == "cli_output" {
-			//delimiter := randomDelimiter()
+			//delimiter, err := randomDelimiter()
+			//if err != nil {
+			//	return err
+
 			//err = printAndWriteString(f, fmt.Sprintf("%s<<%s\n%s\n%s", k, delimiter, v, delimiter))
 			//if err != nil {
 			//	return err
@@ -46,11 +49,11 @@ func printAndWriteString(f *os.File, out string) error {
 	return nil
 }
 
-func randomDelimiter() string {
+func randomDelimiter() (string, error) {
 	b := make([]byte, 15)
 	_, err := rand.Read(b)
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("error generating random delimiter: %w", err)
 	}
-	return base64.StdEncoding.EncodeToString(b)
+	return base64.StdEncoding.EncodeToString(b), nil
 }
