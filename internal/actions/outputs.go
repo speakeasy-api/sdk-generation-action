@@ -43,6 +43,7 @@ func printAndWriteString(f *os.File, out string) error {
 	if _, err := f.WriteString(out); err != nil {
 		return fmt.Errorf("error writing output: %w", err)
 	}
+	return nil
 }
 
 func randomDelimiter() string {
