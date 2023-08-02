@@ -65,8 +65,6 @@ func Suggest() error {
 
 	outputs["branch_name"] = branchName
 
-	printOutputs(outputs)
-
 	if err := setOutputs(outputs); err != nil {
 		return err
 	}
@@ -74,10 +72,4 @@ func Suggest() error {
 	success = true
 
 	return nil
-}
-
-func printOutputs(outputs map[string]string) {
-	for key, value := range outputs {
-		fmt.Printf("Output Key::%s\n\nOutput Value::%s\n", key, value)
-	}
 }
