@@ -5,6 +5,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
+	"github.com/speakeasy-api/sdk-generation-action/internal/suggestions"
 )
 
 func FinalizeSuggestion() error {
@@ -42,17 +43,17 @@ func FinalizeSuggestion() error {
 		return err
 	}
 
-	_, _, err = g.CreateSuggestionPR(branchName, environment.GetOpenAPIDocOutput())
+	prNumber, _, err := g.CreateSuggestionPR(branchName, environment.GetOpenAPIDocOutput())
 	if err != nil {
 		return err
 	}
 
-	//out := environment.GetCliOutput()
-	//if out != "" {
-	//	if err = suggestions.WriteSuggestions(g, prNumber, out); err != nil {
-	//		return err
-	//	}
-	//}
+	out := environment.GetCliOutput()
+	if out != "" {
+		if err = suggestions.WriteSuggestions(g, prNumber, out); err != nil {
+			return err
+		}
+	}
 
 	success = true
 
