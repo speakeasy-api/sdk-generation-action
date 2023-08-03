@@ -115,7 +115,7 @@ inputs:
     description: "The name of the branch to finalize, only used for the 'finalize' action step."
     required: false
   cli_output:
-    description: "Output of the CLI command corresponding to the provided 'action' input"
+    description: "Output of `speakeasy suggest` CLI command, only used for the 'finalize-suggestion' action step."
     required: false
   previous_gen_version:
     description: "The version of the previous generation, only used for the 'finalize' action step."
@@ -162,7 +162,9 @@ outputs:
   ruby_directory:
     description: "The directory the Ruby SDK was generated to"
   branch_name:
-    description: "The name of the branch the SDK was generated on"
+    description: "The name of the branch the SDK was generated or spec was modified on"
+  cli_output:
+    description: "Output of the CLI command corresponding to the provided 'action' input"
   commit_hash:
     description: "The commit hash of the merge commit into main if using 'direct' mode"
   previous_gen_version:
@@ -194,6 +196,7 @@ runs:
     - ${{ inputs.mode }}
     - ${{ inputs.action }}
     - ${{ inputs.branch_name }}
+    - ${{ inputs.cli_output }}
     - ${{ inputs.previous_gen_version }}
     - ${{ inputs.openapi_docs }}
     - ${{ inputs.openapi_doc_output }}
