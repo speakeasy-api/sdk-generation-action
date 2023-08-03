@@ -2,6 +2,7 @@ package actions
 
 import (
 	"errors"
+	"fmt"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
@@ -49,6 +50,7 @@ func FinalizeSuggestion() error {
 	}
 
 	out := environment.GetCliOutput()
+	fmt.Println("cli output: ", out)
 	if out != "" {
 		if err = suggestions.WriteSuggestions(g, prNumber, out); err != nil {
 			return err
