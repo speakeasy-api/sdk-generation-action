@@ -398,7 +398,7 @@ func (g *Git) WritePRBody(prNumber *int, body string) error {
 		return fmt.Errorf("failed to get PR: %w", err)
 	}
 
-	pr.Body = github.String(removeANSISequences(body))
+	pr.Body = github.String(sanitizeExplanations(body))
 	pr, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, pr)
 	if err != nil {
 		return fmt.Errorf("failed to update PR: %w", err)
@@ -407,10 +407,12 @@ func (g *Git) WritePRBody(prNumber *int, body string) error {
 	return nil
 }
 
-func removeANSISequences(str string) string {
+func sanitizeExplanations(str string) string {
+	// Remove ANSI sequences
 	ansiEscape := regexp.MustCompile(`\x1b[^m]*m`)
 	str = ansiEscape.ReplaceAllString(str, "")
-	return str
+	// Escape ~ characters
+	return strings.ReplaceAll(str, "~", "\\~")
 }
 
 func (g *Git) MergeBranch(branchName string) (string, error) {

@@ -37,8 +37,8 @@ func WriteSuggestions(g *git.Git, prNumber *int, out string) error {
 func formatSuggestionsAndExplanations(body prBodyInfo) string {
 	var output string
 	for i := 0; i < len(body.suggestions); i++ {
-		output += fmt.Sprintf("**Suggestion %d**: %s\n", i+1, body.suggestions[i])
-		output += fmt.Sprintf("\n**Explanation %d**: %s", i+1, body.explanations[i])
+		output += fmt.Sprintf("**Suggestion %d**: %s\n\n", i+1, body.suggestions[i])
+		output += fmt.Sprintf("**Explanation %d**: %s\n\n", i+1, body.explanations[i])
 	}
 	return output
 }
