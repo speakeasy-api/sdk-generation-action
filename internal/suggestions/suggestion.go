@@ -48,8 +48,8 @@ func parseOutput(output string) prBodyInfo {
 	var info prBodyInfo
 
 	// Define regular expressions to extract suggestions and explanations
-	suggestionRegexp := regexp.MustCompile(`(?m)^Suggestion:\s*(.*)$`)
-	explanationRegexp := regexp.MustCompile(`(?m)^Explanation:\s*(.*)$`)
+	suggestionRegexp := regexp.MustCompile(`(?m)^Suggestion:\s*(.*)`)
+	explanationRegexp := regexp.MustCompile(`(?m)^Explanation:\s*(.*)`)
 
 	// Find all matches for suggestions and explanations
 	suggestions := suggestionRegexp.FindAllStringSubmatch(output, -1)
