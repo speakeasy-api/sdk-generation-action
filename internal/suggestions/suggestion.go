@@ -40,6 +40,7 @@ func formatSuggestionsAndExplanations(body prBodyInfo) string {
 		output += fmt.Sprintf("Suggestion %d: %s\n", i+1, body.suggestions[i])
 		output += fmt.Sprintf("\nExplanation %d: %s", i+1, body.explanations[i])
 	}
+	fmt.Println("formatted output: ", output)
 	return output
 }
 
@@ -89,6 +90,8 @@ func parseOutput(out string) prBodyInfo {
 	if strings.TrimSpace(explanation) != "" {
 		info.explanations = append(info.explanations, explanation)
 	}
+
+	fmt.Println("prBodyInfo: ", info)
 
 	return info
 }
