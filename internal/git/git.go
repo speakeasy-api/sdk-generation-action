@@ -399,7 +399,6 @@ func (g *Git) WritePRBody(prNumber *int, body string) error {
 	}
 
 	pr.Body = github.String(removeANSISequences(body))
-	fmt.Println("Body is: ", *pr.Body)
 	pr, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, pr)
 	if err != nil {
 		return fmt.Errorf("failed to update PR: %w", err)
