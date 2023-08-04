@@ -53,6 +53,9 @@ func parseOutput(out string) prBodyInfo {
 
 	for scanner.Scan() {
 		line := scanner.Text()
+		fmt.Println("current line: ", line)
+		fmt.Println("current suggestion: ", suggestion)
+		fmt.Println("current explanation: ", explanation)
 
 		if strings.HasPrefix(line, "Suggestion:") {
 			// Save the previous annotation (if any) before starting a new one
