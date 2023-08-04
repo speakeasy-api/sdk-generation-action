@@ -1,11 +1,11 @@
 package suggestions
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
+	"regexp"
 	"strings"
 )
 
@@ -44,50 +44,77 @@ func formatSuggestionsAndExplanations(body prBodyInfo) string {
 	return output
 }
 
-func parseOutput(out string) prBodyInfo {
-	var suggestions, explanations []string
+func parseOutput(output string) prBodyInfo {
+	var info prBodyInfo
 
-	// Split the stdout into lines
-	scanner := bufio.NewScanner(strings.NewReader(out))
-	var suggestion, explanation string
+	// Define regular expressions to extract suggestions and explanations
+	suggestionRegexp := regexp.MustCompile(`(?m)^Suggestion:\s*(.*)$`)
+	explanationRegexp := regexp.MustCompile(`(?m)^Explanation:\s*(.*)$`)
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		fmt.Println("current line: ", line)
-		fmt.Println("current suggestion: ", suggestion)
-		fmt.Println("current explanation: ", explanation)
+	// Find all matches for suggestions and explanations
+	suggestions := suggestionRegexp.FindAllStringSubmatch(output, -1)
+	explanations := explanationRegexp.FindAllStringSubmatch(output, -1)
 
-		if strings.HasPrefix(line, "Suggestion:") {
-			// Save the previous annotation (if any) before starting a new one
-			if suggestion != "" || explanation != "" {
-				suggestions = append(suggestions, suggestion)
-				explanations = append(explanations, explanation)
-			}
+	fmt.Println("suggestions all matches: ", suggestions)
+	fmt.Println("explanations all matches: ", explanations)
 
-			// Reset the suggestion and explanation for the new block
-			suggestion = strings.TrimSpace(strings.TrimPrefix(line, "Suggestion:"))
-			explanation = ""
-		} else if strings.HasPrefix(line, "Explanation:") {
-			// Capture the Explanation block
-			explanation = strings.TrimSpace(strings.TrimPrefix(line, "Explanation:"))
-		} else {
-			// If there are empty lines or other text in between, add them to the current explanation
-			if explanation != "" {
-				explanation += "\n" + line
-			} else if suggestion != "" {
-				suggestion += "\n" + line
-			}
+	// Process suggestions and explanations
+	for _, suggestion := range suggestions {
+		if len(suggestion) >= 2 {
+			info.suggestions = append(info.suggestions, strings.TrimSpace(suggestion[1]))
 		}
 	}
 
-	// Save the last annotation, if any
-	if suggestion != "" || explanation != "" {
-		suggestions = append(suggestions, suggestion)
-		explanations = append(explanations, explanation)
+	for _, explanation := range explanations {
+		if len(explanation) >= 2 {
+			info.explanations = append(info.explanations, strings.TrimSpace(explanation[1]))
+		}
 	}
 
-	return prBodyInfo{
-		suggestions:  suggestions,
-		explanations: explanations,
-	}
+	return info
 }
+
+//func parseOutput(out string) prBodyInfo {
+//	var suggestions, explanations []string
+//
+//	// Split the stdout into lines
+//	scanner := bufio.NewScanner(strings.NewReader(out))
+//	var suggestion, explanation string
+//
+//	for scanner.Scan() {
+//		line := scanner.Text()
+//
+//		if strings.HasPrefix(line, "Suggestion:") {
+//			// Save the previous annotation (if any) before starting a new one
+//			if suggestion != "" || explanation != "" {
+//				suggestions = append(suggestions, suggestion)
+//				explanations = append(explanations, explanation)
+//			}
+//
+//			// Reset the suggestion and explanation for the new block
+//			suggestion = strings.TrimSpace(strings.TrimPrefix(line, "Suggestion:"))
+//			explanation = ""
+//		} else if strings.HasPrefix(line, "Explanation:") {
+//			// Capture the Explanation block
+//			explanation = strings.TrimSpace(strings.TrimPrefix(line, "Explanation:"))
+//		} else {
+//			// If there are empty lines or other text in between, add them to the current explanation
+//			if explanation != "" {
+//				explanation += "\n" + line
+//			} else if suggestion != "" {
+//				suggestion += "\n" + line
+//			}
+//		}
+//	}
+//
+//	// Save the last annotation, if any
+//	if suggestion != "" || explanation != "" {
+//		suggestions = append(suggestions, suggestion)
+//		explanations = append(explanations, explanation)
+//	}
+//
+//	return prBodyInfo{
+//		suggestions:  suggestions,
+//		explanations: explanations,
+//	}
+//}
