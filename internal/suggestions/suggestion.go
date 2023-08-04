@@ -2,77 +2,89 @@ package suggestions
 
 import (
 	"fmt"
-	"strconv"
+	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/sdk-generation-action/internal/git"
 	"strings"
 )
 
-type GithubAnnotation struct {
-	Error       string
-	LineNumber  int
-	Suggestion  []string
-	Explanation []string
+type prBodyInfo struct {
+	suggestions  []string
+	explanations []string
 }
 
-func ParseOutput(out string) []GithubAnnotation {
+func Suggest(docPath, maxSuggestions string) (string, error) {
+	out, err := cli.Suggest(docPath, maxSuggestions, environment.GetOpenAPIDocOutput())
+	if err != nil {
+		return "", err
+	}
+	return out, nil
+}
+
+func WriteSuggestions(g *git.Git, prNumber *int, out string) error {
+	body := parseOutput(out)
+	output := formatSuggestionsAndExplanations(body)
+	if len(output) > 0 {
+		// Writes suggestions and explanations in PR body
+		if err := g.WritePRBody(prNumber, output); err != nil {
+			return fmt.Errorf("error writing PR body: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func formatSuggestionsAndExplanations(body prBodyInfo) string {
+	var output string
+	for i := 0; i < len(body.suggestions); i++ {
+		output += fmt.Sprintf("**Suggestion %d**: %s\n\n", i+1, body.suggestions[i])
+		output += fmt.Sprintf("**Explanation %d**: %s\n\n", i+1, body.explanations[i])
+	}
+	return output
+}
+
+func parseOutput(out string) prBodyInfo {
+	var info prBodyInfo
 	lines := strings.Split(out, "\n")
-	var fix, explanation []string
-	var errorMessage string
-	lineNumber := -1
-	isFix, isExplanation := false, false
-	outAnnotations := make([]GithubAnnotation, 0)
+	suggestion, explanation := "", ""
+	isSuggestion, isExplanation := false, false
 
 	for _, line := range lines {
-		if strings.Contains(line, "[line") { // Grab line number
-			isFix, isExplanation = false, false
-			lineNumber, _ = getLineNumber(line)
-			errorMessage = line
-		} else if strings.Contains(line, "Suggested Fix:") { // Start tracking fix
-			isFix = true
-			fix = append(fix, strings.TrimPrefix(line, "Suggested Fix:"))
+		if strings.Contains(line, "Suggestion:") {
+			isSuggestion = true
+			if strings.TrimSpace(suggestion) != "" {
+				info.suggestions = append(info.suggestions, suggestion)
+			}
+			suggestion = ""
 			continue
-		} else if strings.Contains(line, "Explanation:") { // Start tracking explanation
-			isFix = false
+		} else if strings.Contains(line, "Explanation:") {
+			isSuggestion = false
 			isExplanation = true
-			explanation = append(explanation, strings.TrimPrefix(line, "Explanation:"))
+			if strings.TrimSpace(explanation) != "" {
+				info.explanations = append(info.explanations, explanation)
+			}
+			explanation = ""
 			continue
 		}
 
-		if line == "" {
-			isFix, isExplanation = false, false
+		if strings.TrimSpace(line) == "" {
+			isSuggestion, isExplanation = false, false
 		}
 
-		if isFix { // add to fix
-			fix = append(fix, line)
+		if isSuggestion {
+			suggestion += line
 		}
-		if isExplanation { // add to explanation
-			explanation = append(explanation, line)
-		}
-
-		if !isFix && !isExplanation && len(fix) != 0 && len(explanation) != 0 && lineNumber != -1 {
-			outAnnotations = append(outAnnotations, GithubAnnotation{
-				Error:       errorMessage,
-				LineNumber:  lineNumber,
-				Suggestion:  fix,
-				Explanation: explanation,
-			})
-			fix, explanation, lineNumber, errorMessage = nil, nil, -1, ""
+		if isExplanation {
+			explanation += line
 		}
 	}
 
-	return outAnnotations
-}
-
-func getLineNumber(errStr string) (int, error) {
-	lineStr := strings.Split(errStr, "[line ")
-	if len(lineStr) < 2 {
-		return -1, fmt.Errorf("line number cannot be found in err %s", errStr)
+	if strings.TrimSpace(suggestion) != "" {
+		info.suggestions = append(info.suggestions, suggestion)
+	}
+	if strings.TrimSpace(explanation) != "" {
+		info.explanations = append(info.explanations, explanation)
 	}
 
-	lineNumStr := strings.Split(lineStr[1], "]")[0]
-	lineNum, err := strconv.Atoi(lineNumStr)
-	if err != nil {
-		return -1, err
-	}
-
-	return lineNum, nil
+	return info
 }

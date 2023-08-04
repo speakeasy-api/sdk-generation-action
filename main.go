@@ -29,10 +29,14 @@ func main() {
 	switch environment.GetAction() {
 	case environment.ActionValidate:
 		err = actions.Validate()
+	case environment.ActionSuggest:
+		err = actions.Suggest()
 	case environment.ActionGenerate:
 		err = actions.Generate()
 	case environment.ActionFinalize:
 		err = actions.Finalize()
+	case environment.ActionFinalizeSuggestion:
+		err = actions.FinalizeSuggestion()
 	case environment.ActionRelease:
 		err = actions.Release()
 	}

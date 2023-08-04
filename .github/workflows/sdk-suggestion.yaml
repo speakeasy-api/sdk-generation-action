@@ -1,0 +1,121 @@
+name: Speakeasy SDK Suggestion Workflow
+
+on:
+  workflow_call:
+    inputs:
+      speakeasy_version:
+        description: The version of the Speakeasy CLI to use or "latest"
+        default: latest
+        required: false
+        type: string
+      openapi_doc_auth_header:
+        description: |-
+          The auth header to use when fetching the OpenAPI document if it is not publicly hosted. For example `Authorization`.
+          If using a private speakeasy hosted document use `x-api-key`. This header will be populated with the openapi_doc_auth_token provided.
+        required: false
+        type: string
+      openapi_docs:
+        description: |-
+          A yaml string containing a list of OpenAPI documents to use, if multiple documents are provided they will be merged together, prior to suggestion.
+
+          If the document lives within the repo a relative path can be provided, if the document is hosted publicly a URL can be provided.
+
+          If the documents are hosted privately a URL can be provided along with the `openapi_doc_auth_header` and `openapi_doc_auth_token` inputs.
+          Each document will be fetched using the provided auth header and token, so they need to be valid for all documents.
+
+          For example:
+          openapi_docs: |
+            - https://example.com/openapi1.json
+            - https://example.com/openapi2.json
+        required: false
+        type: string
+      openapi_doc_output:
+        description: "The path to output the modified OpenAPI spec"
+        required: false
+        default: "./openapi.yaml"
+        type: string
+      max_suggestions:
+        description: "The maximum number of suggestions to apply"
+        required: false
+        default: "5"
+        type: string
+    secrets:
+      github_access_token:
+        description: A GitHub access token with write access to the repo
+        required: true
+      openapi_doc_auth_token:
+        description: The auth token to use when fetching the OpenAPI document if it is not publicly hosted. For example `Bearer <token>` or `<token>`.
+        required: false
+      slack_webhook_url:
+        description: A Slack webhook URL that pipeline failures will be posted to
+        required: false
+      speakeasy_api_key:
+        description: The API key to use to authenticate the Speakeasy CLI
+        required: true
+      openai_api_key:
+        description: "The OpenAI API key to authenticate to access LLM suggestions"
+        required: false
+jobs:
+  suggest:
+    name: Suggest OpenAPI Document
+    runs-on: ubuntu-latest
+    outputs:
+      branch_name: ${{ steps.suggest.outputs.branch_name }}
+      cli_output: ${{ steps.suggest.outputs.cli_output }}
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - id: suggest
+        uses: speakeasy-api/sdk-generation-action@v14
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          openapi_doc_auth_header: ${{ inputs.openapi_doc_auth_header }}
+          openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
+          openapi_docs: ${{ inputs.openapi_docs }}
+          openapi_doc_output: ${{ inputs.openapi_doc_output }}
+          max_suggestions: ${{ inputs.max_suggestions }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: suggest
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          openai_api_key: ${{ secrets.openai_api_key }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "OpenAPI Document Suggestion Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  finalize:
+    name: Finalize Suggestion
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
+    needs:
+      - suggest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - id: Finalize
+        uses: speakeasy-api/sdk-generation-action@v14
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          action: finalize-suggestion
+          branch_name: ${{ needs.suggest.outputs.branch_name }}
+          cli_output: ${{ needs.suggest.outputs.cli_output }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "OpenAPI Document Suggestion Finalization Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

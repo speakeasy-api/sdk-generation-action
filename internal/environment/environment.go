@@ -17,10 +17,12 @@ const (
 type Action string
 
 const (
-	ActionValidate Action = "validate"
-	ActionGenerate Action = "generate"
-	ActionFinalize Action = "finalize"
-	ActionRelease  Action = "release"
+	ActionValidate           Action = "validate"
+	ActionGenerate           Action = "generate"
+	ActionSuggest            Action = "suggest"
+	ActionFinalize           Action = "finalize"
+	ActionFinalizeSuggestion Action = "finalize-suggestion"
+	ActionRelease            Action = "release"
 )
 
 var (
@@ -69,12 +71,20 @@ func GetPinnedSpeakeasyVersion() string {
 	return os.Getenv("INPUT_SPEAKEASY_VERSION")
 }
 
+func GetMaxSuggestions() string {
+	return os.Getenv("INPUT_MAX_SUGGESTIONS")
+}
+
 func GetOpenAPIDocLocation() string {
 	return os.Getenv("INPUT_OPENAPI_DOC_LOCATION")
 }
 
 func GetOpenAPIDocs() string {
 	return os.Getenv("INPUT_OPENAPI_DOCS")
+}
+
+func GetOpenAPIDocOutput() string {
+	return os.Getenv("INPUT_OPENAPI_DOC_OUTPUT")
 }
 
 func GetLanguages() string {
@@ -127,6 +137,10 @@ func GetWorkflowEventPayloadPath() string {
 
 func GetBranchName() string {
 	return os.Getenv("INPUT_BRANCH_NAME")
+}
+
+func GetCliOutput() string {
+	return os.Getenv("INPUT_CLI_OUTPUT")
 }
 
 func GetRef() string {

@@ -25,16 +25,17 @@ func Generate() error {
 
 	if mode == environment.ModePR {
 		var err error
-		branchName, _, err = g.FindExistingPR("")
+		branchName, _, err = g.FindExistingPR("", environment.ActionGenerate)
 		if err != nil {
 			return err
 		}
 	}
 
-	branchName, err = g.FindOrCreateBranch(branchName)
+	branchName, err = g.FindOrCreateBranch(branchName, environment.ActionGenerate)
 	if err != nil {
 		return err
 	}
+
 	success := false
 	defer func() {
 		if !success && !environment.IsDebugMode() {
@@ -91,7 +92,7 @@ func Generate() error {
 			return err
 		}
 
-		if _, err := g.CommitAndPush(docVersion, speakeasyVersion); err != nil {
+		if _, err := g.CommitAndPush(docVersion, speakeasyVersion, "", environment.ActionGenerate); err != nil {
 			return err
 		}
 	}
