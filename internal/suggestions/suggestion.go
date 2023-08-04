@@ -5,7 +5,6 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
-	"regexp"
 	"strings"
 )
 
@@ -44,35 +43,81 @@ func formatSuggestionsAndExplanations(body prBodyInfo) string {
 	return output
 }
 
-func parseOutput(output string) prBodyInfo {
+func parseOutput(out string) prBodyInfo {
 	var info prBodyInfo
+	lines := strings.Split(out, "\n")
+	suggestion, explanation := "", ""
+	isSuggestion, isExplanation := false, false
 
-	// Define regular expressions to extract suggestions and explanations
-	suggestionRegexp := regexp.MustCompile(`(?m)^Suggestion:\s*(.*)`)
-	explanationRegexp := regexp.MustCompile(`(?m)^Explanation:\s*(.*)`)
+	for _, line := range lines {
+		fmt.Println("line: ", line)
+		fmt.Println("suggestion: ", suggestion)
+		fmt.Println("explanation: ", explanation)
 
-	// Find all matches for suggestions and explanations
-	suggestions := suggestionRegexp.FindAllStringSubmatch(output, -1)
-	explanations := explanationRegexp.FindAllStringSubmatch(output, -1)
+		if strings.Contains(line, "Suggestion:") {
+			isSuggestion = true
+			info.suggestions = append(info.suggestions, suggestion)
+			suggestion = strings.TrimPrefix(line, "Suggestion:")
+			continue
+		} else if strings.Contains(line, "Explanation:") {
+			isSuggestion = false
+			isExplanation = true
+			info.explanations = append(info.explanations, explanation)
+			explanation = strings.TrimPrefix(line, "Explanation:")
+			continue
+		}
 
-	fmt.Println("suggestions all matches: ", suggestions)
-	fmt.Println("explanations all matches: ", explanations)
+		if line == "" || line == "\n" {
+			isSuggestion, isExplanation = false, false
+		}
 
-	// Process suggestions and explanations
-	for _, suggestion := range suggestions {
-		if len(suggestion) >= 2 {
-			info.suggestions = append(info.suggestions, strings.TrimSpace(suggestion[1]))
+		if isSuggestion {
+			suggestion += line
+		}
+		if isExplanation {
+			explanation += line
 		}
 	}
 
-	for _, explanation := range explanations {
-		if len(explanation) >= 2 {
-			info.explanations = append(info.explanations, strings.TrimSpace(explanation[1]))
-		}
+	if suggestion != "" {
+		info.suggestions = append(info.suggestions, suggestion)
+	}
+	if explanation != "" {
+		info.explanations = append(info.explanations, explanation)
 	}
 
 	return info
 }
+
+//func parseOutput(output string) prBodyInfo {
+//	var info prBodyInfo
+//
+//	// Define regular expressions to extract suggestions and explanations
+//	suggestionRegexp := regexp.MustCompile(`(?m)^Suggestion:\s*(.*)`)
+//	explanationRegexp := regexp.MustCompile(`(?m)^Explanation:\s*(.*)`)
+//
+//	// Find all matches for suggestions and explanations
+//	suggestions := suggestionRegexp.FindAllStringSubmatch(output, -1)
+//	explanations := explanationRegexp.FindAllStringSubmatch(output, -1)
+//
+//	fmt.Println("suggestions all matches: ", suggestions)
+//	fmt.Println("explanations all matches: ", explanations)
+//
+//	// Process suggestions and explanations
+//	for _, suggestion := range suggestions {
+//		if len(suggestion) >= 2 {
+//			info.suggestions = append(info.suggestions, strings.TrimSpace(suggestion[1]))
+//		}
+//	}
+//
+//	for _, explanation := range explanations {
+//		if len(explanation) >= 2 {
+//			info.explanations = append(info.explanations, strings.TrimSpace(explanation[1]))
+//		}
+//	}
+//
+//	return info
+//}
 
 //func parseOutput(out string) prBodyInfo {
 //	var suggestions, explanations []string
