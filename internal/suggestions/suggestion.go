@@ -56,18 +56,22 @@ func parseOutput(out string) prBodyInfo {
 
 		if strings.Contains(line, "Suggestion:") {
 			isSuggestion = true
-			info.suggestions = append(info.suggestions, suggestion)
-			suggestion = strings.TrimPrefix(line, "Suggestion:")
+			if strings.TrimSpace(suggestion) != "" {
+				info.suggestions = append(info.suggestions, suggestion)
+			}
+			suggestion = ""
 			continue
 		} else if strings.Contains(line, "Explanation:") {
 			isSuggestion = false
 			isExplanation = true
-			info.explanations = append(info.explanations, explanation)
-			explanation = strings.TrimPrefix(line, "Explanation:")
+			if strings.TrimSpace(explanation) != "" {
+				info.explanations = append(info.explanations, explanation)
+			}
+			explanation = ""
 			continue
 		}
 
-		if line == "" || line == "\n" {
+		if strings.TrimSpace(line) == "" {
 			isSuggestion, isExplanation = false, false
 		}
 
@@ -79,10 +83,10 @@ func parseOutput(out string) prBodyInfo {
 		}
 	}
 
-	if suggestion != "" {
+	if strings.TrimSpace(suggestion) != "" {
 		info.suggestions = append(info.suggestions, suggestion)
 	}
-	if explanation != "" {
+	if strings.TrimSpace(explanation) != "" {
 		info.explanations = append(info.explanations, explanation)
 	}
 
