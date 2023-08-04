@@ -130,7 +130,6 @@ func Validate(docPath string) error {
 }
 
 func Suggest(docPath, maxSuggestions, docOutputPath string) (string, error) {
-	// capping at 5 suggestions for demo
 	out, err := runSpeakeasyCommand("suggest", "--schema", docPath, "--auto-approve", "--output-file", docOutputPath, "--max-suggestions", maxSuggestions)
 	if err != nil {
 		return out, fmt.Errorf("error suggesting openapi fixes: %w - %s", err, "")

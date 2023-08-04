@@ -36,7 +36,6 @@ func Validate() error {
 	if err := cli.Validate(docPath); err != nil {
 		return err
 	}
-	//}
 
 	return nil
 }

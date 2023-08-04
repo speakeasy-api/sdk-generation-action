@@ -371,7 +371,7 @@ Based on:
 }
 
 func (g *Git) CreateSuggestionPR(branchName, output string) (*int, string, error) {
-	body := fmt.Sprintf(`Generated OpenAPI Suggestions by Speakeasy CLI for the given OpenAPI Doc(s). 
+	body := fmt.Sprintf(`Generated OpenAPI Suggestions by Speakeasy CLI. 
     Outputs changes to *%s*.`, output)
 
 	logging.Info("Creating PR")
@@ -398,7 +398,7 @@ func (g *Git) WritePRBody(prNumber *int, body string) error {
 		return fmt.Errorf("failed to get PR: %w", err)
 	}
 
-	pr.Body = github.String(sanitizeExplanations(body))
+	pr.Body = github.String(strings.Join([]string{*pr.Body, sanitizeExplanations(body)}, "\n\n"))
 	pr, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, pr)
 	if err != nil {
 		return fmt.Errorf("failed to update PR: %w", err)
