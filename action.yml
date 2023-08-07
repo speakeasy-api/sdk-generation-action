@@ -164,7 +164,7 @@ outputs:
   branch_name:
     description: "The name of the branch the SDK was generated or spec was modified on"
   cli_output:
-    description: "Output of the CLI command corresponding to the provided 'action' input"
+    description: "Output of the CLI command issued in the `suggest` action"
   commit_hash:
     description: "The commit hash of the merge commit into main if using 'direct' mode"
   previous_gen_version:
