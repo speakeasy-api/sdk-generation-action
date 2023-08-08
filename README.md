@@ -13,12 +13,13 @@ The action can be used in a number of ways:
 - Configured to run validation check on an OpenAPI doc, this is known as the `validate` action.  
 - Configured to generate and commit directly to a branch in the repo (such as `main` or `master`). This mode is known as the `generate` action in `direct` mode.
 - Configured to generate and commit to an auto-generated branch, then create a PR to merge the changes back into the main repo. This mode is known as the `generate` action in `pr` mode.
+- Configured to apply suggestions to an OpenAPI doc and create a PR to merge the changes back into the main repo. This mode is known as the `suggest` action.
 
 ## Workflow usage
 
 ### Generation Workflow
 
-The `.github/workflows/speakeasy_sdk_generation.yml` workflow provides a reusable workflow for generating the SDKs. This workflow can be used to generate the SDKs and publish them to various package managers if using the `direct` mode of the action or to generate the SDKs and create a PR to merge the changes back into the main repo if using the `pr` mode of the action. If using `pr` mode you can then use the `.github/workflows/speakeasy_sdk_publish.yml` workflow to publish the SDKs to various package managers on merge into the main branch.
+The `.github/workflows/sdk-generation.yaml` workflow provides a reusable workflow for generating the SDKs. This workflow can be used to generate the SDKs and publish them to various package managers if using the `direct` mode of the action or to generate the SDKs and create a PR to merge the changes back into the main repo if using the `pr` mode of the action. If using `pr` mode you can then use the `.github/workflows/speakeasy_sdk_publish.yml` workflow to publish the SDKs to various package managers on merge into the main branch.
 
 The workflow will also validate the provided OpenAPI document and provide addressable warnings and errors in the workflow output.
 
@@ -57,7 +58,7 @@ jobs:
 
 ### Publishing Workflow
 
-When using the action or workflow in `pr` mode you can use the `.github/workflows/speakeasy_sdk_publish.yml` workflow to publish the SDKs to various package managers on merge into the main branch, and create a Github release for the new SDK version.
+When using the action or workflow in `pr` mode you can use the `.github/workflows/sdk-publish.yaml` workflow to publish the SDKs to various package managers on merge into the main branch, and create a Github release for the new SDK version.
 
 Below is example configuration of a workflow using the `pr` mode of the action:
 
@@ -85,7 +86,7 @@ jobs:
 
 ### Validation Workflow
 
-The `.github/workflows/speakeasy_sdk_generation.yml` workflow also provides the ability to run the `validate` action to validate an OpenAPI document.
+The `.github/workflows/sdk-generation.yaml` workflow also provides the ability to run the `validate` action to validate an OpenAPI document.
 
 Below is example configuration of a workflow using the `validate` action:
 
@@ -107,6 +108,36 @@ jobs:
       speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
       github_access_token: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+### Suggestion Workflow
+
+The `.github/workflows/sdk-suggestion.yaml` workflow provides a reusable workflow for applying suggestions to the provided OpenAPI doc(s). This workflow can be used to create a PR to merge the changes containing the applied suggestions back into the main repo.
+
+Below is example configuration of a workflow using the `suggest` action:
+
+```yaml
+name: Suggest
+
+on:
+  workflow_dispatch: {} # Allows manual triggering of the workflow to suggest OpenAPI document
+
+jobs:
+  suggest:
+    uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-suggestion.yaml@v14 # Import the sdk suggestion workflow which will handle applying suggestions to the OpenAPI document and creating a resulting PR.
+    with:
+      speakeasy_version: latest
+      openapi_docs: |
+        - ./openapi.yaml
+      openapi_doc_output: ./openapi.yaml
+      max_suggestions: 5
+    secrets:
+      github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
+      openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+```
+
+Note: `openapi_docs` can also be configured to take in multiple and remote inputs. The above example showcases a local file input.
+`openapi_doc_output` may also be any local filepath. In this case, both values are the same, so the resulting PR will contain the changes to the original file.
 
 ## Generation
 
@@ -213,9 +244,13 @@ The action runs through the following steps:
 
 **Required** The Speakeasy API Key to use to authenticate the CLI run by the action. Create a new API Key in the [Speakeasy Platform](https://app.speakeasyapi.dev).
 
+### `openai_api_key`
+
+The OpenAI API Key to use to authenticate GPT requests issued by the `suggest` action. Create a new API Key in the [OpenAI Platform](https://platform.openai.com/account/api-keys).
+
 ### `action`
 
-The action to run, valid options are `validate`, `generate`, `finalize` or `release`, defaults to `generate`.
+The action to run, valid options are `validate`, `generate`, `finalize`, `suggest`, `finalize-suggest`, or `release`, defaults to `generate`.
 
 ### `mode`
 
@@ -256,6 +291,14 @@ The auth header to use when fetching the OpenAPI document if it is not publicly 
 ### `openapi_doc_auth_token`
 
 The auth token to use when fetching the OpenAPI document if it is not publicly hosted. For example `Bearer <token>` or `<token>`.
+
+### `openapi_doc_output`
+
+The path to output the modified OpenAPI spec to when running the `suggest` action. Defaults to `./openapi.yaml`.
+
+### `max_suggestions`
+
+The maximum number of suggestions to apply when running the `suggest` action. Defaults to `5`.
 
 ### `github_access_token`
 
@@ -372,3 +415,7 @@ The directory the Terraform Provider was generated in
 ### `ruby_directory`
 
 The directory the Ruby SDK was generated in
+
+### `cli_output`
+
+The output of the Speakeasy CLI command used in the `suggest` action
