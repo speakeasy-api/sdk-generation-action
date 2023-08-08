@@ -41,7 +41,7 @@ func Download(pinnedVersion string, g Git) error {
 
 	fmt.Println("Downloading speakeasy cli version: ", version)
 
-	downloadPath := filepath.Join(os.TempDir(), "speakeasy*"+path.Ext(link))
+	downloadPath := filepath.Join(os.TempDir(), "speakeasy"+path.Ext(link))
 	if err := download.DownloadFile(link, downloadPath, "", ""); err != nil {
 		return fmt.Errorf("failed to download speakeasy cli: %w", err)
 	}
@@ -57,16 +57,18 @@ func Download(pinnedVersion string, g Git) error {
 		return fmt.Errorf("failed to set permissions on speakeasy cli: %w", err)
 	}
 
+	fmt.Println("Extracted speakeasy cli to: ", filepath.Join(baseDir, "bin"))
+
 	return nil
 }
 
 func runSpeakeasyCommand(args ...string) (string, error) {
 	baseDir := environment.GetBaseDir()
 
-	cmdPath := path.Join(baseDir, "bin", "speakeasy")
+	cmdPath := filepath.Join(baseDir, "bin", "speakeasy")
 
 	cmd := exec.Command(cmdPath, args...)
-	cmd.Dir = path.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return string(output), fmt.Errorf("error running speakeasy command: speakeasy %s - %w\n %s", strings.Join(args, " "), err, string(output))

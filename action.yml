@@ -81,6 +81,10 @@ inputs:
     description: "Whether the Java SDK will be published to the provided OSSRH URL"
     default: "false"
     required: false
+  publish_csharp:
+    description: "Whether the C# SDK will be published to Nuget"
+    default: "false"
+    required: false
   speakeasy_api_key:
     description: "The Speakeasy API key to authenticate the Speakeasy CLI with"
     required: true

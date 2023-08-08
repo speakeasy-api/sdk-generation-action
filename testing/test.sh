@@ -17,12 +17,13 @@ export INPUT_OPENAPI_DOCS=$(cat <<EOF
 EOF
 )
 export INPUT_GITHUB_ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
+#export INPUT_SPEAKEASY_VERSION="v1.69.0" # Uncomment to test specific versions otherwise uses latest
 export GITHUB_SERVER_URL="https://github.com"
 export GITHUB_REPOSITORY_OWNER="speakeasy-api"
 export GITHUB_REF="refs/heads/main"
 export GITHUB_OUTPUT="./output.txt"
 export GITHUB_WORKFLOW="test"
-export GITHUB_WORKSPACE="./"
+export GITHUB_WORKSPACE=$(pwd)
 
 set -o allexport && source ${ENV_FILE} && set +o allexport
 

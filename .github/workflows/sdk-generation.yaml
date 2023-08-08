@@ -186,6 +186,7 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           working_directory: ${{ inputs.working_directory }}
+          languages: ${{ inputs.languages }}
       - uses: actions/upload-artifact@v3
         if: always()
         with:
