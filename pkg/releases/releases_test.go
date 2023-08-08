@@ -56,9 +56,39 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 			},
 			"ruby": {
 				PackageName: "org-package",
-				Path:				 "ruby",
-				Version:		 "1.2.3",
-				URL:				 "https://rubygems.org/gems/org-package/versions/1.2.3",
+				Path:        "ruby",
+				Version:     "1.2.3",
+				URL:         "https://rubygems.org/gems/org-package/versions/1.2.3",
+			},
+		},
+		LanguagesGenerated: map[string]releases.GenerationInfo{
+			"typescript": {
+				Path:    "typescript",
+				Version: "1.2.3",
+			},
+			"python": {
+				Path:    "python",
+				Version: "1.2.3",
+			},
+			"go": {
+				Path:    "go",
+				Version: "1.2.3",
+			},
+			"php": {
+				Path:    "php",
+				Version: "1.2.3",
+			},
+			"java": {
+				Path:    "java",
+				Version: "1.2.3",
+			},
+			"terraform": {
+				Path:    "terraform",
+				Version: "0.0.5",
+			},
+			"ruby": {
+				Path:    "ruby",
+				Version: "1.2.3",
 			},
 		},
 	}
@@ -84,6 +114,7 @@ func TestReleases_GoPackageNameConstruction_Success(t *testing.T) {
 				URL:         "https://github.com/test/repo/releases/tag/v1.2.3",
 			},
 		},
+		LanguagesGenerated: map[string]releases.GenerationInfo{},
 	}
 
 	info, err := releases.ParseReleases(r.String())
@@ -136,11 +167,12 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 			},
 			"ruby": {
 				PackageName: "org-package",
-				Path:				 "ruby",
-				Version:		 "1.2.3",
-				URL:				 "https://rubygems.org/gems/org-package/versions/1.2.3",
+				Path:        "ruby",
+				Version:     "1.2.3",
+				URL:         "https://rubygems.org/gems/org-package/versions/1.2.3",
 			},
 		},
+		LanguagesGenerated: map[string]releases.GenerationInfo{},
 	}
 
 	r2 := releases.ReleasesInfo{
@@ -188,9 +220,39 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 			},
 			"ruby": {
 				PackageName: "org-package",
-				Path:				 "ruby",
-				Version:		 "1.3.0",
-				URL:				 "https://rubygems.org/gems/org-package/versions/1.3.0",
+				Path:        "ruby",
+				Version:     "1.3.0",
+				URL:         "https://rubygems.org/gems/org-package/versions/1.3.0",
+			},
+		},
+		LanguagesGenerated: map[string]releases.GenerationInfo{
+			"typescript": {
+				Path:    "typescript",
+				Version: "1.3.0",
+			},
+			"python": {
+				Path:    "python",
+				Version: "1.3.0",
+			},
+			"go": {
+				Path:    "go",
+				Version: "1.3.0",
+			},
+			"php": {
+				Path:    "php",
+				Version: "1.3.0",
+			},
+			"java": {
+				Path:    "java",
+				Version: "1.3.0",
+			},
+			"terraform": {
+				Path:    "terraform",
+				Version: "1.3.0",
+			},
+			"ruby": {
+				Path:    "ruby",
+				Version: "1.3.0",
 			},
 		},
 	}
@@ -234,6 +296,7 @@ Based on:
 				URL:         "https://pypi.org/project/vesselapi/2.1.2",
 			},
 		},
+		LanguagesGenerated: map[string]releases.GenerationInfo{},
 	}, *info)
 }
 
@@ -277,5 +340,6 @@ Based on:
 				URL:         "https://github.com/speakeasy-sdks/codat-sdks/releases/tag/v1.1.0",
 			},
 		},
+		LanguagesGenerated: map[string]releases.GenerationInfo{},
 	}, *info)
 }

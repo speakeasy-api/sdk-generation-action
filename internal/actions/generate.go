@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/generate"
@@ -58,12 +59,13 @@ func Generate() error {
 		speakeasyVersion := genInfo.SpeakeasyVersion
 
 		releaseInfo := releases.ReleasesInfo{
-			ReleaseTitle:      environment.GetInvokeTime().Format("2006-01-02 15:04:05"),
-			DocVersion:        docVersion,
-			SpeakeasyVersion:  speakeasyVersion,
-			GenerationVersion: genInfo.GenerationVersion,
-			DocLocation:       environment.GetOpenAPIDocLocation(),
-			Languages:         map[string]releases.LanguageReleaseInfo{},
+			ReleaseTitle:       environment.GetInvokeTime().Format("2006-01-02 15:04:05"),
+			DocVersion:         docVersion,
+			SpeakeasyVersion:   speakeasyVersion,
+			GenerationVersion:  genInfo.GenerationVersion,
+			DocLocation:        environment.GetOpenAPIDocLocation(),
+			Languages:          map[string]releases.LanguageReleaseInfo{},
+			LanguagesGenerated: map[string]releases.GenerationInfo{},
 		}
 
 		supportedLanguages, err := cli.GetSupportedLanguages()
@@ -74,11 +76,20 @@ func Generate() error {
 		for _, lang := range supportedLanguages {
 			langGenInfo, ok := genInfo.Languages[lang]
 
-			if ok && outputs[fmt.Sprintf("%s_regenerated", lang)] == "true" && environment.IsLanguagePublished(lang) {
-				releaseInfo.Languages[lang] = releases.LanguageReleaseInfo{
-					PackageName: langGenInfo.PackageName,
-					Version:     langGenInfo.Version,
-					Path:        outputs[fmt.Sprintf("%s_directory", lang)],
+			if ok && outputs[fmt.Sprintf("%s_regenerated", lang)] == "true" {
+				path := outputs[fmt.Sprintf("%s_directory", lang)]
+
+				releaseInfo.LanguagesGenerated[lang] = releases.GenerationInfo{
+					Version: langGenInfo.Version,
+					Path:    path,
+				}
+
+				if environment.IsLanguagePublished(lang) {
+					releaseInfo.Languages[lang] = releases.LanguageReleaseInfo{
+						PackageName: langGenInfo.PackageName,
+						Version:     langGenInfo.Version,
+						Path:        path,
+					}
 				}
 			}
 		}

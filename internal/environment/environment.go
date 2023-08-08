@@ -33,7 +33,7 @@ var (
 func init() {
 	// Allows us to run this locally
 	if os.Getenv("SPEAKEASY_ENVIRONMENT") == "local" {
-		baseDir = "./"
+		baseDir, _ = os.Getwd()
 	}
 }
 

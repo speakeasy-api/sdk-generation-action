@@ -19,17 +19,32 @@ type LanguageReleaseInfo struct {
 	URL             string
 }
 
+type GenerationInfo struct {
+	Version string
+	Path    string
+}
+
 type ReleasesInfo struct {
-	ReleaseTitle      string
-	DocVersion        string
-	SpeakeasyVersion  string
-	GenerationVersion string
-	DocLocation       string
-	Languages         map[string]LanguageReleaseInfo
+	ReleaseTitle       string
+	DocVersion         string
+	SpeakeasyVersion   string
+	GenerationVersion  string
+	DocLocation        string
+	Languages          map[string]LanguageReleaseInfo
+	LanguagesGenerated map[string]GenerationInfo
 }
 
 func (r ReleasesInfo) String() string {
+	generationOutput := []string{}
 	releasesOutput := []string{}
+
+	for lang, info := range r.LanguagesGenerated {
+		generationOutput = append(generationOutput, fmt.Sprintf("- [%s v%s] %s", lang, info.Version, info.Path))
+	}
+
+	if len(generationOutput) > 0 {
+		generationOutput = append([]string{"\n### Generated"}, generationOutput...)
+	}
 
 	for lang, info := range r.Languages {
 		pkgID := ""
@@ -82,7 +97,7 @@ func (r ReleasesInfo) String() string {
 ### Changes
 Based on:
 - OpenAPI Doc %s %s
-- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s`, "\n\n", r.ReleaseTitle, r.DocVersion, r.DocLocation, r.SpeakeasyVersion, r.GenerationVersion, strings.Join(releasesOutput, "\n"))
+- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", r.ReleaseTitle, r.DocVersion, r.DocLocation, r.SpeakeasyVersion, r.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
 }
 
 func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
@@ -105,14 +120,15 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
 }
 
 var (
-	releaseInfoRegex      = regexp.MustCompile(`(?s)## (.*?)\n### Changes\nBased on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) (\((.*?)\))?.*?`)
-	npmReleaseRegex       = regexp.MustCompile(`- \[NPM v(\d+\.\d+\.\d+)\] (https:\/\/www\.npmjs\.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+) - (.*)`)
-	pypiReleaseRegex      = regexp.MustCompile(`- \[PyPI v(\d+\.\d+\.\d+)\] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
-	goReleaseRegex        = regexp.MustCompile(`- \[Go v(\d+\.\d+\.\d+)\] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+) - (.*)`)
-	composerReleaseRegex  = regexp.MustCompile(`- \[Composer v(\d+\.\d+\.\d+)\] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+) - (.*)`)
-	mavenReleaseRegex     = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+)\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
-	terraformReleaseRegex = regexp.MustCompile(`- \[Terraform v(\d+\.\d+\.\d+)\] (https:\/\/registry\.terraform\.io\/providers\/(.*?)\/(.*?)\/.*?) - (.*)`)
-	rubyGemReleaseRegex  = regexp.MustCompile(`- \[Ruby Gems v(\d+\.\d+\.\d+)\] (https:\/\/rubygems\.org\/gems\/(.*?)\/versions\/.*?) - (.*)`)
+	releaseInfoRegex        = regexp.MustCompile(`(?s)## (.*?)\n### Changes\nBased on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) (\((.*?)\))?.*?`)
+	generatedLanguagesRegex = regexp.MustCompile(`- \[([a-z]+) v(\d+\.\d+\.\d+)\] (.*)`)
+	npmReleaseRegex         = regexp.MustCompile(`- \[NPM v(\d+\.\d+\.\d+)\] (https:\/\/www\.npmjs\.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+) - (.*)`)
+	pypiReleaseRegex        = regexp.MustCompile(`- \[PyPI v(\d+\.\d+\.\d+)\] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
+	goReleaseRegex          = regexp.MustCompile(`- \[Go v(\d+\.\d+\.\d+)\] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+) - (.*)`)
+	composerReleaseRegex    = regexp.MustCompile(`- \[Composer v(\d+\.\d+\.\d+)\] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+) - (.*)`)
+	mavenReleaseRegex       = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+)\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
+	terraformReleaseRegex   = regexp.MustCompile(`- \[Terraform v(\d+\.\d+\.\d+)\] (https:\/\/registry\.terraform\.io\/providers\/(.*?)\/(.*?)\/.*?) - (.*)`)
+	rubyGemReleaseRegex     = regexp.MustCompile(`- \[Ruby Gems v(\d+\.\d+\.\d+)\] (https:\/\/rubygems\.org\/gems\/(.*?)\/versions\/.*?) - (.*)`)
 )
 
 func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
@@ -151,12 +167,23 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 	}
 
 	info := &ReleasesInfo{
-		ReleaseTitle:      matches[1],
-		DocVersion:        matches[2],
-		DocLocation:       matches[3],
-		SpeakeasyVersion:  matches[4],
-		GenerationVersion: genVersion,
-		Languages:         map[string]LanguageReleaseInfo{},
+		ReleaseTitle:       matches[1],
+		DocVersion:         matches[2],
+		DocLocation:        matches[3],
+		SpeakeasyVersion:   matches[4],
+		GenerationVersion:  genVersion,
+		Languages:          map[string]LanguageReleaseInfo{},
+		LanguagesGenerated: map[string]GenerationInfo{},
+	}
+
+	generatedMatches := generatedLanguagesRegex.FindAllStringSubmatch(lastRelease, -1)
+	for _, subMatch := range generatedMatches {
+		if len(subMatch) == 4 {
+			info.LanguagesGenerated[subMatch[1]] = GenerationInfo{
+				Version: subMatch[2],
+				Path:    subMatch[3],
+			}
+		}
 	}
 
 	npmMatches := npmReleaseRegex.FindStringSubmatch(lastRelease)

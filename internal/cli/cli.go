@@ -16,11 +16,13 @@ var (
 	RepoDetailsVersion             = version.Must(version.NewVersion("1.23.1"))
 	OutputTestsVersion             = version.Must(version.NewVersion("1.33.2"))
 	LLMSuggestionVersion           = version.Must(version.NewVersion("1.47.1"))
+	GranularChangeLogVersion       = version.Must(version.NewVersion("1.70.2"))
 )
 
 func IsAtLeastVersion(version *version.Version) bool {
 	sv, err := GetSpeakeasyVersion()
 	if err != nil {
+		logging.Debug(err.Error())
 		return false
 	}
 
@@ -78,7 +80,7 @@ func GetGenerationVersion() (*version.Version, error) {
 
 	logging.Debug(out)
 
-	r := regexp.MustCompile(`^Version:.*?v([0-9]+\.[0-9]+\.[0-9]+)`)
+	r := regexp.MustCompile(`(?m)^Version:.*?v([0-9]+\.[0-9]+\.[0-9]+)`)
 
 	v := r.FindStringSubmatch(strings.TrimSpace(out))[1]
 
@@ -90,34 +92,98 @@ func GetGenerationVersion() (*version.Version, error) {
 	return genVersion, nil
 }
 
-func GetChangelog(genVersion, previousGenVersion string) (string, error) {
+func GetLatestFeatureVersions(lang string) (map[string]string, error) {
+	if !IsAtLeastVersion(GranularChangeLogVersion) {
+		return nil, fmt.Errorf("speakeasy version %s does not support granular changelogs", GranularChangeLogVersion)
+	}
+
+	out, err := runSpeakeasyCommand("generate", "sdk", "version", "-l", lang)
+	if err != nil {
+		return nil, err
+	}
+
+	logging.Debug(out)
+
+	r := regexp.MustCompile(`(?m)^  ([a-zA-Z]+): ([0-9]+\.[0-9]+\.[0-9]+)`)
+
+	matches := r.FindAllStringSubmatch(out, -1)
+
+	versions := map[string]string{}
+
+	for _, subMatch := range matches {
+		feature := subMatch[1]
+		version := subMatch[2]
+
+		versions[feature] = version
+	}
+
+	return versions, nil
+}
+
+func GetChangelog(lang, genVersion, previousGenVersion string, targetVersions map[string]string, previousVersions map[string]string) (string, error) {
 	if !IsAtLeastVersion(ChangeLogVersion) {
 		return "", nil
 	}
 
-	args := []string{}
-	startVersionFlag := "-s"
+	if IsAtLeastVersion(GranularChangeLogVersion) && lang != "" {
+		targetVersionsStrings := []string{}
 
-	if previousGenVersion != "" {
-		startVersionFlag = "-t"
-		args = append(args, "-p", "v"+previousGenVersion)
+		for feature, targetVersion := range targetVersions {
+			targetVersionsStrings = append(targetVersionsStrings, fmt.Sprintf("%s,%s", feature, targetVersion))
+		}
+
+		args := []string{
+			"generate",
+			"sdk",
+			"changelog",
+			"-r",
+			"-l",
+			lang,
+			"-t",
+			strings.Join(targetVersionsStrings, ","),
+		}
+
+		if previousVersions != nil {
+			previosVersionsStrings := []string{}
+
+			for feature, previousVersion := range previousVersions {
+				previosVersionsStrings = append(previosVersionsStrings, fmt.Sprintf("%s,%s", feature, previousVersion))
+			}
+
+			args = append(args, "-p", strings.Join(previosVersionsStrings, ","))
+		}
+
+		out, err := runSpeakeasyCommand(args...)
+		if err != nil {
+			return "", err
+		}
+
+		return out, nil
+	} else {
+		args := []string{}
+		startVersionFlag := "-s"
+
+		if previousGenVersion != "" {
+			startVersionFlag = "-t"
+			args = append(args, "-p", "v"+previousGenVersion)
+		}
+
+		args = append([]string{
+			"generate",
+			"sdk",
+			"changelog",
+			"-r",
+			startVersionFlag,
+			"v" + genVersion,
+		}, args...)
+
+		out, err := runSpeakeasyCommand(args...)
+		if err != nil {
+			return "", err
+		}
+
+		return out, nil
 	}
-
-	args = append([]string{
-		"generate",
-		"sdk",
-		"changelog",
-		"-r",
-		startVersionFlag,
-		"v" + genVersion,
-	}, args...)
-
-	out, err := runSpeakeasyCommand(args...)
-	if err != nil {
-		return "", err
-	}
-
-	return out, nil
 }
 
 func Validate(docPath string) error {

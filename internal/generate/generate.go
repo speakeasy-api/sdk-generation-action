@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 	config "github.com/speakeasy-api/sdk-gen-config"
@@ -23,6 +24,13 @@ type GenerationInfo struct {
 	GenerationVersion string
 	OpenAPIDocVersion string
 	Languages         map[string]LanguageGenInfo
+}
+
+type versionInfo struct {
+	generationVersion *version.Version
+	docVersion        string
+	docChecksum       string
+	sdkVersion        string
 }
 
 type Git interface {
@@ -79,34 +87,16 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 		sdkVersion := langCfg.Version
 
-		// Older versions of the gen.yaml won't have a generation version
-		previousGenVersion := cfg.Config.Management.GenerationVersion
-		if previousGenVersion == "" {
-			previousGenVersion = cfg.Config.Management.SpeakeasyVersion
-		}
-
-		if globalPreviousGenVersion == "" {
-			globalPreviousGenVersion = previousGenVersion
-		} else if previousGenVersion != "" {
-			global, err := version.NewVersion(globalPreviousGenVersion)
-			if err != nil {
-				return nil, outputs, fmt.Errorf("failed to parse global previous gen version %s: %w", globalPreviousGenVersion, err)
-			}
-
-			previous, err := version.NewVersion(previousGenVersion)
-			if err != nil {
-				return nil, outputs, fmt.Errorf("failed to parse previous gen version %s: %w", previousGenVersion, err)
-			}
-
-			if previous.LessThan(global) {
-				globalPreviousGenVersion = previousGenVersion
-			}
-		}
-
-		newVersion, err := checkForChanges(generationVersion, previousGenVersion, docVersion, docChecksum, sdkVersion, cfg.Config.Management)
+		newVersion, previousVersion, err := checkIfGenerationNeeded(cfg.Config, lang, globalPreviousGenVersion, versionInfo{
+			generationVersion: generationVersion,
+			docVersion:        docVersion,
+			docChecksum:       docChecksum,
+			sdkVersion:        sdkVersion,
+		})
 		if err != nil {
 			return nil, outputs, err
 		}
+		globalPreviousGenVersion = previousVersion
 
 		if newVersion != "" {
 			fmt.Println("New version detected: ", newVersion)
@@ -231,114 +221,172 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 	return genInfo, outputs, nil
 }
 
-func normalizeGenVersion(v string) (*version.Version, error) {
-	genVersion, err := version.NewVersion(v)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse generation version %s for normalization: %w", v, err)
-	}
+func checkIfGenerationNeeded(cfg *config.Config, lang, globalPreviousGenVersion string, versionInfo versionInfo) (string, string, error) {
+	bumpMajor := false
+	bumpMinor := false
+	bumpPatch := false
 
-	// To avoid a major version bump to SDKs when this feature is released we need to normalize the major version to 1
-	// The reason for this is that prior to this we were using the speakeasy version which had a major version of 1 while the generation version had a major version of 2
-	// If the generation version is bumped in the future we will just start using that version
-	if genVersion.Segments()[0] == 2 {
-		v = fmt.Sprintf("%d.%d.%d", 1, genVersion.Segments()[1], genVersion.Segments()[2])
-		genVersion, err := version.NewVersion(v)
+	previousFeatureVersions, ok := cfg.Features[lang]
+
+	if cli.IsAtLeastVersion(cli.GranularChangeLogVersion) && ok {
+		latestFeatureVersions, err := cli.GetLatestFeatureVersions(lang)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse normalized generation version %s for normalization: %w", v, err)
+			return "", "", err
 		}
 
-		return genVersion, nil
-	}
+		if globalPreviousGenVersion != "" {
+			globalPreviousGenVersion += ";"
+		}
 
-	return genVersion, nil
-}
+		globalPreviousGenVersion += fmt.Sprintf("%s:", lang)
 
-func checkForChanges(generationVersion *version.Version, previousGenVersion, docVersion, docChecksum, sdkVersion string, mgmtConfig *config.Management) (string, error) {
-	force := environment.ForceGeneration()
+		previousFeatureParts := []string{}
 
-	genVersion, err := normalizeGenVersion(generationVersion.String())
-	if err != nil {
-		return "", err
-	}
+		for feature, previousVersion := range previousFeatureVersions {
+			latestVersion, ok := latestFeatureVersions[feature]
+			if !ok {
+				bumpMinor = true // If the feature is no longer supported then we bump the minor version as we will consider it a feature change for now (maybe breaking though?)
+				continue
+			}
 
-	if previousGenVersion == "" {
-		previousGenVersion = "0.0.0"
-	}
+			previous, err := version.NewVersion(previousVersion)
+			if err != nil {
+				return "", "", fmt.Errorf("failed to parse previous feature version %s for feature %s: %w", previousVersion, feature, err)
+			}
 
-	previousGenerationVersion, err := normalizeGenVersion(previousGenVersion)
-	if err != nil {
-		return "", err
-	}
+			latest, err := version.NewVersion(latestVersion)
+			if err != nil {
+				return "", "", fmt.Errorf("failed to parse latest feature version %s for feature %s: %w", latestVersion, feature, err)
+			}
 
-	if !genVersion.Equal(previousGenerationVersion) || docVersion != mgmtConfig.DocVersion || docChecksum != mgmtConfig.DocChecksum || force {
-		bumpMajor := false
-		bumpMinor := false
-		bumpPatch := false
+			if latest.GreaterThan(previous) {
+				fmt.Printf("Feature version changed detected for %s: %s > %s\n", feature, previousVersion, latestVersion)
 
+				if latest.Segments()[0] > previous.Segments()[0] {
+					bumpMajor = true
+				} else if latest.Segments()[1] > previous.Segments()[1] {
+					bumpMinor = true
+				} else {
+					bumpPatch = true
+				}
+			}
+
+			previousFeatureParts = append(previousFeatureParts, fmt.Sprintf("%s,%s", feature, previousVersion))
+		}
+
+		globalPreviousGenVersion += strings.Join(previousFeatureParts, ",")
+	} else {
+		// Older versions of the gen.yaml won't have a generation version
+		previousGenVersion := cfg.Management.GenerationVersion
 		if previousGenVersion == "" {
-			bumpMinor = true
-		} else {
-			if genVersion.Segments()[0] > previousGenerationVersion.Segments()[0] {
-				fmt.Printf("Generation version changed detected: %s > %s\n", previousGenVersion, generationVersion)
-				bumpMajor = true
-			} else if genVersion.Segments()[1] > previousGenerationVersion.Segments()[1] {
-				fmt.Printf("Generation version changed detected: %s > %s\n", previousGenVersion, generationVersion)
-				bumpMinor = true
-			} else if genVersion.Segments()[2] > previousGenerationVersion.Segments()[2] {
-				fmt.Printf("Generation version changed detected: %s > %s\n", previousGenVersion, generationVersion)
-				bumpPatch = true
+			previousGenVersion = cfg.Management.SpeakeasyVersion
+		}
+
+		if globalPreviousGenVersion == "" {
+			globalPreviousGenVersion = previousGenVersion
+		} else if previousGenVersion != "" {
+			global, err := version.NewVersion(globalPreviousGenVersion)
+			if err != nil {
+				return "", "", fmt.Errorf("failed to parse global previous gen version %s: %w", globalPreviousGenVersion, err)
+			}
+
+			previous, err := version.NewVersion(previousGenVersion)
+			if err != nil {
+				return "", "", fmt.Errorf("failed to parse previous gen version %s: %w", previousGenVersion, err)
+			}
+
+			if previous.LessThan(global) {
+				globalPreviousGenVersion = previousGenVersion
 			}
 		}
 
+		genVersion, err := normalizeGenVersion(versionInfo.generationVersion.String())
+		if err != nil {
+			return "", "", err
+		}
+
+		if previousGenVersion == "" {
+			previousGenVersion = "0.0.0"
+		}
+
+		previousGenerationVersion, err := normalizeGenVersion(previousGenVersion)
+		if err != nil {
+			return "", "", err
+		}
+
+		if !genVersion.Equal(previousGenerationVersion) {
+			if previousGenVersion == "" {
+				bumpMinor = true
+			} else {
+				fmt.Printf("Generation version changed detected: %s > %s\n", previousGenVersion, versionInfo.generationVersion)
+
+				if genVersion.Segments()[0] > previousGenerationVersion.Segments()[0] {
+					bumpMajor = true
+				} else if genVersion.Segments()[1] > previousGenerationVersion.Segments()[1] {
+					bumpMinor = true
+				} else {
+					bumpPatch = true
+				}
+			}
+		}
+	}
+
+	if versionInfo.docVersion != cfg.Management.DocVersion || versionInfo.docChecksum != cfg.Management.DocChecksum || environment.ForceGeneration() {
 		docVersionUpdated := false
 
-		if mgmtConfig.DocVersion == "" {
+		if cfg.Management.DocVersion == "" {
 			bumpMinor = true
 		} else {
-			currentDocV, err := version.NewVersion(docVersion)
+			currentDocV, err := version.NewVersion(versionInfo.docVersion)
 			// If not a semver then we just deal with the checksum
 			if err == nil {
-				previousDocV, err := version.NewVersion(mgmtConfig.DocVersion)
+				previousDocV, err := version.NewVersion(cfg.Management.DocVersion)
 				if err != nil {
-					return "", fmt.Errorf("error parsing config openapi version %s: %w", mgmtConfig.DocVersion, err)
+					return "", "", fmt.Errorf("error parsing config openapi version %s: %w", cfg.Management.DocVersion, err)
 				}
 
-				if currentDocV.Segments()[0] > previousDocV.Segments()[0] {
-					fmt.Printf("OpenAPI doc version changed detected: %s > %s\n", mgmtConfig.DocVersion, docVersion)
-					bumpMajor = true
+				if currentDocV.GreaterThan(previousDocV) {
+					fmt.Printf("OpenAPI doc version changed detected: %s > %s\n", cfg.Management.DocVersion, versionInfo.docVersion)
 					docVersionUpdated = true
-				} else if currentDocV.Segments()[1] > previousDocV.Segments()[1] {
-					fmt.Printf("OpenAPI doc version changed detected: %s > %s\n", mgmtConfig.DocVersion, docVersion)
-					bumpMinor = true
-					docVersionUpdated = true
-				} else if currentDocV.Segments()[2] > previousDocV.Segments()[2] {
-					fmt.Printf("OpenAPI doc version changed detected: %s > %s\n", mgmtConfig.DocVersion, docVersion)
-					bumpPatch = true
-					docVersionUpdated = true
+
+					if currentDocV.Segments()[0] > previousDocV.Segments()[0] {
+						bumpMajor = true
+					} else if currentDocV.Segments()[1] > previousDocV.Segments()[1] {
+						bumpMinor = true
+					} else {
+						bumpPatch = true
+					}
 				}
 			} else {
 				fmt.Println("::warning title=invalid_version::openapi version is not a semver")
 			}
 		}
 
-		if mgmtConfig.DocChecksum == "" {
+		if cfg.Management.DocChecksum == "" {
 			bumpMinor = true
-		} else if docChecksum != mgmtConfig.DocChecksum {
+		} else if versionInfo.docChecksum != cfg.Management.DocChecksum {
 			bumpPatch = true
 
-			fmt.Printf("OpenAPI doc checksum changed detected: %s > %s\n", mgmtConfig.DocChecksum, docChecksum)
+			fmt.Printf("OpenAPI doc checksum changed detected: %s > %s\n", cfg.Management.DocChecksum, versionInfo.docChecksum)
 
 			if !docVersionUpdated {
 				fmt.Println("::warning title=checksum_changed::openapi checksum changed but version did not")
 			}
 		}
 
+		if environment.ForceGeneration() {
+			fmt.Println("Forcing generation, bumping patch version")
+			bumpMinor = true
+		}
+	}
+
+	if bumpMajor || bumpMinor || bumpPatch {
 		var major, minor, patch int
 
-		if sdkVersion != "" {
-			sdkV, err := version.NewVersion(sdkVersion)
+		if versionInfo.sdkVersion != "" {
+			sdkV, err := version.NewVersion(versionInfo.sdkVersion)
 			if err != nil {
-				return "", fmt.Errorf("error parsing sdk version %s: %w", sdkVersion, err)
+				return "", "", fmt.Errorf("error parsing sdk version %s: %w", versionInfo.sdkVersion, err)
 			}
 
 			major = sdkV.Segments()[0]
@@ -360,10 +408,32 @@ func checkForChanges(generationVersion *version.Version, previousGenVersion, doc
 			patch++
 		}
 
-		return fmt.Sprintf("%d.%d.%d", major, minor, patch), nil
+		return fmt.Sprintf("%d.%d.%d", major, minor, patch), globalPreviousGenVersion, nil
 	}
 
-	return "", nil
+	return "", globalPreviousGenVersion, nil
+}
+
+func normalizeGenVersion(v string) (*version.Version, error) {
+	genVersion, err := version.NewVersion(v)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse generation version %s for normalization: %w", v, err)
+	}
+
+	// To avoid a major version bump to SDKs when this feature is released we need to normalize the major version to 1
+	// The reason for this is that prior to this we were using the speakeasy version which had a major version of 1 while the generation version had a major version of 2
+	// If the generation version is bumped in the future we will just start using that version
+	if genVersion.Segments()[0] == 2 {
+		v = fmt.Sprintf("%d.%d.%d", 1, genVersion.Segments()[1], genVersion.Segments()[2])
+		genVersion, err := version.NewVersion(v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse normalized generation version %s for normalization: %w", v, err)
+		}
+
+		return genVersion, nil
+	}
+
+	return genVersion, nil
 }
 
 func getInstallationURL(lang, subdirectory string) string {
