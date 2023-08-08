@@ -33,6 +33,11 @@ type versionInfo struct {
 	sdkVersion        string
 }
 
+var (
+	v0 = version.Must(version.NewVersion("0.0.0"))
+	v1 = version.Must(version.NewVersion("1.0.0"))
+)
+
 type Git interface {
 	CheckDirDirty(dir string) (bool, error)
 }
@@ -226,6 +231,22 @@ func checkIfGenerationNeeded(cfg *config.Config, lang, globalPreviousGenVersion 
 	bumpMinor := false
 	bumpPatch := false
 
+	isPreV1 := false
+	var sdkV *version.Version
+
+	if versionInfo.sdkVersion != "" {
+		var err error
+		sdkV, err = version.NewVersion(versionInfo.sdkVersion)
+		if err != nil {
+			return "", "", fmt.Errorf("error parsing sdk version %s: %w", versionInfo.sdkVersion, err)
+		}
+
+		isPreV1 = sdkV.LessThan(v1)
+	} else {
+		sdkV = v0
+		isPreV1 = true
+	}
+
 	previousFeatureVersions, ok := cfg.Features[lang]
 
 	if cli.IsAtLeastVersion(cli.GranularChangeLogVersion) && ok {
@@ -381,17 +402,14 @@ func checkIfGenerationNeeded(cfg *config.Config, lang, globalPreviousGenVersion 
 	}
 
 	if bumpMajor || bumpMinor || bumpPatch {
-		var major, minor, patch int
+		major := sdkV.Segments()[0]
+		minor := sdkV.Segments()[1]
+		patch := sdkV.Segments()[2]
 
-		if versionInfo.sdkVersion != "" {
-			sdkV, err := version.NewVersion(versionInfo.sdkVersion)
-			if err != nil {
-				return "", "", fmt.Errorf("error parsing sdk version %s: %w", versionInfo.sdkVersion, err)
-			}
-
-			major = sdkV.Segments()[0]
-			minor = sdkV.Segments()[1]
-			patch = sdkV.Segments()[2]
+		// We are assuming breaking changes are okay pre v1
+		if isPreV1 && bumpMajor {
+			bumpMajor = false
+			bumpMinor = true
 		}
 
 		if bumpMajor {
