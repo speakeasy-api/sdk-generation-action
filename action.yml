@@ -131,7 +131,7 @@ inputs:
     description: "Internal use only"
     required: false
   openai_api_key:
-    description: "The OpenAI API key to authenticate to access LLM suggestions. If left empty it will use Speakeasy's platform key withing platform limits."
+    description: "The OpenAI API key to authenticate to access LLM suggestions. If left empty it will use Speakeasy's key within platform limits."
     required: false
   working_directory:
     description: "The working directory for running Speakeasy CLI commands in the action"
