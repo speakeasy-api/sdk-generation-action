@@ -53,7 +53,7 @@ on:
         description: The API key to use to authenticate the Speakeasy CLI
         required: true
       openai_api_key:
-        description: "The OpenAI API key to authenticate to access LLM suggestions"
+        description: "The OpenAI API key to authenticate to access LLM suggestions. If left empty it will use Speakeasys platform key withing platform limits."
         required: false
 jobs:
   suggest:
