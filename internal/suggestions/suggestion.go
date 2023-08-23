@@ -10,9 +10,9 @@ import (
 	"strings"
 )
 
-const (
-	fileNameRegexString      = `Suggestions applied and written to (.+)`
-	validationErrRegexString = `^(INFO|WARN|ERROR)\s+(validation (hint|warn|error):)\s+\[line (\d+)\]\s+(.*)$`
+var (
+	fileNameRegex      = regexp.MustCompile(`Suggestions applied and written to (.+)`)
+	validationErrRegex = regexp.MustCompile(`^(INFO|WARN|ERROR)\s+(validation (hint|warn|error):)\s+\[line (\d+)\]\s+(.*)$`)
 )
 
 type prCommentsInfo struct {
@@ -72,22 +72,22 @@ func formatBody(info prCommentsInfo) string {
 
 func parseSuggestOutput(out string) (prCommentsInfo, string) {
 	var info prCommentsInfo
+	var lineNum int
+	var err error
 	lines := strings.Split(out, "\n")
-	suggestion, explanation, fileName := "", "", ""
+	suggestion, explanation, validationErr, fileName := "", "", "", ""
 	isSuggestion, isExplanation := false, false
-	fileNameRegex := regexp.MustCompile(fileNameRegexString)
-	validationErrRegex := regexp.MustCompile(validationErrRegexString)
 
 	for _, line := range lines {
 		validationErrMatch := validationErrRegex.FindStringSubmatch(line)
+		fmt.Println("validationErrMatch is: ", validationErrMatch)
 		if len(validationErrMatch) == 6 {
-			lineNum, err := strconv.Atoi(validationErrMatch[4])
+			lineNum, err = strconv.Atoi(validationErrMatch[4])
 			if err != nil {
 				// line number 0 indicates adding this validation error, suggestion, and explanation to PR body
 				lineNum = 0
 			}
-			info.lineNums = append(info.lineNums, lineNum)
-			info.errs = append(info.errs, validationErrMatch[5])
+			validationErr = validationErrMatch[5]
 			continue
 		}
 
@@ -96,7 +96,13 @@ func parseSuggestOutput(out string) (prCommentsInfo, string) {
 			if strings.TrimSpace(suggestion) != "" {
 				info.suggestions = append(info.suggestions, suggestion)
 			}
-			suggestion = ""
+			if strings.TrimSpace(validationErr) != "" {
+				info.errs = append(info.errs, validationErr)
+			}
+			info.lineNums = append(info.lineNums, lineNum)
+
+			suggestion, validationErr = "", ""
+			lineNum = 0
 			continue
 		}
 
