@@ -5,12 +5,21 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
-type prBodyInfo struct {
+const (
+	fileNameRegexString      = `Suggestions applied and written to (.+)`
+	validationErrRegexString = `^(INFO|WARN|ERROR)\s+(validation (hint|warn|error):)\s+\[line (\d+)\]\s+(.*)$`
+)
+
+type prCommentsInfo struct {
 	suggestions  []string
 	explanations []string
+	errs         []string
+	lineNums     []int
 }
 
 func Suggest(docPath, maxSuggestions string) (string, error) {
@@ -22,34 +31,66 @@ func Suggest(docPath, maxSuggestions string) (string, error) {
 }
 
 func WriteSuggestions(g *git.Git, prNumber *int, out string) error {
-	body := parseOutput(out)
-	output := formatSuggestionsAndExplanations(body)
-	if len(output) > 0 {
-		// Writes suggestions and explanations in PR body
-		if err := g.WritePRBody(prNumber, output); err != nil {
+	commentsInfo, fileName := parseSuggestOutput(out)
+	body := formatBody(commentsInfo)
+	if body != "" {
+		// Writes suggestions and explanations with line number 0 PR body
+		if err := g.WritePRBody(prNumber, body); err != nil {
 			return fmt.Errorf("error writing PR body: %w", err)
+		}
+	}
+
+	for i := 0; i < len(commentsInfo.lineNums); i++ {
+		if commentsInfo.lineNums[i] != 0 {
+			comment := formatComment(commentsInfo.errs[i], commentsInfo.suggestions[i], commentsInfo.explanations[i], i+1)
+			if err := g.WritePRComment(prNumber, fileName, comment, commentsInfo.lineNums[i]); err != nil {
+				return fmt.Errorf("error writing PR comment: %w", err)
+			}
 		}
 	}
 
 	return nil
 }
 
-func formatSuggestionsAndExplanations(body prBodyInfo) string {
-	var output string
-	for i := 0; i < len(body.suggestions); i++ {
-		output += fmt.Sprintf("**Suggestion %d**: %s\n\n", i+1, body.suggestions[i])
-		output += fmt.Sprintf("**Explanation %d**: %s\n\n", i+1, body.explanations[i])
-	}
-	return output
+func formatComment(err, suggestion, explanation string, index int) string {
+	var commentParts []string
+	commentParts = append(commentParts, fmt.Sprintf("**Error %d**: %s", index, err))
+	commentParts = append(commentParts, fmt.Sprintf("**Suggestion %d**: %s", index, suggestion))
+	commentParts = append(commentParts, fmt.Sprintf("**Explanation %d**: %s", index, explanation))
+	return strings.Join(commentParts, "\n\n")
 }
 
-func parseOutput(out string) prBodyInfo {
-	var info prBodyInfo
+func formatBody(info prCommentsInfo) string {
+	var bodyParts []string
+	for i := 0; i < len(info.lineNums); i++ {
+		if info.lineNums[i] == 0 {
+			bodyParts = append(bodyParts, formatComment(info.errs[i], info.suggestions[i], info.explanations[i], i+1))
+		}
+	}
+	return strings.Join(bodyParts, "\n\n")
+}
+
+func parseSuggestOutput(out string) (prCommentsInfo, string) {
+	var info prCommentsInfo
 	lines := strings.Split(out, "\n")
-	suggestion, explanation := "", ""
+	suggestion, explanation, fileName := "", "", ""
 	isSuggestion, isExplanation := false, false
+	fileNameRegex := regexp.MustCompile(fileNameRegexString)
+	validationErrRegex := regexp.MustCompile(validationErrRegexString)
 
 	for _, line := range lines {
+		validationErrMatch := validationErrRegex.FindStringSubmatch(line)
+		if len(validationErrMatch) == 6 {
+			lineNum, err := strconv.Atoi(validationErrMatch[4])
+			if err != nil {
+				// line number 0 indicates adding this validation error, suggestion, and explanation to PR body
+				lineNum = 0
+			}
+			info.lineNums = append(info.lineNums, lineNum)
+			info.errs = append(info.errs, validationErrMatch[5])
+			continue
+		}
+
 		if strings.Contains(line, "Suggestion:") {
 			isSuggestion = true
 			if strings.TrimSpace(suggestion) != "" {
@@ -57,13 +98,21 @@ func parseOutput(out string) prBodyInfo {
 			}
 			suggestion = ""
 			continue
-		} else if strings.Contains(line, "Explanation:") {
+		}
+
+		if strings.Contains(line, "Explanation:") {
 			isSuggestion = false
 			isExplanation = true
 			if strings.TrimSpace(explanation) != "" {
 				info.explanations = append(info.explanations, explanation)
 			}
 			explanation = ""
+			continue
+		}
+
+		fileNameMatch := fileNameRegex.FindStringSubmatch(line)
+		if len(fileNameMatch) == 2 {
+			fileName = fileNameMatch[1]
 			continue
 		}
 
@@ -86,5 +135,5 @@ func parseOutput(out string) prBodyInfo {
 		info.explanations = append(info.explanations, explanation)
 	}
 
-	return info
+	return info, fileName
 }

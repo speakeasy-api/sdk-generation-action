@@ -472,6 +472,25 @@ func (g *Git) WritePRBody(prNumber *int, body string) error {
 	return nil
 }
 
+func (g *Git) WritePRComment(prNumber *int, fileName, body string, line int) error {
+	pr, _, err := g.client.PullRequests.Get(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber)
+	if err != nil {
+		return fmt.Errorf("failed to get PR: %w", err)
+	}
+
+	_, _, err = g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, &github.PullRequestComment{
+		Body:     github.String(sanitizeExplanations(body)),
+		Line:     github.Int(line),
+		Path:     github.String(fileName),
+		CommitID: pr.GetHead().SHA,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create PR comment: %w", err)
+	}
+
+	return nil
+}
+
 func sanitizeExplanations(str string) string {
 	// Remove ANSI sequences
 	ansiEscape := regexp.MustCompile(`\x1b[^m]*m`)
