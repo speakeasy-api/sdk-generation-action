@@ -12,7 +12,7 @@ import (
 
 var (
 	fileNameRegex      = regexp.MustCompile(`Suggestions applied and written to (.+)`)
-	validationErrRegex = regexp.MustCompile(`^(INFO|WARN|ERROR)\s+(validation (hint|warn|error):)\s+\[line (\d+)\]\s+(.*)$`)
+	validationErrRegex = regexp.MustCompile(`(validation (hint|warn|error):)\s+\[line (\d+)\]\s+(.*)$`)
 )
 
 type prCommentsInfo struct {
@@ -81,13 +81,13 @@ func parseSuggestOutput(out string) (prCommentsInfo, string) {
 	for _, line := range lines {
 		validationErrMatch := validationErrRegex.FindStringSubmatch(line)
 		fmt.Println("validationErrMatch is: ", validationErrMatch)
-		if len(validationErrMatch) == 6 {
-			lineNum, err = strconv.Atoi(validationErrMatch[4])
+		if len(validationErrMatch) == 5 {
+			lineNum, err = strconv.Atoi(validationErrMatch[3])
 			if err != nil {
 				// line number 0 indicates adding this validation error, suggestion, and explanation to PR body
 				lineNum = 0
 			}
-			validationErr = validationErrMatch[5]
+			validationErr = validationErrMatch[4]
 			continue
 		}
 
