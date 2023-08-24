@@ -473,6 +473,9 @@ func (g *Git) WritePRBody(prNumber *int, body string) error {
 }
 
 func (g *Git) WritePRComment(prNumber *int, fileName, body string, line int) error {
+	fmt.Println("fileName: ", fileName)
+	fmt.Println("body: ", body)
+	fmt.Println("line: ", line)
 	pr, _, err := g.client.PullRequests.Get(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber)
 	if err != nil {
 		return fmt.Errorf("failed to get PR: %w", err)

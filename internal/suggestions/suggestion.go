@@ -80,7 +80,6 @@ func parseSuggestOutput(out string) (prCommentsInfo, string) {
 
 	for _, line := range lines {
 		validationErrMatch := validationErrRegex.FindStringSubmatch(line)
-		fmt.Println("validationErrMatch is: ", validationErrMatch)
 		if len(validationErrMatch) == 5 {
 			lineNum, err = strconv.Atoi(validationErrMatch[3])
 			if err != nil {
