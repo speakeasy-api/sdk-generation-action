@@ -507,19 +507,27 @@ func (g *Git) WritePRComment(prNumber *int, fileName, body string, line int) err
 		return err
 	}
 
+	fmt.Println("reqbody is: ", reqBody)
+
 	fullURL, err := url.JoinPath(baseURL.String(), endpointURL)
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("fullURL: ", fullURL)
 
 	req, err := http.NewRequest(http.MethodPost, fullURL, buf)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println("req before headers: ", req)
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("INPUT_GITHUB_ACCESS_TOKEN")))
+
+	fmt.Println("full request: ", req)
 
 	_, err = c.Do(req)
 	if err != nil {
