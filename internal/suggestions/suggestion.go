@@ -5,6 +5,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
+	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"regexp"
 	"strconv"
 	"strings"
@@ -32,6 +33,17 @@ func Suggest(docPath, maxSuggestions string) (string, error) {
 
 func WriteSuggestions(g *git.Git, prNumber *int, out string) error {
 	commentsInfo, fileName := parseSuggestOutput(out)
+
+	for i := 0; i < len(commentsInfo.lineNums); i++ {
+		if commentsInfo.lineNums[i] != 0 {
+			comment := formatComment(commentsInfo.errs[i], commentsInfo.suggestions[i], commentsInfo.explanations[i], 0, i+1)
+			if err := g.WritePRComment(prNumber, fileName, comment, commentsInfo.lineNums[i]); err != nil {
+				logging.Info(fmt.Sprintf("failed to write PR comment: %s", err.Error()))
+				commentsInfo.lineNums[i] = 0
+			}
+		}
+	}
+
 	body := formatBody(commentsInfo)
 	if body != "" {
 		// Writes suggestions and explanations with line number 0 PR body
@@ -40,22 +52,19 @@ func WriteSuggestions(g *git.Git, prNumber *int, out string) error {
 		}
 	}
 
-	for i := 0; i < len(commentsInfo.lineNums); i++ {
-		if commentsInfo.lineNums[i] != 0 {
-			comment := formatComment(commentsInfo.errs[i], commentsInfo.suggestions[i], commentsInfo.explanations[i], i+1)
-			if err := g.WritePRComment(prNumber, fileName, comment, commentsInfo.lineNums[i]); err != nil {
-				return fmt.Errorf("error writing PR comment: %w", err)
-			}
-		}
-	}
-
 	return nil
 }
 
-func formatComment(err, suggestion, explanation string, index int) string {
+func formatComment(err, suggestion, explanation string, lineNum, index int) string {
 	var commentParts []string
 	commentParts = append(commentParts, fmt.Sprintf("**Error %d**: %s", index, err))
-	commentParts = append(commentParts, fmt.Sprintf("**Suggestion %d**: %s", index, suggestion))
+
+	suggestion = fmt.Sprintf("**Suggestion %d**: %s", index, suggestion)
+	if lineNum != 0 {
+		suggestion = fmt.Sprintf("*Applied around line %d*\n%s", lineNum, suggestion)
+	}
+	commentParts = append(commentParts, suggestion)
+	commentParts = append(commentParts, fmt.Sprintf("*Applied around line %d*\n**Suggestion %d**: %s", lineNum, index, suggestion))
 	commentParts = append(commentParts, fmt.Sprintf("**Explanation %d**: %s", index, explanation))
 	return strings.Join(commentParts, "\n\n")
 }
@@ -64,7 +73,7 @@ func formatBody(info prCommentsInfo) string {
 	var bodyParts []string
 	for i := 0; i < len(info.lineNums); i++ {
 		if info.lineNums[i] == 0 {
-			bodyParts = append(bodyParts, formatComment(info.errs[i], info.suggestions[i], info.explanations[i], i+1))
+			bodyParts = append(bodyParts, formatComment(info.errs[i], info.suggestions[i], info.explanations[i], info.lineNums[i], i+1))
 		}
 	}
 	return strings.Join(bodyParts, "\n\n")
@@ -117,7 +126,7 @@ func parseSuggestOutput(out string) (prCommentsInfo, string) {
 
 		fileNameMatch := fileNameRegex.FindStringSubmatch(line)
 		if len(fileNameMatch) == 2 {
-			fileName = fileNameMatch[1]
+			fileName = strings.Replace(fileNameMatch[1], "./", "", 1)
 			continue
 		}
 
