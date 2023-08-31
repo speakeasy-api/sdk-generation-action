@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -28,13 +27,9 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 
-	"github.com/google/go-github/v48/github"
+	"github.com/google/go-github/v54/github"
 	"golang.org/x/oauth2"
 )
-
-const githubApiBaseURL = "https://api.github.com/"
-
-var c = &http.Client{}
 
 type Git struct {
 	accessToken string
@@ -488,55 +483,18 @@ func (g *Git) WritePRComment(prNumber *int, fileName, body string, line int) err
 
 	fmt.Println("commit SHA: ", pr.GetHead().GetSHA())
 
-	baseURL, _ := url.Parse(githubApiBaseURL)
-
-	endpointURL := fmt.Sprintf("repos/%s/%s/pulls/%d/comments", os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber)
-
-	reqBody := &github.PullRequestComment{
+	prComment, resp, err := g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, &github.PullRequestComment{
 		Body:     github.String(sanitizeExplanations(body)),
 		Line:     github.Int(line),
 		Path:     github.String(fileName),
 		CommitID: github.String(pr.GetHead().GetSHA()),
-	}
-
-	buf := &bytes.Buffer{}
-	enc := json.NewEncoder(buf)
-	enc.SetEscapeHTML(false)
-	err = enc.Encode(reqBody)
+	})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create PR comment: %w", err)
 	}
 
-	fmt.Println("reqbody is: ", reqBody)
-
-	fullURL, err := url.JoinPath(baseURL.String(), endpointURL)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("fullURL: ", fullURL)
-
-	req, err := http.NewRequest(http.MethodPost, fullURL, buf)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("req before headers: ", req)
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("INPUT_GITHUB_ACCESS_TOKEN")))
-
-	fmt.Println("full request: ", req)
-
-	resp, err := c.Do(req)
-	if err != nil {
-		fmt.Println(fmt.Sprintf("error is:  %v", err.Error()))
-		fmt.Println("error obj: ", err)
-		return err
-	}
-
-	fmt.Println("full response is: ", resp)
+	fmt.Println("full resp: ", resp)
+	fmt.Println("prComment: ", prComment)
 
 	return nil
 }
