@@ -64,7 +64,6 @@ func formatComment(err, suggestion, explanation string, lineNum, index int) stri
 		suggestion = fmt.Sprintf("*Applied around line %d*\n%s", lineNum, suggestion)
 	}
 	commentParts = append(commentParts, suggestion)
-	commentParts = append(commentParts, fmt.Sprintf("*Applied around line %d*\n**Suggestion %d**: %s", lineNum, index, suggestion))
 	commentParts = append(commentParts, fmt.Sprintf("**Explanation %d**: %s", index, explanation))
 	return strings.Join(commentParts, "\n\n")
 }
