@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -30,6 +31,10 @@ import (
 	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
 )
+
+const githubApiBaseURL = "https://api.github.com/"
+
+var c = &http.Client{}
 
 type Git struct {
 	accessToken string
@@ -483,14 +488,42 @@ func (g *Git) WritePRComment(prNumber *int, fileName, body string, line int) err
 
 	fmt.Println("commit SHA: ", pr.GetHead().GetSHA())
 
-	_, _, err = g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, &github.PullRequestComment{
+	baseURL, _ := url.Parse(githubApiBaseURL)
+
+	endpointURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls/%d/comments", os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber)
+
+	reqBody := &github.PullRequestComment{
 		Body:     github.String(sanitizeExplanations(body)),
 		Line:     github.Int(line),
 		Path:     github.String(fileName),
 		CommitID: github.String(pr.GetHead().GetSHA()),
-	})
+	}
+
+	buf := &bytes.Buffer{}
+	enc := json.NewEncoder(buf)
+	enc.SetEscapeHTML(false)
+	err = enc.Encode(reqBody)
 	if err != nil {
-		return fmt.Errorf("failed to create PR comment: %w", err)
+		return err
+	}
+
+	fullURL, err := url.JoinPath(baseURL.String(), endpointURL)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, fullURL, buf)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("INPUT_GITHUB_ACCESS_TOKEN")))
+
+	_, err = c.Do(req)
+	if err != nil {
+		return err
 	}
 
 	return nil
