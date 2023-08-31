@@ -529,12 +529,14 @@ func (g *Git) WritePRComment(prNumber *int, fileName, body string, line int) err
 
 	fmt.Println("full request: ", req)
 
-	_, err = c.Do(req)
+	resp, err = c.Do(req)
 	if err != nil {
 		fmt.Println(fmt.Sprintf("error is:  %v", err.Error()))
 		fmt.Println("error obj: ", err)
 		return err
 	}
+
+	fmt.Println("full response is: ", resp)
 
 	return nil
 }
