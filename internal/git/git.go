@@ -490,7 +490,7 @@ func (g *Git) WritePRComment(prNumber *int, fileName, body string, line int) err
 
 	baseURL, _ := url.Parse(githubApiBaseURL)
 
-	endpointURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/pulls/%d/comments", os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber)
+	endpointURL := fmt.Sprintf("repos/%s/%s/pulls/%d/comments", os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber)
 
 	reqBody := &github.PullRequestComment{
 		Body:     github.String(sanitizeExplanations(body)),
