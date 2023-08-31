@@ -531,6 +531,8 @@ func (g *Git) WritePRComment(prNumber *int, fileName, body string, line int) err
 
 	_, err = c.Do(req)
 	if err != nil {
+		fmt.Println(fmt.Sprintf("error is:  %v", err.Error()))
+		fmt.Println("error obj: ", err)
 		return err
 	}
 
