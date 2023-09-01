@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/url"
 	"os"
 	"os/exec"
@@ -474,38 +473,20 @@ func (g *Git) WritePRBody(prNumber *int, body string) error {
 }
 
 func (g *Git) WritePRComment(prNumber *int, fileName, body string, line int) error {
-	fmt.Println("fileName: ", fileName)
-	fmt.Println("body: ", body)
-	fmt.Println("line: ", line)
 	pr, _, err := g.client.PullRequests.Get(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber)
 	if err != nil {
 		return fmt.Errorf("failed to get PR: %w", err)
 	}
 
-	fmt.Println("commit SHA: ", pr.GetHead().GetSHA())
-
-	prComment, resp, err := g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, &github.PullRequestComment{
+	_, _, err := g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, &github.PullRequestComment{
 		Body:     github.String(sanitizeExplanations(body)),
 		Line:     github.Int(line),
 		Path:     github.String(fileName),
 		CommitID: github.String(pr.GetHead().GetSHA()),
 	})
 	if err != nil {
-		if resp != nil {
-			fmt.Println("full resp: ", resp)
-			fmt.Println("full request: ", resp.Request)
-
-			reqBody, _ := io.ReadAll(resp.Request.Body)
-			fmt.Println("reqBody: ", string(reqBody))
-
-			resBody, _ := io.ReadAll(resp.Body)
-			fmt.Println("resBody: ", string(resBody))
-		}
 		return fmt.Errorf("failed to create PR comment: %w", err)
 	}
-
-	fmt.Println("full resp: ", resp)
-	fmt.Println("prComment: ", prComment)
 
 	return nil
 }
