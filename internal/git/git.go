@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
@@ -492,6 +493,13 @@ func (g *Git) WritePRComment(prNumber *int, fileName, body string, line int) err
 	if err != nil {
 		if resp != nil {
 			fmt.Println("full resp: ", resp)
+			fmt.Println("full request: ", resp.Request)
+
+			reqBody, _ := io.ReadAll(resp.Request.Body)
+			fmt.Println("reqBody: ", string(reqBody))
+
+			resBody, _ := io.ReadAll(resp.Body)
+			fmt.Println("resBody: ", string(resBody))
 		}
 		return fmt.Errorf("failed to create PR comment: %w", err)
 	}
