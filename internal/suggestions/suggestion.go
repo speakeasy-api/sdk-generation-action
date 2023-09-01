@@ -125,7 +125,9 @@ func parseSuggestOutput(out string) (prCommentsInfo, string) {
 
 		fileNameMatch := fileNameRegex.FindStringSubmatch(line)
 		if len(fileNameMatch) == 2 {
+			// Remove leading ./ and trailing ANSI sequence
 			fileName = strings.Replace(fileNameMatch[1], "./", "", 1)
+			fileName = strings.Split(fileName, " ")[0]
 			continue
 		}
 
