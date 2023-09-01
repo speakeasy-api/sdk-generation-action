@@ -484,9 +484,9 @@ func (g *Git) WritePRComment(prNumber *int, fileName, body string, line int) err
 	fmt.Println("commit SHA: ", pr.GetHead().GetSHA())
 
 	prComment, resp, err := g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, &github.PullRequestComment{
-		Body:     github.String(sanitizeExplanations(body)),
+		Body:     github.String(sanitizeANSISequences(body)),
 		Line:     github.Int(line),
-		Path:     github.String(fileName),
+		Path:     github.String(sanitizeANSISequences(fileName)),
 		CommitID: github.String(pr.GetHead().GetSHA()),
 	})
 	if err != nil {
@@ -499,7 +499,7 @@ func (g *Git) WritePRComment(prNumber *int, fileName, body string, line int) err
 	return nil
 }
 
-func sanitizeExplanations(str string) string {
+func sanitizeANSISequences(str string) string {
 	// Remove ANSI sequences
 	ansiEscape := regexp.MustCompile(`\x1b[^m]*m`)
 	str = ansiEscape.ReplaceAllString(str, "")
