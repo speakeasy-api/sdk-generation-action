@@ -12,7 +12,8 @@ import (
 )
 
 var (
-	fileNameRegex      = regexp.MustCompile(`Suggestions applied and written to (.+)`)
+	fileNameRegex      = regexp.MustCompile(`^(.*?(\.yaml|\.yml|\.json))`)
+	outputFileRegex    = regexp.MustCompile(`Suggestions applied and written to (.+)`)
 	validationErrRegex = regexp.MustCompile(`(validation (hint|warn|error):)\s+\[line (\d+)\]\s+(.*)$`)
 )
 
@@ -123,11 +124,14 @@ func parseSuggestOutput(out string) (prCommentsInfo, string) {
 			continue
 		}
 
-		fileNameMatch := fileNameRegex.FindStringSubmatch(line)
-		if len(fileNameMatch) == 2 {
-			// Remove leading ./ and trailing ANSI sequence
-			fileName = strings.Replace(fileNameMatch[1], "./", "", 1)
-			fileName = strings.Split(fileName, " ")[0]
+		outputFileMatch := outputFileRegex.FindStringSubmatch(line)
+		if len(outputFileMatch) == 2 {
+			// Remove leading ./ and anything trailing after file suffix
+			outputFileName := strings.Replace(outputFileMatch[1], "./", "", 1)
+			fileNameMatch := fileNameRegex.FindStringSubmatch(outputFileName)
+			if len(fileNameMatch) > 0 {
+				fileName = fileNameMatch[0]
+			}
 			continue
 		}
 
