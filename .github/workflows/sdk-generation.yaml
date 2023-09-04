@@ -44,6 +44,7 @@ on:
             - php # using default output of ./php-client-sdk
             - csharp # using default output of ./csharp-client-sdk
             - unity # using default output of ./unity-client-sdk
+            - swift # using default output of ./swift-client-sdk
             - terraform # (single language repo only)
 
           If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
@@ -94,7 +95,7 @@ on:
           The mode to run the workflow in, valid options are 'direct' or 'pr', defaults to 'direct'.
             - 'direct' will create a commit with the changes to the SDKs and push them directly to the branch the workflow is configure to run on (normally 'main' or 'master').
               If publishing and creating a release are configured this will happen immediately after the commit is created on the branch.
-            - 'pr' will instead create a new branch to commit the changes to the SDKs to and then create a PR from this branch. 
+            - 'pr' will instead create a new branch to commit the changes to the SDKs to and then create a PR from this branch.
               The sdk-publish workflow will then need to be configured to run when the PR is merged to publish the SDKs and create a release.
           See documentation for more details.
         default: "direct"
@@ -230,6 +231,8 @@ jobs:
       ruby_directory: ${{ steps.generate.outputs.ruby_directory }}
       csharp_regenerated: ${{ steps.generate.outputs.csharp_regenerated }}
       csharp_directory: ${{ steps.generate.outputs.csharp_directory }}
+      swift_regenerated: ${{ steps.generate.outputs.swift_regenerated }}
+      swift_directory: ${{ steps.generate.outputs.swift_directory }}
       branch_name: ${{ steps.generate.outputs.branch_name }}
       previous_gen_version: ${{ steps.generate.outputs.previous_gen_version }}
     steps:
@@ -508,6 +511,33 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  compile-swift:
+    if: ${{ needs.generate.outputs.swift_regenerated == 'true' }}
+    name: Compile Swift SDK
+    runs-on: macos-latest
+    timeout-minutes: 30
+    needs: generate
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.generate.outputs.branch_name }}
+
+      - run: xcodebuild -scheme $(xcodebuild -list -json | jq -r ".workspace.schemes[0]") -destination "$(xcrun simctl list --json | jq -r '[.runtimes[] | select(.platform=="iOS") as $runtime | .supportedDeviceTypes | map(select(.productFamily=="iPhone")) | last | "platform=iOS Simulator,OS=" + $runtime.version + ",name=" + .name][0]') | xcpretty; exit "${PIPESTATUS[0]}"
+        working-directory: ${{ needs.generate.outputs.swift_directory }}
+
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "Compilation of Swift SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   finalize:
     name: Finalize SDK
     if: |
@@ -521,7 +551,8 @@ jobs:
       needs.compile-typescript.result != 'skipped' ||
       needs.compile-php.result != 'skipped' ||
       needs.compile-ruby.result != 'skipped' ||
-      needs.compile-csharp.result != 'skipped')
+      needs.compile-csharp.result != 'skipped' ||
+      needs.compile-swift.result != 'skipped')
     needs:
       - generate
       - compile-go
@@ -532,6 +563,7 @@ jobs:
       - compile-php
       - compile-ruby
       - compile-csharp
+      - compile-swift
     runs-on: ubuntu-latest
     outputs:
       commit_hash: ${{ steps.finalize.outputs.commit_hash }}

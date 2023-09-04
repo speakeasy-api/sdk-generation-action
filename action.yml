@@ -52,6 +52,7 @@ inputs:
         - terraform # (single language repo only)
         - csharp # using default output of ./csharp-client-sdk
         - unity # using default output of ./unity-client-sdk
+        - swift # using default output of ./swift-client-sdk
 
       If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo and generate the sdk
       in the root of the repo if not path is provided.
