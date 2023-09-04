@@ -82,6 +82,9 @@ func (r ReleasesInfo) String() string {
 		case "ruby":
 			pkgID = "Ruby Gems"
 			pkgURL = fmt.Sprintf("https://rubygems.org/gems/%s/versions/%s", info.PackageName, info.Version)
+		case "csharp":
+			pkgID = "NuGet"
+			pkgURL = fmt.Sprintf("https://www.nuget.org/packages/%s/%s", info.PackageName, info.Version)
 		}
 
 		if pkgID != "" {
@@ -129,6 +132,7 @@ var (
 	mavenReleaseRegex       = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+)\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
 	terraformReleaseRegex   = regexp.MustCompile(`- \[Terraform v(\d+\.\d+\.\d+)\] (https:\/\/registry\.terraform\.io\/providers\/(.*?)\/(.*?)\/.*?) - (.*)`)
 	rubyGemReleaseRegex     = regexp.MustCompile(`- \[Ruby Gems v(\d+\.\d+\.\d+)\] (https:\/\/rubygems\.org\/gems\/(.*?)\/versions\/.*?) - (.*)`)
+	nugetReleaseRegex       = regexp.MustCompile(`- \[NuGet v(\d+\.\d+\.\d+)\] (https:\/\/www\.nuget\.org\/packages\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
 )
 
 func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
@@ -278,6 +282,18 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 			Path:        rubyGemsMatches[4],
 		}
 	}
+
+	nugetMatches := nugetReleaseRegex.FindStringSubmatch(lastRelease)
+
+	if len(nugetMatches) == 5 {
+		info.Languages["csharp"] = LanguageReleaseInfo{
+			Version:     nugetMatches[1],
+			URL:         nugetMatches[2],
+			PackageName: nugetMatches[3],
+			Path:        nugetMatches[4],
+		}
+	}
+
 	return info, nil
 }
 

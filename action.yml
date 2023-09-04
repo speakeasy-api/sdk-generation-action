@@ -49,10 +49,13 @@ inputs:
         - java # using default output of ./java-client-sdk
         - php # using default output of ./php-client-sdk
         - ruby # using default output of ./ruby-client-sdk
+        - terraform # (single language repo only)
+        - csharp # using default output of ./csharp-client-sdk
+        - unity # using default output of ./unity-client-sdk
 
       If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo and generate the sdk
       in the root of the repo if not path is provided.
-    required: true
+    required: false
   create_release:
     description: "Create a Github release on generation"
     default: "true"
@@ -136,6 +139,9 @@ inputs:
   working_directory:
     description: "The working directory for running Speakeasy CLI commands in the action"
     required: false
+  gpg_fingerprint:
+    description: "The GPG fingerprint to sign the release with"
+    required: false
 outputs:
   python_regenerated:
     description: "true if the Python SDK was regenerated"
@@ -165,6 +171,14 @@ outputs:
     description: "true if the Ruby SDK was regenerated"
   ruby_directory:
     description: "The directory the Ruby SDK was generated to"
+  csharp_regenerated:
+    description: "true if the C# SDK was regenerated"
+  csharp_directory:
+    description: "The directory the C# SDK was generated to"
+  unity_regenerated:
+    description: "true if the Unity SDK was regenerated"
+  unity_directory:
+    description: "The directory the Unity SDK was generated to"
   branch_name:
     description: "The name of the branch the SDK was generated or spec was modified on"
   cli_output:
@@ -194,6 +208,7 @@ runs:
     - ${{ inputs.publish_ruby }}
     - ${{ inputs.publish_java }}
     - ${{ inputs.publish_terraform }}
+    - ${{ inputs.publish_csharp }}
     - ${{ inputs.openapi_doc_auth_header }}
     - ${{ inputs.openapi_doc_auth_token }}
     - ${{ inputs.max_suggestions }}
@@ -206,3 +221,4 @@ runs:
     - ${{ inputs.openapi_doc_output }}
     - ${{ inputs.output_tests }}
     - ${{ inputs.working_directory }}
+    - ${{ inputs.gpg_fingerprint }}

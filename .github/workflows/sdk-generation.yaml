@@ -43,6 +43,7 @@ on:
             - java # using default output of ./java-client-sdk
             - php # using default output of ./php-client-sdk
             - csharp # using default output of ./csharp-client-sdk
+            - unity # using default output of ./unity-client-sdk
             - terraform # (single language repo only)
 
           If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
@@ -724,7 +725,7 @@ jobs:
     if: ${{ always() && needs.generate.outputs.csharp_regenerated == 'true' && inputs.publish_csharp == 'true' && inputs.mode != 'pr' }}
     name: Publish C# SDK
     runs-on: ubuntu-latest
-    needs: [ generate, compile-csharp, finalize ]
+    needs: [generate, compile-csharp, finalize]
     defaults:
       run:
         working-directory: ${{ needs.generate.outputs.csharp_directory }}

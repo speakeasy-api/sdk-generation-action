@@ -38,6 +38,11 @@ on:
         default: "false"
         required: false
         type: string
+      publish_terraform:
+        description: "Create a Github release compatible with the terraform registry of the provider"
+        default: "false"
+        required: false
+        type: string
       speakeasy_server_url:
         required: false
         description: "Internal use only"

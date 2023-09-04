@@ -60,6 +60,12 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 				Version:     "1.2.3",
 				URL:         "https://rubygems.org/gems/org-package/versions/1.2.3",
 			},
+			"csharp": {
+				PackageName: "org.package",
+				Path:        "csharp",
+				Version:     "1.2.3",
+				URL:         "https://www.nuget.org/packages/org.package/1.2.3",
+			},
 		},
 		LanguagesGenerated: map[string]releases.GenerationInfo{
 			"typescript": {
@@ -88,6 +94,10 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 			},
 			"ruby": {
 				Path:    "ruby",
+				Version: "1.2.3",
+			},
+			"csharp": {
+				Path:    "csharp",
 				Version: "1.2.3",
 			},
 		},
@@ -171,6 +181,12 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 				Version:     "1.2.3",
 				URL:         "https://rubygems.org/gems/org-package/versions/1.2.3",
 			},
+			"csharp": {
+				PackageName: "org.package",
+				Path:        "csharp",
+				Version:     "1.2.3",
+				URL:         "https://www.nuget.org/packages/org.package/1.2.3",
+			},
 		},
 		LanguagesGenerated: map[string]releases.GenerationInfo{},
 	}
@@ -224,6 +240,12 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 				Version:     "1.3.0",
 				URL:         "https://rubygems.org/gems/org-package/versions/1.3.0",
 			},
+			"csharp": {
+				PackageName: "org.package",
+				Path:        "csharp",
+				Version:     "1.3.0",
+				URL:         "https://www.nuget.org/packages/org.package/1.3.0",
+			},
 		},
 		LanguagesGenerated: map[string]releases.GenerationInfo{
 			"typescript": {
@@ -252,6 +274,10 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 			},
 			"ruby": {
 				Path:    "ruby",
+				Version: "1.3.0",
+			},
+			"csharp": {
+				Path:    "csharp",
 				Version: "1.3.0",
 			},
 		},
