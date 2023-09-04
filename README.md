@@ -10,7 +10,7 @@ This action provides a self contained solution for automatically generating new 
 
 The action can be used in a number of ways:
 
-- Configured to run validation check on an OpenAPI doc, this is known as the `validate` action.  
+- Configured to run validation check on an OpenAPI doc, this is known as the `validate` action.
 - Configured to generate and commit directly to a branch in the repo (such as `main` or `master`). This mode is known as the `generate` action in `direct` mode.
 - Configured to generate and commit to an auto-generated branch, then create a PR to merge the changes back into the main repo. This mode is known as the `generate` action in `pr` mode.
 - Configured to apply suggestions to an OpenAPI doc and create a PR to merge the changes back into the main repo. This mode is known as the `suggest` action.
@@ -205,13 +205,21 @@ Java publishing is supported by publishing to a staging repository provider (OSS
 
 C# publishing is supported by Nuget, an can be configured by following these instructions:
 
-- You will need a Nuget API key to publish to nuget. 
+- You will need a Nuget API key to publish to nuget.
   - Populate the `secrets` section of the workflow with `nuget_api_key: ${{ secrets.NUGET_API_KEY }}` (note: this assumes that the api key is set as a github action secret named `NUGET_API_KEY`).
   - A Nuget API key can be obtained by creating an account at [nuget.org](https://www.nuget.org).
     - When creating your Nuget API key, ensure that the `Package Owner` field is set to the user or organization that you would like to "own" your SDK artifact.
     - Ensure that the API key has the relevant `Push` scoped (if the package already exists, the api key may not need `Push new packages and package versions` permissions).
     - Ensure that the `Glob Pattern` and `Available Packages` fields are populated in a way that will permit publishing of your SDK (the `packageName` specified in `gen.yaml` is used).
 - Add `publish_csharp: true` to the `with` section of both the `generation.yaml` and `publish.yaml` (if using in `pr` mode).
+
+#### Swift
+
+Distribution of Swift SDKs is supported using the [Swift Package Manager](https://www.swift.org/package-manager/), which uses remote URLs and git tags to manage dependencies and versioning.
+
+As such publishing a Swift package through the action creates a new git tag (and corresponding GitHub release) which allows the SDK to be easily imported into Swift projects by the GitHub repository's URL and corresponding version.
+
+**Note:** Because of the requirement on git tags and GitHub releases, the value of `create_release` is ignored when publishing a Swift SDK through the action.
 
 #### Terraform Registry
 
@@ -328,7 +336,7 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 
 ### `publish_python`
 
-**(Workflow Only)** Whether to publish the Python SDK to PyPi. Default `"false"`.  
+**(Workflow Only)** Whether to publish the Python SDK to PyPi. Default `"false"`.
 **Note**: Needs to be set in the generate and publish workflows if using `pr` mode.
 
 ### `publish_typescript`
@@ -355,7 +363,7 @@ This will also create a tag for the release, allowing the Go SDK to be retrieved
 **Note**: Needs to be set in the generate and publish workflows if using `pr` mode.
 
 ### `working_directory`
-The working directory to use when running Speakeasy CLI commands in the action. If not specified, 
+The working directory to use when running Speakeasy CLI commands in the action. If not specified,
 the root of the repo will be used.
 
 ## Outputs
