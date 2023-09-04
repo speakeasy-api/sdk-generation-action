@@ -180,6 +180,10 @@ outputs:
     description: "true if the Unity SDK was regenerated"
   unity_directory:
     description: "The directory the Unity SDK was generated to"
+  swift_regenerated:
+    description: "true if the Swift SDK was regenerated"
+  swift_directory:
+    description: "The directory the Swift SDK was generated to"
   branch_name:
     description: "The name of the branch the SDK was generated or spec was modified on"
   cli_output:
