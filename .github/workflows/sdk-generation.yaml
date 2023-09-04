@@ -118,6 +118,11 @@ on:
         description: "The working directory for running Speakeasy CLI commands in the action"
         required: false
         type: string
+      dotnet_version:
+        description: "The version of dotnet to use when compiling the C# SDK"
+        required: false
+        type: string
+        default: "5.x"
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -487,7 +492,7 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: "5.x"
+          dotnet-version: ${{ inputs.dotnet_version }}
 
       - run: dotnet format && dotnet build
         working-directory: ${{ needs.generate.outputs.csharp_directory }}
@@ -738,7 +743,7 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: "5.x"
+          dotnet-version: ${{ inputs.dotnet_version }}
       - name: Publish
         run: dotnet pack -o . && dotnet nuget push *.nupkg --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
       - uses: ravsamhq/notify-slack-action@v2
