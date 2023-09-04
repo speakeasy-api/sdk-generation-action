@@ -524,7 +524,7 @@ jobs:
         with:
           ref: ${{ needs.generate.outputs.branch_name }}
 
-      - run: xcodebuild -scheme $(xcodebuild -list -json | jq -r ".workspace.schemes[0]") -destination "$(xcrun simctl list --json | jq -r '[.runtimes[] | select(.platform=="iOS") as $runtime | .supportedDeviceTypes | map(select(.productFamily=="iPhone")) | last | "platform=iOS Simulator,OS=" + $runtime.version + ",name=" + .name][0]') | xcpretty; exit "${PIPESTATUS[0]}"
+      - run: xcodebuild -scheme $(xcodebuild -list -json | jq -r ".workspace.schemes[0]") -destination "$(xcrun simctl list --json | jq -r '[.runtimes[] | select(.platform=="iOS") as $runtime | .supportedDeviceTypes | map(select(.productFamily=="iPhone")) | last | "platform=iOS Simulator,OS=" + $runtime.version + ",name=" + .name][0]')" | xcpretty; exit "${PIPESTATUS[0]}"
         working-directory: ${{ needs.generate.outputs.swift_directory }}
 
       - uses: ravsamhq/notify-slack-action@v2
