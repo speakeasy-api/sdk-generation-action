@@ -50,7 +50,7 @@ func FinalizeSuggestion() error {
 
 	out := environment.GetCliOutput()
 	if out != "" {
-		if err = suggestions.WriteSuggestions(g, prNumber, out); err != nil {
+		if err = suggestions.WriteSuggestions(g, *prNumber, out); err != nil {
 			return err
 		}
 	}
