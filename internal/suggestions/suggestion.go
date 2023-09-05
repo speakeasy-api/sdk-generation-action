@@ -32,7 +32,7 @@ func Suggest(docPath, maxSuggestions string) (string, error) {
 	return out, nil
 }
 
-func WriteSuggestions(g *git.Git, prNumber *int, out string) error {
+func WriteSuggestions(g *git.Git, prNumber int, out string) error {
 	commentsInfo, fileName := parseSuggestOutput(out)
 
 	for i := 0; i < len(commentsInfo.lineNums); i++ {
