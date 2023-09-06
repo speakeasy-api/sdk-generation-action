@@ -117,7 +117,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action@v14.28
         with:
           github_access_token: ${{ secrets.github_access_token }}
           create_release: ${{ inputs.create_release }}
@@ -327,7 +327,7 @@ jobs:
           gpg_private_key: ${{ secrets.TERRAFORM_GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.TERRAFORM_GPG_PASSPHRASE }}
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action@v14.28
         with:
           github_access_token: ${{ secrets.github_access_token }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
