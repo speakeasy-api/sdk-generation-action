@@ -66,6 +66,12 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 				Version:     "1.2.3",
 				URL:         "https://www.nuget.org/packages/org.package/1.2.3",
 			},
+			"swift": {
+				PackageName: "github.com/test/repo/swift",
+				Path:        "swift",
+				Version:     "1.2.3",
+				URL:         "https://github.com/test/repo/releases/tag/swift/v1.2.3",
+			},
 		},
 		LanguagesGenerated: map[string]releases.GenerationInfo{
 			"typescript": {
@@ -98,6 +104,10 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 			},
 			"csharp": {
 				Path:    "csharp",
+				Version: "1.2.3",
+			},
+			"swift": {
+				Path:    "swift",
 				Version: "1.2.3",
 			},
 		},
@@ -187,6 +197,12 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 				Version:     "1.2.3",
 				URL:         "https://www.nuget.org/packages/org.package/1.2.3",
 			},
+			"swift": {
+				PackageName: "github.com/test/repo/swift",
+				Path:        "swift",
+				Version:     "1.2.3",
+				URL:         "https://github.com/test/repo/releases/tag/swift/v1.3.0",
+			},
 		},
 		LanguagesGenerated: map[string]releases.GenerationInfo{},
 	}
@@ -246,6 +262,12 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 				Version:     "1.3.0",
 				URL:         "https://www.nuget.org/packages/org.package/1.3.0",
 			},
+			"swift": {
+				PackageName: "github.com/test/repo/swift",
+				Path:        "swift",
+				Version:     "1.3.0",
+				URL:         "https://github.com/test/repo/releases/tag/swift/v1.3.0",
+			},
 		},
 		LanguagesGenerated: map[string]releases.GenerationInfo{
 			"typescript": {
@@ -278,6 +300,10 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 			},
 			"csharp": {
 				Path:    "csharp",
+				Version: "1.3.0",
+			},
+			"swift": {
+				Path:    "swift",
 				Version: "1.3.0",
 			},
 		},
