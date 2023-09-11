@@ -27,7 +27,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 
-	"github.com/google/go-github/v48/github"
+	"github.com/google/go-github/v54/github"
 	"golang.org/x/oauth2"
 )
 
@@ -458,15 +458,34 @@ func (g *Git) CreateSuggestionPR(branchName, output string) (*int, string, error
 	return pr.Number, pr.GetHead().GetSHA(), nil
 }
 
-func (g *Git) WritePRBody(prNumber *int, body string) error {
-	pr, _, err := g.client.PullRequests.Get(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber)
+func (g *Git) WritePRBody(prNumber int, body string) error {
+	pr, _, err := g.client.PullRequests.Get(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber)
 	if err != nil {
 		return fmt.Errorf("failed to get PR: %w", err)
 	}
 
 	pr.Body = github.String(strings.Join([]string{*pr.Body, sanitizeExplanations(body)}, "\n\n"))
-	if _, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *prNumber, pr); err != nil {
+	if _, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber, pr); err != nil {
 		return fmt.Errorf("failed to update PR: %w", err)
+	}
+
+	return nil
+}
+
+func (g *Git) WritePRComment(prNumber int, fileName, body string, line int) error {
+	pr, _, err := g.client.PullRequests.Get(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber)
+	if err != nil {
+		return fmt.Errorf("failed to get PR: %w", err)
+	}
+
+	_, _, err = g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber, &github.PullRequestComment{
+		Body:     github.String(sanitizeExplanations(body)),
+		Line:     github.Int(line),
+		Path:     github.String(fileName),
+		CommitID: github.String(pr.GetHead().GetSHA()),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create PR comment: %w", err)
 	}
 
 	return nil

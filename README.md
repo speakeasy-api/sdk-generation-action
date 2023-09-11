@@ -168,11 +168,11 @@ The action runs through the following steps:
 - Creates a commit with the new SDK(s) and pushes it to the repo
 - Creates a PR from the new branch to the main branch or updates an existing PR
 
-### Publishing
+## Publishing
 
 Publishing is provided by using the included reusable workflows. These workflows can be used to publish the SDKs to various package managers. See below for more information.
 
-#### Java (Maven)
+### Java (Maven)
 
 Java publishing is supported by publishing to a staging repository provider (OSSRH). In order to publish, you must do the following:
 
@@ -201,7 +201,7 @@ Java publishing is supported by publishing to a staging repository provider (OSS
   - `companyURL: https://www.mycompany.com`
   - `companyEmail: info@mycompany.com`
 
-#### C# (Nuget)
+### C# (Nuget)
 
 C# publishing is supported by Nuget, an can be configured by following these instructions:
 
@@ -213,7 +213,7 @@ C# publishing is supported by Nuget, an can be configured by following these ins
     - Ensure that the `Glob Pattern` and `Available Packages` fields are populated in a way that will permit publishing of your SDK (the `packageName` specified in `gen.yaml` is used).
 - Add `publish_csharp: true` to the `with` section of both the `generation.yaml` and `publish.yaml` (if using in `pr` mode).
 
-#### Swift
+### Swift
 
 Distribution of Swift SDKs is supported using the [Swift Package Manager](https://www.swift.org/package-manager/), which uses remote URLs and git tags to manage dependencies and versioning.
 
@@ -221,7 +221,7 @@ As such publishing a Swift package through the action creates a new git tag (and
 
 **Note:** Because of the requirement on git tags and GitHub releases, the value of `create_release` is ignored when publishing a Swift SDK through the action.
 
-#### Terraform Registry
+### Terraform Registry
 
 Publishing a generated terraform provider is possible through the configuration of this action. In order to publish, you must do the following:
 
@@ -245,6 +245,17 @@ The action runs through the following steps:
 - Downloads or loads the latest OpenAPI doc from a url or the repo
 - Validates the OpenAPI doc using the Speakeasy CLI Validation Tool
 - Returns success or failure based on detected warnings/errors
+
+## Suggestion
+
+The suggestion action does the following:
+
+- Downloads the latest or pinned version of the Speakeasy CLI.
+- Clones the associated repo.
+- Downloads or loads the latest OpenAPI doc from a URL or the repo.
+- Generates suggestions for the OpenAPI doc, applies them, and outputs to a local filepath using the Speakeasy CLI.
+- Creates a PR with this modified document.
+- Adds PR comments containing the validation error for that line number, the suggested fix for that error, and an explanation of the fix.
 
 ## Inputs
 
