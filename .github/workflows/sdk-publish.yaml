@@ -296,7 +296,7 @@ jobs:
         with:
           dotnet-version: ${{ inputs.dotnet_version }}
       - name: Publish
-        run: dotnet pack && dotnet nuget push --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
+        run: dotnet pack -o . && dotnet nuget push *.nupkg --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
