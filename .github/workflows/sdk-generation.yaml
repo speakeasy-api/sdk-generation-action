@@ -508,6 +508,37 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  compile-unity:
+    if: ${{ needs.generate.outputs.unity_generated == 'true' }}
+    name: Compile Unity\ SDK
+    runs-on: ubuntu-latest
+    needs: generate
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.generate.outputs.branch_name }}
+
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "5.x"
+
+      - run: echo "Currently not implemented"
+        working-directory: ${{ needs.generate.outputs.unity_directory }}
+
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "Compilation of Unity SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   finalize:
     name: Finalize SDK
     if: |
@@ -521,7 +552,8 @@ jobs:
       needs.compile-typescript.result != 'skipped' ||
       needs.compile-php.result != 'skipped' ||
       needs.compile-ruby.result != 'skipped' ||
-      needs.compile-csharp.result != 'skipped')
+      needs.compile-csharp.result != 'skipped' ||
+      needs.compile-unity.result != 'skipped')
     needs:
       - generate
       - compile-go
@@ -532,6 +564,7 @@ jobs:
       - compile-php
       - compile-ruby
       - compile-csharp
+      - compile-unity
     runs-on: ubuntu-latest
     outputs:
       commit_hash: ${{ steps.finalize.outputs.commit_hash }}
