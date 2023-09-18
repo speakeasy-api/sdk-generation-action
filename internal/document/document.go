@@ -12,8 +12,8 @@ import (
 	"github.com/pb33f/libopenapi"
 	"github.com/pb33f/libopenapi/datamodel"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
-	"github.com/speakeasy-api/sdk-generation-action/internal/download"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/speakeasy-core/download"
 	"gopkg.in/yaml.v3"
 )
 

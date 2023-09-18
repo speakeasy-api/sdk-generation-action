@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/speakeasy-api/sdk-generation-action/internal/download"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/speakeasy-core/download"
 )
 
 type Git interface {

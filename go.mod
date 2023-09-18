@@ -8,6 +8,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/pb33f/libopenapi v0.8.1
 	github.com/speakeasy-api/sdk-gen-config v0.8.1
+	github.com/speakeasy-api/speakeasy-core v0.0.0-20230918193510-312ad1ee7033
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/exp v0.0.0-20221031165847-c99f073a8326
 	golang.org/x/oauth2 v0.11.0
@@ -15,7 +16,7 @@ require (
 )
 
 require (
-	github.com/Microsoft/go-winio v0.4.16 // indirect
+	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
