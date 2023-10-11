@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/go-version"
@@ -186,8 +187,12 @@ func GetChangelog(lang, genVersion, previousGenVersion string, targetVersions ma
 	}
 }
 
-func Validate(docPath string) error {
-	out, err := runSpeakeasyCommand("validate", "openapi", "-s", docPath)
+func Validate(docPath string, maxValidationWarnings, maxValidationErrors int) error {
+	var (
+		maxWarns  = strconv.Itoa(maxValidationWarnings)
+		maxErrors = strconv.Itoa(maxValidationErrors)
+	)
+	out, err := runSpeakeasyCommand("validate", "openapi", "-s", docPath, "--max-validation-warnings", maxWarns, "--max-validation-errors", maxErrors)
 	if err != nil {
 		return fmt.Errorf("error validating openapi: %w - %s", err, out)
 	}

@@ -33,7 +33,18 @@ func Validate() error {
 		logging.Debug("failed to set outputs: %v", err)
 	}
 
-	if err := cli.Validate(docPath); err != nil {
+	// Errors from GetMaxValidation{Warnings,Errors} are very non-fatal, but should be logged.
+
+	var maxWarns, maxErrors int
+	if maxWarns, err = environment.GetMaxValidationWarnings(); err != nil {
+		logging.Info("%v", err)
+	}
+
+	if maxErrors, err = environment.GetMaxValidationErrors(); err != nil {
+		logging.Info("%v", err)
+	}
+
+	if err := cli.Validate(docPath, maxWarns, maxErrors); err != nil {
 		return err
 	}
 
