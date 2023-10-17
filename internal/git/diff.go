@@ -11,7 +11,8 @@ import (
 var (
 	fileBoundaryRegex  = regexp.MustCompile(`(?m)^diff --git a\/.*? b\/.*?$`)
 	fileNameRegex      = regexp.MustCompile(`(?m)^--- a\/(.*?)$`)
-	versionChangeRegex = regexp.MustCompile(`_(sdk|gen)_?[vV]ersion`)
+	versionChangeRegex = regexp.MustCompile(`_?(sdk|gen|Gen|SDK)_?[vV]ersion`)
+	userAgentRegex     = regexp.MustCompile(`speakeasy-sdk/`)
 )
 
 func IsGitDiffSignificant(diff string) bool {
@@ -23,6 +24,7 @@ func IsGitDiffSignificant(diff string) bool {
 
 	significantChanges := false
 
+outer:
 	for _, diff := range diffs {
 		if strings.TrimSpace(diff) == "" {
 			continue
@@ -34,19 +36,22 @@ func IsGitDiffSignificant(diff string) bool {
 		}
 
 		filename := fileNameRegex.FindStringSubmatch(diff)[1]
-		if !strings.Contains(filename, "gen.yaml") {
-			lines := strings.Split(diff, "\n")
-			for _, line := range lines {
-				if strings.HasPrefix(line, "+ ") && !versionChangeRegex.MatchString(line) {
-					fmt.Println(line)
-					significantChanges = true
-					break
-				}
-			}
+		if strings.Contains(filename, "gen.yaml") {
+			continue
 		}
 
-		if significantChanges {
-			break
+		lines := strings.Split(diff, "\n")
+		for _, line := range lines {
+			isAddition := strings.HasPrefix(line, "+ ") || strings.HasPrefix(line, "+\t")
+			isNotVersionChange := !versionChangeRegex.MatchString(line)
+			isNotUAChange := !userAgentRegex.MatchString(line)
+
+			significantChanges = isAddition && isNotVersionChange && isNotUAChange
+
+			if significantChanges {
+				fmt.Println(line)
+				break outer
+			}
 		}
 	}
 
