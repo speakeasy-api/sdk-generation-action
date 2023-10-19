@@ -680,8 +680,8 @@ func getRepo() string {
 }
 
 const (
-	speakeasyGenPRTitle     = "chore: Update SDK - "
-	speakeasySuggestPRTitle = "chore: Suggest OpenAPI changes - "
+	speakeasyGenPRTitle     = "chore: 🐝 Update SDK - "
+	speakeasySuggestPRTitle = "chore: 🐝 Suggest OpenAPI changes - "
 )
 
 func getGenPRTitle() string {
