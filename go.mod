@@ -6,10 +6,10 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/google/go-github/v54 v54.0.0
 	github.com/hashicorp/go-version v1.6.0
-	github.com/pb33f/libopenapi v0.8.1
+	github.com/pb33f/libopenapi v0.12.1
 	github.com/speakeasy-api/sdk-gen-config v0.8.1
 	github.com/stretchr/testify v1.8.1
-	golang.org/x/exp v0.0.0-20221031165847-c99f073a8326
+	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
 	golang.org/x/oauth2 v0.11.0
 	gopkg.in/yaml.v3 v3.0.1
 )
