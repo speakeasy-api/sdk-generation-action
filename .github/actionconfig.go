@@ -4,10 +4,11 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	config "github.com/speakeasy-api/sdk-gen-config"
-	"gopkg.in/yaml.v3"
 	"strconv"
 	"strings"
+
+	config "github.com/speakeasy-api/sdk-gen-config"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -27,8 +28,8 @@ var actionInputsConfig string
 //go:embed action-security-config.json
 var actionSecurityConfig string
 
-func GenerateActionInputsConfig() (*config.SdkGenConfig, error) {
-	var sdkGenConfig config.SdkGenConfig
+func GenerateActionInputsConfig() (*config.SDKGenConfig, error) {
+	var sdkGenConfig config.SDKGenConfig
 
 	inputConfigFields, err := generateConfigFieldsFromGenAction(false)
 	if err != nil {
@@ -41,21 +42,21 @@ func GenerateActionInputsConfig() (*config.SdkGenConfig, error) {
 			inputConfigField.RequiredForPublishing = &reqForPublishing
 			if inputConfigField.Language != nil && *inputConfigField.Language != "" {
 				lang := *inputConfigField.Language
-				if sdkGenConfig.SdkGenLanguageConfig == nil {
-					sdkGenConfig.SdkGenLanguageConfig = make(map[string][]config.SdkGenConfigField)
+				if sdkGenConfig.SDKGenLanguageConfig == nil {
+					sdkGenConfig.SDKGenLanguageConfig = make(map[string][]config.SDKGenConfigField)
 				}
-				sdkGenConfig.SdkGenLanguageConfig[lang] = append(sdkGenConfig.SdkGenLanguageConfig[lang], *inputConfigField)
+				sdkGenConfig.SDKGenLanguageConfig[lang] = append(sdkGenConfig.SDKGenLanguageConfig[lang], *inputConfigField)
 			}
 		} else {
-			sdkGenConfig.SdkGenCommonConfig = append(sdkGenConfig.SdkGenCommonConfig, *inputConfigField)
+			sdkGenConfig.SDKGenCommonConfig = append(sdkGenConfig.SDKGenCommonConfig, *inputConfigField)
 		}
 	}
 
 	return &sdkGenConfig, nil
 }
 
-func GenerateActionSecurityConfig() (*config.SdkGenConfig, error) {
-	var sdkGenConfig config.SdkGenConfig
+func GenerateActionSecurityConfig() (*config.SDKGenConfig, error) {
+	var sdkGenConfig config.SDKGenConfig
 
 	securityConfigFields, err := generateConfigFieldsFromGenAction(true)
 	if err != nil {
@@ -70,19 +71,19 @@ func GenerateActionSecurityConfig() (*config.SdkGenConfig, error) {
 
 		if securityConfigField.Language != nil && *securityConfigField.Language != "" {
 			lang := *securityConfigField.Language
-			if sdkGenConfig.SdkGenLanguageConfig == nil {
-				sdkGenConfig.SdkGenLanguageConfig = make(map[string][]config.SdkGenConfigField)
+			if sdkGenConfig.SDKGenLanguageConfig == nil {
+				sdkGenConfig.SDKGenLanguageConfig = make(map[string][]config.SDKGenConfigField)
 			}
-			sdkGenConfig.SdkGenLanguageConfig[lang] = append(sdkGenConfig.SdkGenLanguageConfig[lang], *securityConfigField)
+			sdkGenConfig.SDKGenLanguageConfig[lang] = append(sdkGenConfig.SDKGenLanguageConfig[lang], *securityConfigField)
 		} else {
-			sdkGenConfig.SdkGenCommonConfig = append(sdkGenConfig.SdkGenCommonConfig, *securityConfigField)
+			sdkGenConfig.SDKGenCommonConfig = append(sdkGenConfig.SDKGenCommonConfig, *securityConfigField)
 		}
 	}
 
 	return &sdkGenConfig, nil
 }
 
-func generateConfigFieldsFromGenAction(security bool) ([]*config.SdkGenConfigField, error) {
+func generateConfigFieldsFromGenAction(security bool) ([]*config.SDKGenConfigField, error) {
 	configKey := inputConfigKey
 	configFile := actionInputsConfig
 
@@ -96,13 +97,13 @@ func generateConfigFieldsFromGenAction(security bool) ([]*config.SdkGenConfigFie
 		return nil, fmt.Errorf("failed to parse generation action yaml: %w", err)
 	}
 
-	var configFields []*config.SdkGenConfigField
+	var configFields []*config.SDKGenConfigField
 	if err := json.Unmarshal([]byte(configFile), &configFields); err != nil {
 		return nil, fmt.Errorf("failed to parse action config json: %w", err)
 	}
 
 	for configName, configVal := range actionConfigMap["on"].(map[string]interface{})["workflow_call"].(map[string]interface{})[configKey].(map[string]interface{}) {
-		sdkGenConfigEntry := &config.SdkGenConfigField{}
+		sdkGenConfigEntry := &config.SDKGenConfigField{}
 		for _, configField := range configFields {
 			if configField.Name == configName {
 				sdkGenConfigEntry = configField
