@@ -6,8 +6,8 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/google/go-github/v54 v54.0.0
 	github.com/hashicorp/go-version v1.6.0
-	github.com/pb33f/libopenapi v0.12.1
-	github.com/speakeasy-api/sdk-gen-config v1.1.0
+	github.com/pb33f/libopenapi v0.13.8
+	github.com/speakeasy-api/sdk-gen-config v1.2.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
 	golang.org/x/oauth2 v0.11.0

@@ -58,9 +58,11 @@ func GetOpenAPIFileInfo() (string, string, string, error) {
 	}
 
 	doc, err := libopenapi.NewDocumentWithConfiguration(data, &datamodel.DocumentConfiguration{
-		AllowRemoteReferences: true,
-		AllowFileReferences:   true,
-		BasePath:              basePath, // TODO possiblity this is set incorrectly for multiple input files but it is assumed currently any local references are relative to the first file
+		AllowRemoteReferences:               true,
+		AllowFileReferences:                 true,
+		BasePath:                            basePath, // TODO possiblity this is set incorrectly for multiple input files but it is assumed currently any local references are relative to the first file
+		IgnorePolymorphicCircularReferences: true,
+		IgnoreArrayCircularReferences:       true,
 	})
 	if err != nil {
 		return "", "", "", fmt.Errorf("failed to parse openapi file: %w", err)

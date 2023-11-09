@@ -114,6 +114,8 @@ github.com/onsi/gomega v1.19.0 h1:4ieX6qQjPP/BfC3mpsAtIGGlxTWPeA3Inl/7DtXw1tw=
 github.com/onsi/gomega v1.19.0/go.mod h1:LY+I3pBVzYsTBU1AnDwOSxaYi9WoWiqgwooUqq9yPro=
 github.com/pb33f/libopenapi v0.12.1 h1:DRhgbg1t32OSYoHT/Bk3stVruqquAkKj+S+OqOQIbBc=
 github.com/pb33f/libopenapi v0.12.1/go.mod h1:s8uj6S0DjWrwZVj20ianJBz+MMjHAbeeRYNyo9ird74=
+github.com/pb33f/libopenapi v0.13.8 h1:PzBTpN1jdTi/XJpHGiRomxSHfQHdabcasGXW8yEhIjw=
+github.com/pb33f/libopenapi v0.13.8/go.mod h1:Lv2eEtsAtbRFlF8hjH82L8SIGoUNgemMVoKoB6A9THk=
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
@@ -129,6 +131,8 @@ github.com/sirupsen/logrus v1.4.1/go.mod h1:ni0Sbl8bgC9z8RoU9G6nDWqqs/fq4eDPysMB
 github.com/sirupsen/logrus v1.7.0/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
 github.com/speakeasy-api/sdk-gen-config v1.1.0 h1:gSrzInsnw8tQh/FtZQJYyNo3gQ1Nu6Sm2OUp0BazMYI=
 github.com/speakeasy-api/sdk-gen-config v1.1.0/go.mod h1:94mmqrM5tP6/O8triQo9PIb6YYqihtKeoH70uwQ+JF4=
+github.com/speakeasy-api/sdk-gen-config v1.2.0 h1:u5UCrS63TXpNPgsBqU4iSmG0ZnFjKg7gDC8ICKVviu0=
+github.com/speakeasy-api/sdk-gen-config v1.2.0/go.mod h1:94mmqrM5tP6/O8triQo9PIb6YYqihtKeoH70uwQ+JF4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
