@@ -53,7 +53,7 @@ func TriggerGoGenerate() error {
 	tidyCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	output, err := tidyCmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("error running command: go mod tidy - %w\n", err, string(output))
+		return fmt.Errorf("error running command: go mod tidy - %w\n %s", err, string(output))
 	}
 	generateCmd := exec.Command("go", "generate", "./...")
 	generateCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
