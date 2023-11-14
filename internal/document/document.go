@@ -24,16 +24,17 @@ type file struct {
 }
 
 func GetOpenAPIFileInfo() (string, string, string, error) {
-	files, err := getFiles()
+	// TODO OPENAPI_DOC_LOCATION is deprecated and should be removed in the future
+	openapiFiles, err := getFiles(environment.GetOpenAPIDocs(), environment.GetOpenAPIDocLocation())
 	if err != nil {
 		return "", "", "", err
 	}
 
-	if len(files) > 1 && !cli.IsAtLeastVersion(cli.MergeVersion) {
+	if len(openapiFiles) > 1 && !cli.IsAtLeastVersion(cli.MergeVersion) {
 		return "", "", "", fmt.Errorf("multiple openapi files are only supported in speakeasy version %s or higher", cli.MergeVersion.String())
 	}
 
-	filePaths, err := resolveFiles(files)
+	resolvedOpenAPIFiles, err := resolveFiles(openapiFiles, "openapi")
 	if err != nil {
 		return "", "", "", err
 	}
@@ -41,12 +42,33 @@ func GetOpenAPIFileInfo() (string, string, string, error) {
 	basePath := ""
 	filePath := ""
 
-	if len(filePaths) == 1 {
-		filePath = filePaths[0]
+	if len(resolvedOpenAPIFiles) == 1 {
+		filePath = resolvedOpenAPIFiles[0]
 		basePath = filepath.Dir(filePath)
 	} else {
-		basePath = filepath.Dir(filePaths[0])
-		filePath, err = mergeFiles(filePaths)
+		basePath = filepath.Dir(resolvedOpenAPIFiles[0])
+		filePath, err = mergeFiles(resolvedOpenAPIFiles)
+		if err != nil {
+			return "", "", "", err
+		}
+	}
+
+	overlayFiles, err := getFiles(environment.GetOverlayDocs(), "")
+	if err != nil {
+		return "", "", "", err
+	}
+
+	if len(overlayFiles) > 1 && !cli.IsAtLeastVersion(cli.OverlayVersion) {
+		return "", "", "", fmt.Errorf("overlay files are only supported in speakeasy version %s or higher", cli.OverlayVersion.String())
+	}
+
+	resolvedOverlayFiles, err := resolveFiles(overlayFiles, "overlay")
+	if err != nil {
+		return "", "", "", err
+	}
+
+	if len(resolvedOverlayFiles) > 0 {
+		filePath, err = applyOverlay(filePath, resolvedOverlayFiles)
 		if err != nil {
 			return "", "", "", err
 		}
@@ -100,7 +122,25 @@ func mergeFiles(files []string) (string, error) {
 	return outPath, nil
 }
 
-func resolveFiles(files []file) ([]string, error) {
+func applyOverlay(filePath string, overlayFiles []string) (string, error) {
+	outPath := filepath.Join(environment.GetWorkspace(), "repo", "openapi", "openapi_overlay")
+
+	if err := os.MkdirAll(filepath.Dir(outPath), os.ModePerm); err != nil {
+		return "", fmt.Errorf("failed to create openapi directory: %w", err)
+	}
+
+	for _, overlayFile := range overlayFiles {
+		if err := cli.ApplyOverlay(overlayFile, filePath, outPath); err != nil {
+			return "", fmt.Errorf("failed to apply overlay: %w", err)
+		}
+
+		filePath = outPath
+	}
+
+	return outPath, nil
+}
+
+func resolveFiles(files []file, typ string) ([]string, error) {
 	workspace := environment.GetWorkspace()
 
 	outFiles := []string{}
@@ -109,18 +149,18 @@ func resolveFiles(files []file) ([]string, error) {
 		localPath := filepath.Join(workspace, "repo", file.Location)
 
 		if _, err := os.Stat(localPath); err == nil {
-			fmt.Println("Found local OpenAPI file: ", localPath)
+			fmt.Printf("Found local %s file: %s\n", typ, localPath)
 
 			outFiles = append(outFiles, localPath)
 		} else {
 			u, err := url.Parse(file.Location)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse openapi url: %w", err)
+				return nil, fmt.Errorf("failed to parse %s url: %w", typ, err)
 			}
 
-			fmt.Println("Downloading openapi file from: ", u.String())
+			fmt.Printf("Downloading %s file from: %s\n", typ, u.String())
 
-			filePath := filepath.Join(environment.GetWorkspace(), "openapi", fmt.Sprintf("openapi_%d", i))
+			filePath := filepath.Join(environment.GetWorkspace(), typ, fmt.Sprintf("%s_%d", typ, i))
 
 			if environment.GetAction() == environment.ActionValidate {
 				if extension := path.Ext(u.Path); extension != "" {
@@ -129,11 +169,11 @@ func resolveFiles(files []file) ([]string, error) {
 			}
 
 			if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
-				return nil, fmt.Errorf("failed to create openapi directory: %w", err)
+				return nil, fmt.Errorf("failed to create %s directory: %w", typ, err)
 			}
 
 			if err := download.DownloadFile(u.String(), filePath, file.Header, file.Token); err != nil {
-				return nil, fmt.Errorf("failed to download openapi file: %w", err)
+				return nil, fmt.Errorf("failed to download %s file: %w", typ, err)
 			}
 
 			outFiles = append(outFiles, filePath)
@@ -143,17 +183,14 @@ func resolveFiles(files []file) ([]string, error) {
 	return outFiles, nil
 }
 
-func getFiles() ([]file, error) {
-	docsYaml := environment.GetOpenAPIDocs()
-
+func getFiles(filesYaml string, defaultFile string) ([]file, error) {
 	var fileLocations []string
-	if err := yaml.Unmarshal([]byte(docsYaml), &fileLocations); err != nil {
+	if err := yaml.Unmarshal([]byte(filesYaml), &fileLocations); err != nil {
 		return nil, fmt.Errorf("failed to parse openapi_docs input: %w", err)
 	}
 
-	// TODO OPENAPI_DOC_LOCATION is deprecated and should be removed in the future
-	if len(fileLocations) == 0 {
-		fileLocations = append(fileLocations, environment.GetOpenAPIDocLocation())
+	if len(fileLocations) == 0 && defaultFile != "" {
+		fileLocations = append(fileLocations, defaultFile)
 	}
 
 	files := []file{}
