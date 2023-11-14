@@ -57,11 +57,9 @@ func TriggerGoGenerate() error {
 	}
 	generateCmd := exec.Command("go", "generate", "./...")
 	generateCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
-	// connect generateCmd stdout to this stdout
-	generateCmd.Stdout = os.Stdout
-	err = generateCmd.Run()
+	output, err = generateCmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("error running command: go generate ./... - %w\n", err)
+		return fmt.Errorf("error running command: go generate ./... - %w\n %s", err, output)
 	}
 
 	return nil
