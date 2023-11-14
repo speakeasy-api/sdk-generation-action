@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -18,6 +19,7 @@ var (
 	OutputTestsVersion             = version.Must(version.NewVersion("1.33.2"))
 	LLMSuggestionVersion           = version.Must(version.NewVersion("1.47.1"))
 	GranularChangeLogVersion       = version.Must(version.NewVersion("1.70.2"))
+	OverlayVersion                 = version.Must(version.NewVersion("1.112.1"))
 )
 
 func IsAtLeastVersion(version *version.Version) bool {
@@ -279,5 +281,31 @@ func MergeDocuments(files []string, output string) error {
 		return fmt.Errorf("error merging documents: %w - %s", err, out)
 	}
 	fmt.Println(out)
+	return nil
+}
+
+func ApplyOverlay(overlayPath, inPath, outPath string) error {
+	if !IsAtLeastVersion(OverlayVersion) {
+		return fmt.Errorf("speakeasy version %s does not support applying overlays", OverlayVersion)
+	}
+
+	args := []string{
+		"overlay",
+		"apply",
+		"-o",
+		overlayPath,
+		"-s",
+		inPath,
+	}
+
+	out, err := runSpeakeasyCommand(args...)
+	if err != nil {
+		return fmt.Errorf("error applying overlay: %w - %s", err, out)
+	}
+
+	if err := os.WriteFile(outPath, []byte(out), os.ModePerm); err != nil {
+		return fmt.Errorf("error writing overlay output: %w", err)
+	}
+
 	return nil
 }

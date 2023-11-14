@@ -117,6 +117,10 @@ func GetOpenAPIDocs() string {
 	return os.Getenv("INPUT_OPENAPI_DOCS")
 }
 
+func GetOverlayDocs() string {
+	return os.Getenv("INPUT_OVERLAY_DOCS")
+}
+
 func GetOpenAPIDocOutput() string {
 	return os.Getenv("INPUT_OPENAPI_DOC_OUTPUT")
 }

@@ -33,6 +33,21 @@ on:
             - https://example.com/openapi2.json
         required: false
         type: string
+      overlay_docs:
+        description: |-
+          A yaml string containing a list of overlay documents to use, if multiple documents are provided they will be applied to the OpenAPI document in the order provided.
+
+          If the document lives within the repo a relative path can be provided, if the document is hosted publicly a URL can be provided.
+
+          If the documents are hosted privately a URL can be provided along with the `openapi_doc_auth_header` and `openapi_doc_auth_token` inputs.
+          Each document will be fetched using the provided auth header and token, so they need to be valid for all documents.
+
+          For example:
+          overlay_docs: |
+            - https://example.com/overlay1.json
+            - https://example.com/overlay2.json
+        required: false
+        type: string
       languages:
         description: |-
           A yaml string containing a list of languages to generate SDKs for example:
@@ -187,6 +202,7 @@ jobs:
           openapi_doc_auth_header: ${{ inputs.openapi_doc_auth_header }}
           openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
           openapi_docs: ${{ inputs.openapi_docs }}
+          overlay_docs: ${{ inputs.overlay_docs }}
           github_access_token: ${{ secrets.github_access_token }}
           action: validate
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
@@ -245,6 +261,7 @@ jobs:
           openapi_doc_auth_header: ${{ inputs.openapi_doc_auth_header }}
           openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
           openapi_docs: ${{ inputs.openapi_docs }}
+          overlay_docs: ${{ inputs.overlay_docs }}
           github_access_token: ${{ secrets.github_access_token }}
           languages: ${{ inputs.languages }}
           create_release: ${{ inputs.create_release }}

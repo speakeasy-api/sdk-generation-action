@@ -17,3 +17,6 @@ test-release-mode-multi-sdk:
 
 test-validate-action:
 	./testing/test.sh ./testing/validate-action.env
+
+test-overlay:
+	./testing/test.sh ./testing/overlay-test.env
