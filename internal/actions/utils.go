@@ -7,7 +7,7 @@ import (
 
 func getReleasesDir() (string, error) {
 	releasesDir := "."
-	// For SDK Docs the Release Directory will always be root.
+	// For SDK Docs the Release Directory will always be root for now.
 	if environment.GetAction() == environment.ActionFinalizeDocs || environment.GetAction() == environment.ActionGenerateDocs {
 		return releasesDir, nil
 	}
