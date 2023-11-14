@@ -2,7 +2,10 @@ package cli
 
 import (
 	"fmt"
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -43,6 +46,25 @@ func GetSupportedLanguages() ([]string, error) {
 	langs := r.FindStringSubmatch(strings.TrimSpace(out))[1]
 
 	return strings.Split(langs, ", "), nil
+}
+
+func TriggerGoGenerate() error {
+	tidyCmd := exec.Command("go", "mod", "tidy")
+	tidyCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	output, err := tidyCmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error running command: go mod tidy - %w\n %s", err, string(output))
+	}
+	generateCmd := exec.Command("go", "generate", "./...")
+	generateCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	// connect generateCmd stdout to this stdout
+	generateCmd.Stdout = os.Stdout
+	err = generateCmd.Run()
+	if err != nil {
+		return fmt.Errorf("error running command: go generate ./... - %w\n", err)
+	}
+
+	return nil
 }
 
 func GetSpeakeasyVersion() (*version.Version, error) {
