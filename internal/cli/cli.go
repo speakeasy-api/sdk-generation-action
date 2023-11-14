@@ -293,7 +293,7 @@ func ApplyOverlay(overlayPath, inPath, outPath string) error {
 		"overlay",
 		"apply",
 		"-o",
-		"overlayPath",
+		overlayPath,
 		"-s",
 		inPath,
 	}
