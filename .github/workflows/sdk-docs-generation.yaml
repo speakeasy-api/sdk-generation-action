@@ -1,0 +1,241 @@
+name: Speakeasy SDK Generation Workflow
+
+on:
+  workflow_call:
+    inputs:
+      speakeasy_version:
+        description: The version of the Speakeasy CLI to use or "latest"
+        default: latest
+        required: false
+        type: string
+      openapi_doc_location:
+        description: The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document
+        required: false
+        type: string
+      openapi_doc_auth_header:
+        description: |-
+          The auth header to use when fetching the OpenAPI document if it is not publicly hosted. For example `Authorization`.
+          If using a private speakeasy hosted document use `x-api-key`. This header will be populated with the openapi_doc_auth_token provided.
+        required: false
+        type: string
+      openapi_docs:
+        description: |-
+          A yaml string containing a list of OpenAPI documents to use, if multiple documents are provided they will be merged together, prior to generation.
+
+          If the document lives within the repo a relative path can be provided, if the document is hosted publicly a URL can be provided.
+
+          If the documents are hosted privately a URL can be provided along with the `openapi_doc_auth_header` and `openapi_doc_auth_token` inputs.
+          Each document will be fetched using the provided auth header and token, so they need to be valid for all documents.
+
+          For example:
+          openapi_docs: |
+            - https://example.com/openapi1.json
+            - https://example.com/openapi2.json
+        required: false
+        type: string
+      overlay_docs:
+        description: |-
+          A yaml string containing a list of overlay documents to use, if multiple documents are provided they will be applied to the OpenAPI document in the order provided.
+
+          If the document lives within the repo a relative path can be provided, if the document is hosted publicly a URL can be provided.
+
+          If the documents are hosted privately a URL can be provided along with the `openapi_doc_auth_header` and `openapi_doc_auth_token` inputs.
+          Each document will be fetched using the provided auth header and token, so they need to be valid for all documents.
+
+          For example:
+          overlay_docs: |
+            - https://example.com/overlay1.json
+            - https://example.com/overlay2.json
+        required: false
+        type: string
+      languages:
+        description: |-
+          A yaml string containing a list of languages to generate SDK Docs for example:
+          languages: |
+            - go
+            - python
+            - typescript
+            - java
+            - csharp
+            - unity
+
+        required: true
+        type: string
+      mode:
+        description: |-
+          The mode to run the workflow in, valid options are 'direct' or 'pr', defaults to 'direct'.
+            - 'direct' will create a commit with the changes to the SDK Docs and push them directly to the branch the workflow is configure to run on (normally 'main' or 'master').
+            - 'pr' will instead create a new branch to commit the changes to the SDKs to and then create a PR from this branch.
+        default: "direct"
+        required: false
+        type: string
+      force:
+        description: "Force the generation of the SDK Docs"
+        default: "false"
+        required: false
+        type: string
+      speakeasy_server_url:
+        required: false
+        description: "Internal use only"
+        type: string
+      working_directory:
+        description: "The working directory for running Speakeasy CLI commands in the action"
+        required: false
+        type: string
+    secrets:
+      github_access_token:
+        description: A GitHub access token with write access to the repo
+        required: true
+      openapi_doc_auth_token:
+        description: The auth token to use when fetching the OpenAPI document if it is not publicly hosted. For example `Bearer <token>` or `<token>`.
+        required: false
+      speakeasy_api_key:
+        description: The API key to use to authenticate the Speakeasy CLI
+        required: true
+      slack_webhook_url:
+        description: A Slack webhook URL that pipeline failures will be posted to
+        required: false
+jobs:
+  validate:
+    name: Validate OpenAPI Document
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - id: validate
+        uses: speakeasy-api/sdk-generation-action@v14
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          openapi_doc_location: ${{ inputs.openapi_doc_location }}
+          openapi_doc_auth_header: ${{ inputs.openapi_doc_auth_header }}
+          openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
+          openapi_docs: ${{ inputs.openapi_docs }}
+          overlay_docs: ${{ inputs.overlay_docs }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: validate
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          working_directory: ${{ inputs.working_directory }}
+          languages: ${{ inputs.languages }}
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: openapi-doc
+          path: ${{ steps.validate.outputs.openapi_doc }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "OpenAPI Document Validation Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  generate:
+    name: Generate Docs
+    runs-on: ubuntu-latest
+    needs: validate
+    outputs:
+      docs_directory: ${{ steps.generate.outputs.docs_directory }}
+      branch_name: ${{ steps.generate.outputs.branch_name }}
+      previous_gen_version: ${{ steps.generate.outputs.previous_gen_version }}
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - id: Generate
+        uses: speakeasy-api/sdk-generation-action@v14
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          openapi_doc_location: ${{ inputs.openapi_doc_location }}
+          openapi_doc_auth_header: ${{ inputs.openapi_doc_auth_header }}
+          openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
+          openapi_docs: ${{ inputs.openapi_docs }}
+          overlay_docs: ${{ inputs.overlay_docs }}
+          github_access_token: ${{ secrets.github_access_token }}
+          languages: ${{ inputs.languages }}
+          mode: ${{ inputs.mode }}
+          action: generate-docs
+          force: ${{ inputs.force }}
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          working_directory: ${{ inputs.working_directory }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "SDK Generation Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  compile-docs:
+    name: Compile Docs
+    runs-on: ubuntu-latest
+    needs: generate
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.generate.outputs.branch_name }}
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.x"
+          registry-url: "https://registry.npmjs.org"
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - run: pnpm i && pnpm run build
+        working-directory: ${{ needs.generate.outputs.docs_directory }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "Compilation of Docs Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  finalize:
+    name: Finalize Docs
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      needs.compile-docs.result != 'skipped'
+    needs:
+      - generate
+      - compile-docs
+    runs-on: ubuntu-latest
+    outputs:
+      commit_hash: ${{ steps.finalize.outputs.commit_hash }}
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - id: Finalize
+        uses: speakeasy-api/sdk-generation-action@v14
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          mode: ${{ inputs.mode }}
+          action: finalize-docs
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          branch_name: ${{ needs.generate.outputs.branch_name }}
+          previous_gen_version: ${{ needs.generate.outputs.previous_gen_version }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "SDK Finalization Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

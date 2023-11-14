@@ -164,6 +164,8 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action) (stri
 		prTitle = getGenPRTitle()
 	} else if action == environment.ActionFinalize || action == environment.ActionFinalizeSuggestion {
 		prTitle = getSuggestPRTitle()
+	} else if action == environment.ActionGenerateDocs || action == environment.ActionFinalizeDocs {
+		prTitle = getDocsPRTitle()
 	}
 
 	for _, p := range prs {
@@ -237,6 +239,8 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 		branchName = fmt.Sprintf("speakeasy-sdk-regen-%d", time.Now().Unix())
 	} else if action == environment.ActionSuggest {
 		branchName = fmt.Sprintf("speakeasy-openapi-suggestion-%d", time.Now().Unix())
+	} else if action == environment.ActionGenerateDocs {
+		branchName = fmt.Sprintf("speakeasy-sdk-docs-regen-%d", time.Now().Unix())
 	}
 
 	logging.Info("Creating branch %s", branchName)
@@ -416,6 +420,53 @@ Based on:
 
 		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
 			Title:               github.String(getGenPRTitle()),
+			Body:                github.String(body),
+			Head:                github.String(branchName),
+			Base:                github.String(environment.GetRef()),
+			MaintainerCanModify: github.Bool(true),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create PR: %w", err)
+		}
+	}
+
+	url := ""
+	if pr.URL != nil {
+		url = *pr.HTMLURL
+	}
+
+	logging.Info("PR: %s", url)
+
+	return nil
+}
+
+func (g *Git) CreateOrUpdateDocsPR(branchName string, releaseInfo releases.ReleasesInfo, previousGenVersion string, pr *github.PullRequest) error {
+	var err error
+
+	body := fmt.Sprintf(`# SDK Docs update
+Based on:
+- OpenAPI Doc %s %s
+- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy`, releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion)
+
+	const maxBodyLength = 65536
+
+	if len(body) > maxBodyLength {
+		body = body[:maxBodyLength-3] + "..."
+	}
+
+	if pr != nil {
+		logging.Info("Updating PR")
+
+		pr.Body = github.String(body)
+		pr, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), pr.GetNumber(), pr)
+		if err != nil {
+			return fmt.Errorf("failed to update PR: %w", err)
+		}
+	} else {
+		logging.Info("Creating PR")
+
+		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
+			Title:               github.String(getDocsPRTitle()),
 			Body:                github.String(body),
 			Head:                github.String(branchName),
 			Base:                github.String(environment.GetRef()),
@@ -682,10 +733,15 @@ func getRepo() string {
 const (
 	speakeasyGenPRTitle     = "chore: 🐝 Update SDK - "
 	speakeasySuggestPRTitle = "chore: 🐝 Suggest OpenAPI changes - "
+	speakeasyDocsPRTitle    = "chore: 🐝 Update SDK Docs - "
 )
 
 func getGenPRTitle() string {
 	return speakeasyGenPRTitle + environment.GetWorkflowName()
+}
+
+func getDocsPRTitle() string {
+	return speakeasyDocsPRTitle + environment.GetWorkflowName()
 }
 
 func getSuggestPRTitle() string {

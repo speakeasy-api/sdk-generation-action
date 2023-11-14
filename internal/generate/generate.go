@@ -12,6 +12,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/document"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"gopkg.in/yaml.v3"
 )
 
 type LanguageGenInfo struct {
@@ -206,6 +207,162 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 					PackageName: fmt.Sprintf("%s", langCfg.Cfg["packageName"]),
 					Version:     langCfg.Version,
 				}
+			}
+
+			regenerated = true
+		}
+	}
+
+	var genInfo *GenerationInfo
+
+	if regenerated {
+		genInfo = &GenerationInfo{
+			SpeakeasyVersion:  speakeasyVersion.String(),
+			GenerationVersion: generationVersion.String(),
+			OpenAPIDocVersion: docVersion,
+			Languages:         langGenInfo,
+		}
+	}
+
+	return genInfo, outputs, nil
+}
+
+func GenerateDocs(g Git) (*GenerationInfo, map[string]string, error) {
+	// TODO: For now SDK Docs will generate into the root directory.
+	rootDir := "."
+
+	//TODO: Validate accepted docs languages.
+	languages := environment.GetLanguages()
+	languages = strings.ReplaceAll(languages, "\\n", "\n")
+	langs := []string{}
+	if err := yaml.Unmarshal([]byte(languages), &langs); err != nil {
+		return nil, nil, fmt.Errorf("failed to parse languages: %w", err)
+	}
+
+	workspace := environment.GetWorkspace()
+	outputs := map[string]string{}
+
+	docPath, docChecksum, docVersion, err := document.GetOpenAPIFileInfo()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	genConfigs, err := configuration.LoadGeneratorConfigs(workspace, map[string]string{
+		"docs": rootDir,
+	})
+	if err != nil {
+		return nil, outputs, err
+	}
+
+	cfg := genConfigs["docs"]
+
+	speakeasyVersion, err := cli.GetSpeakeasyVersion()
+	if err != nil {
+		return nil, outputs, fmt.Errorf("failed to get speakeasy version: %w", err)
+	}
+	generationVersion, err := cli.GetGenerationVersion()
+	if err != nil {
+		return nil, outputs, fmt.Errorf("failed to get generation version: %w", err)
+	}
+
+	langGenerated := map[string]bool{}
+
+	globalPreviousGenVersion := ""
+
+	langCfg, ok := cfg.Config.Languages["docs"]
+	if !ok {
+		langCfg = config.LanguageConfig{
+			Version: "0.0.0",
+		}
+
+		cfg.Config.Languages["docs"] = langCfg
+	}
+
+	if cfg.Config.Management == nil {
+		cfg.Config.Management = &config.Management{}
+	}
+
+	sdkVersion := langCfg.Version
+
+	newVersion, previousVersion, err := checkIfGenerationNeeded(cfg.Config, "docs", globalPreviousGenVersion, versionInfo{
+		generationVersion: generationVersion,
+		docVersion:        docVersion,
+		docChecksum:       docChecksum,
+		sdkVersion:        sdkVersion,
+	})
+	if err != nil {
+		return nil, outputs, err
+	}
+	globalPreviousGenVersion = previousVersion
+
+	if newVersion != "" {
+		fmt.Println("New version detected: ", newVersion)
+		outputDir := path.Join(workspace, "repo", rootDir)
+
+		langCfg.Version = newVersion
+		cfg.Config.Languages["docs"] = langCfg
+
+		if err := config.Save(cfg.ConfigDir, cfg.Config); err != nil {
+			return nil, outputs, err
+		}
+
+		fmt.Printf("Generating SDK Docs in %s\n", outputDir)
+
+		if err := cli.GenerateDocs(docPath, strings.Join(langs, ","), outputDir); err != nil {
+			return nil, outputs, err
+		}
+
+		// Load the config again as it could have been modified by the generator
+		loadedCfg, err := config.Load(outputDir)
+		if err != nil {
+			return nil, outputs, err
+		}
+
+		cfg.Config = loadedCfg
+
+		outputs["docs_directory"] = rootDir
+
+		dirty, err := g.CheckDirDirty(rootDir)
+		if err != nil {
+			return nil, outputs, err
+		}
+
+		if dirty {
+			langGenerated["docs"] = true
+		} else {
+			langCfg.Version = sdkVersion
+			cfg.Config.Languages["docs"] = langCfg
+
+			if err := config.Save(cfg.ConfigDir, cfg.Config); err != nil {
+				return nil, outputs, err
+			}
+
+			fmt.Printf("Regenerating SDK Docs did not result in any changes\n")
+		}
+	} else {
+		fmt.Println("No changes detected")
+	}
+
+	outputs["previous_gen_version"] = globalPreviousGenVersion
+
+	regenerated := false
+
+	langGenInfo := map[string]LanguageGenInfo{}
+
+	for lang, cfg := range genConfigs {
+		if langGenerated[lang] {
+			outputs[lang+"_regenerated"] = "true"
+
+			mgmtConfig := cfg.Config.Management
+
+			mgmtConfig.SpeakeasyVersion = speakeasyVersion.String()
+			mgmtConfig.GenerationVersion = generationVersion.String()
+			mgmtConfig.DocVersion = docVersion
+			mgmtConfig.DocChecksum = docChecksum
+			cfg.Config.Management = mgmtConfig
+
+			if err := config.Save(cfg.ConfigDir, cfg.Config); err != nil {
+				return nil, outputs, err
 			}
 
 			regenerated = true

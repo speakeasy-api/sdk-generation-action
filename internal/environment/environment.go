@@ -20,9 +20,11 @@ type Action string
 const (
 	ActionValidate           Action = "validate"
 	ActionGenerate           Action = "generate"
+	ActionGenerateDocs       Action = "generate-docs"
 	ActionSuggest            Action = "suggest"
 	ActionFinalize           Action = "finalize"
 	ActionFinalizeSuggestion Action = "finalize-suggestion"
+	ActionFinalizeDocs       Action = "finalize-docs"
 	ActionRelease            Action = "release"
 )
 
