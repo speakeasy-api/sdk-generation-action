@@ -52,6 +52,7 @@ on:
         description: |-
           A yaml string containing a list of languages to generate SDK Docs for example:
           languages: |
+            - curl
             - go
             - python
             - typescript
