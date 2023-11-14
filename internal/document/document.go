@@ -128,18 +128,18 @@ func mergeFiles(files []string) (string, error) {
 }
 
 func applyOverlay(filePath string, overlayFiles []string) (string, error) {
-	outPath := filepath.Join(environment.GetWorkspace(), "openapi", "openapi_overlay")
+	for i, overlayFile := range overlayFiles {
+		outPath := filepath.Join(environment.GetWorkspace(), "openapi", fmt.Sprintf("openapi_overlay_%v", i))
 
-	if err := os.MkdirAll(filepath.Dir(outPath), os.ModePerm); err != nil {
-		return "", fmt.Errorf("failed to create openapi directory: %w", err)
-	}
+		if err := os.MkdirAll(filepath.Dir(outPath), os.ModePerm); err != nil {
+			return "", fmt.Errorf("failed to create openapi directory: %w", err)
+		}
 
-	outPathAbs, err := filepath.Abs(outPath)
-	if err != nil {
-		return "", fmt.Errorf("failed to get absolute path for openapi overlay file: %w", err)
-	}
+		outPathAbs, err := filepath.Abs(outPath)
+		if err != nil {
+			return "", fmt.Errorf("failed to get absolute path for openapi overlay file: %w", err)
+		}
 
-	for _, overlayFile := range overlayFiles {
 		if err := cli.ApplyOverlay(overlayFile, filePath, outPathAbs); err != nil {
 			return "", fmt.Errorf("failed to apply overlay: %w", err)
 		}
