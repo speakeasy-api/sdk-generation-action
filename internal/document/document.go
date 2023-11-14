@@ -115,29 +115,39 @@ func mergeFiles(files []string) (string, error) {
 		return "", fmt.Errorf("failed to create openapi directory: %w", err)
 	}
 
-	if err := cli.MergeDocuments(files, outPath); err != nil {
+	absOutPath, err := filepath.Abs(outPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to get absolute path for openapi file: %w", err)
+	}
+
+	if err := cli.MergeDocuments(files, absOutPath); err != nil {
 		return "", fmt.Errorf("failed to merge openapi files: %w", err)
 	}
 
-	return outPath, nil
+	return absOutPath, nil
 }
 
 func applyOverlay(filePath string, overlayFiles []string) (string, error) {
-	outPath := filepath.Join(environment.GetWorkspace(), "repo", ".openapi", "openapi_overlay")
+	outPath := filepath.Join(environment.GetWorkspace(), "openapi", "openapi_overlay")
 
 	if err := os.MkdirAll(filepath.Dir(outPath), os.ModePerm); err != nil {
 		return "", fmt.Errorf("failed to create openapi directory: %w", err)
 	}
 
+	outPathAbs, err := filepath.Abs(outPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to get absolute path for openapi overlay file: %w", err)
+	}
+
 	for _, overlayFile := range overlayFiles {
-		if err := cli.ApplyOverlay(overlayFile, filePath, outPath); err != nil {
+		if err := cli.ApplyOverlay(overlayFile, filePath, outPathAbs); err != nil {
 			return "", fmt.Errorf("failed to apply overlay: %w", err)
 		}
 
-		filePath = outPath
+		filePath = outPathAbs
 	}
 
-	return outPath, nil
+	return filePath, nil
 }
 
 func resolveFiles(files []file, typ string) ([]string, error) {
@@ -150,8 +160,12 @@ func resolveFiles(files []file, typ string) ([]string, error) {
 
 		if _, err := os.Stat(localPath); err == nil {
 			fmt.Printf("Found local %s file: %s\n", typ, localPath)
+			absPath, err := filepath.Abs(localPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get absolute path for %s file: %w", localPath, err)
+			}
 
-			outFiles = append(outFiles, localPath)
+			outFiles = append(outFiles, absPath)
 		} else {
 			u, err := url.Parse(file.Location)
 			if err != nil {
@@ -172,11 +186,16 @@ func resolveFiles(files []file, typ string) ([]string, error) {
 				return nil, fmt.Errorf("failed to create %s directory: %w", typ, err)
 			}
 
-			if err := download.DownloadFile(u.String(), filePath, file.Header, file.Token); err != nil {
+			absPath, err := filepath.Abs(filePath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get absolute path for %s file: %w", filePath, err)
+			}
+
+			if err := download.DownloadFile(u.String(), absPath, file.Header, file.Token); err != nil {
 				return nil, fmt.Errorf("failed to download %s file: %w", typ, err)
 			}
 
-			outFiles = append(outFiles, filePath)
+			outFiles = append(outFiles, absPath)
 		}
 	}
 
