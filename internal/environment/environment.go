@@ -130,7 +130,7 @@ func GetLanguages() string {
 }
 
 func CreateGitRelease() bool {
-	return os.Getenv("INPUT_CREATE_RELEASE") == "true" || IsLanguagePublished("php") || IsLanguagePublished("terraform")
+	return os.Getenv("INPUT_CREATE_RELEASE") == "true" || IsLanguagePublished("php") || IsLanguagePublished("terraform") || IsLanguagePublished("swift")
 }
 
 func GetAccessToken() string {
@@ -146,7 +146,7 @@ func GetInvokeTime() time.Time {
 }
 
 func IsLanguagePublished(lang string) bool {
-	if lang == "go" {
+	if lang == "go" || lang == "swift" {
 		return os.Getenv("INPUT_CREATE_RELEASE") == "true"
 	}
 

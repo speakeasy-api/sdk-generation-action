@@ -85,6 +85,16 @@ func (r ReleasesInfo) String() string {
 		case "csharp":
 			pkgID = "NuGet"
 			pkgURL = fmt.Sprintf("https://www.nuget.org/packages/%s/%s", info.PackageName, info.Version)
+		case "swift":
+			pkgID = "Swift Package Manager"
+			repoPath := os.Getenv("GITHUB_REPOSITORY")
+
+			tag := fmt.Sprintf("v%s", info.Version)
+			if info.Path != "." {
+				tag = fmt.Sprintf("%s/%s", info.Path, tag)
+			}
+
+			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
 		}
 
 		if pkgID != "" {
@@ -133,6 +143,7 @@ var (
 	terraformReleaseRegex   = regexp.MustCompile(`- \[Terraform v(\d+\.\d+\.\d+)\] (https:\/\/registry\.terraform\.io\/providers\/(.*?)\/(.*?)\/.*?) - (.*)`)
 	rubyGemReleaseRegex     = regexp.MustCompile(`- \[Ruby Gems v(\d+\.\d+\.\d+)\] (https:\/\/rubygems\.org\/gems\/(.*?)\/versions\/.*?) - (.*)`)
 	nugetReleaseRegex       = regexp.MustCompile(`- \[NuGet v(\d+\.\d+\.\d+)\] (https:\/\/www\.nuget\.org\/packages\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
+	swiftReleaseRegex       = regexp.MustCompile(`- \[Swift Package Manager v(\d+\.\d+\.\d+)\] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+) - (.*)`)
 )
 
 func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
@@ -291,6 +302,24 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 			URL:         nugetMatches[2],
 			PackageName: nugetMatches[3],
 			Path:        nugetMatches[4],
+		}
+	}
+
+	swiftMatches := swiftReleaseRegex.FindStringSubmatch(lastRelease)
+
+	if len(swiftMatches) == 5 {
+		packageName := swiftMatches[3]
+		path := swiftMatches[4]
+
+		if path != "." {
+			packageName = fmt.Sprintf("%s/%s", packageName, strings.TrimPrefix(path, "./"))
+		}
+
+		info.Languages["swift"] = LanguageReleaseInfo{
+			Version:     swiftMatches[1],
+			URL:         swiftMatches[2],
+			PackageName: packageName,
+			Path:        path,
 		}
 	}
 

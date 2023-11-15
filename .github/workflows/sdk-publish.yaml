@@ -113,6 +113,8 @@ jobs:
       ruby_directory: ${{ steps.release.outputs.ruby_directory }}
       csharp_regenerated: ${{ steps.release.outputs.csharp_regenerated }}
       csharp_directory: ${{ steps.release.outputs.csharp_directory }}
+      swift_regenerated: ${{ steps.release.outputs.swift_regenerated }}
+      swift_directory: ${{ steps.release.outputs.swift_directory }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
