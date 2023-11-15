@@ -15,7 +15,7 @@ COPY pkg/ ./pkg/
 RUN go build -o /action
 
 ## Deploy
-FROM alpine:latest
+FROM golang:1.21-alpine
 
 RUN apk update
 RUN apk add git

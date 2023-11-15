@@ -3,6 +3,7 @@ package environment
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -23,6 +24,11 @@ const (
 	ActionFinalize           Action = "finalize"
 	ActionFinalizeSuggestion Action = "finalize-suggestion"
 	ActionRelease            Action = "release"
+)
+
+const (
+	DefaultMaxValidationWarnings = 1000
+	DefaultMaxValidationErrors   = 1000
 )
 
 var (
@@ -75,12 +81,44 @@ func GetMaxSuggestions() string {
 	return os.Getenv("INPUT_MAX_SUGGESTIONS")
 }
 
+func GetMaxValidationWarnings() (int, error) {
+	maxVal := os.Getenv("INPUT_MAX_VALIDATION_WARNINGS")
+	if maxVal == "" {
+		return DefaultMaxValidationWarnings, nil
+	}
+
+	maxWarns, err := strconv.Atoi(maxVal)
+	if err != nil {
+		return DefaultMaxValidationWarnings, fmt.Errorf("max_validation_warnings must be an integer, falling back to default (%d): %w", DefaultMaxValidationWarnings, err)
+	}
+
+	return maxWarns, nil
+}
+
+func GetMaxValidationErrors() (int, error) {
+	maxVal := os.Getenv("INPUT_MAX_VALIDATION_ERRORS")
+	if maxVal == "" {
+		return DefaultMaxValidationErrors, nil
+	}
+
+	maxErrors, err := strconv.Atoi(maxVal)
+	if err != nil {
+		return DefaultMaxValidationErrors, fmt.Errorf("max_validaiton_errors must be an integer, falling back to default (%d): %v", DefaultMaxValidationErrors, err)
+	}
+
+	return maxErrors, nil
+}
+
 func GetOpenAPIDocLocation() string {
 	return os.Getenv("INPUT_OPENAPI_DOC_LOCATION")
 }
 
 func GetOpenAPIDocs() string {
 	return os.Getenv("INPUT_OPENAPI_DOCS")
+}
+
+func GetOverlayDocs() string {
+	return os.Getenv("INPUT_OVERLAY_DOCS")
 }
 
 func GetOpenAPIDocOutput() string {

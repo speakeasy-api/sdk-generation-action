@@ -33,6 +33,21 @@ on:
             - https://example.com/openapi2.json
         required: false
         type: string
+      overlay_docs:
+        description: |-
+          A yaml string containing a list of overlay documents to use, if multiple documents are provided they will be applied to the OpenAPI document in the order provided.
+
+          If the document lives within the repo a relative path can be provided, if the document is hosted publicly a URL can be provided.
+
+          If the documents are hosted privately a URL can be provided along with the `openapi_doc_auth_header` and `openapi_doc_auth_token` inputs.
+          Each document will be fetched using the provided auth header and token, so they need to be valid for all documents.
+
+          For example:
+          overlay_docs: |
+            - https://example.com/overlay1.json
+            - https://example.com/overlay2.json
+        required: false
+        type: string
       languages:
         description: |-
           A yaml string containing a list of languages to generate SDKs for example:
@@ -43,8 +58,8 @@ on:
             - java # using default output of ./java-client-sdk
             - php # using default output of ./php-client-sdk
             - csharp # using default output of ./csharp-client-sdk
-            - unity # using default output of ./unity-client-sdk
             - swift # using default output of ./swift-client-sdk
+            - unity # using default output of ./unity-client-sdk
             - terraform # (single language repo only)
 
           If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
@@ -188,6 +203,7 @@ jobs:
           openapi_doc_auth_header: ${{ inputs.openapi_doc_auth_header }}
           openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
           openapi_docs: ${{ inputs.openapi_docs }}
+          overlay_docs: ${{ inputs.overlay_docs }}
           github_access_token: ${{ secrets.github_access_token }}
           action: validate
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
@@ -233,6 +249,8 @@ jobs:
       csharp_directory: ${{ steps.generate.outputs.csharp_directory }}
       swift_regenerated: ${{ steps.generate.outputs.swift_regenerated }}
       swift_directory: ${{ steps.generate.outputs.swift_directory }}
+      unity_regenerated: ${{ steps.generate.outputs.unity_regenerated }}
+      unity_directory: ${{ steps.generate.outputs.unity_directory }}
       branch_name: ${{ steps.generate.outputs.branch_name }}
       previous_gen_version: ${{ steps.generate.outputs.previous_gen_version }}
     steps:
@@ -246,6 +264,7 @@ jobs:
           openapi_doc_auth_header: ${{ inputs.openapi_doc_auth_header }}
           openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
           openapi_docs: ${{ inputs.openapi_docs }}
+          overlay_docs: ${{ inputs.overlay_docs }}
           github_access_token: ${{ secrets.github_access_token }}
           languages: ${{ inputs.languages }}
           create_release: ${{ inputs.create_release }}
@@ -373,10 +392,10 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.8"
       - run: pip install -e .[dev]
         working-directory: ${{ needs.generate.outputs.python_directory }}
-      - run: python3.9 -m compileall -q .
+      - run: python3.8 -m compileall -q .
         working-directory: ${{ needs.generate.outputs.python_directory }}
       - run: pylint src
         working-directory: ${{ needs.generate.outputs.python_directory }}
@@ -538,6 +557,37 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  compile-unity:
+    if: ${{ needs.generate.outputs.unity_regenerated == 'true' }}
+    name: Compile Unity SDK
+    runs-on: ubuntu-latest
+    needs: generate
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.generate.outputs.branch_name }}
+
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "5.x"
+
+      - run: echo "Currently not implemented"
+        working-directory: ${{ needs.generate.outputs.unity_directory }}
+
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "Compilation of Unity SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   finalize:
     name: Finalize SDK
     if: |
@@ -552,7 +602,8 @@ jobs:
       needs.compile-php.result != 'skipped' ||
       needs.compile-ruby.result != 'skipped' ||
       needs.compile-csharp.result != 'skipped' ||
-      needs.compile-swift.result != 'skipped')
+      needs.compile-swift.result != 'skipped' ||
+      needs.compile-unity.result != 'skipped')
     needs:
       - generate
       - compile-go
@@ -564,6 +615,7 @@ jobs:
       - compile-ruby
       - compile-csharp
       - compile-swift
+      - compile-unity
     runs-on: ubuntu-latest
     outputs:
       commit_hash: ${{ steps.finalize.outputs.commit_hash }}
@@ -617,7 +669,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.8"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -790,7 +842,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-packagist:
-    if: ${{ always() && needs.generate.generate.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
+    if: ${{ always() && needs.generate.outputs.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
     name: Publish PHP SDK
     runs-on: ubuntu-latest
     needs: [generate, compile-php, finalize]

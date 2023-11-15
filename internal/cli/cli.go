@@ -2,7 +2,12 @@ package cli
 
 import (
 	"fmt"
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/go-version"
@@ -17,6 +22,7 @@ var (
 	OutputTestsVersion             = version.Must(version.NewVersion("1.33.2"))
 	LLMSuggestionVersion           = version.Must(version.NewVersion("1.47.1"))
 	GranularChangeLogVersion       = version.Must(version.NewVersion("1.70.2"))
+	OverlayVersion                 = version.Must(version.NewVersion("1.112.1"))
 )
 
 func IsAtLeastVersion(version *version.Version) bool {
@@ -40,6 +46,23 @@ func GetSupportedLanguages() ([]string, error) {
 	langs := r.FindStringSubmatch(strings.TrimSpace(out))[1]
 
 	return strings.Split(langs, ", "), nil
+}
+
+func TriggerGoGenerate() error {
+	tidyCmd := exec.Command("go", "mod", "tidy")
+	tidyCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	output, err := tidyCmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error running command: go mod tidy - %w\n %s", err, string(output))
+	}
+	generateCmd := exec.Command("go", "generate", "./...")
+	generateCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	output, err = generateCmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error running command: go generate ./... - %w\n %s", err, output)
+	}
+
+	return nil
 }
 
 func GetSpeakeasyVersion() (*version.Version, error) {
@@ -186,8 +209,12 @@ func GetChangelog(lang, genVersion, previousGenVersion string, targetVersions ma
 	}
 }
 
-func Validate(docPath string) error {
-	out, err := runSpeakeasyCommand("validate", "openapi", "-s", docPath)
+func Validate(docPath string, maxValidationWarnings, maxValidationErrors int) error {
+	var (
+		maxWarns  = strconv.Itoa(maxValidationWarnings)
+		maxErrors = strconv.Itoa(maxValidationErrors)
+	)
+	out, err := runSpeakeasyCommand("validate", "openapi", "-s", docPath, "--max-validation-warnings", maxWarns, "--max-validation-errors", maxErrors)
 	if err != nil {
 		return fmt.Errorf("error validating openapi: %w - %s", err, out)
 	}
@@ -274,5 +301,31 @@ func MergeDocuments(files []string, output string) error {
 		return fmt.Errorf("error merging documents: %w - %s", err, out)
 	}
 	fmt.Println(out)
+	return nil
+}
+
+func ApplyOverlay(overlayPath, inPath, outPath string) error {
+	if !IsAtLeastVersion(OverlayVersion) {
+		return fmt.Errorf("speakeasy version %s does not support applying overlays", OverlayVersion)
+	}
+
+	args := []string{
+		"overlay",
+		"apply",
+		"-o",
+		overlayPath,
+		"-s",
+		inPath,
+	}
+
+	out, err := runSpeakeasyCommand(args...)
+	if err != nil {
+		return fmt.Errorf("error applying overlay: %w - %s", err, out)
+	}
+
+	if err := os.WriteFile(outPath, []byte(out), os.ModePerm); err != nil {
+		return fmt.Errorf("error writing overlay output: %w", err)
+	}
+
 	return nil
 }

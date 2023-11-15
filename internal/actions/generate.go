@@ -91,6 +91,13 @@ func Generate() error {
 						Path:        path,
 					}
 				}
+				if lang == "terraform" {
+					// Also trigger "go generate ./..." to regenerate docs
+					err = cli.TriggerGoGenerate()
+					if err != nil {
+						return err
+					}
+				}
 			}
 		}
 

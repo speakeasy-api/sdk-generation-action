@@ -13,11 +13,17 @@ import (
 func main() {
 	if environment.IsDebugMode() {
 		envs := os.Environ()
-		slices.SortFunc(envs, func(i, j string) bool {
+		slices.SortFunc(envs, func(i, j string) int {
 			iKey, iValue, _ := strings.Cut(i, "=")
 			jKey, jValue, _ := strings.Cut(j, "=")
 
-			return iKey < jKey || (iKey == jKey && iValue < jValue)
+			comp := strings.Compare(iKey, jKey)
+
+			if comp != 0 {
+				return comp
+			}
+
+			return strings.Compare(iValue, jValue)
 		})
 
 		for _, env := range envs {
