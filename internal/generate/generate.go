@@ -231,7 +231,6 @@ func GenerateDocs(g Git) (*GenerationInfo, map[string]string, error) {
 	// TODO: For now SDK Docs will generate into the root directory.
 	rootDir := "."
 
-	//TODO: Validate accepted docs languages.
 	languages := environment.GetLanguages()
 	languages = strings.ReplaceAll(languages, "\\n", "\n")
 	langs := []string{}
