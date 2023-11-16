@@ -66,7 +66,7 @@ on:
         description: |-
           The mode to run the workflow in, valid options are 'direct' or 'pr', defaults to 'direct'.
             - 'direct' will create a commit with the changes to the SDK Docs and push them directly to the branch the workflow is configure to run on (normally 'main' or 'master').
-            - 'pr' will instead create a new branch to commit the changes to the SDKs to and then create a PR from this branch.
+            - 'pr' will instead create a new branch to commit the changes to the SDK docs to and then create a PR from this branch.
         default: "direct"
         required: false
         type: string
