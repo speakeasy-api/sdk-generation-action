@@ -32,7 +32,7 @@ type logProxyEntry struct {
 func LogActionResult() error {
 	key := os.Getenv("SPEAKEASY_API_KEY")
 	if key == "" {
-		return fmt.Errorf("no speakeasy api key available")
+		return fmt.Errorf("no speakeasy api key available.")
 	}
 
 	logLevel := logProxyLevelInfo

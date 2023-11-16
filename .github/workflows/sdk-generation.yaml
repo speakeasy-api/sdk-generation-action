@@ -192,6 +192,8 @@ jobs:
   validate:
     name: Validate OpenAPI Document
     runs-on: ubuntu-latest
+    outputs:
+      resolved_speakeasy_version: ${{ steps.validate.outputs.resolved_speakeasy_version }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
