@@ -272,6 +272,26 @@ func Generate(docPath, lang, outputDir, installationURL string, published, outpu
 	return nil
 }
 
+func GenerateDocs(docPath, langs, outputDir string) error {
+	args := []string{
+		"docs",
+		"generate",
+		"-s",
+		docPath,
+		"-l",
+		langs,
+		"-o",
+		outputDir,
+	}
+
+	out, err := runSpeakeasyCommand(args...)
+	if err != nil {
+		return fmt.Errorf("error generating sdk docs: %w - %s", err, out)
+	}
+	fmt.Println(out)
+	return nil
+}
+
 func ValidateConfig(configDir string) error {
 	out, err := runSpeakeasyCommand("validate", "config", "-d", configDir)
 	if err != nil {
