@@ -1,4 +1,4 @@
-name: Speakeasy SDK Generation Workflow
+name: Speakeasy SDK Docs Generation Workflow
 
 on:
   workflow_call:
