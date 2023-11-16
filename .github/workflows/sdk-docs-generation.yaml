@@ -235,7 +235,7 @@ jobs:
           status: ${{ job.status }}
           token: ${{ secrets.github_access_token }}
           notify_when: "failure"
-          notification_title: "SDK Finalization Failed"
+          notification_title: "SDK Docs Finalization Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
