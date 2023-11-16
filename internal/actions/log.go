@@ -69,7 +69,7 @@ func LogActionResult() error {
 	}
 
 	if os.Getenv("GITHUB_REPOSITORY") != "" {
-		request.Tags["gh_repo"] = strings.Split(os.Getenv("GITHUB_REPOSITORY"), "/")[0]
+		request.Tags["gh_organization"] = strings.Split(os.Getenv("GITHUB_REPOSITORY"), "/")[0]
 	}
 
 	body, err := json.Marshal(&request)
