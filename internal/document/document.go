@@ -109,7 +109,7 @@ func GetOpenAPIFileInfo() (string, string, string, error) {
 }
 
 func mergeFiles(files []string) (string, error) {
-	outPath := filepath.Join(environment.GetWorkspace(), "repo", ".openapi", "openapi_merged")
+	outPath := filepath.Join(environment.GetWorkspace(), ".openapi", "openapi_merged")
 
 	if err := os.MkdirAll(filepath.Dir(outPath), os.ModePerm); err != nil {
 		return "", fmt.Errorf("failed to create openapi directory: %w", err)
