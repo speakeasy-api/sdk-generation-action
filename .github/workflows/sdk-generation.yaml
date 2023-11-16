@@ -198,7 +198,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: validate
-        uses: speakeasy-api/sdk-generation-action@v14.34
+        uses: speakeasy-api/sdk-generation-action@v14.35
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -229,7 +229,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.34
+        uses: speakeasy-api/sdk-generation-action@v14.35
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           github_access_token: ${{ secrets.github_access_token }}
@@ -274,7 +274,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v14.34
+        uses: speakeasy-api/sdk-generation-action@v14.35
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -310,6 +310,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   compile-go:
     if: ${{ needs.generate.outputs.go_regenerated == 'true' }}
     name: Compile Go SDK
@@ -337,6 +352,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   compile-terraform:
     if: ${{ needs.generate.outputs.terraform_regenerated == 'true' }}
     name: Compile Terraform Provider
@@ -366,6 +396,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   compile-java:
     if: ${{ needs.generate.outputs.java_regenerated == 'true' }}
     name: Compile Java SDK
@@ -395,6 +440,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   compile-python:
     if: ${{ needs.generate.outputs.python_regenerated == 'true' }}
     name: Compile Python SDK
@@ -427,6 +487,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   compile-typescript:
     if: ${{ needs.generate.outputs.typescript_regenerated == 'true' }}
     name: Compile Typescript SDK
@@ -459,6 +534,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   compile-php:
     if: ${{ needs.generate.outputs.php_regenerated == 'true' }}
     name: Compile PHP SDK
@@ -488,6 +578,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   compile-ruby:
     if: ${{ needs.generate.outputs.ruby_regenerated == 'true' }}
     name: Compile Ruby SDK
@@ -516,6 +621,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   compile-csharp:
     if: ${{ needs.generate.outputs.csharp_regenerated == 'true' }}
     name: Compile C# SDK
@@ -547,6 +667,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   compile-swift:
     if: ${{ needs.generate.outputs.swift_regenerated == 'true' }}
     name: Compile Swift SDK
@@ -574,6 +709,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   compile-unity:
     if: ${{ needs.generate.outputs.unity_regenerated == 'true' }}
     name: Compile Unity SDK
@@ -605,6 +755,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   finalize:
     name: Finalize SDK
     if: |
@@ -640,7 +805,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: Finalize
-        uses: speakeasy-api/sdk-generation-action@v14.34
+        uses: speakeasy-api/sdk-generation-action@v14.35
         with:
           github_access_token: ${{ secrets.github_access_token }}
           languages: ${{ inputs.languages }}
@@ -669,6 +834,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   publish-pypi:
     if: ${{ always() && needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' && inputs.mode != 'pr' }}
     name: Publish Python SDK
@@ -709,6 +889,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   publish-npm:
     if: ${{ always() && needs.generate.outputs.typescript_regenerated == 'true' && inputs.publish_typescript == 'true' && inputs.mode != 'pr' }}
     name: Publish Typescript SDK
@@ -745,6 +940,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   publish-java:
     if: ${{ always() && needs.finalize.generate.java_regenerated == 'true' && inputs.publish_java == 'true' && inputs.mode != 'pr' }}
     name: Publish Java SDK
@@ -786,6 +996,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   publish-gems:
     if: ${{ always() && needs.generate.outputs.ruby_regenerated == 'true' && inputs.publish_ruby == 'true' && inputs.mode != 'pr' }}
     name: Publish Ruby SDK
@@ -827,6 +1052,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   publish-nuget:
     if: ${{ always() && needs.generate.outputs.csharp_regenerated == 'true' && inputs.publish_csharp == 'true' && inputs.mode != 'pr' }}
     name: Publish C# SDK
@@ -858,6 +1098,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   publish-packagist:
     if: ${{ always() && needs.generate.outputs.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
     name: Publish PHP SDK
@@ -887,3 +1142,18 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.35
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
