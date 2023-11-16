@@ -196,7 +196,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: validate
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action@v14.34
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -226,6 +226,21 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log
+        uses: speakeasy-api/sdk-generation-action@v14.34
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validation.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET: "sdk"
   generate:
     name: Generate SDK
     runs-on: ubuntu-latest
@@ -257,7 +272,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action@v14.34
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -623,7 +638,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: Finalize
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action@v14.34
         with:
           github_access_token: ${{ secrets.github_access_token }}
           languages: ${{ inputs.languages }}

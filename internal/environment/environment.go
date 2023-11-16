@@ -26,6 +26,7 @@ const (
 	ActionFinalizeSuggestion Action = "finalize-suggestion"
 	ActionFinalizeDocs       Action = "finalize-docs"
 	ActionRelease            Action = "release"
+	ActionLog                Action = "log"
 )
 
 const (
