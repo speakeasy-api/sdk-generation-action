@@ -323,7 +323,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -366,7 +366,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -411,7 +411,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -456,7 +456,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -504,7 +504,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -552,7 +552,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -597,7 +597,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -641,7 +641,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -688,7 +688,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -731,7 +731,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -778,7 +778,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -858,7 +858,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -914,7 +914,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -966,7 +966,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -1023,7 +1023,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -1080,7 +1080,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -1127,7 +1127,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -1172,7 +1172,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
