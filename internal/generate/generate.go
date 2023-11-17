@@ -40,7 +40,7 @@ var (
 )
 
 type Git interface {
-	CheckDirDirty(dir string) (bool, error)
+	CheckDirDirty(dir string, ignoreMap map[string]string) (bool, error)
 }
 
 func Generate(g Git) (*GenerationInfo, map[string]string, error) {
@@ -145,7 +145,9 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 			outputs[fmt.Sprintf("%s_directory", lang)] = dirForOutput
 
-			dirty, err := g.CheckDirDirty(dir)
+			dirty, err := g.CheckDirDirty(dir, map[string]string{
+				previousVersion: newVersion,
+			})
 			if err != nil {
 				return nil, outputs, err
 			}
@@ -321,7 +323,7 @@ func GenerateDocs(g Git) (*GenerationInfo, map[string]string, error) {
 
 		outputs["docs_directory"] = rootDir
 
-		dirty, err := g.CheckDirDirty(rootDir)
+		dirty, err := g.CheckDirDirty(rootDir, map[string]string{})
 		if err != nil {
 			return nil, outputs, err
 		}

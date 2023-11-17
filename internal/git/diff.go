@@ -15,7 +15,7 @@ var (
 	userAgentRegex     = regexp.MustCompile(`speakeasy-sdk/`)
 )
 
-func IsGitDiffSignificant(diff string) bool {
+func IsGitDiffSignificant(diff string, ignoreChangePatterns map[string]string) bool {
 	if environment.ForceGeneration() {
 		return true
 	}
@@ -41,12 +41,23 @@ outer:
 		}
 
 		lines := strings.Split(diff, "\n")
-		for _, line := range lines {
+		for i, line := range lines {
 			isAddition := strings.HasPrefix(line, "+ ") || strings.HasPrefix(line, "+\t")
+			isSpecificPatternIgnored := false
+			if i > 1 && isAddition && strings.HasPrefix(lines[i-1], "- ") {
+				priorLine := lines[i-1]
+				for fromPattern, toPattern := range ignoreChangePatterns {
+					if strings.Contains(priorLine, fromPattern) && strings.Contains(line, toPattern) {
+						isSpecificPatternIgnored = true
+						break
+					}
+				}
+
+			}
 			isNotVersionChange := !versionChangeRegex.MatchString(line)
 			isNotUAChange := !userAgentRegex.MatchString(line)
 
-			significantChanges = isAddition && isNotVersionChange && isNotUAChange
+			significantChanges = isAddition && isNotVersionChange && isNotUAChange && !isSpecificPatternIgnored
 
 			if significantChanges {
 				fmt.Println(line)
