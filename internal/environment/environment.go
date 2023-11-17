@@ -136,7 +136,7 @@ func GetDocsLanguages() string {
 
 func IsDocsGeneration() bool {
 	languages := os.Getenv("INPUT_LANGUAGES")
-	// Rough check to ensure target is docs, we could parse this further.
+	// Quick check to ensure target is docs, we could parse this further.
 	return strings.Contains(languages, "docs")
 }
 
