@@ -80,7 +80,7 @@ func (g *Git) CloneRepo() error {
 	return nil
 }
 
-func (g *Git) CheckDirDirty(dir string) (bool, error) {
+func (g *Git) CheckDirDirty(dir string, ignoreChangePatterns map[string]string) (bool, error) {
 	if g.repo == nil {
 		return false, fmt.Errorf("repo not cloned")
 	}
@@ -146,7 +146,7 @@ func (g *Git) CheckDirDirty(dir string) (bool, error) {
 		return false, fmt.Errorf("error running git diff: %w", err)
 	}
 
-	return IsGitDiffSignificant(diffOutput), nil
+	return IsGitDiffSignificant(diffOutput, ignoreChangePatterns), nil
 }
 
 func (g *Git) FindExistingPR(branchName string, action environment.Action) (string, *github.PullRequest, error) {

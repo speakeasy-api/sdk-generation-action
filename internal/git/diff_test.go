@@ -110,10 +110,27 @@ index b26db52..fdc01f4 100755
 			},
 			want: true,
 		},
+		{
+			name: "ignores a version number change, even when compiled into an unusual line",
+			args: args{
+				// Important: Preserve tabs in the follow diff
+				diff: `diff --git a/gen.yaml b/gen.yaml
+index 322c845..585bc5b 100644
+--- a/useragent.go
++++ b/useragent.go
+- useragent := "%s/go 1.3.2 2.155.1 0.1.0-alpha openapi"
++ useragent := "%s/go 1.3.3 2.155.1 0.1.0-alpha openapi"
+`,
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := IsGitDiffSignificant(tt.args.diff)
+			got := IsGitDiffSignificant(tt.args.diff, map[string]string{
+				// example version number change
+				"1.3.2": "1.3.3",
+			})
 			assert.Equal(t, tt.want, got)
 		})
 	}
