@@ -129,8 +129,8 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 				docsLanguages := environment.GetDocsLanguages()
 				docsLanguages = strings.ReplaceAll(docsLanguages, "\\n", "\n")
 				docsLangs := []string{}
-				if err := yaml.Unmarshal([]byte(docsLanguages), &langs); err != nil {
-					return nil, nil, fmt.Errorf("failed to parse docs languages: %w", err)
+				if err := yaml.Unmarshal([]byte(docsLanguages), &docsLanguages); err != nil {
+					return nil, outputs, fmt.Errorf("failed to parse docs languages: %w", err)
 				}
 
 				if err := cli.GenerateDocs(docPath, strings.Join(docsLangs, ","), outputDir); err != nil {
