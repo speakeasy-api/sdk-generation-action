@@ -65,7 +65,6 @@ func LogActionResult() {
 	}
 	if len(langs) > 0 {
 		request.Tags["language"] = langs[0]
-		request.Tags["languages"] = langs
 	}
 
 	target := os.Getenv("TARGET")
