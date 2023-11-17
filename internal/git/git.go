@@ -422,8 +422,13 @@ Based on:
 	} else {
 		logging.Info("Creating PR")
 
+		title := getGenPRTitle()
+		if environment.IsDocsGeneration() {
+			title = getDocsPRTitle()
+		}
+
 		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
-			Title:               github.String(getGenPRTitle()),
+			Title:               github.String(title),
 			Body:                github.String(body),
 			Head:                github.String(branchName),
 			Base:                github.String(environment.GetRef()),
