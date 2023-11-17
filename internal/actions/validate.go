@@ -15,7 +15,8 @@ func Validate() error {
 		return err
 	}
 
-	if err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
+	resolvedVersion, err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g)
+	if err != nil {
 		return err
 	}
 
@@ -28,7 +29,8 @@ func Validate() error {
 		docPathPrefix += "/"
 	}
 	if err := setOutputs(map[string]string{
-		"openapi_doc": strings.TrimPrefix(docPath, docPathPrefix),
+		"resolved_speakeasy_version": resolvedVersion,
+		"openapi_doc":                strings.TrimPrefix(docPath, docPathPrefix),
 	}); err != nil {
 		logging.Debug("failed to set outputs: %v", err)
 	}

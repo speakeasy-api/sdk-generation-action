@@ -14,7 +14,8 @@ func GenerateDocs() error {
 		return err
 	}
 
-	if err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
+	resolvedVersion, err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g)
+	if err != nil {
 		return err
 	}
 
@@ -45,6 +46,7 @@ func GenerateDocs() error {
 	}()
 
 	genInfo, outputs, err := generate.GenerateDocs(g)
+	outputs["resolved_speakeasy_version"] = resolvedVersion
 	if err != nil {
 		if err := setOutputs(outputs); err != nil {
 			logging.Debug("failed to set outputs: %v", err)

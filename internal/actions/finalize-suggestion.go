@@ -2,6 +2,7 @@ package actions
 
 import (
 	"errors"
+
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
@@ -34,7 +35,7 @@ func FinalizeSuggestion() error {
 		return err
 	}
 
-	if err = cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
+	if _, err = cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
 		return err
 	}
 

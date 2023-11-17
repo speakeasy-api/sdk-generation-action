@@ -37,7 +37,7 @@ func Finalize() error {
 
 	switch environment.GetMode() {
 	case environment.ModePR:
-		if err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
+		if _, err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
 			return err
 		}
 

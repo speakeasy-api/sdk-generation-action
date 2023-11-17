@@ -21,7 +21,7 @@ type Git interface {
 	GetDownloadLink(version string) (string, string, error)
 }
 
-func Download(pinnedVersion string, g Git) error {
+func Download(pinnedVersion string, g Git) (string, error) {
 	if pinnedVersion == "" {
 		pinnedVersion = "latest"
 	}
@@ -36,30 +36,30 @@ func Download(pinnedVersion string, g Git) error {
 
 	link, version, err := g.GetDownloadLink(version)
 	if err != nil {
-		return err
+		return version, err
 	}
 
 	fmt.Println("Downloading speakeasy cli version: ", version)
 
 	downloadPath := filepath.Join(os.TempDir(), "speakeasy"+path.Ext(link))
 	if err := download.DownloadFile(link, downloadPath, "", ""); err != nil {
-		return fmt.Errorf("failed to download speakeasy cli: %w", err)
+		return version, fmt.Errorf("failed to download speakeasy cli: %w", err)
 	}
 	defer os.Remove(downloadPath)
 
 	baseDir := environment.GetBaseDir()
 
 	if err := extract(downloadPath, filepath.Join(baseDir, "bin")); err != nil {
-		return fmt.Errorf("failed to extract speakeasy cli: %w", err)
+		return version, fmt.Errorf("failed to extract speakeasy cli: %w", err)
 	}
 
 	if err := os.Chmod(filepath.Join(baseDir, "bin", "speakeasy"), 0o755); err != nil {
-		return fmt.Errorf("failed to set permissions on speakeasy cli: %w", err)
+		return version, fmt.Errorf("failed to set permissions on speakeasy cli: %w", err)
 	}
 
 	fmt.Println("Extracted speakeasy cli to: ", filepath.Join(baseDir, "bin"))
 
-	return nil
+	return version, nil
 }
 
 func runSpeakeasyCommand(args ...string) (string, error) {

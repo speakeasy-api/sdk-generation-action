@@ -49,6 +49,8 @@ func main() {
 		err = actions.FinalizeDocs()
 	case environment.ActionRelease:
 		err = actions.Release()
+	case environment.ActionLog:
+		actions.LogActionResult()
 	}
 
 	if err != nil {

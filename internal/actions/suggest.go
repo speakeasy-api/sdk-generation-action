@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/document"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
@@ -15,7 +16,7 @@ func Suggest() error {
 		return err
 	}
 
-	err = cli.Download(environment.GetPinnedSpeakeasyVersion(), g)
+	_, err = cli.Download(environment.GetPinnedSpeakeasyVersion(), g)
 	if err != nil {
 		return err
 	}
