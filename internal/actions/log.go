@@ -67,7 +67,7 @@ func LogActionResult() {
 		request.Tags["language"] = langs[0]
 	}
 
-	target := os.Getenv("TARGET")
+	target := os.Getenv("TARGET_TYPE")
 	if len(langs) > 0 {
 		if langs[0] == "docs" {
 			target = "docs"
