@@ -48,7 +48,6 @@ func LogActionResult() {
 		Message:  logMessage,
 		Source:   "gh_action",
 		Tags: map[string]interface{}{
-			"target":            os.Getenv("TARGET"),
 			"gh_repository":     fmt.Sprintf("https://github.com/%s", os.Getenv("GITHUB_REPOSITORY")),
 			"gh_action_version": os.Getenv("GH_ACTION_VERSION"),
 			"gh_action_step":    os.Getenv("GH_ACTION_STEP"),
@@ -66,6 +65,19 @@ func LogActionResult() {
 	}
 	if len(langs) > 0 {
 		request.Tags["language"] = langs[0]
+		request.Tags["languages"] = langs
+	}
+
+	target := os.Getenv("TARGET")
+	if len(langs) > 0 {
+		if langs[0] == "docs" {
+			target = "docs"
+		} else {
+			target = "sdk"
+		}
+	}
+	if target != "" {
+		request.Tags["target_type"] = target
 	}
 
 	if os.Getenv("GITHUB_REPOSITORY") != "" {
