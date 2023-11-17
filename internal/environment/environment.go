@@ -20,11 +20,9 @@ type Action string
 const (
 	ActionValidate           Action = "validate"
 	ActionGenerate           Action = "generate"
-	ActionGenerateDocs       Action = "generate-docs"
 	ActionSuggest            Action = "suggest"
 	ActionFinalize           Action = "finalize"
 	ActionFinalizeSuggestion Action = "finalize-suggestion"
-	ActionFinalizeDocs       Action = "finalize-docs"
 	ActionRelease            Action = "release"
 	ActionLog                Action = "log-result"
 )
@@ -130,6 +128,16 @@ func GetOpenAPIDocOutput() string {
 
 func GetLanguages() string {
 	return os.Getenv("INPUT_LANGUAGES")
+}
+
+func GetDocsLanguages() string {
+	return os.Getenv("INPUT_DOCS_LANGUAGES")
+}
+
+func IsDocsGeneration() bool {
+	languages := os.Getenv("INPUT_LANGUAGES")
+	// Rough check to ensure target is docs, we could parse this further.
+	return strings.Contains(languages, "docs")
 }
 
 func CreateGitRelease() bool {

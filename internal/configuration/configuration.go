@@ -108,6 +108,10 @@ func GetAndValidateLanguages(checkLangSupported bool) (map[string]string, error)
 	}
 
 	for l := range langCfgs {
+		if l == "docs" {
+			return langCfgs, nil
+		}
+
 		if !slices.Contains(supportedLangs, l) {
 			return nil, fmt.Errorf("unsupported language: %s", l)
 		}
