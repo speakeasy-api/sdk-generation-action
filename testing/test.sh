@@ -33,7 +33,6 @@ run_action
 
 rm output.txt || true
 INPUT_ACTION="generate"
-# INPUT_ACTION="generate-docs"
 run_action
 
 if [ "$RUN_FINALIZE" = "true" ]; then
@@ -42,6 +41,5 @@ if [ "$RUN_FINALIZE" = "true" ]; then
     export INPUT_BRANCH_NAME=${BRANCH_NAME}
     export INPUT_PREVIOUS_GEN_VERSION=${PREVIOUS_GEN_VERSION}
     INPUT_ACTION="finalize"
-    # INPUT_ACTION="finalize-docs"
     run_action
 fi
