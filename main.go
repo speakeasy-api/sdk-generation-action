@@ -50,7 +50,7 @@ func main() {
 	case environment.ActionRelease:
 		err = actions.Release()
 	case environment.ActionLog:
-		err = actions.LogActionResult()
+		actions.LogActionResult()
 	}
 
 	if err != nil {

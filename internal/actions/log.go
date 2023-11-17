@@ -29,10 +29,11 @@ type logProxyEntry struct {
 	Tags     map[string]interface{} `json:"tags"`
 }
 
-func LogActionResult() error {
+func LogActionResult() {
 	key := os.Getenv("SPEAKEASY_API_KEY")
 	if key == "" {
-		return fmt.Errorf("no speakeasy api key available.")
+		fmt.Print("no SPEAKEASY_API_KEY provided.")
+		return
 	}
 
 	logLevel := logProxyLevelInfo
@@ -77,7 +78,8 @@ func LogActionResult() error {
 
 	body, err := json.Marshal(&request)
 	if err != nil {
-		return err
+		fmt.Print("failure sending log to speakeasy.")
+		return
 	}
 
 	baseURL := os.Getenv("SPEAKEASY_SERVER_URL")
@@ -87,7 +89,8 @@ func LogActionResult() error {
 
 	req, err := http.NewRequest("POST", baseURL+"/v1/log/proxy", bytes.NewBuffer(body))
 	if err != nil {
-		return err
+		fmt.Print("failure sending log to speakeasy.")
+		return
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -99,7 +102,7 @@ func LogActionResult() error {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Print("failure sending log to speakeasy.")
-		return nil
+		return
 	}
 
 	defer resp.Body.Close()
@@ -108,5 +111,5 @@ func LogActionResult() error {
 		fmt.Printf("failure sending log to speakeasy with status %s.", resp.Status)
 	}
 
-	return nil
+	return
 }
