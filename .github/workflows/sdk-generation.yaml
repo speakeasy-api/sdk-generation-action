@@ -198,7 +198,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: validate
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -229,7 +229,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -271,11 +271,12 @@ jobs:
       unity_directory: ${{ steps.generate.outputs.unity_directory }}
       branch_name: ${{ steps.generate.outputs.branch_name }}
       previous_gen_version: ${{ steps.generate.outputs.previous_gen_version }}
+      resolved_speakeasy_version: ${{ steps.generate.outputs.resolved_speakeasy_version }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: generate
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_location: ${{ inputs.openapi_doc_location }}
@@ -312,7 +313,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -323,7 +324,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -355,7 +356,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -366,7 +367,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -400,7 +401,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -411,7 +412,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -445,7 +446,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -456,7 +457,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -493,7 +494,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -504,7 +505,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -541,7 +542,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -552,7 +553,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -586,7 +587,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -597,7 +598,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -630,7 +631,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -641,7 +642,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -677,7 +678,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -688,7 +689,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -720,7 +721,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -731,7 +732,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -767,7 +768,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -778,7 +779,7 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -817,7 +818,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: Finalize
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         with:
           github_access_token: ${{ secrets.github_access_token }}
           languages: ${{ inputs.languages }}
@@ -847,7 +848,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -858,7 +859,6 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -903,7 +903,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -914,7 +914,6 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -955,7 +954,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -966,7 +965,6 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -1012,7 +1010,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -1023,7 +1021,6 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -1069,7 +1066,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -1080,7 +1077,6 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -1116,7 +1112,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -1127,7 +1123,6 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"
@@ -1161,7 +1156,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log
-        uses: speakeasy-api/sdk-generation-action@v14.35
+        uses: speakeasy-api/sdk-generation-action@v14
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -1172,7 +1167,6 @@ jobs:
           languages: ${{ inputs.languages }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          RESOLVED_SPEAKEASY_VERSION: ${{ needs.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET: "sdk"

@@ -48,8 +48,7 @@ func LogActionResult() error {
 		Source:   "gh_action",
 		Tags: map[string]interface{}{
 			"target":            os.Getenv("TARGET"),
-			"speakeasy_version": os.Getenv("RESOLVED_SPEAKEASY_VERSION"),
-			"gh_repo":           os.Getenv("GITHUB_REPOSITORY"),
+			"gh_repository":     fmt.Sprintf("https://github.com/%s", os.Getenv("GITHUB_REPOSITORY")),
 			"gh_action_version": os.Getenv("GH_ACTION_VERSION"),
 			"gh_action_step":    os.Getenv("GH_ACTION_STEP"),
 			"gh_action_result":  os.Getenv("GH_ACTION_RESULT"),
@@ -70,6 +69,10 @@ func LogActionResult() error {
 
 	if os.Getenv("GITHUB_REPOSITORY") != "" {
 		request.Tags["gh_organization"] = strings.Split(os.Getenv("GITHUB_REPOSITORY"), "/")[0]
+	}
+
+	if os.Getenv("RESOLVED_SPEAKEASY_VERSION") != "" {
+		request.Tags["speakeasy_version"] = os.Getenv("RESOLVED_SPEAKEASY_VERSION")
 	}
 
 	body, err := json.Marshal(&request)
