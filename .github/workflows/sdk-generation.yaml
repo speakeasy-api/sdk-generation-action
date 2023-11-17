@@ -384,7 +384,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-terraform:
     if: ${{ needs.generate.outputs.terraform_regenerated == 'true' }}
     name: Compile Terraform Provider
@@ -429,7 +429,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-java:
     if: ${{ needs.generate.outputs.java_regenerated == 'true' }}
     name: Compile Java SDK
@@ -474,7 +474,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-python:
     if: ${{ needs.generate.outputs.python_regenerated == 'true' }}
     name: Compile Python SDK
@@ -522,7 +522,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-typescript:
     if: ${{ needs.generate.outputs.typescript_regenerated == 'true' }}
     name: Compile Typescript SDK
@@ -570,7 +570,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-php:
     if: ${{ needs.generate.outputs.php_regenerated == 'true' }}
     name: Compile PHP SDK
@@ -615,7 +615,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-ruby:
     if: ${{ needs.generate.outputs.ruby_regenerated == 'true' }}
     name: Compile Ruby SDK
@@ -659,7 +659,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-csharp:
     if: ${{ needs.generate.outputs.csharp_regenerated == 'true' }}
     name: Compile C# SDK
@@ -706,7 +706,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-swift:
     if: ${{ needs.generate.outputs.swift_regenerated == 'true' }}
     name: Compile Swift SDK
@@ -749,7 +749,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-unity:
     if: ${{ needs.generate.outputs.unity_regenerated == 'true' }}
     name: Compile Unity SDK
@@ -796,7 +796,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-docs:
     if: ${{ needs.generate.outputs.docs_regenerated == 'true' }}
     name: Compile SDK Docs
@@ -843,7 +843,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "docs"
+          TARGET_TYPE: "docs"
   finalize:
     name: Finalize SDK
     if: |
@@ -978,7 +978,7 @@ jobs:
           GH_ACTION_RESULT: ${{ job.status }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   publish-npm:
     if: ${{ always() && needs.generate.outputs.typescript_regenerated == 'true' && inputs.publish_typescript == 'true' && inputs.mode != 'pr' }}
     name: Publish Typescript SDK
@@ -1029,7 +1029,7 @@ jobs:
           GH_ACTION_RESULT: ${{ job.status }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   publish-java:
     if: ${{ always() && needs.finalize.generate.java_regenerated == 'true' && inputs.publish_java == 'true' && inputs.mode != 'pr' }}
     name: Publish Java SDK
@@ -1085,7 +1085,7 @@ jobs:
           GH_ACTION_RESULT: ${{ job.status }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   publish-gems:
     if: ${{ always() && needs.generate.outputs.ruby_regenerated == 'true' && inputs.publish_ruby == 'true' && inputs.mode != 'pr' }}
     name: Publish Ruby SDK
@@ -1141,7 +1141,7 @@ jobs:
           GH_ACTION_RESULT: ${{ job.status }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   publish-nuget:
     if: ${{ always() && needs.generate.outputs.csharp_regenerated == 'true' && inputs.publish_csharp == 'true' && inputs.mode != 'pr' }}
     name: Publish C# SDK
@@ -1187,7 +1187,7 @@ jobs:
           GH_ACTION_RESULT: ${{ job.status }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   publish-packagist:
     if: ${{ always() && needs.generate.outputs.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
     name: Publish PHP SDK
@@ -1231,4 +1231,4 @@ jobs:
           GH_ACTION_RESULT: ${{ job.status }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
