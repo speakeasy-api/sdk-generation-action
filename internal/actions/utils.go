@@ -2,16 +2,10 @@ package actions
 
 import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
-	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 )
 
 func getReleasesDir() (string, error) {
 	releasesDir := "."
-	// For SDK Docs the Release Directory will always be root for now.
-	if environment.GetAction() == environment.ActionFinalizeDocs || environment.GetAction() == environment.ActionGenerateDocs {
-		return releasesDir, nil
-	}
-
 	// Find releases file
 	langs, err := configuration.GetAndValidateLanguages(false)
 	if err != nil {

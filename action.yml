@@ -66,9 +66,21 @@ inputs:
         - csharp # using default output of ./csharp-client-sdk
         - unity # using default output of ./unity-client-sdk
         - swift # using default output of ./swift-client-sdk
-
+        - docs # generation target for sdk docs
       If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo and generate the sdk
       in the root of the repo if not path is provided.
+    required: false
+  docs_languages:
+    description: |-
+      A yaml string containing a list of languages to generate SDK docs for example:
+      languages: |
+        - go
+        - python
+        - typescript
+        - java
+        - csharp
+        - unity
+        - curl
     required: false
   create_release:
     description: "Create a Github release on generation"
@@ -197,6 +209,10 @@ outputs:
     description: "true if the Swift SDK was regenerated"
   swift_directory:
     description: "The directory the Swift SDK was generated to"
+  docs_regenerated:
+    description: "true if SDK docs were regenerated"
+  docs_directory:
+    description: "The directory the SDK docs was generated to"
   branch_name:
     description: "The name of the branch the SDK was generated or spec was modified on"
   cli_output:
@@ -219,6 +235,7 @@ runs:
     - ${{ inputs.openapi_doc_location }}
     - ${{ inputs.github_access_token }}
     - ${{ inputs.languages }}
+    - ${{ inputs.docs_languages }}
     - ${{ inputs.create_release }}
     - ${{ inputs.publish_python }}
     - ${{ inputs.publish_typescript }}

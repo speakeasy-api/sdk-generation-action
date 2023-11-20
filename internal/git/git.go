@@ -164,7 +164,9 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action) (stri
 		prTitle = getGenPRTitle()
 	} else if action == environment.ActionFinalize || action == environment.ActionFinalizeSuggestion {
 		prTitle = getSuggestPRTitle()
-	} else if action == environment.ActionGenerateDocs || action == environment.ActionFinalizeDocs {
+	}
+
+	if environment.IsDocsGeneration() {
 		prTitle = getDocsPRTitle()
 	}
 
@@ -239,7 +241,9 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 		branchName = fmt.Sprintf("speakeasy-sdk-regen-%d", time.Now().Unix())
 	} else if action == environment.ActionSuggest {
 		branchName = fmt.Sprintf("speakeasy-openapi-suggestion-%d", time.Now().Unix())
-	} else if action == environment.ActionGenerateDocs {
+	}
+
+	if environment.IsDocsGeneration() {
 		branchName = fmt.Sprintf("speakeasy-sdk-docs-regen-%d", time.Now().Unix())
 	}
 
@@ -418,8 +422,13 @@ Based on:
 	} else {
 		logging.Info("Creating PR")
 
+		title := getGenPRTitle()
+		if environment.IsDocsGeneration() {
+			title = getDocsPRTitle()
+		}
+
 		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
-			Title:               github.String(getGenPRTitle()),
+			Title:               github.String(title),
 			Body:                github.String(body),
 			Head:                github.String(branchName),
 			Base:                github.String(environment.GetRef()),

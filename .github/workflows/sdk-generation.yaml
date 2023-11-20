@@ -65,6 +65,19 @@ on:
           If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo
         required: true
         type: string
+      docs_languages:
+        description: |-
+          A yaml string containing a list of languages to generate SDK docs for example:
+          languages: |
+            - go
+            - python
+            - typescript
+            - java
+            - csharp
+            - unity
+            - curl
+        required: false
+        type: string
       create_release:
         description: "Create a Github release on generation if using 'direct' mode or prepare a release if using 'pr' mode"
         default: "true"
@@ -243,7 +256,6 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ steps.validate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
   generate:
     name: Generate SDK
     runs-on: ubuntu-latest
@@ -269,6 +281,8 @@ jobs:
       swift_directory: ${{ steps.generate.outputs.swift_directory }}
       unity_regenerated: ${{ steps.generate.outputs.unity_regenerated }}
       unity_directory: ${{ steps.generate.outputs.unity_directory }}
+      docs_regenerated: ${{ steps.generate.outputs.docs_regenerated }}
+      docs_directory: ${{ steps.generate.outputs.docs_directory }}
       branch_name: ${{ steps.generate.outputs.branch_name }}
       previous_gen_version: ${{ steps.generate.outputs.previous_gen_version }}
       resolved_speakeasy_version: ${{ steps.generate.outputs.resolved_speakeasy_version }}
@@ -286,6 +300,7 @@ jobs:
           overlay_docs: ${{ inputs.overlay_docs }}
           github_access_token: ${{ secrets.github_access_token }}
           languages: ${{ inputs.languages }}
+          docs_languages: ${{ inputs.docs_languages }}
           create_release: ${{ inputs.create_release }}
           publish_python: ${{ inputs.publish_python }}
           publish_typescript: ${{ inputs.publish_typescript }}
@@ -327,7 +342,6 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ steps.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
   compile-go:
     if: ${{ needs.generate.outputs.go_regenerated == 'true' }}
     name: Compile Go SDK
@@ -370,7 +384,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-terraform:
     if: ${{ needs.generate.outputs.terraform_regenerated == 'true' }}
     name: Compile Terraform Provider
@@ -415,7 +429,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-java:
     if: ${{ needs.generate.outputs.java_regenerated == 'true' }}
     name: Compile Java SDK
@@ -460,7 +474,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-python:
     if: ${{ needs.generate.outputs.python_regenerated == 'true' }}
     name: Compile Python SDK
@@ -508,7 +522,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-typescript:
     if: ${{ needs.generate.outputs.typescript_regenerated == 'true' }}
     name: Compile Typescript SDK
@@ -556,7 +570,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-php:
     if: ${{ needs.generate.outputs.php_regenerated == 'true' }}
     name: Compile PHP SDK
@@ -601,7 +615,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-ruby:
     if: ${{ needs.generate.outputs.ruby_regenerated == 'true' }}
     name: Compile Ruby SDK
@@ -645,7 +659,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-csharp:
     if: ${{ needs.generate.outputs.csharp_regenerated == 'true' }}
     name: Compile C# SDK
@@ -692,7 +706,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-swift:
     if: ${{ needs.generate.outputs.swift_regenerated == 'true' }}
     name: Compile Swift SDK
@@ -735,7 +749,7 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   compile-unity:
     if: ${{ needs.generate.outputs.unity_regenerated == 'true' }}
     name: Compile Unity SDK
@@ -782,7 +796,54 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
+  compile-docs:
+    if: ${{ needs.generate.outputs.docs_regenerated == 'true' }}
+    name: Compile SDK Docs
+    runs-on: ubuntu-latest
+    needs: generate
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.generate.outputs.branch_name }}
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.x"
+          registry-url: "https://registry.npmjs.org"
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - run: pnpm i && pnpm run build
+        working-directory: ${{ needs.generate.outputs.docs_directory }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "Compilation of Docs Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log-result
+        uses: speakeasy-api/sdk-generation-action@v14
+        if: always()
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log-result
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          languages: ${{ inputs.languages }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ needs.generate.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v14"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET_TYPE: "docs"
   finalize:
     name: Finalize SDK
     if: |
@@ -798,6 +859,7 @@ jobs:
       needs.compile-ruby.result != 'skipped' ||
       needs.compile-csharp.result != 'skipped' ||
       needs.compile-swift.result != 'skipped' ||
+      needs.compile-docs.result != 'skipped' ||
       needs.compile-unity.result != 'skipped')
     needs:
       - generate
@@ -811,6 +873,7 @@ jobs:
       - compile-csharp
       - compile-swift
       - compile-unity
+      - compile-docs
     runs-on: ubuntu-latest
     outputs:
       commit_hash: ${{ steps.finalize.outputs.commit_hash }}
@@ -861,7 +924,6 @@ jobs:
           GH_ACTION_RESULT: ${{ job.status }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
   publish-pypi:
     if: ${{ always() && needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' && inputs.mode != 'pr' }}
     name: Publish Python SDK
@@ -916,7 +978,7 @@ jobs:
           GH_ACTION_RESULT: ${{ job.status }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   publish-npm:
     if: ${{ always() && needs.generate.outputs.typescript_regenerated == 'true' && inputs.publish_typescript == 'true' && inputs.mode != 'pr' }}
     name: Publish Typescript SDK
@@ -967,7 +1029,7 @@ jobs:
           GH_ACTION_RESULT: ${{ job.status }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   publish-java:
     if: ${{ always() && needs.finalize.generate.java_regenerated == 'true' && inputs.publish_java == 'true' && inputs.mode != 'pr' }}
     name: Publish Java SDK
@@ -1023,7 +1085,7 @@ jobs:
           GH_ACTION_RESULT: ${{ job.status }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   publish-gems:
     if: ${{ always() && needs.generate.outputs.ruby_regenerated == 'true' && inputs.publish_ruby == 'true' && inputs.mode != 'pr' }}
     name: Publish Ruby SDK
@@ -1079,7 +1141,7 @@ jobs:
           GH_ACTION_RESULT: ${{ job.status }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   publish-nuget:
     if: ${{ always() && needs.generate.outputs.csharp_regenerated == 'true' && inputs.publish_csharp == 'true' && inputs.mode != 'pr' }}
     name: Publish C# SDK
@@ -1125,7 +1187,7 @@ jobs:
           GH_ACTION_RESULT: ${{ job.status }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
   publish-packagist:
     if: ${{ always() && needs.generate.outputs.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
     name: Publish PHP SDK
@@ -1169,4 +1231,4 @@ jobs:
           GH_ACTION_RESULT: ${{ job.status }}
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
-          TARGET: "sdk"
+          TARGET_TYPE: "sdk"
