@@ -40,7 +40,7 @@ var (
 )
 
 type Git interface {
-	CheckDirDirty(dir string, ignoreMap map[string]string) (bool, error)
+	CheckDirDirty(dir string, ignoreMap map[string]string) (bool, string, error)
 }
 
 func Generate(g Git) (*GenerationInfo, map[string]string, error) {
@@ -158,8 +158,10 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 			outputs[fmt.Sprintf("%s_directory", lang)] = dirForOutput
 
-			dirty, err := g.CheckDirDirty(dir, map[string]string{
-				previousVersion: newVersion,
+			dirty, dirtyMsg, err := g.CheckDirDirty(dir, map[string]string{
+				sdkVersion:                              newVersion,
+				cfg.Config.Management.GenerationVersion: generationVersion.String(),
+				cfg.Config.Management.DocChecksum:       docChecksum,
 			})
 			if err != nil {
 				return nil, outputs, err
@@ -167,6 +169,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 			if dirty {
 				langGenerated[lang] = true
+				fmt.Printf("Regenerating %s SDK resulted in significant changes %s\n", lang, dirtyMsg)
 			} else {
 				langCfg.Version = sdkVersion
 				cfg.Config.Languages[lang] = langCfg

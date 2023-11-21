@@ -2,69 +2,37 @@ package git
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
+	diffParser "github.com/speakeasy-api/git-diff-parser"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 )
 
-var (
-	fileBoundaryRegex  = regexp.MustCompile(`(?m)^diff --git a\/.*? b\/.*?$`)
-	fileNameRegex      = regexp.MustCompile(`(?m)^--- a\/(.*?)$`)
-	versionChangeRegex = regexp.MustCompile(`_?(sdk|gen|Gen|SDK)_?[vV]ersion`)
-	userAgentRegex     = regexp.MustCompile(`speakeasy-sdk/`)
-)
-
-func IsGitDiffSignificant(diff string, ignoreChangePatterns map[string]string) bool {
+func IsGitDiffSignificant(diff string, ignoreChangePatterns map[string]string) (bool, string, error) {
 	if environment.ForceGeneration() {
-		return true
+		return true, "", nil
 	}
 
-	diffs := fileBoundaryRegex.Split(diff, -1)
-
-	significantChanges := false
-
-outer:
-	for _, diff := range diffs {
-		if strings.TrimSpace(diff) == "" {
-			continue
+	isSignificant, signifanceMsg, err := diffParser.SignificantChange(diff, func(diff *diffParser.FileDiff, change *diffParser.ContentChange) (bool, string) {
+		if diff.ToFile == "gen.yaml" || diff.ToFile == "RELEASES.md" {
+			return false, ""
 		}
-
-		matches := fileNameRegex.FindStringSubmatch(diff)
-		if len(matches) != 2 {
-			continue
+		if change.Type == diffParser.ContentChangeTypeNOOP {
+			return false, ""
 		}
-
-		filename := fileNameRegex.FindStringSubmatch(diff)[1]
-		if strings.Contains(filename, "gen.yaml") {
-			continue
-		}
-
-		lines := strings.Split(diff, "\n")
-		for i, line := range lines {
-			isAddition := strings.HasPrefix(line, "+ ") || strings.HasPrefix(line, "+\t")
-			isSpecificPatternIgnored := false
-			if i > 1 && isAddition && strings.HasPrefix(lines[i-1], "- ") {
-				priorLine := lines[i-1]
-				for fromPattern, toPattern := range ignoreChangePatterns {
-					if strings.Contains(priorLine, fromPattern) && strings.Contains(line, toPattern) {
-						isSpecificPatternIgnored = true
-						break
-					}
-				}
-
-			}
-			isNotVersionChange := !versionChangeRegex.MatchString(line)
-			isNotUAChange := !userAgentRegex.MatchString(line)
-
-			significantChanges = isAddition && isNotVersionChange && isNotUAChange && !isSpecificPatternIgnored
-
-			if significantChanges {
-				fmt.Println(line)
-				break outer
+		for pattern, replacement := range ignoreChangePatterns {
+			if strings.Contains(change.From, pattern) && strings.Contains(change.To, replacement) {
+				return false, ""
 			}
 		}
+		if diff.Type == diffParser.FileDiffTypeModified {
+			return true, fmt.Sprintf("significant diff %#v", diff)
+		}
+
+		return true, fmt.Sprintf("significant change %#v in %s", change, diff.ToFile)
+	})
+	if err != nil {
+		return true, "", fmt.Errorf("failed to parse diff: %w", err)
 	}
-
-	return significantChanges
+	return isSignificant, signifanceMsg, nil
 }
