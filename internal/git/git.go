@@ -80,19 +80,19 @@ func (g *Git) CloneRepo() error {
 	return nil
 }
 
-func (g *Git) CheckDirDirty(dir string, ignoreChangePatterns map[string]string) (bool, error) {
+func (g *Git) CheckDirDirty(dir string, ignoreChangePatterns map[string]string) (bool, string, error) {
 	if g.repo == nil {
-		return false, fmt.Errorf("repo not cloned")
+		return false, "", fmt.Errorf("repo not cloned")
 	}
 
 	w, err := g.repo.Worktree()
 	if err != nil {
-		return false, fmt.Errorf("error getting worktree: %w", err)
+		return false, "", fmt.Errorf("error getting worktree: %w", err)
 	}
 
 	status, err := w.Status()
 	if err != nil {
-		return false, fmt.Errorf("error getting status: %w", err)
+		return false, "", fmt.Errorf("error getting status: %w", err)
 	}
 
 	cleanedDir := path.Clean(dir)
@@ -134,19 +134,19 @@ func (g *Git) CheckDirDirty(dir string, ignoreChangePatterns map[string]string) 
 	}
 
 	if fileChangesFound {
-		return true, nil
+		return true, "new file found", nil
 	}
 
 	if !changesFound {
-		return false, nil
+		return false, "", nil
 	}
 
-	diffOutput, err := runGitCommand("diff")
+	diffOutput, err := runGitCommand("diff", "--word-diff=porcelain")
 	if err != nil {
-		return false, fmt.Errorf("error running git diff: %w", err)
+		return false, "", fmt.Errorf("error running git diff: %w", err)
 	}
 
-	return IsGitDiffSignificant(diffOutput, ignoreChangePatterns), nil
+	return IsGitDiffSignificant(diffOutput, ignoreChangePatterns)
 }
 
 func (g *Git) FindExistingPR(branchName string, action environment.Action) (string, *github.PullRequest, error) {

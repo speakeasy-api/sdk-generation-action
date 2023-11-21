@@ -159,7 +159,8 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 			outputs[fmt.Sprintf("%s_directory", lang)] = dirForOutput
 
 			dirty, err := g.CheckDirDirty(dir, map[string]string{
-				previousVersion: newVersion,
+				previousVersion:          newVersion,
+				globalPreviousGenVersion: generationVersion.String(),
 			})
 			if err != nil {
 				return nil, outputs, err

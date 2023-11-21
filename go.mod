@@ -7,6 +7,7 @@ require (
 	github.com/google/go-github/v54 v54.0.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/pb33f/libopenapi v0.13.8
+	github.com/speakeasy-api/git-diff-parser v0.0.3
 	github.com/speakeasy-api/sdk-gen-config v1.2.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
