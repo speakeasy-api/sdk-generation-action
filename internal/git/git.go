@@ -102,6 +102,7 @@ func (g *Git) CheckDirDirty(dir string, ignoreChangePatterns map[string]string) 
 
 	changesFound := false
 	fileChangesFound := false
+	newFiles := []string{}
 
 	for f, s := range status {
 		if strings.Contains(f, "gen.yaml") {
@@ -115,6 +116,7 @@ func (g *Git) CheckDirDirty(dir string, ignoreChangePatterns map[string]string) 
 			case git.Deleted:
 				fallthrough
 			case git.Untracked:
+				newFiles = append(newFiles, f)
 				fileChangesFound = true
 			case git.Modified:
 				fallthrough
@@ -134,7 +136,7 @@ func (g *Git) CheckDirDirty(dir string, ignoreChangePatterns map[string]string) 
 	}
 
 	if fileChangesFound {
-		return true, "new file found", nil
+		return true, fmt.Sprintf("new file found: %#v", newFiles), nil
 	}
 
 	if !changesFound {
