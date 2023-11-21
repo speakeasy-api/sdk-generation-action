@@ -232,6 +232,10 @@ func Suggest(docPath, maxSuggestions, docOutputPath string) (string, error) {
 }
 
 func Generate(docPath, lang, outputDir, installationURL string, published, outputTests bool, repoURL, repoSubDirectory string) error {
+	outputDir, err := filepath.Abs(outputDir)
+	if err != nil {
+		return err
+	}
 	args := []string{
 		"generate",
 		"sdk",
