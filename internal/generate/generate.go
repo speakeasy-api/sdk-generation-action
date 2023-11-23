@@ -136,6 +136,14 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 				if err := cli.GenerateDocs(docPath, strings.Join(docsLangs, ","), outputDir); err != nil {
 					return nil, outputs, err
 				}
+			} else if lang == "terraform" {
+				if err := cli.Generate(docPath, lang, outputDir, installationURL, published, environment.ShouldOutputTests(), repoURL, repoSubdirectory); err != nil {
+					return nil, outputs, err
+				}
+				// Also trigger "go generate ./..." to regenerate docs
+				if err = cli.TriggerGoGenerate(); err != nil {
+					return nil, outputs, err
+				}
 			} else {
 				if err := cli.Generate(docPath, lang, outputDir, installationURL, published, environment.ShouldOutputTests(), repoURL, repoSubdirectory); err != nil {
 					return nil, outputs, err
