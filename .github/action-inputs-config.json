@@ -49,9 +49,5 @@
   {
     "name": "publish_terraform",
     "language": "terraform"
-  },
-  {
-    "name": "dotnet_version",
-    "language": "csharp"
   }
 ]
