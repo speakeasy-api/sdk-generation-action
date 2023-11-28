@@ -80,5 +80,9 @@
     "name": "nuget_api_key",
     "secret_name": "NUGET_API_KEY",
     "language": "csharp"
+  },
+  {
+    "name": "slack_webhook_url",
+    "secret_name": "SLACK_WEBHOOK_URL"
   }
 ]
