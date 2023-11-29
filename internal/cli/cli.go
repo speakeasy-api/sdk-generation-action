@@ -2,13 +2,14 @@ package cli
 
 import (
 	"fmt"
-	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 
 	"github.com/hashicorp/go-version"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
@@ -278,8 +279,8 @@ func Generate(docPath, lang, outputDir, installationURL string, published, outpu
 
 func GenerateDocs(docPath, langs, outputDir string) error {
 	args := []string{
-		"docs",
 		"generate",
+		"docs",
 		"-s",
 		docPath,
 		"-l",
