@@ -583,6 +583,15 @@ func (g *Git) MergeBranch(branchName string) (string, error) {
 
 	output, err := runGitCommand("merge", branchName)
 	if err != nil {
+		// This can happen if a "compile" has changed something unexpectedly. Add a "git status --porcelain" into the action output
+		debugOutput, _ := runGitCommand("status", "--porcelain")
+		if len(debugOutput) > 0 {
+			logging.Info("git status\n%s", debugOutput)
+		}
+		debugOutput, _ = runGitCommand("diff")
+		if len(debugOutput) > 0 {
+			logging.Info("git diff\n%s", debugOutput)
+		}
 		return "", fmt.Errorf("error merging branch: %w", err)
 	}
 
