@@ -1,8 +1,6 @@
 package document
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"net/url"
 	"os"
@@ -23,20 +21,20 @@ type file struct {
 	Token    string `yaml:"auth_token"`
 }
 
-func GetOpenAPIFileInfo() (string, string, string, error) {
+func GetOpenAPIFileInfo() (string, string, error) {
 	// TODO OPENAPI_DOC_LOCATION is deprecated and should be removed in the future
 	openapiFiles, err := getFiles(environment.GetOpenAPIDocs(), environment.GetOpenAPIDocLocation())
 	if err != nil {
-		return "", "", "", err
+		return "", "", err
 	}
 
 	if len(openapiFiles) > 1 && !cli.IsAtLeastVersion(cli.MergeVersion) {
-		return "", "", "", fmt.Errorf("multiple openapi files are only supported in speakeasy version %s or higher", cli.MergeVersion.String())
+		return "", "", fmt.Errorf("multiple openapi files are only supported in speakeasy version %s or higher", cli.MergeVersion.String())
 	}
 
 	resolvedOpenAPIFiles, err := resolveFiles(openapiFiles, "openapi")
 	if err != nil {
-		return "", "", "", err
+		return "", "", err
 	}
 
 	basePath := ""
@@ -49,34 +47,34 @@ func GetOpenAPIFileInfo() (string, string, string, error) {
 		basePath = filepath.Dir(resolvedOpenAPIFiles[0])
 		filePath, err = mergeFiles(resolvedOpenAPIFiles)
 		if err != nil {
-			return "", "", "", err
+			return "", "", err
 		}
 	}
 
 	overlayFiles, err := getFiles(environment.GetOverlayDocs(), "")
 	if err != nil {
-		return "", "", "", err
+		return "", "", err
 	}
 
 	if len(overlayFiles) > 1 && !cli.IsAtLeastVersion(cli.OverlayVersion) {
-		return "", "", "", fmt.Errorf("overlay files are only supported in speakeasy version %s or higher", cli.OverlayVersion.String())
+		return "", "", fmt.Errorf("overlay files are only supported in speakeasy version %s or higher", cli.OverlayVersion.String())
 	}
 
 	resolvedOverlayFiles, err := resolveFiles(overlayFiles, "overlay")
 	if err != nil {
-		return "", "", "", err
+		return "", "", err
 	}
 
 	if len(resolvedOverlayFiles) > 0 {
 		filePath, err = applyOverlay(filePath, resolvedOverlayFiles)
 		if err != nil {
-			return "", "", "", err
+			return "", "", err
 		}
 	}
 
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to read openapi file: %w", err)
+		return "", "", fmt.Errorf("failed to read openapi file: %w", err)
 	}
 
 	doc, err := libopenapi.NewDocumentWithConfiguration(data, &datamodel.DocumentConfiguration{
@@ -87,25 +85,23 @@ func GetOpenAPIFileInfo() (string, string, string, error) {
 		IgnoreArrayCircularReferences:       true,
 	})
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to parse openapi file: %w", err)
+		return "", "", fmt.Errorf("failed to parse openapi file: %w", err)
 	}
 
 	model, errs := doc.BuildV3Model()
 	if len(errs) > 0 {
-		return "", "", "", fmt.Errorf("failed to build openapi model: %w", errs[0])
+		return "", "", fmt.Errorf("failed to build openapi model: %w", errs[0])
 	}
 	if model == nil {
-		return "", "", "", fmt.Errorf("failed to build openapi model: model is nil")
+		return "", "", fmt.Errorf("failed to build openapi model: model is nil")
 	}
 
-	hash := md5.Sum(data)
-	checksum := hex.EncodeToString(hash[:])
 	version := "0.0.0"
 	if model.Model.Info != nil {
 		version = model.Model.Info.Version
 	}
 
-	return filePath, checksum, version, nil
+	return filePath, version, nil
 }
 
 func mergeFiles(files []string) (string, error) {

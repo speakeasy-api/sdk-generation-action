@@ -2,57 +2,14 @@ package configuration
 
 import (
 	"fmt"
-	"path"
 	"path/filepath"
 	"strings"
 
-	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 )
-
-type genConfig struct {
-	ConfigDir string
-	Config    *config.Config
-}
-
-func LoadGeneratorConfigs(baseDir string, langConfigs map[string]string) (map[string]*genConfig, error) {
-	genConfigs := map[string]*genConfig{}
-
-	sharedCache := map[string]*config.Config{}
-
-	for lang, dir := range langConfigs {
-		configDir := path.Join(baseDir, "repo", dir)
-
-		if err := cli.ValidateConfig(configDir); err != nil {
-			return nil, err
-		}
-
-		cfg, ok := sharedCache[configDir]
-		if !ok {
-			fmt.Println("Loading generator config: ", configDir)
-
-			loaded, err := config.Load(configDir)
-			if err != nil {
-				return nil, err
-			}
-
-			cfg = loaded
-			sharedCache[configDir] = cfg
-		}
-
-		genConfig := genConfig{
-			ConfigDir: configDir,
-			Config:    cfg,
-		}
-
-		genConfigs[lang] = &genConfig
-	}
-
-	return genConfigs, nil
-}
 
 func GetAndValidateLanguages(checkLangSupported bool) (map[string]string, error) {
 	languages := environment.GetLanguages()

@@ -51,7 +51,7 @@ func Finalize() error {
 			return err
 		}
 
-		if err := g.CreateOrUpdatePR(branchName, *releaseInfo, environment.GetPreviousGenVersion(), pr); err != nil {
+		if err := g.CreateOrUpdatePR(branchName, *releaseInfo, pr); err != nil {
 			return err
 		}
 	case environment.ModeDirect:

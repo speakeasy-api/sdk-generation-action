@@ -20,7 +20,7 @@ func Validate() error {
 		return err
 	}
 
-	docPath, _, _, err := document.GetOpenAPIFileInfo()
+	docPath, _, err := document.GetOpenAPIFileInfo()
 	if err != nil {
 		return err
 	}
