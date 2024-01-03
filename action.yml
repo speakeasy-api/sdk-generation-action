@@ -168,106 +168,51 @@ inputs:
   gpg_fingerprint:
     description: "The GPG fingerprint to sign the release with"
     required: false
-  python_changelog:
-    description: "The changelog of updates since the last generation of the Python SDK"
-    required: false
-  typescript_changelog:
-    description: "The changelog of updates since the last generation of the Typescript SDK"
-    required: false
-  go_changelog:
-    description: "The changelog of updates since the last generation of the Go SDK"
-    required: false
-  java_changelog:
-    description: "The changelog of updates since the last generation of the Java SDK"
-    required: false
-  terraform_changelog:
-    description: "The changelog of updates since the last generation of the Terraform Provider"
-    required: false
-  php_changelog:
-    description: "The changelog of updates since the last generation of the PHP SDK"
-    required: false
-  ruby_changelog:
-    description: "The changelog of updates since the last generation of the Ruby SDK"
-    required: false
-  csharp_changelog:
-    description: "The changelog of updates since the last generation of the C# SDK"
-    required: false
-  unity_changelog:
-    description: "The changelog of updates since the last generation of the Unity SDK"
-    required: false
-  swift_changelog:
-    description: "The changelog of updates since the last generation of the Swift SDK"
-    required: false
-  docs_changelog:
-    description: "The changelog of updates since the last generation of the SDK docs"
-    required: false
 outputs:
   python_regenerated:
     description: "true if the Python SDK was regenerated"
   python_directory:
     description: "The directory the Python SDK was generated to"
-  python_changelog:
-    description: "The changelog of updates since the last generation of the Python SDK"
   typescript_regenerated:
     description: "true if the Typescript SDK was regenerated"
   typescript_directory:
     description: "The directory the Typescript SDK was generated to"
-  typescript_changelog:
-    description: "The changelog of updates since the last generation of the Typescript SDK"
   go_regenerated:
     description: "true if the Go SDK was regenerated"
   go_directory:
     description: "The directory the Go SDK was generated to"
-  go_changelog:
-    description: "The changelog of updates since the last generation of the Go SDK"
   java_regenerated:
     description: "true if the Java SDK was regenerated"
   java_directory:
     description: "The directory the Java SDK was generated to"
-  java_changelog:
-    description: "The changelog of updates since the last generation of the Java SDK"
   terraform_regenerated:
     description: "true if the Terraform Provider was regenerated"
   terraform_directory:
     description: "The directory the Terraform Provider was generated to"
-  terraform_changelog:
-    description: "The changelog of updates since the last generation of the Terraform Provider"
   php_regenerated:
     description: "true if the PHP SDK was regenerated"
   php_directory:
     description: "The directory the PHP SDK was generated to"
-  php_changelog:
-    description: "The changelog of updates since the last generation of the PHP SDK"
   ruby_regenerated:
     description: "true if the Ruby SDK was regenerated"
   ruby_directory:
     description: "The directory the Ruby SDK was generated to"
-  ruby_changelog:
-    description: "The changelog of updates since the last generation of the Ruby SDK"
   csharp_regenerated:
     description: "true if the C# SDK was regenerated"
   csharp_directory:
     description: "The directory the C# SDK was generated to"
-  csharp_changelog:
-    description: "The changelog of updates since the last generation of the C# SDK"
   unity_regenerated:
     description: "true if the Unity SDK was regenerated"
   unity_directory:
     description: "The directory the Unity SDK was generated to"
-  unity_changelog:
-    description: "The changelog of updates since the last generation of the Unity SDK"
   swift_regenerated:
     description: "true if the Swift SDK was regenerated"
   swift_directory:
     description: "The directory the Swift SDK was generated to"
-  swift_changelog:
-    description: "The changelog of updates since the last generation of the Swift SDK"
   docs_regenerated:
     description: "true if SDK docs were regenerated"
   docs_directory:
     description: "The directory the SDK docs was generated to"
-  docs_changelog:
-    description: "The changelog of updates since the last generation of the SDK docs"
   branch_name:
     description: "The name of the branch the SDK was generated or spec was modified on"
   cli_output:
@@ -312,14 +257,3 @@ runs:
     - ${{ inputs.output_tests }}
     - ${{ inputs.working_directory }}
     - ${{ inputs.gpg_fingerprint }}
-    - ${{ inputs.python_changelog }}
-    - ${{ inputs.typescript_changelog }}
-    - ${{ inputs.go_changelog }}
-    - ${{ inputs.java_changelog }}
-    - ${{ inputs.terraform_changelog }}
-    - ${{ inputs.php_changelog }}
-    - ${{ inputs.ruby_changelog }}
-    - ${{ inputs.csharp_changelog }}
-    - ${{ inputs.unity_changelog }}
-    - ${{ inputs.swift_changelog }}
-    - ${{ inputs.docs_changelog }}
