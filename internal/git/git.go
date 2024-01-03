@@ -21,6 +21,8 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/utils/merkletrie"
+	genConfig "github.com/speakeasy-api/sdk-gen-config"
+	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
@@ -330,77 +332,75 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	return commitHash.String(), nil
 }
 
-func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo releases.ReleasesInfo, pr *github.PullRequest) error {
+func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo releases.ReleasesInfo, previousGenVersion string, pr *github.PullRequest) error {
 	var changelog string
 	var err error
 
-	// if cli.IsAtLeastVersion(cli.GranularChangeLogVersion) {
-	// var previousGenVersions []string
+	if cli.IsAtLeastVersion(cli.GranularChangeLogVersion) {
+		var previousGenVersions []string
 
-	// if previousGenVersion != "" {
-	// 	previousGenVersions = strings.Split(previousGenVersion, ";")
-	// }
+		if previousGenVersion != "" {
+			previousGenVersions = strings.Split(previousGenVersion, ";")
+		}
 
-	for language := range releaseInfo.LanguagesGenerated {
-		versionChangelog := "" // TODO: need to get this rom an artifact
+		for language, info := range releaseInfo.LanguagesGenerated {
+			genPath := path.Join(environment.GetWorkspace(), "repo", info.Path)
 
-		// genPath := path.Join(environment.GetWorkspace(), "repo", info.Path)
+			var targetVersions map[string]string
 
-		// var targetVersions map[string]string
+			cfg, err := genConfig.Load(genPath)
+			if err != nil {
+				logging.Debug("failed to load gen config for retrieving granular versions for changelog at path %s: %v", genPath, err)
+				continue
+			} else {
+				ok := false
+				targetVersions, ok = cfg.LockFile.Features[language]
+				if !ok {
+					logging.Debug("failed to find language %s in gen config for retrieving granular versions for changelog at path %s", language, genPath)
+					continue
+				}
+			}
 
-		// cfg, err := genConfig.Load(genPath)
-		// if err != nil {
-		// 	logging.Debug("failed to load gen config for retrieving granular versions for changelog at path %s: %v", genPath, err)
-		// 	continue
-		// } else {
-		// 	ok := false
-		// 	targetVersions, ok = cfg.Features[language]
-		// 	if !ok {
-		// 		logging.Debug("failed to find language %s in gen config for retrieving granular versions for changelog at path %s", language, genPath)
-		// 		continue
-		// 	}
-		// }
+			var previousVersions map[string]string
 
-		// var previousVersions map[string]string
+			if len(previousGenVersions) > 0 {
+				for _, previous := range previousGenVersions {
+					langVersions := strings.Split(previous, ":")
 
-		// if len(previousGenVersions) > 0 {
-		// 	for _, previous := range previousGenVersions {
-		// 		langVersions := strings.Split(previous, ":")
+					if len(langVersions) == 2 && langVersions[0] == language {
+						previousVersions = map[string]string{}
 
-		// 		if len(langVersions) == 2 && langVersions[0] == language {
-		// 			previousVersions = map[string]string{}
+						pairs := strings.Split(langVersions[1], ",")
+						for i := 0; i < len(pairs); i += 2 {
+							previousVersions[pairs[i]] = pairs[i+1]
+						}
+					}
+				}
+			}
 
-		// 			pairs := strings.Split(langVersions[1], ",")
-		// 			for i := 0; i < len(pairs); i += 2 {
-		// 				previousVersions[pairs[i]] = pairs[i+1]
-		// 			}
-		// 		}
-		// 	}
-		// }
+			versionChangelog, err := cli.GetChangelog(language, releaseInfo.GenerationVersion, "", targetVersions, previousVersions)
+			if err != nil {
+				return fmt.Errorf("failed to get changelog for language %s: %w", language, err)
+			}
 
-		// versionChangelog, err := cli.GetChangelog(language, releaseInfo.GenerationVersion, "", targetVersions, previousVersions)
-		// if err != nil {
-		// 	return fmt.Errorf("failed to get changelog for language %s: %w", language, err)
-		// }
+			changelog += fmt.Sprintf("\n\n## %s CHANGELOG\n\n%s", strings.ToUpper(language), versionChangelog)
+		}
 
-		changelog += fmt.Sprintf("\n\n## %s CHANGELOG\n\n%s", strings.ToUpper(language), versionChangelog)
+		if changelog != "" {
+			changelog = "\n" + changelog
+		}
 	}
 
-	if changelog != "" {
-		changelog = "\n" + changelog
+	if changelog == "" {
+		// Not using granular version, grab old changelog
+		changelog, err = cli.GetChangelog("", releaseInfo.GenerationVersion, previousGenVersion, nil, nil)
+		if err != nil {
+			return fmt.Errorf("failed to get changelog: %w", err)
+		}
+		if strings.TrimSpace(changelog) != "" {
+			changelog = "\n\n\n## CHANGELOG\n\n" + changelog
+		}
 	}
-	//}
-
-	// if changelog == "" {
-	// 	// Not using granular version, grab old changelog
-	// 	changelog, err = cli.GetChangelog("", releaseInfo.GenerationVersion, previousGenVersion, nil, nil)
-	// 	if err != nil {
-	// 		return fmt.Errorf("failed to get changelog: %w", err)
-	// 	}
-	// 	if strings.TrimSpace(changelog) != "" {
-	// 		changelog = "\n\n\n## CHANGELOG\n\n" + changelog
-	// 	}
-	// }
 
 	body := fmt.Sprintf(`# SDK update
 Based on:

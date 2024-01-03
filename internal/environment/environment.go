@@ -196,6 +196,10 @@ func GetRef() string {
 	return os.Getenv("GITHUB_REF")
 }
 
+func GetPreviousGenVersion() string {
+	return os.Getenv("INPUT_PREVIOUS_GEN_VERSION")
+}
+
 func GetWorkingDirectory() string {
 	return os.Getenv("INPUT_WORKING_DIRECTORY")
 }

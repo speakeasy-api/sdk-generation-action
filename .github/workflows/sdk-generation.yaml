@@ -263,26 +263,37 @@ jobs:
     outputs:
       python_regenerated: ${{ steps.generate.outputs.python_regenerated }}
       python_directory: ${{ steps.generate.outputs.python_directory }}
+      python_changelog: ${{ steps.generate.outputs.python_changelog }}
       typescript_regenerated: ${{ steps.generate.outputs.typescript_regenerated }}
       typescript_directory: ${{ steps.generate.outputs.typescript_directory }}
+      typescript_changelog: ${{ steps.generate.outputs.typescript_changelog }}
       go_regenerated: ${{ steps.generate.outputs.go_regenerated }}
       go_directory: ${{ steps.generate.outputs.go_directory }}
+      go_changelog: ${{ steps.generate.outputs.go_changelog }}
       terraform_regenerated: ${{ steps.generate.outputs.terraform_regenerated }}
       terraform_directory: ${{ steps.generate.outputs.terraform_directory }}
+      terraform_changelog: ${{ steps.generate.outputs.terraform_changelog }}
       java_regenerated: ${{ steps.generate.outputs.java_regenerated }}
       java_directory: ${{ steps.generate.outputs.java_directory }}
+      java_changelog: ${{ steps.generate.outputs.java_changelog }}
       php_regenerated: ${{ steps.generate.outputs.php_regenerated }}
       php_directory: ${{ steps.generate.outputs.php_directory }}
+      php_changelog: ${{ steps.generate.outputs.php_changelog }}
       ruby_regenerated: ${{ steps.generate.outputs.ruby_regenerated }}
       ruby_directory: ${{ steps.generate.outputs.ruby_directory }}
+      ruby_changelog: ${{ steps.generate.outputs.ruby_changelog }}
       csharp_regenerated: ${{ steps.generate.outputs.csharp_regenerated }}
       csharp_directory: ${{ steps.generate.outputs.csharp_directory }}
+      csharp_changelog: ${{ steps.generate.outputs.csharp_changelog }}
       swift_regenerated: ${{ steps.generate.outputs.swift_regenerated }}
       swift_directory: ${{ steps.generate.outputs.swift_directory }}
+      swift_changelog: ${{ steps.generate.outputs.swift_changelog }}
       unity_regenerated: ${{ steps.generate.outputs.unity_regenerated }}
       unity_directory: ${{ steps.generate.outputs.unity_directory }}
+      unity_changelog: ${{ steps.generate.outputs.unity_changelog }}
       docs_regenerated: ${{ steps.generate.outputs.docs_regenerated }}
       docs_directory: ${{ steps.generate.outputs.docs_directory }}
+      docs_changelog: ${{ steps.generate.outputs.docs_changelog }}
       branch_name: ${{ steps.generate.outputs.branch_name }}
       previous_gen_version: ${{ steps.generate.outputs.previous_gen_version }}
       resolved_speakeasy_version: ${{ steps.generate.outputs.resolved_speakeasy_version }}
@@ -899,6 +910,16 @@ jobs:
           branch_name: ${{ needs.generate.outputs.branch_name }}
           previous_gen_version: ${{ needs.generate.outputs.previous_gen_version }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          python_changelog: ${{ needs.generate.outputs.python_changelog }}
+          typescript_changelog: ${{ needs.generate.outputs.typescript_changelog }}
+          terraform_changelog: ${{ needs.generate.outputs.terraform_changelog }}
+          java_changelog: ${{ needs.generate.outputs.java_changelog }}
+          php_changelog: ${{ needs.generate.outputs.php_changelog }}
+          ruby_changelog: ${{ needs.generate.outputs.ruby_changelog }}
+          csharp_changelog: ${{ needs.generate.outputs.csharp_changelog }}
+          swift_changelog: ${{ needs.generate.outputs.swift_changelog }}
+          unity_changelog: ${{ needs.generate.outputs.unity_changelog }}
+          docs_changelog: ${{ needs.generate.outputs.docs_changelog }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
