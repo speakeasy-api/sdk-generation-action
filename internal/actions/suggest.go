@@ -21,8 +21,8 @@ func Suggest() error {
 		return err
 	}
 
-	if !cli.IsAtLeastVersion(cli.LLMSuggestionVersion) {
-		return fmt.Errorf("suggestion action requires at least version %s of the speakeasy CLI", cli.LLMSuggestionVersion)
+	if !cli.IsAtLeastVersion(cli.MinimumSupportedCLIVersion) {
+		return fmt.Errorf("suggestion action requires at least version %s of the speakeasy CLI", cli.MinimumSupportedCLIVersion)
 	}
 
 	docPath, _, err := document.GetOpenAPIFileInfo()

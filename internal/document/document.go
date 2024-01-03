@@ -28,10 +28,6 @@ func GetOpenAPIFileInfo() (string, string, error) {
 		return "", "", err
 	}
 
-	if len(openapiFiles) > 1 && !cli.IsAtLeastVersion(cli.MergeVersion) {
-		return "", "", fmt.Errorf("multiple openapi files are only supported in speakeasy version %s or higher", cli.MergeVersion.String())
-	}
-
 	resolvedOpenAPIFiles, err := resolveFiles(openapiFiles, "openapi")
 	if err != nil {
 		return "", "", err
@@ -54,10 +50,6 @@ func GetOpenAPIFileInfo() (string, string, error) {
 	overlayFiles, err := getFiles(environment.GetOverlayDocs(), "")
 	if err != nil {
 		return "", "", err
-	}
-
-	if len(overlayFiles) > 1 && !cli.IsAtLeastVersion(cli.OverlayVersion) {
-		return "", "", fmt.Errorf("overlay files are only supported in speakeasy version %s or higher", cli.OverlayVersion.String())
 	}
 
 	resolvedOverlayFiles, err := resolveFiles(overlayFiles, "overlay")

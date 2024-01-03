@@ -2,6 +2,7 @@ package actions
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
@@ -37,6 +38,10 @@ func FinalizeSuggestion() error {
 
 	if _, err = cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
 		return err
+	}
+
+	if !cli.IsAtLeastVersion(cli.MinimumSupportedCLIVersion) {
+		return fmt.Errorf("suggestion action requires at least version %s of the speakeasy CLI", cli.MinimumSupportedCLIVersion)
 	}
 
 	branchName, _, err = g.FindExistingPR(branchName, environment.ActionFinalize)

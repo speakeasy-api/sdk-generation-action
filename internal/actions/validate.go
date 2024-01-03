@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
@@ -18,6 +19,10 @@ func Validate() error {
 	resolvedVersion, err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g)
 	if err != nil {
 		return err
+	}
+
+	if !cli.IsAtLeastVersion(cli.MinimumSupportedCLIVersion) {
+		return fmt.Errorf("action requires at least version %s of the speakeasy CLI", cli.MinimumSupportedCLIVersion)
 	}
 
 	docPath, _, err := document.GetOpenAPIFileInfo()

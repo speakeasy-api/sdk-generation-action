@@ -15,16 +15,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 )
 
-var (
-	ChangeLogVersion               = version.Must(version.NewVersion("1.14.2"))
-	UnpublishedInstallationVersion = version.Must(version.NewVersion("1.16.0"))
-	MergeVersion                   = version.Must(version.NewVersion("1.21.3"))
-	RepoDetailsVersion             = version.Must(version.NewVersion("1.23.1"))
-	OutputTestsVersion             = version.Must(version.NewVersion("1.33.2"))
-	LLMSuggestionVersion           = version.Must(version.NewVersion("1.47.1"))
-	GranularChangeLogVersion       = version.Must(version.NewVersion("1.70.2"))
-	OverlayVersion                 = version.Must(version.NewVersion("1.112.1"))
-)
+var MinimumSupportedCLIVersion = version.Must(version.NewVersion("2.0.0")) // TODO update this to the correct version once it is released
 
 func IsAtLeastVersion(version *version.Version) bool {
 	sv, err := GetSpeakeasyVersion()
@@ -87,16 +78,6 @@ func GetSpeakeasyVersion() (*version.Version, error) {
 }
 
 func GetGenerationVersion() (*version.Version, error) {
-	sv, err := GetSpeakeasyVersion()
-	if err != nil {
-		return nil, err
-	}
-
-	// speakeasy versions before 1.14.2 don't support the generate sdk version command
-	if sv.LessThan(ChangeLogVersion) {
-		return sv, nil
-	}
-
 	out, err := runSpeakeasyCommand("generate", "sdk", "version")
 	if err != nil {
 		return nil, err
@@ -117,10 +98,6 @@ func GetGenerationVersion() (*version.Version, error) {
 }
 
 func GetLatestFeatureVersions(lang string) (map[string]string, error) {
-	if !IsAtLeastVersion(GranularChangeLogVersion) {
-		return nil, fmt.Errorf("speakeasy version %s does not support granular changelogs", GranularChangeLogVersion)
-	}
-
 	out, err := runSpeakeasyCommand("generate", "sdk", "version", "-l", lang)
 	if err != nil {
 		return nil, err
@@ -145,69 +122,39 @@ func GetLatestFeatureVersions(lang string) (map[string]string, error) {
 }
 
 func GetChangelog(lang, genVersion, previousGenVersion string, targetVersions map[string]string, previousVersions map[string]string) (string, error) {
-	if !IsAtLeastVersion(ChangeLogVersion) {
-		return "", nil
+	targetVersionsStrings := []string{}
+
+	for feature, targetVersion := range targetVersions {
+		targetVersionsStrings = append(targetVersionsStrings, fmt.Sprintf("%s,%s", feature, targetVersion))
 	}
 
-	if IsAtLeastVersion(GranularChangeLogVersion) && lang != "" {
-		targetVersionsStrings := []string{}
-
-		for feature, targetVersion := range targetVersions {
-			targetVersionsStrings = append(targetVersionsStrings, fmt.Sprintf("%s,%s", feature, targetVersion))
-		}
-
-		args := []string{
-			"generate",
-			"sdk",
-			"changelog",
-			"-r",
-			"-l",
-			lang,
-			"-t",
-			strings.Join(targetVersionsStrings, ","),
-		}
-
-		if previousVersions != nil {
-			previosVersionsStrings := []string{}
-
-			for feature, previousVersion := range previousVersions {
-				previosVersionsStrings = append(previosVersionsStrings, fmt.Sprintf("%s,%s", feature, previousVersion))
-			}
-
-			args = append(args, "-p", strings.Join(previosVersionsStrings, ","))
-		}
-
-		out, err := runSpeakeasyCommand(args...)
-		if err != nil {
-			return "", err
-		}
-
-		return out, nil
-	} else {
-		args := []string{}
-		startVersionFlag := "-s"
-
-		if previousGenVersion != "" {
-			startVersionFlag = "-t"
-			args = append(args, "-p", "v"+previousGenVersion)
-		}
-
-		args = append([]string{
-			"generate",
-			"sdk",
-			"changelog",
-			"-r",
-			startVersionFlag,
-			"v" + genVersion,
-		}, args...)
-
-		out, err := runSpeakeasyCommand(args...)
-		if err != nil {
-			return "", err
-		}
-
-		return out, nil
+	args := []string{
+		"generate",
+		"sdk",
+		"changelog",
+		"-r",
+		"-l",
+		lang,
+		"-t",
+		strings.Join(targetVersionsStrings, ","),
 	}
+
+	if previousVersions != nil {
+		previosVersionsStrings := []string{}
+
+		for feature, previousVersion := range previousVersions {
+			previosVersionsStrings = append(previosVersionsStrings, fmt.Sprintf("%s,%s", feature, previousVersion))
+		}
+
+		args = append(args, "-p", strings.Join(previosVersionsStrings, ","))
+	}
+
+	out, err := runSpeakeasyCommand(args...)
+	if err != nil {
+		return "", err
+	}
+
+	return out, nil
 }
 
 func Validate(docPath string, maxValidationWarnings, maxValidationErrors int) error {
@@ -249,25 +196,19 @@ func Generate(docPath, lang, outputDir, installationURL string, published, outpu
 		"-y",
 	}
 
-	if IsAtLeastVersion(UnpublishedInstallationVersion) {
-		args = append(args, "-i", installationURL)
-		if published {
-			args = append(args, "-p")
-		}
+	args = append(args, "-i", installationURL)
+	if published {
+		args = append(args, "-p")
 	}
 
-	if IsAtLeastVersion(RepoDetailsVersion) {
-		if repoURL != "" {
-			args = append(args, "-r", repoURL)
-		}
-		if repoSubDirectory != "" {
-			args = append(args, "-b", repoSubDirectory)
-		}
+	if repoURL != "" {
+		args = append(args, "-r", repoURL)
+	}
+	if repoSubDirectory != "" {
+		args = append(args, "-b", repoSubDirectory)
 	}
 
-	if IsAtLeastVersion(OutputTestsVersion) && outputTests {
-		args = append(args, "-t")
-	}
+	args = append(args, "-t")
 
 	out, err := runSpeakeasyCommand(args...)
 	if err != nil {
@@ -307,10 +248,6 @@ func ValidateConfig(configDir string) error {
 }
 
 func MergeDocuments(files []string, output string) error {
-	if !IsAtLeastVersion(MergeVersion) {
-		return fmt.Errorf("speakeasy version %s does not support merging documents", MergeVersion)
-	}
-
 	args := []string{
 		"merge",
 		"-o",
@@ -330,10 +267,6 @@ func MergeDocuments(files []string, output string) error {
 }
 
 func ApplyOverlay(overlayPath, inPath, outPath string) error {
-	if !IsAtLeastVersion(OverlayVersion) {
-		return fmt.Errorf("speakeasy version %s does not support applying overlays", OverlayVersion)
-	}
-
 	args := []string{
 		"overlay",
 		"apply",

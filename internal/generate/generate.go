@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/hashicorp/go-version"
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
@@ -192,46 +191,23 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 func getPreviousGenVersion(lockFile *config.LockFile, lang, globalPreviousGenVersion string) (string, error) {
 	previousFeatureVersions, ok := lockFile.Features[lang]
-
-	if cli.IsAtLeastVersion(cli.GranularChangeLogVersion) && ok {
-		if globalPreviousGenVersion != "" {
-			globalPreviousGenVersion += ";"
-		}
-
-		globalPreviousGenVersion += fmt.Sprintf("%s:", lang)
-
-		previousFeatureParts := []string{}
-
-		for feature, previousVersion := range previousFeatureVersions {
-			previousFeatureParts = append(previousFeatureParts, fmt.Sprintf("%s,%s", feature, previousVersion))
-		}
-
-		globalPreviousGenVersion += strings.Join(previousFeatureParts, ",")
-	} else {
-		// Older versions of the gen.yaml won't have a generation version
-		previousGenVersion := lockFile.Management.GenerationVersion
-		if previousGenVersion == "" {
-			previousGenVersion = lockFile.Management.SpeakeasyVersion
-		}
-
-		if globalPreviousGenVersion == "" {
-			globalPreviousGenVersion = previousGenVersion
-		} else if previousGenVersion != "" {
-			global, err := version.NewVersion(globalPreviousGenVersion)
-			if err != nil {
-				return "", fmt.Errorf("failed to parse global previous gen version %s: %w", globalPreviousGenVersion, err)
-			}
-
-			previous, err := version.NewVersion(previousGenVersion)
-			if err != nil {
-				return "", fmt.Errorf("failed to parse previous gen version %s: %w", previousGenVersion, err)
-			}
-
-			if previous.LessThan(global) {
-				globalPreviousGenVersion = previousGenVersion
-			}
-		}
+	if !ok {
+		return globalPreviousGenVersion, nil
 	}
+
+	if globalPreviousGenVersion != "" {
+		globalPreviousGenVersion += ";"
+	}
+
+	globalPreviousGenVersion += fmt.Sprintf("%s:", lang)
+
+	previousFeatureParts := []string{}
+
+	for feature, previousVersion := range previousFeatureVersions {
+		previousFeatureParts = append(previousFeatureParts, fmt.Sprintf("%s,%s", feature, previousVersion))
+	}
+
+	globalPreviousGenVersion += strings.Join(previousFeatureParts, ",")
 
 	return globalPreviousGenVersion, nil
 }
