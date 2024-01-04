@@ -105,7 +105,7 @@ func (g *Git) CheckDirDirty(dir string, ignoreChangePatterns map[string]string) 
 	newFiles := []string{}
 
 	for f, s := range status {
-		if strings.Contains(f, "gen.yaml") {
+		if strings.Contains(f, "gen.yaml") || strings.Contains(f, "gen.lock") {
 			continue
 		}
 
