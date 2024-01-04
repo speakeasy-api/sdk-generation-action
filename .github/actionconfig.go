@@ -28,8 +28,13 @@ var actionInputsConfig string
 //go:embed action-security-config.json
 var actionSecurityConfig string
 
-func GenerateActionInputsConfig() (*config.SDKGenConfig, error) {
-	var sdkGenConfig config.SDKGenConfig
+type SDKGenConfig struct {
+	SDKGenLanguageConfig map[string][]SDKGenConfigField `json:"language_configs"`
+	SDKGenCommonConfig   []SDKGenConfigField            `json:"common_config"`
+}
+
+func GenerateActionInputsConfig() (*SDKGenConfig, error) {
+	var sdkGenConfig SDKGenConfig
 
 	inputConfigFields, err := generateConfigFieldsFromGenAction(false)
 	if err != nil {
@@ -56,7 +61,7 @@ func GenerateActionInputsConfig() (*config.SDKGenConfig, error) {
 }
 
 func GenerateActionSecurityConfig() (*config.SDKGenConfig, error) {
-	var sdkGenConfig config.SDKGenConfig
+	var sdkGenConfig SDKGenConfig
 
 	securityConfigFields, err := generateConfigFieldsFromGenAction(true)
 	if err != nil {

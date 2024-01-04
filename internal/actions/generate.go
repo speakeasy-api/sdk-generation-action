@@ -21,6 +21,10 @@ func Generate() error {
 		return err
 	}
 
+	if !cli.IsAtLeastVersion(cli.MinimumSupportedCLIVersion) {
+		return fmt.Errorf("action requires at least version %s of the speakeasy CLI", cli.MinimumSupportedCLIVersion)
+	}
+
 	mode := environment.GetMode()
 
 	branchName := ""
