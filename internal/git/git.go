@@ -625,17 +625,17 @@ func (g *Git) GetDownloadLink(version string) (string, string, error) {
 
 	// Iterate through pages until we find the release, or we run out of results
 	for {
-		releases, _, err := g.client.Repositories.ListReleases(context.Background(), "speakeasy-api", "speakeasy", &github.ListOptions{Page: page})
+		releases, response, err := g.client.Repositories.ListReleases(context.Background(), "speakeasy-api", "speakeasy", &github.ListOptions{Page: page})
 		if err != nil {
 			return "", "", fmt.Errorf("failed to get speakeasy cli releases: %w", err)
 		}
-
+		
 		if len(releases) == 0 {
 			return "", "", fmt.Errorf("no speakeasy cli releases found")
 		} else {
 			link, tag := getDownloadLinkFromReleases(releases, version)
 			if link == nil || tag == nil {
-				page++
+				page = response.NextPage
 				continue
 			}
 
