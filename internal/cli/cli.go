@@ -15,7 +15,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 )
 
-var MinimumSupportedCLIVersion = version.Must(version.NewVersion("2.0.0")) // TODO update this to the correct version once it is released
+var MinimumSupportedCLIVersion = version.Must(version.NewVersion("1.130.0"))
 
 func IsAtLeastVersion(version *version.Version) bool {
 	sv, err := GetSpeakeasyVersion()
