@@ -208,7 +208,9 @@ func Generate(docPath, lang, outputDir, installationURL string, published, outpu
 		args = append(args, "-b", repoSubDirectory)
 	}
 
-	args = append(args, "-t")
+	if outputTests {
+		args = append(args, "-t")
+	}
 
 	out, err := runSpeakeasyCommand(args...)
 	if err != nil {
