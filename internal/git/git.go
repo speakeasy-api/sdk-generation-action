@@ -621,33 +621,49 @@ func (g *Git) GetLatestTag() (string, error) {
 }
 
 func (g *Git) GetDownloadLink(version string) (string, string, error) {
-	releases, _, err := g.client.Repositories.ListReleases(context.Background(), "speakeasy-api", "speakeasy", nil)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to get speakeasy cli releases: %w", err)
-	}
+	page := 0
 
-	if len(releases) == 0 {
-		return "", "", fmt.Errorf("no speakeasy cli releases found")
-	}
+	// Iterate through pages until we find the release, or we run out of results
+	for {
+		releases, response, err := g.client.Repositories.ListReleases(context.Background(), "speakeasy-api", "speakeasy", &github.ListOptions{Page: page})
+		if err != nil {
+			return "", "", fmt.Errorf("failed to get speakeasy cli releases: %w", err)
+		}
+		
+		if len(releases) == 0 {
+			return "", "", fmt.Errorf("no speakeasy cli releases found")
+		} else {
+			link, tag := getDownloadLinkFromReleases(releases, version)
+			if link == nil || tag == nil {
+				page = response.NextPage
+				continue
+			}
 
+			return *link, *tag, nil
+		}
+	}
+}
+
+func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version string) (*string, *string) {
 	for _, release := range releases {
 		for _, asset := range release.Assets {
 			if version == "latest" || version == release.GetTagName() {
 				curOS := runtime.GOOS
 				curArch := runtime.GOARCH
+				downloadUrl := asset.GetBrowserDownloadURL()
 
 				// https://github.com/speakeasy-api/sdk-generation-action/pull/28#discussion_r1213129634
 				if curOS == "linux" && (strings.Contains(strings.ToLower(asset.GetName()), "_linux_x86_64") || strings.Contains(strings.ToLower(asset.GetName()), "_linux_amd64")) {
-					return asset.GetBrowserDownloadURL(), *release.TagName, nil
+					return &downloadUrl, release.TagName
 				} else if strings.Contains(strings.ToLower(asset.GetName()), curOS) &&
 					strings.Contains(strings.ToLower(asset.GetName()), curArch) {
-					return asset.GetBrowserDownloadURL(), *release.TagName, nil
+					return &downloadUrl, release.TagName
 				}
 			}
 		}
 	}
 
-	return "", "", fmt.Errorf("no speakeasy cli release found for linux amd64")
+	return nil, nil
 }
 
 func (g *Git) GetCommitedFiles() ([]string, error) {
