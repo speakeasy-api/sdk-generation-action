@@ -128,6 +128,7 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 		dirty, dirtyMsg, err := g.CheckDirDirty(dir, map[string]string{
 			previousManagementInfo.ReleaseVersion:    currentManagementInfo.ReleaseVersion,
 			previousManagementInfo.GenerationVersion: currentManagementInfo.GenerationVersion,
+			previousManagementInfo.ConfigChecksum:    currentManagementInfo.ConfigChecksum,
 			previousManagementInfo.DocVersion:        currentManagementInfo.DocVersion,
 			previousManagementInfo.DocChecksum:       currentManagementInfo.DocChecksum,
 		})
