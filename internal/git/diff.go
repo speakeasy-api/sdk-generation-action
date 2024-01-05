@@ -14,7 +14,7 @@ func IsGitDiffSignificant(diff string, ignoreChangePatterns map[string]string) (
 	}
 
 	isSignificant, signifanceMsg, err := diffParser.SignificantChange(diff, func(diff *diffParser.FileDiff, change *diffParser.ContentChange) (bool, string) {
-		if diff.ToFile == "gen.yaml" || diff.ToFile == "RELEASES.md" {
+		if strings.Contains(diff.ToFile, "gen.yaml") || strings.Contains(diff.ToFile, "RELEASES.md") || strings.Contains(diff.ToFile, "gen.lock") {
 			return false, ""
 		}
 		if change.Type == diffParser.ContentChangeTypeNOOP {
