@@ -29,8 +29,8 @@ var actionInputsConfig string
 var actionSecurityConfig string
 
 type SDKGenConfig struct {
-	SDKGenLanguageConfig map[string][]SDKGenConfigField `json:"language_configs"`
-	SDKGenCommonConfig   []SDKGenConfigField            `json:"common_config"`
+	SDKGenLanguageConfig map[string][]config.SDKGenConfigField `json:"language_configs"`
+	SDKGenCommonConfig   []config.SDKGenConfigField            `json:"common_config"`
 }
 
 func GenerateActionInputsConfig() (*SDKGenConfig, error) {
@@ -60,7 +60,7 @@ func GenerateActionInputsConfig() (*SDKGenConfig, error) {
 	return &sdkGenConfig, nil
 }
 
-func GenerateActionSecurityConfig() (*config.SDKGenConfig, error) {
+func GenerateActionSecurityConfig() (*SDKGenConfig, error) {
 	var sdkGenConfig SDKGenConfig
 
 	securityConfigFields, err := generateConfigFieldsFromGenAction(true)
