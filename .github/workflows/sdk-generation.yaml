@@ -459,6 +459,11 @@ jobs:
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: gradlew.bat
+          path: ${{ needs.generate.outputs.java_directory }}/gradlew.bat
       - id: log-result
         uses: speakeasy-api/sdk-generation-action@v14
         if: always()
