@@ -880,11 +880,6 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: gradlew.bat
-          path: ${{ needs.generate.outputs.java_directory }}/gradlew.bat
       - id: Finalize
         uses: speakeasy-api/sdk-generation-action@v14
         with:
