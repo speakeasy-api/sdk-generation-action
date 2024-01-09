@@ -212,6 +212,11 @@ func Generate(docPath, lang, outputDir, installationURL string, published, outpu
 		args = append(args, "-t")
 	}
 
+	if environment.ForceGeneration() {
+		fmt.Println("force input enabled - setting SPEAKEASY_FORCE_GENERATION=true")
+		os.Setenv("SPEAKEASY_FORCE_GENERATION", "true")
+	}
+
 	out, err := runSpeakeasyCommand(args...)
 	if err != nil {
 		return fmt.Errorf("error generating sdk: %w - %s", err, out)
