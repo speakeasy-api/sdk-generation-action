@@ -299,6 +299,23 @@ openapi_docs: |
   - https://example.com/openapi2.json
 ```
 
+### `overlay_docs`
+
+A yaml string containing a list of [OpenAPI overlay documents](https://www.speakeasyapi.dev/docs/openapi/overlays) to use, if multiple documents are provided they will be applied to the OpenAPI document in the order provided.
+
+If the document lives within the repo a relative path can be provided, if the document is hosted publicly a URL can be provided.
+
+If the documents are hosted privately a URL can be provided along with the `openapi_doc_auth_header` and `openapi_doc_auth_token` inputs.
+Each document will be fetched using the provided auth header and token, so they need to be valid for all documents.
+
+For example:
+
+```yaml
+overlay_docs: |
+  - https://example.com/overlay1.json
+  - https://example.com/overlay2.json
+```
+
 ### `openapi_doc_location`
 
 **Required** The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document.
