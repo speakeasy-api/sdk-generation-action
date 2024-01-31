@@ -10,12 +10,6 @@ function run_action() {
 
 # Default environment variables not subject to change by different tests
 export INPUT_DEBUG=true
-#export INPUT_OPENAPI_DOC_LOCATION="https://docs.speakeasyapi.dev/openapi.yaml" # Uncomment to test deprecated input and comment out INPUT_OPENAPI_DOCS
-export INPUT_OPENAPI_DOCS=$(cat <<EOF
-- https://docs.speakeasyapi.dev/openapi.yaml
-- https://docs.speakeasyapi.dev/openapi.yaml
-EOF
-)
 export INPUT_GITHUB_ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
 #export INPUT_SPEAKEASY_VERSION="v1.69.0" # Uncomment to test specific versions otherwise uses latest
 export GITHUB_SERVER_URL="https://github.com"
@@ -28,11 +22,7 @@ export GITHUB_WORKSPACE=$(pwd)
 set -o allexport && source ${ENV_FILE} && set +o allexport
 
 rm output.txt || true
-INPUT_ACTION="validate"
-run_action
-
-rm output.txt || true
-INPUT_ACTION="generate"
+INPUT_ACTION="run-workflow"
 run_action
 
 if [ "$RUN_FINALIZE" = "true" ]; then
