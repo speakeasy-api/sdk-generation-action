@@ -95,6 +95,7 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 
 		repoURL, repoSubdirectory := getRepoDetails(dir)
 
+		// TODO: this should be openapi location, not target.Source
 		if err = runLang(targetID, lang, target.Source, outputDir, installationURL, published, repoURL, repoSubdirectory); err != nil {
 			return nil, outputs, err
 		}
