@@ -72,6 +72,19 @@ on:
         description: "The working directory for running Speakeasy CLI commands in the action"
         required: false
         type: string
+      docs_languages:
+        description: |-
+          A yaml string containing a list of languages to generate SDK docs for example:
+          docs_languages: |
+            - go
+            - python
+            - typescript
+            - java
+            - csharp
+            - unity
+            - curl
+        required: false
+        type: string
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -258,7 +271,7 @@ jobs:
     if: ${{ always() && needs.run-workflow.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' && inputs.mode != 'pr' }}
     name: Publish Python SDK
     runs-on: ubuntu-latest
-    needs: [run-workflow, compile-python, finalize]
+    needs: [ run-workflow, compile-python, finalize ]
     defaults:
       run:
         working-directory: ${{ needs.run-workflow.outputs.python_directory }}
@@ -312,7 +325,7 @@ jobs:
     if: ${{ always() && needs.run-workflow.outputs.typescript_regenerated == 'true' && inputs.publish_typescript == 'true' && inputs.mode != 'pr' }}
     name: Publish Typescript SDK
     runs-on: ubuntu-latest
-    needs: [run-workflow, compile-typescript, finalize]
+    needs: [ run-workflow, compile-typescript, finalize ]
     defaults:
       run:
         working-directory: ${{ needs.run-workflow.outputs.typescript_directory }}
@@ -362,7 +375,7 @@ jobs:
     if: ${{ always() && needs.finalize.run-workflow.java_regenerated == 'true' && inputs.publish_java == 'true' && inputs.mode != 'pr' }}
     name: Publish Java SDK
     runs-on: ubuntu-latest
-    needs: [run-workflow, compile-java, finalize]
+    needs: [ run-workflow, compile-java, finalize ]
     defaults:
       run:
         working-directory: ${{ needs.run-workflow.outputs.java_directory }}
@@ -417,7 +430,7 @@ jobs:
     if: ${{ always() && needs.run-workflow.outputs.ruby_regenerated == 'true' && inputs.publish_ruby == 'true' && inputs.mode != 'pr' }}
     name: Publish Ruby SDK
     runs-on: ubuntu-latest
-    needs: [run-workflow, compile-ruby, finalize]
+    needs: [ run-workflow, compile-ruby, finalize ]
     defaults:
       run:
         working-directory: ${{ needs.run-workflow.outputs.ruby_directory }}
@@ -472,7 +485,7 @@ jobs:
     if: ${{ always() && needs.run-workflow.outputs.csharp_regenerated == 'true' && inputs.publish_csharp == 'true' && inputs.mode != 'pr' }}
     name: Publish C# SDK
     runs-on: ubuntu-latest
-    needs: [run-workflow, compile-csharp, finalize]
+    needs: [ run-workflow, compile-csharp, finalize ]
     defaults:
       run:
         working-directory: ${{ needs.run-workflow.outputs.csharp_directory }}
@@ -517,7 +530,7 @@ jobs:
     if: ${{ always() && needs.run-workflow.outputs.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
     name: Publish PHP SDK
     runs-on: ubuntu-latest
-    needs: [run-workflow, compile-php, finalize]
+    needs: [ run-workflow, compile-php, finalize ]
     defaults:
       run:
         working-directory: ${{ needs.run-workflow.outputs.php_directory }}
