@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/pb33f/libopenapi v0.13.8
 	github.com/speakeasy-api/git-diff-parser v0.0.3
-	github.com/speakeasy-api/sdk-gen-config v1.5.1
+	github.com/speakeasy-api/sdk-gen-config v1.6.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
 	golang.org/x/oauth2 v0.11.0

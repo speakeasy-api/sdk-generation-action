@@ -40,6 +40,58 @@ func GetSupportedLanguages() ([]string, error) {
 	return strings.Split(langs, ", "), nil
 }
 
+func Run(target, installationURL string, published bool, repoURL, repoSubDirectory string) error {
+	args := []string{
+		"run",
+	}
+
+	args = append(args, "-t", target)
+
+	args = append(args, "-i", installationURL)
+	if published {
+		args = append(args, "-p")
+	}
+
+	if repoURL != "" {
+		args = append(args, "-r", repoURL)
+	}
+	if repoSubDirectory != "" {
+		args = append(args, "-b", repoSubDirectory)
+	}
+
+	if environment.ForceGeneration() {
+		fmt.Println("force input enabled - setting SPEAKEASY_FORCE_GENERATION=true")
+		os.Setenv("SPEAKEASY_FORCE_GENERATION", "true")
+	}
+
+	out, err := runSpeakeasyCommand(args...)
+	if err != nil {
+		return fmt.Errorf("error running workflow: %w - %s", err, out)
+	}
+	fmt.Println(out)
+	return nil
+}
+
+func RunDocs(docPath, langs, outputDir string) error {
+	args := []string{
+		"generate",
+		"docs",
+		"-s",
+		docPath,
+		"-l",
+		langs,
+		"-o",
+		outputDir,
+	}
+
+	out, err := runSpeakeasyCommand(args...)
+	if err != nil {
+		return fmt.Errorf("error generating sdk docs: %w - %s", err, out)
+	}
+	fmt.Println(out)
+	return nil
+}
+
 func TriggerGoGenerate() error {
 	tidyCmd := exec.Command("go", "mod", "tidy")
 	tidyCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())

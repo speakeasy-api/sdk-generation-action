@@ -37,8 +37,8 @@ func main() {
 		err = actions.Validate()
 	case environment.ActionSuggest:
 		err = actions.Suggest()
-	case environment.ActionGenerate:
-		err = actions.Generate()
+	case environment.ActionRunWorkflow:
+		err = actions.RunWorkflow()
 	case environment.ActionFinalize:
 		err = actions.Finalize()
 	case environment.ActionFinalizeSuggestion:

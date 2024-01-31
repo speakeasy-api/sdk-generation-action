@@ -162,7 +162,7 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action) (stri
 	}
 
 	var prTitle string
-	if action == environment.ActionGenerate || action == environment.ActionFinalize {
+	if action == environment.ActionRunWorkflow || action == environment.ActionFinalize {
 		prTitle = getGenPRTitle()
 	} else if action == environment.ActionFinalize || action == environment.ActionFinalizeSuggestion {
 		prTitle = getSuggestPRTitle()
@@ -239,7 +239,7 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 		return g.FindBranch(branchName)
 	}
 
-	if action == environment.ActionGenerate {
+	if action == environment.ActionRunWorkflow {
 		branchName = fmt.Sprintf("speakeasy-sdk-regen-%d", time.Now().Unix())
 	} else if action == environment.ActionSuggest {
 		branchName = fmt.Sprintf("speakeasy-openapi-suggestion-%d", time.Now().Unix())
@@ -306,7 +306,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	}
 
 	var commitMessage string
-	if action == environment.ActionGenerate {
+	if action == environment.ActionRunWorkflow {
 		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 	} else if action == environment.ActionSuggest {
 		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
@@ -629,7 +629,7 @@ func (g *Git) GetDownloadLink(version string) (string, string, error) {
 		if err != nil {
 			return "", "", fmt.Errorf("failed to get speakeasy cli releases: %w", err)
 		}
-		
+
 		if len(releases) == 0 {
 			return "", "", fmt.Errorf("no speakeasy cli releases found")
 		} else {
