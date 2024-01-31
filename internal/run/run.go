@@ -52,7 +52,7 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 		return nil, outputs, fmt.Errorf("failed to load workflow file: %w", err)
 	}
 
-	langs := make([]string, len(wf.Targets))
+	var langs []string
 	for _, target := range wf.Targets {
 		langs = append(langs, target.Target)
 	}
