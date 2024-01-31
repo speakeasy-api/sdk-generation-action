@@ -3,7 +3,6 @@ package run
 import (
 	"fmt"
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -206,12 +205,11 @@ func runLang(targetID, target, docPath, outputDir, installationURL string, publi
 }
 
 func getWorkflow() (*workflow.Workflow, error) {
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
+	workspace := environment.GetWorkspace()
 
-	wf, _, err := workflow.Load(wd)
+	localPath := filepath.Join(workspace, "repo")
+
+	wf, _, err := workflow.Load(localPath)
 	if err != nil {
 		return nil, err
 	}
