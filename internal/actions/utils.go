@@ -7,7 +7,7 @@ import (
 func getReleasesDir() (string, error) {
 	releasesDir := "."
 	// Find releases file
-	langs, err := configuration.GetAndValidateLanguages(false)
+	_, langs, err := configuration.GetWorkflowAndValidateLanguages(false)
 	if err != nil {
 		return "", err
 	}

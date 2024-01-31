@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	config "github.com/speakeasy-api/sdk-gen-config"
-	"github.com/speakeasy-api/sdk-gen-config/workflow"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"gopkg.in/yaml.v3"
@@ -47,17 +46,8 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 
 	globalPreviousGenVersion := ""
 
-	wf, err := getWorkflow()
+	wf, _, err := configuration.GetWorkflowAndValidateLanguages(true)
 	if err != nil {
-		return nil, outputs, fmt.Errorf("failed to load workflow file: %w", err)
-	}
-
-	var langs []string
-	for _, target := range wf.Targets {
-		langs = append(langs, target.Target)
-	}
-
-	if err := configuration.AssertLangsSupported(langs); err != nil {
 		return nil, outputs, err
 	}
 
@@ -202,19 +192,6 @@ func runLang(targetID, target, docPath, outputDir, installationURL string, publi
 	}
 
 	return nil
-}
-
-func getWorkflow() (*workflow.Workflow, error) {
-	workspace := environment.GetWorkspace()
-
-	localPath := filepath.Join(workspace, "repo")
-
-	wf, _, err := workflow.Load(localPath)
-	if err != nil {
-		return nil, err
-	}
-
-	return wf, err
 }
 
 func getPreviousGenVersion(lockFile *config.LockFile, lang, globalPreviousGenVersion string) (string, error) {
