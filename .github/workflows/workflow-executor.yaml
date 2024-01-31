@@ -168,7 +168,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: run-workflow
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action-v15@v15
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           github_access_token: ${{ secrets.github_access_token }}
@@ -198,7 +198,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action-v15@v15
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -226,7 +226,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: Finalize
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action-v15@v15
         with:
           github_access_token: ${{ secrets.github_access_token }}
           create_release: ${{ inputs.create_release }}
@@ -255,7 +255,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action-v15@v15
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -308,7 +308,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action-v15@v15
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -358,7 +358,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action-v15@v15
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -413,7 +413,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action-v15@v15
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -468,7 +468,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action-v15@v15
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -513,7 +513,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action-v15@v15
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -556,7 +556,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action-v15@v15
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
