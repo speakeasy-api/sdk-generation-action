@@ -11,7 +11,6 @@ import (
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-gen-config/workflow"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
-	"github.com/speakeasy-api/sdk-generation-action/internal/document"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"gopkg.in/yaml.v3"
 )
@@ -35,11 +34,6 @@ type Git interface {
 func Run(g Git) (*GenerationInfo, map[string]string, error) {
 	workspace := environment.GetWorkspace()
 	outputs := map[string]string{}
-
-	docPath, docVersion, err := document.GetOpenAPIFileInfo()
-	if err != nil {
-		return nil, nil, err
-	}
 
 	speakeasyVersion, err := cli.GetSpeakeasyVersion()
 	if err != nil {
@@ -101,7 +95,7 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 
 		repoURL, repoSubdirectory := getRepoDetails(dir)
 
-		if err = runLang(targetID, lang, docPath, outputDir, installationURL, published, repoURL, repoSubdirectory); err != nil {
+		if err = runLang(targetID, lang, target.Source, outputDir, installationURL, published, repoURL, repoSubdirectory); err != nil {
 			return nil, outputs, err
 		}
 
@@ -173,8 +167,8 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 		genInfo = &GenerationInfo{
 			SpeakeasyVersion:  speakeasyVersion.String(),
 			GenerationVersion: generationVersion.String(),
-			OpenAPIDocVersion: docVersion,
-			Languages:         langGenInfo,
+			//OpenAPIDocVersion: docVersion, //TODO
+			Languages: langGenInfo,
 		}
 	}
 
