@@ -2,15 +2,16 @@ package actions
 
 import (
 	"fmt"
+	"github.com/hashicorp/go-version"
+	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
-	"github.com/speakeasy-api/sdk-generation-action/internal/generate"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 )
 
-func Generate() error {
+func RunWorkflow() error {
 	g, err := initAction()
 	if err != nil {
 		return err
@@ -21,8 +22,9 @@ func Generate() error {
 		return err
 	}
 
-	if !cli.IsAtLeastVersion(cli.MinimumSupportedCLIVersion) {
-		return fmt.Errorf("action requires at least version %s of the speakeasy CLI", cli.MinimumSupportedCLIVersion)
+	minimumVersionForRun := version.Must(version.NewVersion("1.161.0"))
+	if !cli.IsAtLeastVersion(minimumVersionForRun) {
+		return fmt.Errorf("action requires at least version %s of the speakeasy CLI", minimumVersionForRun)
 	}
 
 	mode := environment.GetMode()
@@ -31,13 +33,13 @@ func Generate() error {
 
 	if mode == environment.ModePR {
 		var err error
-		branchName, _, err = g.FindExistingPR("", environment.ActionGenerate)
+		branchName, _, err = g.FindExistingPR("", environment.ActionRunWorkflow)
 		if err != nil {
 			return err
 		}
 	}
 
-	branchName, err = g.FindOrCreateBranch(branchName, environment.ActionGenerate)
+	branchName, err = g.FindOrCreateBranch(branchName, environment.ActionRunWorkflow)
 	if err != nil {
 		return err
 	}
@@ -51,7 +53,7 @@ func Generate() error {
 		}
 	}()
 
-	genInfo, outputs, err := generate.Generate(g)
+	genInfo, outputs, err := run.Run(g)
 	outputs["resolved_speakeasy_version"] = resolvedVersion
 	if err != nil {
 		if err := setOutputs(outputs); err != nil {
@@ -109,7 +111,7 @@ func Generate() error {
 			return err
 		}
 
-		if _, err := g.CommitAndPush(docVersion, speakeasyVersion, "", environment.ActionGenerate); err != nil {
+		if _, err := g.CommitAndPush(docVersion, speakeasyVersion, "", environment.ActionRunWorkflow); err != nil {
 			return err
 		}
 	}

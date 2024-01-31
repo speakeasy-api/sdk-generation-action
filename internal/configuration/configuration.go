@@ -2,6 +2,7 @@ package configuration
 
 import (
 	"fmt"
+	"golang.org/x/exp/maps"
 	"path/filepath"
 	"strings"
 
@@ -59,20 +60,28 @@ func GetAndValidateLanguages(checkLangSupported bool) (map[string]string, error)
 		return langCfgs, nil
 	}
 
-	supportedLangs, err := cli.GetSupportedLanguages()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get supported languages: %w", err)
-	}
-
-	for l := range langCfgs {
-		if l == "docs" {
-			return langCfgs, nil
-		}
-
-		if !slices.Contains(supportedLangs, l) {
-			return nil, fmt.Errorf("unsupported language: %s", l)
-		}
+	if err := AssertLangsSupported(maps.Keys(langCfgs)); err != nil {
+		return nil, err
 	}
 
 	return langCfgs, nil
+}
+
+func AssertLangsSupported(langs []string) error {
+	supportedLangs, err := cli.GetSupportedLanguages()
+	if err != nil {
+		return fmt.Errorf("failed to get supported languages: %w", err)
+	}
+
+	for _, l := range langs {
+		if l == "docs" {
+			return nil
+		}
+
+		if !slices.Contains(supportedLangs, l) {
+			return fmt.Errorf("unsupported language: %s", l)
+		}
+	}
+
+	return nil
 }
