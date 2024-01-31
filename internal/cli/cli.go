@@ -48,9 +48,9 @@ func Run(target, installationURL string, published bool, repoURL, repoSubDirecto
 	args = append(args, "-t", target)
 
 	args = append(args, "-i", installationURL)
-	if published {
-		args = append(args, "-p")
-	}
+	//if published { TODO: add this back in
+	//	args = append(args, "-p")
+	//}
 
 	if repoURL != "" {
 		args = append(args, "-r", repoURL)
