@@ -14,7 +14,7 @@ func getReleasesDir() (string, error) {
 
 	for _, target := range wf.Targets {
 		// If we are only generating one language and its not in the root directory we assume this is a multi-sdk repo
-		if len(wf.Targets) == 1 && *target.Output != "." {
+		if len(wf.Targets) == 1 && target.Output != nil && *target.Output != "." {
 			releasesDir = *target.Output
 		}
 	}
