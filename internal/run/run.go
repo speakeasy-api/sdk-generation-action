@@ -46,7 +46,7 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 
 	globalPreviousGenVersion := ""
 
-	wf, _, err := configuration.GetWorkflowAndValidateLanguages(true)
+	wf, err := configuration.GetWorkflowAndValidateLanguages(true)
 	if err != nil {
 		return nil, outputs, err
 	}
