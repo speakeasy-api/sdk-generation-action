@@ -92,7 +92,7 @@ func RunWorkflow() error {
 					Path:    path,
 				}
 
-				if environment.IsLanguagePublished(lang) {
+				if published, ok := outputs[fmt.Sprintf("publish_%s", lang)]; ok && published == "true" {
 					releaseInfo.Languages[lang] = releases.LanguageReleaseInfo{
 						PackageName: langGenInfo.PackageName,
 						Version:     langGenInfo.Version,

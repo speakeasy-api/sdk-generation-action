@@ -197,13 +197,6 @@ jobs:
         with:
           github_access_token: ${{ secrets.github_access_token }}
           create_release: ${{ inputs.create_release }}
-          publish_python: ${{ steps.run-workflow.outputs.publish_python }}
-          publish_typescript: ${{ steps.run-workflow.outputs.publish_typescript }}
-          publish_terraform: ${{ steps.run-workflow.outputs.publish_terraform }}
-          publish_java: ${{ steps.run-workflow.outputs.publish_java }}
-          publish_php: ${{ steps.run-workflow.outputs.publish_php }}
-          publish_ruby: ${{ steps.run-workflow.outputs.publish_ruby }}
-          publish_csharp: ${{ steps.run-workflow.outputs.publish_csharp }}
           mode: ${{ inputs.mode }}
           action: finalize
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
