@@ -139,12 +139,13 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
-      - name: Set up Node
+      - name: Set Up Node
         uses: actions/setup-node@v3
         with:
           node-version: "16.x"
           registry-url: "https://registry.npmjs.org"
       - id: run-workflow
+        name: Run Generation Workflow
         uses: speakeasy-api/sdk-generation-action-v15@v15
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -168,6 +169,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
+        name: Log Generation Output
         uses: speakeasy-api/sdk-generation-action-v15@v15
         if: always()
         with:

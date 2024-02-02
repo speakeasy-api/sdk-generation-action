@@ -10,7 +10,6 @@ import (
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
-	"gopkg.in/yaml.v3"
 )
 
 type LanguageGenInfo struct {
@@ -74,12 +73,9 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 			return nil, outputs, err
 		}
 
-		fmt.Printf("Generating %s SDK in %s\n", lang, outputDir)
-
 		published := target.Publishing.IsPublished(target.Target)
 		outputs[fmt.Sprintf("publish_%s", lang)] = fmt.Sprintf("%t", published)
-
-		fmt.Printf("Should Publish %s SDK: %t\n", lang, published) // TODO: remove
+		fmt.Printf("Generating %s SDK in %s; Should Publish SDK: %t \n", lang, outputDir, published) // TODO: remove publish part
 
 		installationURL := getInstallationURL(lang, dir)
 		if installationURL == "" {
@@ -89,7 +85,7 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 		repoURL, repoSubdirectory := getRepoDetails(dir)
 
 		// TODO: this should be openapi location, not target.Source
-		if err = runLang(targetID, lang, target.Source, outputDir, installationURL, published, repoURL, repoSubdirectory); err != nil {
+		if err = runLang(targetID, lang, installationURL, repoURL, repoSubdirectory); err != nil {
 			return nil, outputs, err
 		}
 
@@ -169,29 +165,15 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 	return genInfo, outputs, nil
 }
 
-func runLang(targetID, target, docPath, outputDir, installationURL string, published bool, repoURL, repoSubdirectory string) error {
-	// Docs is not yet supported by `run`
-	if target == "docs" {
-		docsLanguages := environment.GetDocsLanguages()
-		docsLanguages = strings.ReplaceAll(docsLanguages, "\\n", "\n")
-		docsLangs := []string{}
-		if err := yaml.Unmarshal([]byte(docsLanguages), &docsLangs); err != nil {
-			return fmt.Errorf("failed to parse docs languages: %w", err)
-		}
+func runLang(targetID, target, installationURL string, repoURL, repoSubdirectory string) error {
+	if err := cli.Run(targetID, installationURL, repoURL, repoSubdirectory); err != nil {
+		return err
+	}
 
-		if err := cli.GenerateDocs(docPath, strings.Join(docsLangs, ","), outputDir); err != nil {
+	// For terraform, also trigger "go generate ./..." to regenerate docs
+	if target == "terraform" {
+		if err := cli.TriggerGoGenerate(); err != nil {
 			return err
-		}
-	} else {
-		if err := cli.Run(targetID, installationURL, published, repoURL, repoSubdirectory); err != nil {
-			return err
-		}
-
-		// For terraform, also trigger "go generate ./..." to regenerate docs
-		if target == "terraform" {
-			if err := cli.TriggerGoGenerate(); err != nil {
-				return err
-			}
 		}
 	}
 

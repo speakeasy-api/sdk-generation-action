@@ -40,7 +40,7 @@ func GetSupportedLanguages() ([]string, error) {
 	return strings.Split(langs, ", "), nil
 }
 
-func Run(target, installationURL string, published bool, repoURL, repoSubDirectory string) error {
+func Run(target, installationURL string, repoURL, repoSubDirectory string) error {
 	args := []string{
 		"run",
 	}
@@ -48,9 +48,6 @@ func Run(target, installationURL string, published bool, repoURL, repoSubDirecto
 	args = append(args, "-t", target)
 
 	args = append(args, "-i", installationURL)
-	//if published { TODO: add this back in
-	//	args = append(args, "-p")
-	//}
 
 	if repoURL != "" {
 		args = append(args, "-r", repoURL)
