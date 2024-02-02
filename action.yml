@@ -25,34 +25,6 @@ inputs:
     description: "Create a Github release on generation"
     default: "true"
     required: false
-  publish_python:
-    description: "Whether the Python SDK will be published to PyPi"
-    default: "false"
-    required: false
-  publish_typescript:
-    description: "Whether the Typescript SDK will be published to NPM"
-    default: "false"
-    required: false
-  publish_terraform:
-    description: "Whether the Terraform Provider will be published to the Terraform Registry"
-    default: "false"
-    required: false
-  publish_php:
-    description: "Whether the PHP SDK will be published to Packagist this will also create a release on Github"
-    default: "false"
-    required: false
-  publish_ruby:
-    description: "Whether the Ruby SDK will be published to Rubygems"
-    default: "false"
-    required: false
-  publish_java:
-    description: "Whether the Java SDK will be published to the provided OSSRH URL"
-    default: "false"
-    required: false
-  publish_csharp:
-    description: "Whether the C# SDK will be published to Nuget"
-    default: "false"
-    required: false
   speakeasy_api_key:
     description: "The Speakeasy API key to authenticate the Speakeasy CLI with"
     required: true
@@ -108,6 +80,20 @@ inputs:
     description: "The GPG fingerprint to sign the release with"
     required: false
 outputs:
+  publish_python:
+    description: "Whether the Python SDK will be published to PyPi"
+  publish_typescript:
+    description: "Whether the Typescript SDK will be published to NPM"
+  publish_terraform:
+    description: "Whether the Terraform Provider will be published to the Terraform Registry"
+  publish_php:
+    description: "Whether the PHP SDK will be published to Packagist this will also create a release on Github"
+  publish_ruby:
+    description: "Whether the Ruby SDK will be published to Rubygems"
+  publish_java:
+    description: "Whether the Java SDK will be published to the provided OSSRH URL"
+  publish_csharp:
+    description: "Whether the C# SDK will be published to Nuget"
   python_regenerated:
     description: "true if the Python SDK was regenerated"
   python_directory:
@@ -174,13 +160,6 @@ runs:
     - ${{ inputs.github_access_token }}
     - ${{ inputs.docs_languages }}
     - ${{ inputs.create_release }}
-    - ${{ inputs.publish_python }}
-    - ${{ inputs.publish_typescript }}
-    - ${{ inputs.publish_php }}
-    - ${{ inputs.publish_ruby }}
-    - ${{ inputs.publish_java }}
-    - ${{ inputs.publish_terraform }}
-    - ${{ inputs.publish_csharp }}
     - ${{ inputs.max_suggestions }}
     - ${{ inputs.mode }}
     - ${{ inputs.action }}

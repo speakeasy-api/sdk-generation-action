@@ -76,7 +76,9 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 
 		fmt.Printf("Generating %s SDK in %s\n", lang, outputDir)
 
-		published := environment.IsLanguagePublished(lang)
+		published := target.Publishing.IsPublished(target.Target)
+		outputs[fmt.Sprintf("publish_%s", lang)] = fmt.Sprintf("%t", published)
+
 		installationURL := getInstallationURL(lang, dir)
 		if installationURL == "" {
 			published = true // Treat as published if we don't have an installation URL
