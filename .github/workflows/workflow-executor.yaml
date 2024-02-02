@@ -139,8 +139,11 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
-      - name: Install Node
-        uses: actions/setup-node@v4
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.x"
+          registry-url: "https://registry.npmjs.org"
       - id: run-workflow
         uses: speakeasy-api/sdk-generation-action-v15@v15
         with:
