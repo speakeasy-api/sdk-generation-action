@@ -1,6 +1,19 @@
 ## Build
 FROM golang:1.21-alpine as builder
 
+### Install Node
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    npm
+RUN npm install npm@latest -g && \
+    npm install n -g && \
+    n latest
+
+### Install Python
+RUN apt-get install -y python3
+
+### Build Speakeasy Action
+
 WORKDIR /app
 
 COPY go.mod ./
