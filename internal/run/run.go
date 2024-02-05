@@ -75,7 +75,7 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 
 		published := target.IsPublished()
 		outputs[fmt.Sprintf("publish_%s", lang)] = fmt.Sprintf("%t", published)
-		fmt.Printf("Generating %s SDK in %s; Should Publish SDK: %t \n", lang, outputDir, published) // TODO: remove publish part
+		fmt.Printf("Generating %s SDK in %s", lang, outputDir)
 
 		installationURL := getInstallationURL(lang, dir)
 		if installationURL == "" {
