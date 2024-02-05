@@ -24,7 +24,7 @@ RUN apk add git
 RUN apk add --update --no-cache nodejs npm
 
 ### Install Python
-RUN apk add python3=3.8.2-r2 --repository=http://dl-cdn.alpinelinux.org/alpine/v3.11/main
+RUN apk add --update --no-cache python38 py3-pip
 
 WORKDIR /
 
