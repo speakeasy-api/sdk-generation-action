@@ -24,7 +24,7 @@ RUN apk add git
 RUN apk add --update --no-cache nodejs npm
 
 ### Install Python
-RUN apk add --update --no-cache python3 py3-pip
+RUN apk add --update --no-cache python3=~3.8 py3-pip
 
 WORKDIR /
 
