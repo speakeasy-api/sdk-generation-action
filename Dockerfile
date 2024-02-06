@@ -26,6 +26,16 @@ RUN apk add --update --no-cache nodejs npm
 ### Install Python
 RUN apk add --update --no-cache python38 py3-pip
 
+### Install Java
+RUN apk add --update --no-cache openjdk11 gradle
+
+### Install Ruby
+RUN apk add ruby ruby-bundler
+
+### Install PHP and Composer
+RUN apk --update add wget curl php7
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
+
 WORKDIR /
 
 COPY --from=builder /action /action
