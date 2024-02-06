@@ -30,7 +30,7 @@ RUN apk add --update --no-cache python3 py3-pip
 RUN apk add --update --no-cache openjdk11 gradle
 
 ### Install Ruby
-RUN apk add ruby ruby-bundler
+RUN apk add ruby ruby-bundler ruby-dev
 
 ### Install PHP and Composer
 #### Source: https://github.com/geshan/docker-php-composer-alpine/blob/master/Dockerfile
