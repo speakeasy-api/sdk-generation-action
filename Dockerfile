@@ -33,7 +33,7 @@ RUN apk add --update --no-cache openjdk11 gradle
 RUN apk add ruby ruby-bundler
 
 ### Install PHP and Composer
-RUN apk --update add wget curl php7
+RUN apk --update add wget curl php
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 
 WORKDIR /
