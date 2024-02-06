@@ -24,7 +24,7 @@ RUN apk add git
 RUN apk add --update --no-cache nodejs npm
 
 ### Install Python
-RUN apk add --update --no-cache python38 py3-pip
+RUN apk add --update --no-cache python3 py3-pip
 
 ### Install Java
 RUN apk add --update --no-cache openjdk11 gradle
