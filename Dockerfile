@@ -32,6 +32,9 @@ RUN apk add --update --no-cache openjdk11 gradle
 ### Install Ruby
 RUN apk add ruby ruby-bundler ruby-dev
 
+### Install Dotnet
+RUN apk add --update --no-cache dotnet6-sdk
+
 ### Install PHP and Composer
 #### Source: https://github.com/geshan/docker-php-composer-alpine/blob/master/Dockerfile
 RUN apk --update --no-cache add wget \
