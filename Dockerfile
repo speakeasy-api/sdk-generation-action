@@ -33,8 +33,24 @@ RUN apk add --update --no-cache openjdk11 gradle
 RUN apk add ruby ruby-bundler
 
 ### Install PHP and Composer
-RUN apk --update add wget curl php
+#### Source: https://github.com/geshan/docker-php-composer-alpine/blob/master/Dockerfile
+RUN apk --update --no-cache add wget \
+		     curl \
+		     git \
+		     php \
+		     php-curl \
+		     php-openssl \
+		     php-iconv \
+		     php-json \
+		     php-mbstring \
+		     php-phar \
+		     php-dom --repository http://nl.alpinelinux.org/alpine/edge/testing/
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
+RUN mkdir -p /var/www
+WORKDIR /var/www
+COPY . /var/www
+VOLUME /var/www
+### END PHP
 
 WORKDIR /
 
