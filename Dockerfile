@@ -30,7 +30,7 @@ RUN apk add --update --no-cache python3 py3-pip
 RUN apk add --update --no-cache openjdk11 gradle
 
 ### Install Ruby
-RUN apk add ruby ruby-bundler ruby-dev
+RUN apk add --update --no-cache build-base ruby ruby-bundler ruby-dev
 
 ### Install Dotnet
 RUN apk add --update --no-cache dotnet6-sdk
