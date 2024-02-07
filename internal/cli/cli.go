@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -40,21 +41,28 @@ func GetSupportedLanguages() ([]string, error) {
 	return strings.Split(langs, ", "), nil
 }
 
-func Run(target, installationURL string, repoURL, repoSubDirectory string) error {
+func Run(installationURLs map[string]string, repoURL string, repoSubdirectories map[string]string) error {
 	args := []string{
 		"run",
 	}
 
-	args = append(args, "-t", target)
+	args = append(args, "-t", "all")
 
-	args = append(args, "-i", installationURL)
+	urls, err := json.Marshal(installationURLs)
+	if err != nil {
+		return fmt.Errorf("error marshalling installation urls: %w", err)
+	}
+	args = append(args, "--installationURLs", string(urls))
 
 	if repoURL != "" {
 		args = append(args, "-r", repoURL)
 	}
-	if repoSubDirectory != "" {
-		args = append(args, "-b", repoSubDirectory)
+
+	subdirs, err := json.Marshal(repoSubdirectories)
+	if err != nil {
+		return fmt.Errorf("error marshalling repo subdirectories: %w", err)
 	}
+	args = append(args, "--repo-subdirs", string(subdirs))
 
 	if environment.ForceGeneration() {
 		fmt.Println("force input enabled - setting SPEAKEASY_FORCE_GENERATION=true")

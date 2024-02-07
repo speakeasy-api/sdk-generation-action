@@ -52,6 +52,10 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 
 	langConfigs := map[string]*config.LanguageConfig{}
 
+	installationURLs := map[string]string{}
+	repoURL := getRepoURL()
+	repoSubdirectories := map[string]string{}
+
 	for targetID, target := range wf.Targets {
 		lang := target.Target
 		dir := "."
@@ -82,12 +86,8 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 			published = true // Treat as published if we don't have an installation URL
 		}
 
-		repoURL, repoSubdirectory := getRepoDetails(dir)
-
-		// TODO: this should be openapi location, not target.Source
-		if err = runLang(targetID, lang, installationURL, repoURL, repoSubdirectory); err != nil {
-			return nil, outputs, err
-		}
+		repoSubdirectories[targetID] = filepath.Clean(dir)
+		installationURLs[targetID] = installationURL
 
 		// Load the config again so we can compare the versions
 		loadedCfg, err = config.Load(outputDir)
@@ -117,6 +117,10 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 		} else {
 			fmt.Printf("Regenerating %s SDK did not result in any changes\n", lang)
 		}
+	}
+
+	if err := cli.Run(installationURLs, repoURL, repoSubdirectories); err != nil {
+		return nil, outputs, err
 	}
 
 	outputs["previous_gen_version"] = globalPreviousGenVersion
@@ -163,21 +167,6 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 	}
 
 	return genInfo, outputs, nil
-}
-
-func runLang(targetID, target, installationURL string, repoURL, repoSubdirectory string) error {
-	if err := cli.Run(targetID, installationURL, repoURL, repoSubdirectory); err != nil {
-		return err
-	}
-
-	// For terraform, also trigger "go generate ./..." to regenerate docs
-	if target == "terraform" {
-		if err := cli.TriggerGoGenerate(); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func getPreviousGenVersion(lockFile *config.LockFile, lang, globalPreviousGenVersion string) (string, error) {
@@ -248,8 +237,6 @@ func getInstallationURL(lang, subdirectory string) string {
 	return ""
 }
 
-func getRepoDetails(subdirectory string) (string, string) {
-	subdirectory = filepath.Clean(subdirectory)
-
-	return fmt.Sprintf("%s/%s.git", environment.GetGithubServerURL(), environment.GetRepo()), subdirectory
+func getRepoURL() string {
+	return fmt.Sprintf("%s/%s.git", environment.GetGithubServerURL(), environment.GetRepo())
 }
