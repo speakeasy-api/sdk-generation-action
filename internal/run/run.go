@@ -2,6 +2,7 @@ package run
 
 import (
 	"fmt"
+	"github.com/speakeasy-api/sdk-gen-config/workflow"
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"path"
 	"path/filepath"
@@ -55,22 +56,28 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 	installationURLs := map[string]string{}
 	repoURL := getRepoURL()
 	repoSubdirectories := map[string]string{}
+	previousManagementInfos := map[string]config.Management{}
 
-	for targetID, target := range wf.Targets {
-		lang := target.Target
+	getDirAndOutputDir := func(target workflow.Target) (string, string) {
 		dir := "."
 		if target.Output != nil {
 			dir = *target.Output
 		}
 
-		outputDir := path.Join(workspace, "repo", dir)
+		return dir, path.Join(workspace, "repo", dir)
+	}
+
+	// Load initial configs
+	for targetID, target := range wf.Targets {
+		lang := target.Target
+		dir, outputDir := getDirAndOutputDir(target)
 
 		// Load the config so we can get the current version information
 		loadedCfg, err := config.Load(outputDir)
 		if err != nil {
 			return nil, outputs, err
 		}
-		previousManagementInfo := loadedCfg.LockFile.Management
+		previousManagementInfos[targetID] = loadedCfg.LockFile.Management
 
 		globalPreviousGenVersion, err = getPreviousGenVersion(loadedCfg.LockFile, lang, globalPreviousGenVersion)
 		if err != nil {
@@ -88,9 +95,20 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 
 		repoSubdirectories[targetID] = filepath.Clean(dir)
 		installationURLs[targetID] = installationURL
+	}
+
+	// Run the workflow
+	if err := cli.Run(installationURLs, repoURL, repoSubdirectories); err != nil {
+		return nil, outputs, err
+	}
+
+	// Check for changes
+	for targetID, target := range wf.Targets {
+		lang := target.Target
+		dir, outputDir := getDirAndOutputDir(target)
 
 		// Load the config again so we can compare the versions
-		loadedCfg, err = config.Load(outputDir)
+		loadedCfg, err := config.Load(outputDir)
 		if err != nil {
 			return nil, outputs, err
 		}
@@ -100,6 +118,7 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 
 		outputs[fmt.Sprintf("%s_directory", lang)] = dir
 
+		previousManagementInfo := previousManagementInfos[targetID]
 		dirty, dirtyMsg, err := g.CheckDirDirty(dir, map[string]string{
 			previousManagementInfo.ReleaseVersion:    currentManagementInfo.ReleaseVersion,
 			previousManagementInfo.GenerationVersion: currentManagementInfo.GenerationVersion,
@@ -117,10 +136,6 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 		} else {
 			fmt.Printf("Regenerating %s SDK did not result in any changes\n", lang)
 		}
-	}
-
-	if err := cli.Run(installationURLs, repoURL, repoSubdirectories); err != nil {
-		return nil, outputs, err
 	}
 
 	outputs["previous_gen_version"] = globalPreviousGenVersion
