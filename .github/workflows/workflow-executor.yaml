@@ -183,7 +183,19 @@ jobs:
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&
-      !contains(needs.*.result, 'cancelled')
+      !contains(needs.*.result, 'cancelled') && (
+        needs.run-workflow.outputs.go_regenerated == 'true' ||
+        needs.run-workflow.outputs.python_regenerated == 'true' ||
+        needs.run-workflow.outputs.typescript_regenerated == 'true' ||
+        needs.run-workflow.outputs.terraform_regenerated == 'true' ||
+        needs.run-workflow.outputs.java_regenerated == 'true' ||
+        needs.run-workflow.outputs.php_regenerated == 'true' ||
+        needs.run-workflow.outputs.ruby_regenerated == 'true' ||
+        needs.run-workflow.outputs.csharp_regenerated == 'true' ||
+        needs.run-workflow.outputs.swift_regenerated == 'true' ||
+        needs.run-workflow.outputs.unity_regenerated == 'true' ||
+        needs.run-workflow.outputs.docs_regenerated == 'true'
+      )
     needs:
       - run-workflow
     runs-on: ubuntu-latest
@@ -332,7 +344,7 @@ jobs:
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-java:
-    if: ${{ always() && needs.finalize.run-workflow.java_regenerated == 'true' && needs.run-workflow.outputs.publish_java == 'true' && inputs.mode != 'pr' }}
+    if: ${{ always() && needs.run-workflow.outputs.java_regenerated == 'true' && needs.run-workflow.outputs.publish_java == 'true' && inputs.mode != 'pr' }}
     name: Publish Java SDK
     runs-on: ubuntu-latest
     needs: [ run-workflow, finalize ]
