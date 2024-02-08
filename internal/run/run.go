@@ -93,8 +93,12 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 			published = true // Treat as published if we don't have an installation URL
 		}
 
-		repoSubdirectories[targetID] = filepath.Clean(dir)
-		installationURLs[targetID] = installationURL
+		if installationURL != "" {
+			installationURLs[targetID] = installationURL
+		}
+		if dir != "." {
+			repoSubdirectories[targetID] = filepath.Clean(dir)
+		}
 	}
 
 	// Run the workflow
