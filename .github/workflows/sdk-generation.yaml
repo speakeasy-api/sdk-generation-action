@@ -446,7 +446,9 @@ jobs:
           distribution: "corretto"
           java-version: "11"
           cache: "gradle"
-      - run: ./gradlew build --no-daemon -x test && ./gradlew javadoc
+      - run: |-
+          pwd
+          ./gradlew build --no-daemon -x test && ./gradlew javadoc
         working-directory: ${{ needs.generate.outputs.java_directory }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
