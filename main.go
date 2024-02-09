@@ -39,8 +39,6 @@ func main() {
 		err = actions.Suggest()
 	case environment.ActionRunWorkflow:
 		err = actions.RunWorkflow()
-	case environment.ActionFinalize:
-		err = actions.Finalize()
 	case environment.ActionFinalizeSuggestion:
 		err = actions.FinalizeSuggestion()
 	case environment.ActionRelease:

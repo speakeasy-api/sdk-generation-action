@@ -8,11 +8,6 @@ on:
         default: latest
         required: false
         type: string
-      create_release:
-        description: "Create a Github release on generation if using 'direct' mode or prepare a release if using 'pr' mode"
-        default: "true"
-        required: false
-        type: string
       mode:
         description: |-
           The mode to run the workflow in, valid options are 'direct' or 'pr', defaults to 'direct'.
@@ -35,19 +30,6 @@ on:
         type: string
       working_directory:
         description: "The working directory for running Speakeasy CLI commands in the action"
-        required: false
-        type: string
-      docs_languages:
-        description: |-
-          A yaml string containing a list of languages to generate SDK docs for example:
-          docs_languages: |
-            - go
-            - python
-            - typescript
-            - java
-            - csharp
-            - unity
-            - curl
         required: false
         type: string
     secrets:

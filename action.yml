@@ -9,22 +9,6 @@ inputs:
   github_access_token:
     description: A GitHub access token with write access to the repo
     required: true
-  docs_languages:
-    description: |-
-      A yaml string containing a list of languages to generate SDK docs for example:
-      languages: |
-        - go
-        - python
-        - typescript
-        - java
-        - csharp
-        - unity
-        - curl
-    required: false
-  create_release:
-    description: "Create a Github release on generation"
-    default: "true"
-    required: false
   speakeasy_api_key:
     description: "The Speakeasy API key to authenticate the Speakeasy CLI with"
     required: true

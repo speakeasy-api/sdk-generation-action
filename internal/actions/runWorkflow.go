@@ -46,7 +46,7 @@ func RunWorkflow() error {
 
 	success := false
 	defer func() {
-		if !success && !environment.IsDebugMode() {
+		if (!success || environment.GetMode() == environment.ModeDirect) && !environment.IsDebugMode() {
 			if err := g.DeleteBranch(branchName); err != nil {
 				logging.Debug("failed to delete branch %s: %v", branchName, err)
 			}
@@ -61,6 +61,8 @@ func RunWorkflow() error {
 		}
 		return err
 	}
+
+	anythingRegenerated := false
 
 	if genInfo != nil {
 		docVersion := genInfo.OpenAPIDocVersion
@@ -85,6 +87,8 @@ func RunWorkflow() error {
 			langGenInfo, ok := genInfo.Languages[lang]
 
 			if ok && outputs[fmt.Sprintf("%s_regenerated", lang)] == "true" {
+				anythingRegenerated = true
+
 				path := outputs[fmt.Sprintf("%s_directory", lang)]
 
 				releaseInfo.LanguagesGenerated[lang] = releases.GenerationInfo{
@@ -116,13 +120,96 @@ func RunWorkflow() error {
 		}
 	}
 
-	outputs["branch_name"] = branchName
-
-	if err := setOutputs(outputs); err != nil {
+	if err = finalize(outputs, branchName, anythingRegenerated); err != nil {
 		return err
 	}
 
 	success = true
 
 	return nil
+}
+
+// Sets outputs and creates or adds releases info
+func finalize(outputs map[string]string, branchName string, anythingRegenerated bool) error {
+	g, err := initAction()
+	if err != nil {
+		return err
+	}
+
+	branchName, err = g.FindBranch(branchName)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		outputs["branch_name"] = branchName
+
+		if err := setOutputs(outputs); err != nil {
+			logging.Debug("failed to set outputs: %v", err)
+		}
+	}()
+
+	// If nothing was regenerated, we don't need to do anything
+	if !anythingRegenerated {
+		return nil
+	}
+
+	switch environment.GetMode() {
+	case environment.ModePR:
+		if _, err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
+			return err
+		}
+
+		if !cli.IsAtLeastVersion(cli.MinimumSupportedCLIVersion) {
+			return fmt.Errorf("action requires at least version %s of the speakeasy CLI", cli.MinimumSupportedCLIVersion)
+		}
+
+		branchName, pr, err := g.FindExistingPR(branchName, environment.ActionFinalize)
+		if err != nil {
+			return err
+		}
+
+		releaseInfo, err := getReleasesInfo()
+		if err != nil {
+			return err
+		}
+
+		if err := g.CreateOrUpdatePR(branchName, *releaseInfo, environment.GetPreviousGenVersion(), pr); err != nil {
+			return err
+		}
+	case environment.ModeDirect:
+		releaseInfo, err := getReleasesInfo()
+		if err != nil {
+			return err
+		}
+
+		commitHash, err := g.MergeBranch(branchName)
+		if err != nil {
+			return err
+		}
+
+		if environment.CreateGitRelease() {
+			if err := g.CreateRelease(*releaseInfo); err != nil {
+				return err
+			}
+		}
+
+		outputs["commit_hash"] = commitHash
+	}
+
+	return nil
+}
+
+func getReleasesInfo() (*releases.ReleasesInfo, error) {
+	releasesDir, err := getReleasesDir()
+	if err != nil {
+		return nil, err
+	}
+
+	releasesInfo, err := releases.GetLastReleaseInfo(releasesDir)
+	if err != nil {
+		return nil, err
+	}
+
+	return releasesInfo, nil
 }
