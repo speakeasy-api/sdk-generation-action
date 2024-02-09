@@ -33,8 +33,6 @@ func main() {
 
 	var err error
 	switch environment.GetAction() {
-	case environment.ActionValidate:
-		err = actions.Validate()
 	case environment.ActionSuggest:
 		err = actions.Suggest()
 	case environment.ActionRunWorkflow:

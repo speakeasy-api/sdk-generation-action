@@ -3,6 +3,7 @@ package actions
 import (
 	"fmt"
 	"github.com/hashicorp/go-version"
+	"github.com/speakeasy-api/sdk-generation-action/internal/git"
 	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
@@ -120,7 +121,7 @@ func RunWorkflow() error {
 		}
 	}
 
-	if err = finalize(outputs, branchName, anythingRegenerated); err != nil {
+	if err = finalize(outputs, branchName, anythingRegenerated, g); err != nil {
 		return err
 	}
 
@@ -130,13 +131,8 @@ func RunWorkflow() error {
 }
 
 // Sets outputs and creates or adds releases info
-func finalize(outputs map[string]string, branchName string, anythingRegenerated bool) error {
-	g, err := initAction()
-	if err != nil {
-		return err
-	}
-
-	branchName, err = g.FindBranch(branchName)
+func finalize(outputs map[string]string, branchName string, anythingRegenerated bool, g *git.Git) error {
+	branchName, err := g.FindBranch(branchName)
 	if err != nil {
 		return err
 	}
@@ -156,14 +152,6 @@ func finalize(outputs map[string]string, branchName string, anythingRegenerated 
 
 	switch environment.GetMode() {
 	case environment.ModePR:
-		if _, err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g); err != nil {
-			return err
-		}
-
-		if !cli.IsAtLeastVersion(cli.MinimumSupportedCLIVersion) {
-			return fmt.Errorf("action requires at least version %s of the speakeasy CLI", cli.MinimumSupportedCLIVersion)
-		}
-
 		branchName, pr, err := g.FindExistingPR(branchName, environment.ActionFinalize)
 		if err != nil {
 			return err

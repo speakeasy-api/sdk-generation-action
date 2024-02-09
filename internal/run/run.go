@@ -67,6 +67,8 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 		return dir, path.Join(workspace, "repo", dir)
 	}
 
+	includesTerraform := false
+
 	// Load initial configs
 	for targetID, target := range wf.Targets {
 		lang := target.Target
@@ -99,11 +101,21 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 		if dir != "." {
 			repoSubdirectories[targetID] = filepath.Clean(dir)
 		}
+		if lang == "terraform" {
+			includesTerraform = true
+		}
 	}
 
 	// Run the workflow
 	if err := cli.Run(installationURLs, repoURL, repoSubdirectories); err != nil {
 		return nil, outputs, err
+	}
+
+	// For terraform, we also trigger "go generate ./..." to regenerate docs
+	if includesTerraform {
+		if err = cli.TriggerGoGenerate(); err != nil {
+			return nil, outputs, err
+		}
 	}
 
 	// Check for changes
