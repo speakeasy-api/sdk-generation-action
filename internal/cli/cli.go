@@ -67,7 +67,7 @@ func Run(installationURLs map[string]string, repoURL string, repoSubdirectories 
 		fmt.Println("force input enabled - setting SPEAKEASY_FORCE_GENERATION=true")
 		os.Setenv("SPEAKEASY_FORCE_GENERATION", "true")
 	}
-	
+
 	if environment.ShouldOutputTests() {
 		// TODO: Add CLI flag for outputting tests
 	}
