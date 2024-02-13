@@ -103,6 +103,11 @@ on:
         default: "false"
         required: false
         type: string
+      publish_java_sonatype_central:
+        description: "Publish the Java SDK to the Sonatype central portal if using 'direct' mode or prepare a release if using 'pr' mode"
+        default: "false"
+        required: false
+        type: string
       publish_php:
         description: "Publish the PHP SDK for Composer if using 'direct' mode or prepare a release if using 'pr' mode"
         default: "false"
@@ -305,7 +310,7 @@ jobs:
           publish_python: ${{ inputs.publish_python }}
           publish_typescript: ${{ inputs.publish_typescript }}
           publish_terraform: ${{ inputs.publish_terraform }}
-          publish_java: ${{ inputs.publish_java }}
+          publish_java: ${{ inputs.publish_java || inputs.publish_java_sonatype_central }}
           publish_php: ${{ inputs.publish_php }}
           publish_ruby: ${{ inputs.publish_ruby }}
           publish_csharp: ${{ inputs.publish_csharp }}
@@ -891,7 +896,7 @@ jobs:
           publish_python: ${{ inputs.publish_python }}
           publish_typescript: ${{ inputs.publish_typescript }}
           publish_terraform: ${{ inputs.publish_terraform }}
-          publish_java: ${{ inputs.publish_java }}
+          publish_java: ${{ inputs.publish_java || inputs.publish_java_sonatype_central }}
           publish_php: ${{ inputs.publish_php }}
           publish_ruby: ${{ inputs.publish_ruby }}
           publish_csharp: ${{ inputs.publish_csharp }}
@@ -1033,7 +1038,11 @@ jobs:
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-java:
-    if: ${{ always() && needs.generate.outputs.java_regenerated == 'true' && inputs.publish_java == 'true' && inputs.mode != 'pr' }}
+    if: |
+      always() && 
+      needs.generate.outputs.java_regenerated == 'true' && 
+      (inputs.publish_java == 'true' || inputs.publish_java_sonatype_central == 'true') && 
+      inputs.mode != 'pr'
     name: Publish Java SDK
     runs-on: ubuntu-latest
     needs: [generate, compile-java, finalize]
@@ -1055,11 +1064,21 @@ jobs:
       - run: |-
           pwd
           ./gradlew publish --no-daemon
+        if: ${{ inputs.publish_java == 'true' }}
         env:
           MAVEN_USERNAME: ${{ secrets.ossrh_username }}
           MAVEN_PASSWORD: ${{ secrets.ossrh_password }}
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.java_gpg_secret_key }}
           ORG_GRADLE_PROJECT_signingPassphrase: ${{ secrets.java_gpg_passphrase }}
+      - run: |-
+          pwd
+          ./gradlew sonatypeCentralUpload --no-daemon
+        if: ${{ inputs.publish_java_sonatype_central == 'true' }}
+        env:
+          SONATYPE_USERNAME: ${{ secrets.ossrh_username }}
+          SONATYPE_PASSWORD: ${{ secrets.ossrh_password }}
+          SONATYPE_SIGNING_KEY: ${{ secrets.java_gpg_secret_key }}
+          SIGNING_KEY_PASSPHRASE: ${{ secrets.java_gpg_passphrase }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
