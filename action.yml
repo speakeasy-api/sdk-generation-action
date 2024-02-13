@@ -110,6 +110,10 @@ inputs:
     description: "Whether the Java SDK will be published to the provided OSSRH URL"
     default: "false"
     required: false
+  publish_java_sonatype_central:
+    description: "Whether to publish the Java SDK to the Sonatype central portal"
+    default: "false"
+    required: false
   publish_csharp:
     description: "Whether the C# SDK will be published to Nuget"
     default: "false"
