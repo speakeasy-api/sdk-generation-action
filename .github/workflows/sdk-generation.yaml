@@ -103,8 +103,8 @@ on:
         default: "false"
         required: false
         type: string
-      publish_java_sonatype_central:
-        description: "Publish the Java SDK to the Sonatype central portal if using 'direct' mode or prepare a release if using 'pr' mode"
+      use_sonatype_central:
+        description: "When publishing the Java SDK, use to the Sonatype central portal"
         default: "false"
         required: false
         type: string
@@ -310,7 +310,7 @@ jobs:
           publish_python: ${{ inputs.publish_python }}
           publish_typescript: ${{ inputs.publish_typescript }}
           publish_terraform: ${{ inputs.publish_terraform }}
-          publish_java: ${{ inputs.publish_java || inputs.publish_java_sonatype_central }}
+          publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
           publish_ruby: ${{ inputs.publish_ruby }}
           publish_csharp: ${{ inputs.publish_csharp }}
@@ -896,7 +896,7 @@ jobs:
           publish_python: ${{ inputs.publish_python }}
           publish_typescript: ${{ inputs.publish_typescript }}
           publish_terraform: ${{ inputs.publish_terraform }}
-          publish_java: ${{ inputs.publish_java || inputs.publish_java_sonatype_central }}
+          publish_java: ${{ inputs.publish_java }}
           publish_php: ${{ inputs.publish_php }}
           publish_ruby: ${{ inputs.publish_ruby }}
           publish_csharp: ${{ inputs.publish_csharp }}
@@ -1041,7 +1041,7 @@ jobs:
     if: |
       always() && 
       needs.generate.outputs.java_regenerated == 'true' && 
-      (inputs.publish_java == 'true' || inputs.publish_java_sonatype_central == 'true') && 
+      inputs.publish_java == 'true' && 
       inputs.mode != 'pr'
     name: Publish Java SDK
     runs-on: ubuntu-latest
@@ -1064,7 +1064,7 @@ jobs:
       - run: |-
           pwd
           ./gradlew publish --no-daemon
-        if: ${{ inputs.publish_java == 'true' }}
+        if: ${{ inputs.use_sonatype_central == 'false' }}
         env:
           MAVEN_USERNAME: ${{ secrets.ossrh_username }}
           MAVEN_PASSWORD: ${{ secrets.ossrh_password }}
@@ -1073,7 +1073,7 @@ jobs:
       - run: |-
           pwd
           ./gradlew sonatypeCentralUpload --no-daemon
-        if: ${{ inputs.publish_java_sonatype_central == 'true' }}
+        if: ${{ inputs.use_sonatype_central == 'true' }}
         env:
           SONATYPE_USERNAME: ${{ secrets.ossrh_username }}
           SONATYPE_PASSWORD: ${{ secrets.ossrh_password }}
