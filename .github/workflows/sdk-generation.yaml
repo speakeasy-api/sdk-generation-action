@@ -1072,7 +1072,7 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassphrase: ${{ secrets.java_gpg_passphrase }}
       - run: |-
           pwd
-          ./gradlew sonatypeCentralUpload --no-daemon
+          ./gradlew build sonatypeCentralUpload --no-daemon
         if: ${{ inputs.use_sonatype_central == 'true' }}
         env:
           SONATYPE_USERNAME: ${{ secrets.ossrh_username }}
