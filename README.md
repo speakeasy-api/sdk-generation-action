@@ -175,10 +175,13 @@ Publishing is provided by using the included reusable workflows. These workflows
 
 ### Java (Maven -- Sonatype Central Portal)
 
-Java publishing to Sonatype's central portal is supported. For legacy support, see the next section.
+This section covers how to publish to Sonatype's central portal. For legacy OSSRH publishing support, see the next section.
 
 In order to publish, you must do the following:
 - If you've never published to Maven before, you must set up a Sonatype Central Portal account. Follow the instructions [here](https://central.sonatype.org/register/central-portal/) to do so.
+- You will need a Sonatype-generated username and password for authentication. Click your username in the top right -> view account -> generate user token.
+  - Store the username and password as GitHub secrets
+- Create a Sonatype namespace. Follow the instructions [here](https://central.sonatype.org/register/central-portal/#choosing-a-namespace).
 - You will need a GPG key to sign the artifacts. Follow the instructions [here](https://central.sonatype.org/publish/requirements/gpg/) to create one. An abbreviated guide is provided below.
   - Install gnupg on your machine (e.g. `brew install gnupg`)
   - Run `gpg --gen-key`. Note the keyId (e.g. `CA925CD6C9E8D064FF05B4728190C4130ABA0F98`) and shortId (last 8 characters of the keyId, e.g. `0ABA0F98`).
@@ -186,23 +189,23 @@ In order to publish, you must do the following:
   - Run `gpg --export-secret-keys --armor <your_shortId> > secret_key.asc`
   - `secret_key.asc` will contain your GPG secret key
 - Add your GPG secret key and passphrase as GitHub secrets
-- Add your OSSRH (e.g. Sonatype) username and password as GitHub secrets
-- Populate the `secrets` section of the workflow file with your secrets. For example:
+- Populate the `secrets` section of the workflow file with your secrets. Modify the values of `secrets.<MY_SECRET_NAME>` as needed in the following example:
   - `ossrh_username: ${{ secrets.OSSRH_USERNAME }}`
   - `ossrh_password: ${{ secrets.OSSRH_PASSWORD }}`
-  - `java_gpg_secret_key: ${{ secrets.JAVA_GPG_SECRET_KEY }}`
-  - `java_gpg_passphrase: ${{ secrets.JAVA_GPG_PASSPHRASE }}`
-- In the workflow file, set `publish_java_sonatype_central: true`
+  - `java_gpg_secret_key: ${{ secrets.GPG_SECRET_KEY }}`
+  - `java_gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}`
+- In the workflow file, set the following:
+  - `publish_java: true`
+  - `use_sonatype_central: true`
 - In the `java` section of `gen.yaml`, ensure the groupId you've provided matches your OSSRH org and the artifact name you want. For example:
   - `groupID: com.example`
   - `artifactID: example-sdk`
-- In the `java` section of `gen.yaml`, provide the additional configuration required for publishing to Maven. The below fields are required:
-  - `ossrhURL: https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/`
+- In the `java` section of `gen.yaml`, provide the additional configuration required for publishing to Maven. Do **not** supply an `ossrh_url`. The below fields are required:
   - `githubURL: github.com/org/repo`
   - `companyName: My Company`
   - `companyURL: https://www.mycompany.com`
   - `companyEmail: info@mycompany.com`
-  - 
+  
 ### Java (Maven -- Sonatype -- Legacy)
 
 Java publishing is supported by publishing to a staging repository provider (OSSRH). In order to publish, you must do the following:
