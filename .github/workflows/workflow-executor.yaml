@@ -319,7 +319,7 @@ jobs:
         if: ${{ inputs.use_sonatype_central == 'true' }}
         run: |-
           pwd
-          ./gradlew sonatypeCentralUpload --no-daemon
+          ./gradlew build sonatypeCentralUpload --no-daemon
         env:
           SONATYPE_USERNAME: ${{ secrets.ossrh_username }}
           SONATYPE_PASSWORD: ${{ secrets.ossrh_password }}
