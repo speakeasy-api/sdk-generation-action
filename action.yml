@@ -111,7 +111,7 @@ inputs:
     default: "false"
     required: false
   use_sonatype_central:
-    description: "When publishing the Java SDK, use to the Sonatype central portal"
+    description: "When publishing the Java SDK, use the Sonatype central portal"
     default: "false"
     required: false
   publish_csharp:
