@@ -1061,16 +1061,18 @@ jobs:
           java-version: "11"
           distribution: "corretto"
           cache: "gradle"
-      - run: |-
+      - name: Publish to Sonatype (legacy)
+        run: |-
           pwd
           ./gradlew publish --no-daemon
-        if: ${{ inputs.use_sonatype_central == 'false' }}
+        if: ${{ inputs.use_sonatype_central != 'true' }}
         env:
           MAVEN_USERNAME: ${{ secrets.ossrh_username }}
           MAVEN_PASSWORD: ${{ secrets.ossrh_password }}
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.java_gpg_secret_key }}
           ORG_GRADLE_PROJECT_signingPassphrase: ${{ secrets.java_gpg_passphrase }}
-      - run: |-
+      - name: Publish to Sonatype Central
+        run: |-
           pwd
           ./gradlew build sonatypeCentralUpload --no-daemon
         if: ${{ inputs.use_sonatype_central == 'true' }}
