@@ -63,6 +63,10 @@ inputs:
   gpg_fingerprint:
     description: "The GPG fingerprint to sign the release with"
     required: false
+  use_sonatype_central:
+    description: "When publishing the Java SDK, use the Sonatype central portal"
+    default: "false"
+    required: false
 outputs:
   publish_python:
     description: "Whether the Python SDK will be published to PyPi"
