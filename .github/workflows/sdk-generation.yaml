@@ -104,7 +104,7 @@ on:
         required: false
         type: string
       use_sonatype_central:
-        description: "When publishing the Java SDK, use to the Sonatype central portal"
+        description: "When publishing the Java SDK, use the Sonatype central portal"
         default: "false"
         required: false
         type: string
