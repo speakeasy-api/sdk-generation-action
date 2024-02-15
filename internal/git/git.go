@@ -301,7 +301,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	logging.Info("Commit and pushing changes to git")
 
-	if _, err := w.Add("."); err != nil {
+	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
@@ -330,6 +330,22 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	}
 
 	return commitHash.String(), nil
+}
+
+func (g *Git) Add(arg string) error {
+	baseDir := environment.GetBaseDir()
+
+	cmdPath := filepath.Join(baseDir, "bin", "git")
+
+	cmd := exec.Command(cmdPath, "add", arg)
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Env = os.Environ()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error running `git add %s`: %w %s", arg, err, string(output))
+	}
+
+	return nil
 }
 
 func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo releases.ReleasesInfo, previousGenVersion string, pr *github.PullRequest) error {
