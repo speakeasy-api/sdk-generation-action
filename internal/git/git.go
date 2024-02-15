@@ -333,11 +333,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 }
 
 func (g *Git) Add(arg string) error {
-	baseDir := environment.GetBaseDir()
-
-	cmdPath := filepath.Join(baseDir, "bin", "git")
-
-	cmd := exec.Command(cmdPath, "add", arg)
+	cmd := exec.Command("git", "add", arg)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
