@@ -940,7 +940,7 @@ jobs:
           GH_ACTION_VERSION: "v14"
           GH_ACTION_STEP: ${{ github.job }}
   publish-pypi:
-    if: ${{ needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' && inputs.mode != 'pr' }}
+    if: ${{ always() && needs.generate.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' && inputs.mode != 'pr' }}
     name: Publish Python SDK
     runs-on: ubuntu-latest
     needs: [generate, compile-python, finalize]
@@ -995,7 +995,7 @@ jobs:
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-npm:
-    if: ${{ needs.generate.outputs.typescript_regenerated == 'true' && inputs.publish_typescript == 'true' && inputs.mode != 'pr' }}
+    if: ${{ always() && needs.generate.outputs.typescript_regenerated == 'true' && inputs.publish_typescript == 'true' && inputs.mode != 'pr' }}
     name: Publish Typescript SDK
     runs-on: ubuntu-latest
     needs: [generate, compile-typescript, finalize]
@@ -1116,7 +1116,7 @@ jobs:
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-gems:
-    if: ${{ needs.generate.outputs.ruby_regenerated == 'true' && inputs.publish_ruby == 'true' && inputs.mode != 'pr' }}
+    if: ${{ always() && needs.generate.outputs.ruby_regenerated == 'true' && inputs.publish_ruby == 'true' && inputs.mode != 'pr' }}
     name: Publish Ruby SDK
     runs-on: ubuntu-latest
     needs: [generate, compile-ruby, finalize]
@@ -1172,7 +1172,7 @@ jobs:
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-nuget:
-    if: ${{ needs.generate.outputs.csharp_regenerated == 'true' && inputs.publish_csharp == 'true' && inputs.mode != 'pr' }}
+    if: ${{ always() && needs.generate.outputs.csharp_regenerated == 'true' && inputs.publish_csharp == 'true' && inputs.mode != 'pr' }}
     name: Publish C# SDK
     runs-on: ubuntu-latest
     needs: [generate, compile-csharp, finalize]
@@ -1218,7 +1218,7 @@ jobs:
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-packagist:
-    if: ${{ needs.generate.outputs.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
+    if: ${{ always() && needs.generate.outputs.php_regenerated == 'true' && inputs.publish_php == 'true' && inputs.mode != 'pr' }}
     name: Publish PHP SDK
     runs-on: ubuntu-latest
     needs: [generate, compile-php, finalize]
