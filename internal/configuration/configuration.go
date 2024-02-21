@@ -2,77 +2,61 @@ package configuration
 
 import (
 	"fmt"
-	"path/filepath"
-	"strings"
-
+	"github.com/speakeasy-api/sdk-gen-config/workflow"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"golang.org/x/exp/slices"
-	"gopkg.in/yaml.v3"
+	"path/filepath"
 )
 
-func GetAndValidateLanguages(checkLangSupported bool) (map[string]string, error) {
-	languages := environment.GetLanguages()
-
-	languages = strings.ReplaceAll(languages, "\\n", "\n")
-
-	langs := []interface{}{}
-
-	if err := yaml.Unmarshal([]byte(languages), &langs); err != nil {
-		return nil, fmt.Errorf("failed to parse languages: %w", err)
+func GetWorkflowAndValidateLanguages(checkLangSupported bool) (*workflow.Workflow, error) {
+	wf, err := getWorkflow()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load workflow file: %w", err)
 	}
 
-	if len(langs) == 0 {
-		return nil, fmt.Errorf("no languages provided")
+	var langs []string
+	for _, target := range wf.Targets {
+		langs = append(langs, target.Target)
 	}
 
-	langCfgs := map[string]string{}
-
-	numConfigs := len(langs)
-
-	for _, l := range langs {
-		langCfg, ok := l.(map[string]interface{})
-		if ok {
-			for l := range langCfg {
-				path := langCfg[l].(string)
-
-				langCfgs[l] = filepath.Clean(path)
-			}
-
-			continue
+	if checkLangSupported {
+		if err := AssertLangsSupported(langs); err != nil {
+			return nil, err
 		}
-
-		lang, ok := l.(string)
-		if ok {
-			if numConfigs > 1 {
-				langCfgs[lang] = fmt.Sprintf("%s-client-sdk", lang)
-			} else {
-				langCfgs[lang] = ""
-			}
-			continue
-		}
-
-		return nil, fmt.Errorf("invalid language configuration: %v", l)
 	}
 
-	if !checkLangSupported {
-		return langCfgs, nil
+	return wf, nil
+}
+
+func getWorkflow() (*workflow.Workflow, error) {
+	workspace := environment.GetWorkspace()
+
+	localPath := filepath.Join(workspace, "repo")
+
+	wf, _, err := workflow.Load(localPath)
+	if err != nil {
+		return nil, err
 	}
 
+	return wf, err
+}
+
+func AssertLangsSupported(langs []string) error {
 	supportedLangs, err := cli.GetSupportedLanguages()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get supported languages: %w", err)
+		return fmt.Errorf("failed to get supported languages: %w", err)
 	}
 
-	for l := range langCfgs {
+	for _, l := range langs {
 		if l == "docs" {
-			return langCfgs, nil
+			return nil
 		}
 
 		if !slices.Contains(supportedLangs, l) {
-			return nil, fmt.Errorf("unsupported language: %s", l)
+			return fmt.Errorf("unsupported language: %s", l)
 		}
 	}
 
-	return langCfgs, nil
+	return nil
 }
