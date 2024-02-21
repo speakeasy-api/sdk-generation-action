@@ -19,7 +19,7 @@ type Action string
 
 const (
 	ActionValidate           Action = "validate"
-	ActionGenerate           Action = "generate"
+	ActionRunWorkflow        Action = "run-workflow"
 	ActionSuggest            Action = "suggest"
 	ActionFinalize           Action = "finalize"
 	ActionFinalizeSuggestion Action = "finalize-suggestion"
@@ -68,7 +68,7 @@ func GetMode() Mode {
 func GetAction() Action {
 	action := os.Getenv("INPUT_ACTION")
 	if action == "" {
-		return ActionGenerate
+		return ActionRunWorkflow
 	}
 
 	return Action(action)
@@ -162,10 +162,6 @@ func IsLanguagePublished(lang string) bool {
 	}
 
 	return os.Getenv(fmt.Sprintf("INPUT_PUBLISH_%s", strings.ToUpper(lang))) == "true"
-}
-
-func IsJavaPublished() bool {
-	return os.Getenv("INPUT_PUBLISH_JAVA") == "true"
 }
 
 func GetOpenAPIDocAuthHeader() string {
