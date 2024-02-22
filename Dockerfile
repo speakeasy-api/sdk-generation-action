@@ -35,7 +35,7 @@ RUN apk add --update --no-cache build-base ruby ruby-bundler ruby-dev
 
 ### Install .NET 6.0
 ENV DOTNET_ROOT=/usr/lib/dotnet
-RUN apk add --update --no-cache dotnet6-sdk curl bash
+RUN apk add --update --no-cache dotnet6-sdk
 
 # Install .NET 5.0
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin -Channel 5.0 -InstallDir ${DOTNET_ROOT}
