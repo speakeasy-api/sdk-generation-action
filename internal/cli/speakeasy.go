@@ -4,8 +4,10 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -182,4 +184,31 @@ func extractTarGZ(archive, dest string) error {
 	}
 
 	return nil
+}
+
+func CheckFreeUsageAccess() (bool, error) {
+	apiURL := "https://example.com/v1/workspace/access?passive=true"
+
+	resp, err := http.Get(apiURL)
+	if err != nil {
+		return false, fmt.Errorf("error making the API request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return false, fmt.Errorf("API request failed with status code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, fmt.Errorf("error reading the response body: %w", err)
+	}
+	var accessDetails struct {
+		GenerationAllowed bool `json:"generation_allowed"`
+	}
+	if err := json.Unmarshal(body, &accessDetails); err != nil {
+		return false, fmt.Errorf("error unmarshaling the response: %w", err)
+	}
+
+	return accessDetails.GenerationAllowed, nil
 }

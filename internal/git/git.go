@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/url"
 	"os"
 	"os/exec"
@@ -403,6 +404,14 @@ Based on:
 - OpenAPI Doc %s %s
 - Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s`, releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, changelog)
 
+	// TODO: To be removed after we start blocking on usage limits.
+	if accessAllowed, err := cli.CheckFreeUsageAccess(); err == nil && !accessAllowed {
+		warningDate := time.Date(2024, time.March, 18, 0, 0, 0, 0, time.UTC)
+		daysToLimit := int(math.Round(warningDate.Sub(time.Now().Truncate(24*time.Hour)).Hours() / 24))
+		body = fmt.Sprintf(`# 🚀 Time to Upgrade 🚀
+You have exceeded the limit of one free generated SDK. Please reach out to the Speakeasy team in the next %d days to ensure continued access`, daysToLimit) + "\n\n" + body
+	}
+
 	const maxBodyLength = 65536
 
 	if len(body) > maxBodyLength {
@@ -629,7 +638,7 @@ func (g *Git) GetDownloadLink(version string) (string, string, error) {
 		if err != nil {
 			return "", "", fmt.Errorf("failed to get speakeasy cli releases: %w", err)
 		}
-		
+
 		if len(releases) == 0 {
 			return "", "", fmt.Errorf("no speakeasy cli releases found")
 		} else {
