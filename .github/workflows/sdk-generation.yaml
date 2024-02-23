@@ -896,7 +896,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: Finalize
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action@v14.44
         with:
           github_access_token: ${{ secrets.github_access_token }}
           languages: ${{ inputs.languages }}
