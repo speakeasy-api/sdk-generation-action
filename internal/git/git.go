@@ -410,6 +410,8 @@ Based on:
 		daysToLimit := int(math.Round(warningDate.Sub(time.Now().Truncate(24*time.Hour)).Hours() / 24))
 		body = fmt.Sprintf(`# 🚀 Time to Upgrade 🚀
 You have exceeded the limit of one free generated SDK. Please reach out to the Speakeasy team in the next %d days to ensure continued access`, daysToLimit) + "\n\n" + body
+	} else {
+		return err
 	}
 
 	const maxBodyLength = 65536

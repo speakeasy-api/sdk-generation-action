@@ -188,7 +188,7 @@ func extractTarGZ(archive, dest string) error {
 
 func CheckFreeUsageAccess() (bool, error) {
 	apiURL := "https://api.speakeasyapi.dev/v1/workspace/access?passive=true"
-	
+
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
 		return false, fmt.Errorf("error creating the request: %w", err)
