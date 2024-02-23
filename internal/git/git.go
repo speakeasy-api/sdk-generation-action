@@ -408,8 +408,8 @@ Based on:
 	if accessAllowed, err := cli.CheckFreeUsageAccess(); err == nil && !accessAllowed {
 		warningDate := time.Date(2024, time.March, 18, 0, 0, 0, 0, time.UTC)
 		daysToLimit := int(math.Round(warningDate.Sub(time.Now().Truncate(24*time.Hour)).Hours() / 24))
-		body = fmt.Sprintf(`# 🚀 Time to Upgrade 🚀
-You have exceeded the limit of one free generated SDK. Please reach out to the Speakeasy team in the next %d days to ensure continued access`, daysToLimit) + "\n\n" + body
+		body += fmt.Sprintf(`\n\n\n# 🚀 Time to Upgrade 🚀
+You have exceeded the limit of one free generated SDK. Please reach out to the Speakeasy team in the next %d days to ensure continued access`, daysToLimit) + "\n\n"
 	}
 
 	const maxBodyLength = 65536
