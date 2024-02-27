@@ -62,13 +62,13 @@ jobs:
     name: Create Github Release
     runs-on: ubuntu-latest
     outputs:
-      publish_python: ${{ steps.run-workflow.outputs.publish_python }}
-      publish_typescript: ${{ steps.run-workflow.outputs.publish_typescript }}
-      publish_terraform: ${{ steps.run-workflow.outputs.publish_terraform }}
-      publish_java: ${{ steps.run-workflow.outputs.publish_java }}
-      publish_php: ${{ steps.run-workflow.outputs.publish_php }}
-      publish_ruby: ${{ steps.run-workflow.outputs.publish_ruby }}
-      publish_csharp: ${{ steps.run-workflow.outputs.publish_csharp }}
+      publish_python: ${{ steps.release.outputs.publish_python }}
+      publish_typescript: ${{ steps.release.outputs.publish_typescript }}
+      publish_terraform: ${{ steps.release.outputs.publish_terraform }}
+      publish_java: ${{ steps.release.outputs.publish_java }}
+      publish_php: ${{ steps.release.outputs.publish_php }}
+      publish_ruby: ${{ steps.release.outputs.publish_ruby }}
+      publish_csharp: ${{ steps.release.outputs.publish_csharp }}
       python_regenerated: ${{ steps.release.outputs.python_regenerated }}
       python_directory: ${{ steps.release.outputs.python_directory }}
       typescript_regenerated: ${{ steps.release.outputs.typescript_regenerated }}
