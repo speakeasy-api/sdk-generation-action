@@ -143,7 +143,6 @@ runs:
     - ${{ inputs.speakeasy_version }}
     - ${{ inputs.github_access_token }}
     - ${{ inputs.docs_languages }}
-    - ${{ inputs.create_release }}
     - ${{ inputs.max_suggestions }}
     - ${{ inputs.mode }}
     - ${{ inputs.action }}

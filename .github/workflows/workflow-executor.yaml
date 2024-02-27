@@ -127,7 +127,6 @@ jobs:
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           github_access_token: ${{ secrets.github_access_token }}
-          create_release: ${{ inputs.create_release }}
           mode: ${{ inputs.mode }}
           force: ${{ inputs.force }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}

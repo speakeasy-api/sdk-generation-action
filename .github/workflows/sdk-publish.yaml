@@ -3,11 +3,6 @@ name: Speakeasy SDK Publish Workflow
 on:
   workflow_call:
     inputs:
-      create_release:
-        description: "Create a Github release"
-        default: "true"
-        required: false
-        type: string
       speakeasy_server_url:
         required: false
         description: "Internal use only"
@@ -94,7 +89,6 @@ jobs:
         uses: speakeasy-api/sdk-generation-action@v15
         with:
           github_access_token: ${{ secrets.github_access_token }}
-          create_release: ${{ inputs.create_release }}
           action: "release"
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
