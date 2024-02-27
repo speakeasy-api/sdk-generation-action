@@ -8,46 +8,6 @@ on:
         default: "true"
         required: false
         type: string
-      publish_python:
-        description: "Publish the Python SDK to PyPi if using 'direct' mode or prepare a release if using 'pr' mode"
-        default: "false"
-        required: false
-        type: string
-      publish_typescript:
-        description: "Publish the Typescript SDK to NPM if using 'direct' mode or prepare a release if using 'pr' mode"
-        default: "false"
-        required: false
-        type: string
-      publish_java:
-        description: "Publish the Java SDK to the OSSRH URL configured in gen.yml if using 'direct' mode or prepare a release if using 'pr' mode"
-        default: "false"
-        required: false
-        type: string
-      use_sonatype_central:
-        description: "When publishing the Java SDK, use the Sonatype central portal"
-        default: "false"
-        required: false
-        type: string
-      publish_php:
-        description: "Publish the PHP SDK for Composer if using 'direct' mode or prepare a release if using 'pr' mode"
-        default: "false"
-        required: false
-        type: string
-      publish_ruby:
-        description: "Publish the Ruby SDK for RubyGems if using 'direct' mode or prepare a release if using 'pr' mode"
-        default: "false"
-        required: false
-        type: string
-      publish_csharp:
-        description: "Publish the C# SDK for nuget if using 'direct' mode or prepare a release if using 'pr' mode"
-        default: "false"
-        required: false
-        type: string
-      publish_terraform:
-        description: "Create a Github release compatible with the terraform registry of the provider"
-        default: "false"
-        required: false
-        type: string
       speakeasy_server_url:
         required: false
         description: "Internal use only"
@@ -102,6 +62,13 @@ jobs:
     name: Create Github Release
     runs-on: ubuntu-latest
     outputs:
+      publish_python: ${{ steps.run-workflow.outputs.publish_python }}
+      publish_typescript: ${{ steps.run-workflow.outputs.publish_typescript }}
+      publish_terraform: ${{ steps.run-workflow.outputs.publish_terraform }}
+      publish_java: ${{ steps.run-workflow.outputs.publish_java }}
+      publish_php: ${{ steps.run-workflow.outputs.publish_php }}
+      publish_ruby: ${{ steps.run-workflow.outputs.publish_ruby }}
+      publish_csharp: ${{ steps.run-workflow.outputs.publish_csharp }}
       python_regenerated: ${{ steps.release.outputs.python_regenerated }}
       python_directory: ${{ steps.release.outputs.python_directory }}
       typescript_regenerated: ${{ steps.release.outputs.typescript_regenerated }}
@@ -124,17 +91,10 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action@v15
         with:
           github_access_token: ${{ secrets.github_access_token }}
           create_release: ${{ inputs.create_release }}
-          publish_python: ${{ inputs.publish_python }}
-          publish_typescript: ${{ inputs.publish_typescript }}
-          publish_terraform: ${{ inputs.publish_terraform }}
-          publish_java: ${{ inputs.publish_java }}
-          publish_php: ${{ inputs.publish_php }}
-          publish_ruby: ${{ inputs.publish_ruby }}
-          publish_csharp: ${{ inputs.publish_csharp }}
           action: "release"
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
@@ -150,7 +110,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-pypi:
-    if: ${{ needs.release.outputs.python_regenerated == 'true' && inputs.publish_python == 'true' }}
+    if: ${{ needs.release.outputs.python_regenerated == 'true' && needs.release.outputs.publish_python == 'true' }}
     name: Publish Python SDK
     runs-on: ubuntu-latest
     needs: release
@@ -188,7 +148,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-npm:
-    if: ${{ needs.release.outputs.typescript_regenerated == 'true' && inputs.publish_typescript == 'true' }}
+    if: ${{ needs.release.outputs.typescript_regenerated == 'true' && needs.release.outputs.publish_typescript == 'true' }}
     name: Publish Typescript SDK
     runs-on: ubuntu-latest
     needs: release
@@ -222,7 +182,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-java:
-    if: ${{ needs.release.outputs.java_regenerated == 'true' && inputs.publish_java == 'true' }}
+    if: ${{ needs.release.outputs.java_regenerated == 'true' && needs.release.outputs.publish_java == 'true' }}
     name: Publish Java SDK
     runs-on: ubuntu-latest
     needs: release
@@ -243,7 +203,7 @@ jobs:
         run: |-
           pwd
           ./gradlew publish --no-daemon
-        if: ${{ inputs.use_sonatype_central != 'true' }}
+        if: ${{ needs.release.outputs.use_sonatype_legacy == 'true' }}
         env:
           MAVEN_USERNAME: ${{ secrets.ossrh_username }}
           MAVEN_PASSWORD: ${{ secrets.ossrh_password }}
@@ -253,7 +213,7 @@ jobs:
         run: |-
           pwd
           ./gradlew build sonatypeCentralUpload --no-daemon
-        if: ${{ inputs.use_sonatype_central == 'true' }}
+        if: ${{ needs.release.outputs.use_sonatype_legacy != 'true' }}
         env:
           SONATYPE_USERNAME: ${{ secrets.ossrh_username }}
           SONATYPE_PASSWORD: ${{ secrets.ossrh_password }}
@@ -271,7 +231,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-packagist:
-    if: ${{ needs.release.outputs.php_regenerated == 'true' && inputs.publish_php == 'true' }}
+    if: ${{ needs.release.outputs.php_regenerated == 'true' && needs.release.outputs.publish_php == 'true' }}
     name: Publish PHP SDK
     runs-on: ubuntu-latest
     needs: release
@@ -300,7 +260,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-nuget:
-    if: ${{ needs.release.outputs.csharp_regenerated == 'true' && inputs.publish_csharp == 'true' }}
+    if: ${{ needs.release.outputs.csharp_regenerated == 'true' && needs.release.outputs.publish_csharp == 'true' }}
     name: Publish C# SDK
     runs-on: ubuntu-latest
     needs: release
@@ -329,7 +289,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-terraform:
-    if: ${{ needs.release.outputs.terraform_regenerated == 'true' && inputs.publish_terraform == 'true' }}
+    if: ${{ needs.release.outputs.terraform_regenerated == 'true' && needs.release.outputs.publish_terraform == 'true' }}
     name: Publish Terraform Provider
     runs-on: ubuntu-latest
     needs: release
@@ -347,7 +307,7 @@ jobs:
           gpg_private_key: ${{ secrets.TERRAFORM_GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.TERRAFORM_GPG_PASSPHRASE }}
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action@v15
         with:
           github_access_token: ${{ secrets.github_access_token }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
@@ -368,7 +328,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   publish-gems:
-    if: ${{ needs.release.outputs.ruby_regenerated == 'true' && inputs.publish_ruby == 'true' }}
+    if: ${{ needs.release.outputs.ruby_regenerated == 'true' && needs.release.outputs.publish_ruby == 'true' }}
     name: Publish Ruby SDK
     runs-on: ubuntu-latest
     needs: release

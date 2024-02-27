@@ -3,7 +3,9 @@ package actions
 import (
 	"errors"
 	"fmt"
+	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
@@ -61,8 +63,31 @@ func Release() error {
 		outputs[fmt.Sprintf("%s_directory", lang)] = info.Path
 	}
 
-	if err := setOutputs(outputs); err != nil {
+	if err = addPublishOutputs(outputs); err != nil {
 		return err
+	}
+
+	if err = setOutputs(outputs); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func addPublishOutputs(outputs map[string]string) error {
+	wf, err := configuration.GetWorkflowAndValidateLanguages(true)
+	if err != nil {
+		return err
+	}
+
+	for _, target := range wf.Targets {
+		lang := target.Target
+		published := target.IsPublished()
+		outputs[fmt.Sprintf("publish_%s", lang)] = fmt.Sprintf("%t", published)
+
+		if published && lang == "java" && target.Publishing.Java != nil {
+			outputs["use_sonatype_legacy"] = strconv.FormatBool(target.Publishing.Java.UseSonatypeLegacy)
+		}
 	}
 
 	return nil

@@ -8,11 +8,6 @@ on:
         default: latest
         required: false
         type: string
-      use_sonatype_central:
-        description: "When publishing the Java SDK, use the Sonatype central portal"
-        default: "false"
-        required: false
-        type: string
       mode:
         description: |-
           The mode to run the workflow in, valid options are 'direct' or 'pr', defaults to 'direct'.
