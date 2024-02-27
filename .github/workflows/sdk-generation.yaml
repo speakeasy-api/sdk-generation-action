@@ -692,7 +692,14 @@ jobs:
         with:
           dotnet-version: ${{ inputs.dotnet_version }}
 
-      - run: dotnet format && dotnet build
+      - name: Compile 5.X
+        if: ${{ startsWith(inputs.dotnet_version, '5') }}
+        run: dotnet build
+        working-directory: ${{ needs.generate.outputs.csharp_directory }}
+
+      - name: Compile 6.X
+        if: ${{ startsWith(inputs.dotnet_version, '6') }}
+        run: dotnet format && dotnet build
         working-directory: ${{ needs.generate.outputs.csharp_directory }}
 
       - uses: ravsamhq/notify-slack-action@v2
