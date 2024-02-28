@@ -63,7 +63,7 @@ func Release() error {
 		outputs[fmt.Sprintf("%s_directory", lang)] = info.Path
 	}
 
-	if err = addPublishOutputs(outputs); err != nil {
+	if err = addPublishOutputs(dir, outputs); err != nil {
 		return err
 	}
 
@@ -74,13 +74,18 @@ func Release() error {
 	return nil
 }
 
-func addPublishOutputs(outputs map[string]string) error {
+func addPublishOutputs(dir string, outputs map[string]string) error {
 	wf, err := configuration.GetWorkflowAndValidateLanguages(false)
 	if err != nil {
 		return err
 	}
 
 	for _, target := range wf.Targets {
+		// Only add outputs for the target that was regenerated, based on output directory
+		if dir != "." && target.Output != nil && *target.Output != dir {
+			continue
+		}
+
 		lang := target.Target
 		published := target.IsPublished()
 		outputs[fmt.Sprintf("publish_%s", lang)] = fmt.Sprintf("%t", published)
