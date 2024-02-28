@@ -47,6 +47,7 @@ RUN apk --update --no-cache add wget \
 		     curl \
 		     git \
 		     php \
+         php-xml \
 		     php-curl \
 		     php-openssl \
 		     php-iconv \
