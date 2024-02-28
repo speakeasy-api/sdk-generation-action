@@ -75,7 +75,7 @@ func Release() error {
 }
 
 func addPublishOutputs(outputs map[string]string) error {
-	wf, err := configuration.GetWorkflowAndValidateLanguages(true)
+	wf, err := configuration.GetWorkflowAndValidateLanguages(false)
 	if err != nil {
 		return err
 	}
