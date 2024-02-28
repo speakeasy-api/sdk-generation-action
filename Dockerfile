@@ -47,14 +47,11 @@ RUN apk --update --no-cache add wget \
 		     curl \
 		     git \
 		     php \
-         php-xml \
+         php-ctype php-dom php-json php-mbstring php-phar php-tokenizer php-xml php-xmlwriter \
 		     php-curl \
 		     php-openssl \
 		     php-iconv \
-		     php-json \
-		     php-mbstring \
-		     php-phar \
-		     php-dom --repository http://nl.alpinelinux.org/alpine/edge/testing/
+		    --repository http://nl.alpinelinux.org/alpine/edge/testing/
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 RUN mkdir -p /var/www
 WORKDIR /var/www
