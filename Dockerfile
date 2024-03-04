@@ -1,5 +1,5 @@
 ## Build
-FROM golang:1.21-alpine as builder
+FROM golang:1.21-alpine3.18 as builder
 
 WORKDIR /app
 
@@ -15,10 +15,10 @@ COPY pkg/ ./pkg/
 RUN go build -o /action
 
 ## Deploy
-FROM golang:1.21-alpine
+FROM golang:1.21-alpine3.18
 
 RUN apk update
-RUN apk add git bash curl
+RUN apk add git
 
 ### Install Node
 RUN apk add --update --no-cache nodejs npm
@@ -32,14 +32,14 @@ RUN apk add --update --no-cache openjdk11 gradle
 ### Install Ruby
 RUN apk add --update --no-cache build-base ruby ruby-bundler ruby-dev
 
-
 ### Install .NET 6.0
 ENV DOTNET_ROOT=/usr/lib/dotnet
 RUN apk add --update --no-cache dotnet6-sdk
 
 # Install .NET 5.0
+RUN apk add --update --no-cache curl bash openssl1.1-compat
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin -Channel 5.0 -InstallDir ${DOTNET_ROOT}
-RUN ${DOTNET_ROOT}/dotnet --list-sdks
+RUN dotnet --list-sdks
 
 ### Install PHP and Composer
 #### Source: https://github.com/geshan/docker-php-composer-alpine/blob/master/Dockerfile
