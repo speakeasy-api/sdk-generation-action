@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/go-version"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
 	"github.com/speakeasy-api/sdk-generation-action/internal/run"
@@ -132,6 +133,11 @@ func RunWorkflow() error {
 
 // Sets outputs and creates or adds releases info
 func finalize(outputs map[string]string, branchName string, anythingRegenerated bool, g *git.Git) error {
+	// If nothing was regenerated, we don't need to do anything
+	if !anythingRegenerated {
+		return nil
+	}
+
 	branchName, err := g.FindBranch(branchName)
 	if err != nil {
 		return err
@@ -144,11 +150,6 @@ func finalize(outputs map[string]string, branchName string, anythingRegenerated 
 			logging.Debug("failed to set outputs: %v", err)
 		}
 	}()
-
-	// If nothing was regenerated, we don't need to do anything
-	if !anythingRegenerated {
-		return nil
-	}
 
 	switch environment.GetMode() {
 	case environment.ModePR:
