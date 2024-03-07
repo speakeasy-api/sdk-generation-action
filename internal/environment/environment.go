@@ -17,7 +17,9 @@ type Mode string
 
 const (
 	ModeDirect Mode = "direct"
-	ModePR     Mode = "pr"
+	ModePR                         Mode = "pr"
+	// a random UUID. Change this to fan-out executions with the same gh run id.
+	speakeasyGithubActionNamespace      = "360D564A-5583-4EF6-BC2B-99530BF036CC"
 )
 
 type Action string
@@ -233,8 +235,8 @@ func Telemetry(f func() error) error {
 	if runID == "" {
 		return f()
 	}
-	executionKeyNamespace := fmt.Sprintf("GH_%s", runID)
-	namespace, err := uuid.Parse("360D564A-5583-4EF6-BC2B-99530BF036CC")
+	executionKey := fmt.Sprintf("GITHUB_RUN_ID_%s", runID)
+	namespace, err := uuid.Parse(speakeasyGithubActionNamespace)
 	if err != nil {
 		return err
 	}
@@ -243,7 +245,7 @@ func Telemetry(f func() error) error {
 	if err != nil {
 		return err
 	}
-	executionID := uuid.NewSHA1(namespace, []byte(executionKeyNamespace))
+	executionID := uuid.NewSHA1(namespace, []byte(executionKey))
 	_ = os.Setenv(events.ExecutionKeyEnvironmentVariable, executionID.String())
 
 	return events.Telemetry(ctx, shared.InteractionTypeCiExec, func(ctx context.Context, event *shared.CliEvent) error {
