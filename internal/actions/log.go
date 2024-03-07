@@ -90,7 +90,7 @@ func LogActionResult() error {
 	body, err := json.Marshal(&request)
 	if err != nil {
 		fmt.Print("failure sending log to speakeasy.")
-		return
+		return nil
 	}
 
 	baseURL := os.Getenv("SPEAKEASY_SERVER_URL")
@@ -101,7 +101,7 @@ func LogActionResult() error {
 	req, err := http.NewRequest("POST", baseURL+"/v1/log/proxy", bytes.NewBuffer(body))
 	if err != nil {
 		fmt.Print("failure sending log to speakeasy.")
-		return
+		return nil
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -113,7 +113,7 @@ func LogActionResult() error {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Print("failure sending log to speakeasy.")
-		return
+		return nil
 	}
 
 	defer resp.Body.Close()
@@ -122,5 +122,5 @@ func LogActionResult() error {
 		fmt.Printf("failure sending log to speakeasy with status %s.", resp.Status)
 	}
 
-	return
+	return nil
 }
