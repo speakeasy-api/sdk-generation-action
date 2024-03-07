@@ -22,9 +22,6 @@ jobs:
       id-token: "write"
       actions: "read"
     steps:
-      - name: Setup environment
-        run: |-
-          echo ("GOPRIVATE=github.com/speakeasy-api") >> $env:GITHUB_ENV
       - name: Configure git for private modules
         env:
           GIT_AUTH_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}

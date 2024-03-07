@@ -8,7 +8,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-
+  GOPRIVATE: "github.com/speakeasy-api"
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
@@ -17,9 +17,6 @@ jobs:
       packages: write
 
     steps:
-      - name: Setup environment
-        run: |-
-          echo ("GOPRIVATE=github.com/speakeasy-api") >> $env:GITHUB_ENV
       - name: Configure git for private modules
         env:
           GIT_AUTH_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
