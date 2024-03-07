@@ -29,11 +29,11 @@ type logProxyEntry struct {
 	Tags     map[string]interface{} `json:"tags"`
 }
 
-func LogActionResult() {
+func LogActionResult() error {
 	key := os.Getenv("SPEAKEASY_API_KEY")
 	if key == "" {
 		fmt.Print("no SPEAKEASY_API_KEY provided.")
-		return
+		return nil
 	}
 
 	logLevel := logProxyLevelInfo

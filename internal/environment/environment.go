@@ -1,7 +1,11 @@
 package environment
 
 import (
+	"context"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
+	"github.com/speakeasy-api/speakeasy-core/events"
 	"os"
 	"strconv"
 	"strings"
@@ -218,4 +222,21 @@ func GetWorkspace() string {
 
 func ShouldOutputTests() bool {
 	return os.Getenv("INPUT_OUTPUT_TESTS") == "true"
+}
+
+func Telemetry(f func() error) error {
+	runID := os.Getenv("GITHUB_RUN_ID")
+	if runID == "" {
+		return f()
+	}
+	executionKeyNamespace := fmt.Sprintf("GH_%s", runID)
+	namespace, err := uuid.Parse("360D564A-5583-4EF6-BC2B-99530BF036CC")
+	if err != nil {
+		return err
+	}
+	executionID := uuid.NewSHA1(namespace, []byte(executionKeyNamespace))
+	_ = os.Setenv(events.ExecutionKeyEnvironmentVariable, executionID.String())
+	return events.Telemetry(context.Background(), shared.InteractionTypeCiExec, func(ctx context.Context, event *shared.CliEvent) error {
+		return f()
+	})
 }
