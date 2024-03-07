@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
+	"github.com/speakeasy-api/speakeasy-core/auth"
 	"github.com/speakeasy-api/speakeasy-core/events"
 	"os"
 	"strconv"
@@ -84,6 +85,9 @@ func GetPinnedSpeakeasyVersion() string {
 
 func GetMaxSuggestions() string {
 	return os.Getenv("INPUT_MAX_SUGGESTIONS")
+}
+func GetApiKey() string {
+	return os.Getenv("SPEAKEASY_API_KEY")
 }
 
 func GetMaxValidationWarnings() (int, error) {
@@ -234,9 +238,15 @@ func Telemetry(f func() error) error {
 	if err != nil {
 		return err
 	}
+
+	ctx, err := auth.NewContextWithSDK(context.Background(), GetApiKey())
+	if err != nil {
+		return err
+	}
 	executionID := uuid.NewSHA1(namespace, []byte(executionKeyNamespace))
 	_ = os.Setenv(events.ExecutionKeyEnvironmentVariable, executionID.String())
-	return events.Telemetry(context.Background(), shared.InteractionTypeCiExec, func(ctx context.Context, event *shared.CliEvent) error {
+
+	return events.Telemetry(ctx, shared.InteractionTypeCiExec, func(ctx context.Context, event *shared.CliEvent) error {
 		return f()
 	})
 }
