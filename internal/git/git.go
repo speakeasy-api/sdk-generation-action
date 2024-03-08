@@ -66,6 +66,13 @@ func (g *Git) CloneRepo() error {
 
 	workspace := environment.GetWorkspace()
 
+	// Remove the repo if it exists
+	// Flow is useful when testing locally, but we're usually in a fresh image so unnecessary most of the time
+	repoDir := path.Join(workspace, "repo")
+	if err := os.RemoveAll(repoDir); err != nil {
+		return err
+	}
+
 	r, err := git.PlainClone(path.Join(workspace, "repo"), false, &git.CloneOptions{
 		URL:           repoPath,
 		Progress:      os.Stdout,

@@ -52,13 +52,13 @@ func Generate() error {
 	}()
 
 	genInfo, outputs, err := generate.Generate(g)
-	outputs["resolved_speakeasy_version"] = resolvedVersion
 	if err != nil {
 		if err := setOutputs(outputs); err != nil {
 			logging.Debug("failed to set outputs: %v", err)
 		}
 		return err
 	}
+	outputs["resolved_speakeasy_version"] = resolvedVersion
 
 	if genInfo != nil {
 		docVersion := genInfo.OpenAPIDocVersion

@@ -241,7 +241,11 @@ func Telemetry(f func() error) error {
 		return err
 	}
 
-	ctx, err := auth.NewContextWithSDK(context.Background(), GetApiKey())
+	apiKey := GetApiKey()
+	if apiKey == "" {
+		return fmt.Errorf("no SPEAKEASY_API_KEY secret provided")
+	}
+	ctx, err := auth.NewContextWithSDK(context.Background(), apiKey)
 	if err != nil {
 		return err
 	}

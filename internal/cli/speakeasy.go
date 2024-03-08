@@ -41,6 +41,10 @@ func Download(pinnedVersion string, g Git) (string, error) {
 		return version, err
 	}
 
+	if _, err := os.Stat(filepath.Join(environment.GetBaseDir(), "bin", "speakeasy")); err == nil {
+		return version, nil
+	}
+
 	fmt.Println("Downloading speakeasy cli version: ", version)
 
 	downloadPath := filepath.Join(os.TempDir(), "speakeasy"+path.Ext(link))
