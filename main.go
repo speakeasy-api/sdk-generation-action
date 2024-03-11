@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/speakeasy-api/sdk-generation-action/internal/telemetry"
+	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
 	"os"
 	"strings"
 
@@ -33,7 +36,7 @@ func main() {
 
 	var err error
 
-	err = environment.Telemetry(func() error {
+	err = telemetry.Track(context.Background(), shared.InteractionTypeCiExec, func(ctx context.Context, event *shared.CliEvent) error {
 		switch environment.GetAction() {
 		case environment.ActionValidate:
 			return actions.Validate()

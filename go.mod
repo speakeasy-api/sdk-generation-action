@@ -11,7 +11,6 @@ require (
 	github.com/speakeasy-api/git-diff-parser v0.0.3
 	github.com/speakeasy-api/sdk-gen-config v1.5.1
 	github.com/speakeasy-api/speakeasy-client-sdk-go/v3 v3.4.1
-	github.com/speakeasy-api/speakeasy-core v0.3.2
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
 	golang.org/x/oauth2 v0.11.0

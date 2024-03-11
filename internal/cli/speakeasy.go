@@ -23,7 +23,7 @@ type Git interface {
 	GetDownloadLink(version string) (string, string, error)
 }
 
-func Download(pinnedVersion string, g Git) (string, error) {
+func GetVersion(pinnedVersion string) string {
 	if pinnedVersion == "" {
 		pinnedVersion = "latest"
 	}
@@ -35,6 +35,12 @@ func Download(pinnedVersion string, g Git) (string, error) {
 			version = "v" + pinnedVersion
 		}
 	}
+
+	return version
+}
+
+func Download(pinnedVersion string, g Git) (string, error) {
+	version := GetVersion(pinnedVersion)
 
 	link, version, err := g.GetDownloadLink(version)
 	if err != nil {

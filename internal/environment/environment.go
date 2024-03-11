@@ -1,12 +1,7 @@
 package environment
 
 import (
-	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
-	"github.com/speakeasy-api/speakeasy-core/auth"
-	"github.com/speakeasy-api/speakeasy-core/events"
 	"os"
 	"strconv"
 	"strings"
@@ -19,7 +14,6 @@ const (
 	ModeDirect Mode = "direct"
 	ModePR                         Mode = "pr"
 	// a random UUID. Change this to fan-out executions with the same gh run id.
-	speakeasyGithubActionNamespace      = "360D564A-5583-4EF6-BC2B-99530BF036CC"
 )
 
 type Action string
@@ -88,10 +82,6 @@ func GetPinnedSpeakeasyVersion() string {
 func GetMaxSuggestions() string {
 	return os.Getenv("INPUT_MAX_SUGGESTIONS")
 }
-func GetApiKey() string {
-	return os.Getenv("SPEAKEASY_API_KEY")
-}
-
 func GetMaxValidationWarnings() (int, error) {
 	maxVal := os.Getenv("INPUT_MAX_VALIDATION_WARNINGS")
 	if maxVal == "" {
@@ -228,31 +218,4 @@ func GetWorkspace() string {
 
 func ShouldOutputTests() bool {
 	return os.Getenv("INPUT_OUTPUT_TESTS") == "true"
-}
-
-func Telemetry(f func() error) error {
-	runID := os.Getenv("GITHUB_RUN_ID")
-	if runID == "" {
-		return f()
-	}
-	executionKey := fmt.Sprintf("GITHUB_RUN_ID_%s", runID)
-	namespace, err := uuid.Parse(speakeasyGithubActionNamespace)
-	if err != nil {
-		return err
-	}
-
-	apiKey := GetApiKey()
-	if apiKey == "" {
-		return fmt.Errorf("no SPEAKEASY_API_KEY secret provided")
-	}
-	ctx, err := auth.NewContextWithSDK(context.Background(), apiKey)
-	if err != nil {
-		return err
-	}
-	executionID := uuid.NewSHA1(namespace, []byte(executionKey))
-	_ = os.Setenv(events.ExecutionKeyEnvironmentVariable, executionID.String())
-
-	return events.Telemetry(ctx, shared.InteractionTypeCiExec, func(ctx context.Context, event *shared.CliEvent) error {
-		return f()
-	})
 }
