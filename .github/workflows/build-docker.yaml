@@ -8,7 +8,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  GOPRIVATE: "github.com/speakeasy-api"
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
