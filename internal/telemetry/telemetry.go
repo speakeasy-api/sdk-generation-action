@@ -117,11 +117,13 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 	duration := runEvent.LocalCompletedAt.Sub(runEvent.LocalStartedAt).Milliseconds()
 	runEvent.DurationMs = &duration
 	runEvent.Success = err == nil
+	currentIntegrationEnvironment := "GITHUB_ACTIONS"
+	runEvent.ContinuousIntegrationEnvironment = &currentIntegrationEnvironment
 
 	// Attempt to flush any stored events (swallow errors)
 	sdk.Events.PostWorkspaceEvents(ctx, operations.PostWorkspaceEventsRequest{
 		RequestBody: []shared.CliEvent{*runEvent},
-		WorkspaceID: nil,
+		WorkspaceID: &workspaceID,
 	})
 
 	return err
