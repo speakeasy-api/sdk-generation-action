@@ -11,8 +11,6 @@ on:
       - reopened
       - synchronize
       - ready_for_review
-env:
-  GOPRIVATE: "github.com/speakeasy-api"
 jobs:
   build:
     name: Build
@@ -22,10 +20,6 @@ jobs:
       id-token: "write"
       actions: "read"
     steps:
-      - name: Configure git for private modules
-        env:
-          GIT_AUTH_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
-        run: git config --global url."https://speakeasybot:${GIT_AUTH_TOKEN}@github.com".insteadOf "https://github.com"
       - name: Set up Go 1.x
         uses: actions/setup-go@v3
         with:
