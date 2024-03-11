@@ -11,8 +11,6 @@ on:
       - reopened
       - synchronize
       - ready_for_review
-env:
-  GOPRIVATE: "github.com/speakeasy-api"
 jobs:
   build:
     name: Build
