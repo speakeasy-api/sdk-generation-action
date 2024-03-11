@@ -57,7 +57,7 @@ func EnrichEventWithEnvironmentVariables(event *shared.CliEvent) {
 	}
 }
 
-func enrichHostName(ctx context.Context, event *shared.CliEvent) {
+func enrichHostName(event *shared.CliEvent) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return
@@ -107,7 +107,7 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 	runEvent.WorkspaceID = workspaceID
 
 	EnrichEventWithEnvironmentVariables(runEvent)
-	enrichHostName(ctx, runEvent)
+	enrichHostName(runEvent)
 
 	// Execute the provided function, capturing any error
 	err = fn(ctx, runEvent)
