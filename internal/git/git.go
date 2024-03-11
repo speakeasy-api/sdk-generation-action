@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/url"
 	"os"
 	"os/exec"
@@ -64,6 +65,13 @@ func (g *Git) CloneRepo() error {
 	logging.Info("Cloning repo: %s from ref: %s", repoPath, ref)
 
 	workspace := environment.GetWorkspace()
+
+	// Remove the repo if it exists
+	// Flow is useful when testing locally, but we're usually in a fresh image so unnecessary most of the time
+	repoDir := path.Join(workspace, "repo")
+	if err := os.RemoveAll(repoDir); err != nil {
+		return err
+	}
 
 	r, err := git.PlainClone(path.Join(workspace, "repo"), false, &git.CloneOptions{
 		URL:           repoPath,
@@ -414,6 +422,14 @@ func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo releases.ReleasesI
 Based on:
 - OpenAPI Doc %s %s
 - Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s`, releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, changelog)
+
+	// TODO: To be removed after we start blocking on usage limits.
+	if accessAllowed, err := cli.CheckFreeUsageAccess(); err == nil && !accessAllowed {
+		warningDate := time.Date(2024, time.March, 18, 0, 0, 0, 0, time.UTC)
+		daysToLimit := int(math.Round(warningDate.Sub(time.Now().Truncate(24*time.Hour)).Hours() / 24))
+		body += "\n\n\n" + fmt.Sprintf(`## 🚀 Time to Upgrade 🚀
+You have exceeded the limit of one free generated SDK. Please reach out to the Speakeasy team in the next %d days to ensure continued access`, daysToLimit) + "\n\n"
+	}
 
 	const maxBodyLength = 65536
 
