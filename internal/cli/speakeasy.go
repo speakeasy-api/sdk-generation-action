@@ -23,7 +23,7 @@ type Git interface {
 	GetDownloadLink(version string) (string, string, error)
 }
 
-func Download(pinnedVersion string, g Git) (string, error) {
+func GetVersion(pinnedVersion string) string {
 	if pinnedVersion == "" {
 		pinnedVersion = "latest"
 	}
@@ -36,9 +36,19 @@ func Download(pinnedVersion string, g Git) (string, error) {
 		}
 	}
 
+	return version
+}
+
+func Download(pinnedVersion string, g Git) (string, error) {
+	version := GetVersion(pinnedVersion)
+
 	link, version, err := g.GetDownloadLink(version)
 	if err != nil {
 		return version, err
+	}
+
+	if _, err := os.Stat(filepath.Join(environment.GetBaseDir(), "bin", "speakeasy")); err == nil {
+		return version, nil
 	}
 
 	fmt.Println("Downloading speakeasy cli version: ", version)
