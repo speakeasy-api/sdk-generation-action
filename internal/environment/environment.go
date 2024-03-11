@@ -13,7 +13,6 @@ type Mode string
 const (
 	ModeDirect Mode = "direct"
 	ModePR                         Mode = "pr"
-	// a random UUID. Change this to fan-out executions with the same gh run id.
 )
 
 type Action string

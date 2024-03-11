@@ -18,6 +18,7 @@ const ExecutionKeyEnvironmentVariable = "SPEAKEASY_EXECUTION_ID"
 const SpeakeasySDKKey ContextKey = "speakeasy.SDK"
 const WorkspaceIDKey ContextKey = "speakeasy.workspaceID"
 const AccountTypeKey ContextKey = "speakeasy.accountType"
+// a random UUID. Change this to fan-out executions with the same gh run id.
 const speakeasyGithubActionNamespace = "360D564A-5583-4EF6-BC2B-99530BF036CC"
 
 func NewContextWithSDK(ctx context.Context, apiKey string) (context.Context, *speakeasy.Speakeasy, string, error) {
