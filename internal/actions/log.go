@@ -40,7 +40,7 @@ func LogActionResult() error {
 	logMessage := "Success in Github Action"
 	if !strings.Contains(strings.ToLower(os.Getenv("GH_ACTION_RESULT")), "success") {
 		logLevel = logProxyLevelError
-		logMessage = fmt.Sprintf("Failure in Github Action: %s", os.Getenv("GH_ACTION_RESULT"))
+		logMessage = "Failure in Github Action"
 	}
 
 	request := logProxyEntry{
