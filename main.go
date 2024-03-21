@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/speakeasy-api/sdk-generation-action/internal/telemetry"
+	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
 	"os"
 	"strings"
 
@@ -32,18 +35,24 @@ func main() {
 	}
 
 	var err error
-	switch environment.GetAction() {
+
+	err = telemetry.Track(context.Background(), shared.InteractionTypeCiExec, func(ctx context.Context, event *shared.CliEvent) error {
+		switch environment.GetAction() {
 	case environment.ActionSuggest:
-		err = actions.Suggest()
+		return actions.Suggest()
 	case environment.ActionRunWorkflow:
-		err = actions.RunWorkflow()
+		return actions.RunWorkflow()
 	case environment.ActionFinalizeSuggestion:
-		err = actions.FinalizeSuggestion()
+		return actions.FinalizeSuggestion()
 	case environment.ActionRelease:
-		err = actions.Release()
+		return actions.Release()
 	case environment.ActionLog:
-		actions.LogActionResult()
-	}
+		return actions.LogActionResult()
+	default:
+		return fmt.Errorf("unknown action: %s", environment.GetAction())
+		}
+	})
+
 
 	if err != nil {
 		fmt.Printf("::error title=failed::%v\n", err)
