@@ -19,7 +19,7 @@ type Action string
 
 const (
 	ActionValidate           Action = "validate"
-	ActionGenerate           Action = "generate"
+	ActionRunWorkflow        Action = "run-workflow"
 	ActionSuggest            Action = "suggest"
 	ActionFinalize           Action = "finalize"
 	ActionFinalizeSuggestion Action = "finalize-suggestion"
@@ -68,7 +68,7 @@ func GetMode() Mode {
 func GetAction() Action {
 	action := os.Getenv("INPUT_ACTION")
 	if action == "" {
-		return ActionGenerate
+		return ActionRunWorkflow
 	}
 
 	return Action(action)
@@ -140,7 +140,7 @@ func IsDocsGeneration() bool {
 }
 
 func CreateGitRelease() bool {
-	return os.Getenv("INPUT_CREATE_RELEASE") == "true" || IsLanguagePublished("php") || IsLanguagePublished("terraform") || IsLanguagePublished("swift")
+	return IsLanguagePublished("php") || IsLanguagePublished("terraform") || IsLanguagePublished("swift")
 }
 
 func GetAccessToken() string {
@@ -157,14 +157,10 @@ func GetInvokeTime() time.Time {
 
 func IsLanguagePublished(lang string) bool {
 	if lang == "go" || lang == "swift" {
-		return os.Getenv("INPUT_CREATE_RELEASE") == "true"
+		return true
 	}
 
 	return os.Getenv(fmt.Sprintf("INPUT_PUBLISH_%s", strings.ToUpper(lang))) == "true"
-}
-
-func IsJavaPublished() bool {
-	return os.Getenv("INPUT_PUBLISH_JAVA") == "true"
 }
 
 func GetOpenAPIDocAuthHeader() string {

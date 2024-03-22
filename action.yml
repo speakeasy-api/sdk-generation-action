@@ -1,123 +1,14 @@
 # action.yml
-name: Speakeasy Client SDK Generation Action
+name: Speakeasy SDK Workflow Runner Action (alpha)
 description: The Speakeasy Generation Action isto be run via the workflows provided in this repo and is not intended to be run directly.
 inputs:
   speakeasy_version:
     description: The version of the Speakeasy CLI to use or "latest"
     default: latest
     required: false
-  openapi_doc_location:
-    description: The location of the OpenAPI document to use, either a relative path within the repo or a URL to a publicly hosted document
-    required: false
-    deprecationMessage: "This input is deprecated, please use the `openapi_docs` input instead."
-  openapi_doc_auth_header:
-    description: |-
-      The auth header to use when fetching the OpenAPI document if it is not publicly hosted. For example `Authorization`.
-      If using a private speakeasy hosted document use `x-api-key`. This header will be populated with the openapi_doc_auth_token provided.
-    required: false
-  openapi_doc_auth_token:
-    description: The auth token to use when fetching the OpenAPI document if it is not publicly hosted. For example `Bearer <token>` or `<token>`.
-    required: false
-  openapi_docs:
-    description: |-
-      A yaml string containing a list of OpenAPI documents to use, if multiple documents are provided they will be merged together, prior to generation.
-
-      If the document lives within the repo a relative path can be provided, if the document is hosted publicly a URL can be provided.
-
-      If the documents are hosted privately a URL can be provided along with the `openapi_doc_auth_header` and `openapi_doc_auth_token` inputs.
-      Each document will be fetched using the provided auth header and token, so they need to be valid for all documents.
-
-      For example:
-      openapi_docs: |
-        - https://example.com/openapi1.json
-        - https://example.com/openapi2.json
-    required: false
-  overlay_docs:
-    description: |-
-      A yaml string containing a list of overlay documents to use, if multiple documents are provided they will be applied to the OpenAPI document in the order provided.
-
-      If the document lives within the repo a relative path can be provided, if the document is hosted publicly a URL can be provided.
-
-      If the documents are hosted privately a URL can be provided along with the `openapi_doc_auth_header` and `openapi_doc_auth_token` inputs.
-      Each document will be fetched using the provided auth header and token, so they need to be valid for all documents.
-
-      For example:
-      overlay_docs: |
-        - https://example.com/overlay1.json
-        - https://example.com/overlay2.json
-  openapi_doc_output:
-    description: "The path to output the modified OpenAPI spec"
-    required: false
-    default: "./openapi.yaml"
   github_access_token:
     description: A GitHub access token with write access to the repo
     required: true
-  languages:
-    description: |-
-      A yaml string containing a list of languages to generate SDKs for example:
-      languages: |
-        - go: ./go-sdk # specifying a output directory
-        - python # using default output of ./python-client-sdk
-        - typescript # using default output of ./typescript-client-sdk
-        - java # using default output of ./java-client-sdk
-        - php # using default output of ./php-client-sdk
-        - ruby # using default output of ./ruby-client-sdk
-        - terraform # (single language repo only)
-        - csharp # using default output of ./csharp-client-sdk
-        - unity # using default output of ./unity-client-sdk
-        - swift # using default output of ./swift-client-sdk
-        - docs # generation target for sdk docs
-      If multiple languages are present we will treat this repo as a mono repo, if a single language is present as a single language repo and generate the sdk
-      in the root of the repo if not path is provided.
-    required: false
-  docs_languages:
-    description: |-
-      A yaml string containing a list of languages to generate SDK docs for example:
-      languages: |
-        - go
-        - python
-        - typescript
-        - java
-        - csharp
-        - unity
-        - curl
-    required: false
-  create_release:
-    description: "Create a Github release on generation"
-    default: "true"
-    required: false
-  publish_python:
-    description: "Whether the Python SDK will be published to PyPi"
-    default: "false"
-    required: false
-  publish_typescript:
-    description: "Whether the Typescript SDK will be published to NPM"
-    default: "false"
-    required: false
-  publish_terraform:
-    description: "Whether the Terraform Provider will be published to the Terraform Registry"
-    default: "false"
-    required: false
-  publish_php:
-    description: "Whether the PHP SDK will be published to Packagist this will also create a release on Github"
-    default: "false"
-    required: false
-  publish_ruby:
-    description: "Whether the Ruby SDK will be published to Rubygems"
-    default: "false"
-    required: false
-  publish_java:
-    description: "Whether the Java SDK will be published to the provided OSSRH URL"
-    default: "false"
-    required: false
-  use_sonatype_central:
-    description: "When publishing the Java SDK, use the Sonatype central portal"
-    default: "false"
-    required: false
-  publish_csharp:
-    description: "Whether the C# SDK will be published to Nuget"
-    default: "false"
-    required: false
   speakeasy_api_key:
     description: "The Speakeasy API key to authenticate the Speakeasy CLI with"
     required: true
@@ -140,10 +31,10 @@ inputs:
     required: false
   action:
     description: |-
-      The current action step to run, valid options are 'validate', 'generate', 'suggest', 'finalize', 'finalize-suggestion', or 'release', defaults to 'generate'.
+      The current action step to run, valid options are 'validate', 'run-workflow', 'suggest', 'finalize', 'finalize-suggestion', or 'release', defaults to 'run-workflow'.
       This is intended to be used along with the `mode` input to determine the current action step to run.
         - 'validate' will validate the OpenAPI document and return addressable warnings and errors.
-        - 'generate' will generate the SDK and commit the changes to the branch.
+        - 'run-workflow' will generate the SDK and commit the changes to the branch.
         - 'suggest' will apply suggestions to the OpenAPI document and commit the changes to the branch.
         - 'finalize' depending on mode will either merge the branch to the branch the workflow is configure to run on (normally 'main' or 'master') or create a pull request.
         - 'finalize-suggestion' will create a pull request with the suggestions from the LLM model.
@@ -173,6 +64,20 @@ inputs:
     description: "The GPG fingerprint to sign the release with"
     required: false
 outputs:
+  publish_python:
+    description: "Whether the Python SDK will be published to PyPi"
+  publish_typescript:
+    description: "Whether the Typescript SDK will be published to NPM"
+  publish_terraform:
+    description: "Whether the Terraform Provider will be published to the Terraform Registry"
+  publish_php:
+    description: "Whether the PHP SDK will be published to Packagist this will also create a release on Github"
+  publish_ruby:
+    description: "Whether the Ruby SDK will be published to Rubygems"
+  publish_java:
+    description: "Whether the Java SDK will be published to the provided OSSRH URL"
+  publish_csharp:
+    description: "Whether the C# SDK will be published to Nuget"
   python_regenerated:
     description: "true if the Python SDK was regenerated"
   python_directory:
@@ -229,34 +134,21 @@ outputs:
     description: "The location of the OpenAPI document used for generation"
 runs:
   using: "docker"
-  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v14"
+  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v15"
   env:
     SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
     SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
     OPENAI_API_KEY: ${{ inputs.openai_api_key }}
   args:
     - ${{ inputs.speakeasy_version }}
-    - ${{ inputs.openapi_doc_location }}
     - ${{ inputs.github_access_token }}
-    - ${{ inputs.languages }}
     - ${{ inputs.docs_languages }}
-    - ${{ inputs.create_release }}
-    - ${{ inputs.publish_python }}
-    - ${{ inputs.publish_typescript }}
-    - ${{ inputs.publish_php }}
-    - ${{ inputs.publish_ruby }}
-    - ${{ inputs.publish_java }}
-    - ${{ inputs.publish_terraform }}
-    - ${{ inputs.publish_csharp }}
-    - ${{ inputs.openapi_doc_auth_header }}
-    - ${{ inputs.openapi_doc_auth_token }}
     - ${{ inputs.max_suggestions }}
     - ${{ inputs.mode }}
     - ${{ inputs.action }}
     - ${{ inputs.branch_name }}
     - ${{ inputs.cli_output }}
     - ${{ inputs.previous_gen_version }}
-    - ${{ inputs.openapi_docs }}
     - ${{ inputs.openapi_doc_output }}
     - ${{ inputs.output_tests }}
     - ${{ inputs.working_directory }}

@@ -170,7 +170,7 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action) (stri
 	}
 
 	var prTitle string
-	if action == environment.ActionGenerate || action == environment.ActionFinalize {
+	if action == environment.ActionRunWorkflow || action == environment.ActionFinalize {
 		prTitle = getGenPRTitle()
 	} else if action == environment.ActionFinalize || action == environment.ActionFinalizeSuggestion {
 		prTitle = getSuggestPRTitle()
@@ -247,7 +247,7 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 		return g.FindBranch(branchName)
 	}
 
-	if action == environment.ActionGenerate {
+	if action == environment.ActionRunWorkflow {
 		branchName = fmt.Sprintf("speakeasy-sdk-regen-%d", time.Now().Unix())
 	} else if action == environment.ActionSuggest {
 		branchName = fmt.Sprintf("speakeasy-openapi-suggestion-%d", time.Now().Unix())
@@ -309,12 +309,12 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	logging.Info("Commit and pushing changes to git")
 
-	if _, err := w.Add("."); err != nil {
+	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
 	var commitMessage string
-	if action == environment.ActionGenerate {
+	if action == environment.ActionRunWorkflow {
 		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 	} else if action == environment.ActionSuggest {
 		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
@@ -338,6 +338,18 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	}
 
 	return commitHash.String(), nil
+}
+
+func (g *Git) Add(arg string) error {
+	cmd := exec.Command("git", "add", arg)
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Env = os.Environ()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error running `git add %s`: %w %s", arg, err, string(output))
+	}
+
+	return nil
 }
 
 func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo releases.ReleasesInfo, previousGenVersion string, pr *github.PullRequest) error {
@@ -449,7 +461,11 @@ You have exceeded the limit of one free generated SDK. Please reach out to the S
 			MaintainerCanModify: github.Bool(true),
 		})
 		if err != nil {
-			return fmt.Errorf("failed to create PR: %w", err)
+			messageSuffix := ""
+			if strings.Contains(err.Error(), "GitHub Actions is not permitted to create or approve pull requests") {
+				messageSuffix += "\nNavigate to Settings > Actions > Workflow permissions and ensure that allow GitHub Actions to create and approve pull requests is checked. For more information see https://www.speakeasyapi.dev/docs/advanced-setup/github-setup."
+			}
+			return fmt.Errorf("failed to create PR: %w%s", err, messageSuffix)
 		}
 	}
 

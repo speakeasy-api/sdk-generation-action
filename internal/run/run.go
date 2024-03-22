@@ -1,17 +1,16 @@
-package generate
+package run
 
 import (
 	"fmt"
+	"github.com/speakeasy-api/sdk-gen-config/workflow"
+	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"path"
 	"path/filepath"
 	"strings"
 
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
-	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
-	"github.com/speakeasy-api/sdk-generation-action/internal/document"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
-	"gopkg.in/yaml.v3"
 )
 
 type LanguageGenInfo struct {
@@ -30,19 +29,9 @@ type Git interface {
 	CheckDirDirty(dir string, ignoreMap map[string]string) (bool, string, error)
 }
 
-func Generate(g Git) (*GenerationInfo, map[string]string, error) {
-	langs, err := configuration.GetAndValidateLanguages(true)
-	if err != nil {
-		return nil, nil, err
-	}
-
+func Run(g Git) (*GenerationInfo, map[string]string, error) {
 	workspace := environment.GetWorkspace()
 	outputs := map[string]string{}
-
-	docPath, docVersion, err := document.GetOpenAPIFileInfo()
-	if err != nil {
-		return nil, nil, err
-	}
 
 	speakeasyVersion, err := cli.GetSpeakeasyVersion()
 	if err != nil {
@@ -57,60 +46,85 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 
 	globalPreviousGenVersion := ""
 
+	wf, err := configuration.GetWorkflowAndValidateLanguages(true)
+	if err != nil {
+		return nil, outputs, err
+	}
+
 	langConfigs := map[string]*config.LanguageConfig{}
 
-	for lang, dir := range langs {
-		outputDir := path.Join(workspace, "repo", dir)
+	installationURLs := map[string]string{}
+	repoURL := getRepoURL()
+	repoSubdirectories := map[string]string{}
+	previousManagementInfos := map[string]config.Management{}
+
+	getDirAndOutputDir := func(target workflow.Target) (string, string) {
+		dir := "."
+		if target.Output != nil {
+			dir = *target.Output
+		}
+
+		return dir, path.Join(workspace, "repo", dir)
+	}
+
+	includesTerraform := false
+
+	// Load initial configs
+	for targetID, target := range wf.Targets {
+		lang := target.Target
+		dir, outputDir := getDirAndOutputDir(target)
 
 		// Load the config so we can get the current version information
 		loadedCfg, err := config.Load(outputDir)
 		if err != nil {
 			return nil, outputs, err
 		}
-		previousManagementInfo := loadedCfg.LockFile.Management
+		previousManagementInfos[targetID] = loadedCfg.LockFile.Management
 
 		globalPreviousGenVersion, err = getPreviousGenVersion(loadedCfg.LockFile, lang, globalPreviousGenVersion)
 		if err != nil {
 			return nil, outputs, err
 		}
 
-		fmt.Printf("Generating %s SDK in %s\n", lang, outputDir)
+		published := target.IsPublished()
+		outputs[fmt.Sprintf("publish_%s", lang)] = fmt.Sprintf("%t", published)
+		fmt.Printf("Generating %s SDK in %s", lang, outputDir)
 
-		published := environment.IsLanguagePublished(lang)
 		installationURL := getInstallationURL(lang, dir)
 		if installationURL == "" {
 			published = true // Treat as published if we don't have an installation URL
 		}
 
-		repoURL, repoSubdirectory := getRepoDetails(dir)
-
-		if lang == "docs" {
-			docsLanguages := environment.GetDocsLanguages()
-			docsLanguages = strings.ReplaceAll(docsLanguages, "\\n", "\n")
-			docsLangs := []string{}
-			if err := yaml.Unmarshal([]byte(docsLanguages), &docsLangs); err != nil {
-				return nil, outputs, fmt.Errorf("failed to parse docs languages: %w", err)
-			}
-
-			if err := cli.GenerateDocs(docPath, strings.Join(docsLangs, ","), outputDir); err != nil {
-				return nil, outputs, err
-			}
-		} else if lang == "terraform" {
-			if err := cli.Generate(docPath, lang, outputDir, installationURL, published, environment.ShouldOutputTests(), repoURL, repoSubdirectory); err != nil {
-				return nil, outputs, err
-			}
-			// Also trigger "go generate ./..." to regenerate docs
-			if err = cli.TriggerGoGenerate(); err != nil {
-				return nil, outputs, err
-			}
-		} else {
-			if err := cli.Generate(docPath, lang, outputDir, installationURL, published, environment.ShouldOutputTests(), repoURL, repoSubdirectory); err != nil {
-				return nil, outputs, err
-			}
+		if installationURL != "" {
+			installationURLs[targetID] = installationURL
 		}
+		if dir != "." {
+			repoSubdirectories[targetID] = filepath.Clean(dir)
+		}
+		if lang == "terraform" {
+			includesTerraform = true
+		}
+	}
+
+	// Run the workflow
+	if err := cli.Run(installationURLs, repoURL, repoSubdirectories); err != nil {
+		return nil, outputs, err
+	}
+
+	// For terraform, we also trigger "go generate ./..." to regenerate docs
+	if includesTerraform {
+		if err = cli.TriggerGoGenerate(); err != nil {
+			return nil, outputs, err
+		}
+	}
+
+	// Check for changes
+	for targetID, target := range wf.Targets {
+		lang := target.Target
+		dir, outputDir := getDirAndOutputDir(target)
 
 		// Load the config again so we can compare the versions
-		loadedCfg, err = config.Load(outputDir)
+		loadedCfg, err := config.Load(outputDir)
 		if err != nil {
 			return nil, outputs, err
 		}
@@ -118,13 +132,9 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 		langCfg := loadedCfg.Config.Languages[lang]
 		langConfigs[lang] = &langCfg
 
-		dirForOutput := dir
-		if dirForOutput == "" {
-			dirForOutput = "."
-		}
+		outputs[fmt.Sprintf("%s_directory", lang)] = dir
 
-		outputs[fmt.Sprintf("%s_directory", lang)] = dirForOutput
-
+		previousManagementInfo := previousManagementInfos[targetID]
 		dirty, dirtyMsg, err := g.CheckDirDirty(dir, map[string]string{
 			previousManagementInfo.ReleaseVersion:    currentManagementInfo.ReleaseVersion,
 			previousManagementInfo.GenerationVersion: currentManagementInfo.GenerationVersion,
@@ -182,8 +192,8 @@ func Generate(g Git) (*GenerationInfo, map[string]string, error) {
 		genInfo = &GenerationInfo{
 			SpeakeasyVersion:  speakeasyVersion.String(),
 			GenerationVersion: generationVersion.String(),
-			OpenAPIDocVersion: docVersion,
-			Languages:         langGenInfo,
+			//OpenAPIDocVersion: docVersion, //TODO
+			Languages: langGenInfo,
 		}
 	}
 
@@ -258,8 +268,6 @@ func getInstallationURL(lang, subdirectory string) string {
 	return ""
 }
 
-func getRepoDetails(subdirectory string) (string, string) {
-	subdirectory = filepath.Clean(subdirectory)
-
-	return fmt.Sprintf("%s/%s.git", environment.GetGithubServerURL(), environment.GetRepo()), subdirectory
+func getRepoURL() string {
+	return fmt.Sprintf("%s/%s.git", environment.GetGithubServerURL(), environment.GetRepo())
 }

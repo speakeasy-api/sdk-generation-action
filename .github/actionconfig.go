@@ -15,7 +15,6 @@ const (
 	publishIdentifier = "publish_"
 	inputConfigKey    = "inputs"
 	securityConfigKey = "secrets"
-	createRelease     = "create_release"
 	schemaTokenKey    = "openapi_doc_auth_token"
 )
 
@@ -42,7 +41,7 @@ func GenerateActionInputsConfig() (*SDKGenConfig, error) {
 	}
 
 	for _, inputConfigField := range inputConfigFields {
-		if strings.Contains(inputConfigField.Name, publishIdentifier) || inputConfigField.Name == createRelease {
+		if strings.Contains(inputConfigField.Name, publishIdentifier) {
 			reqForPublishing := true
 			inputConfigField.RequiredForPublishing = &reqForPublishing
 			if inputConfigField.Language != nil && *inputConfigField.Language != "" {

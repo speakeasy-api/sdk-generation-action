@@ -78,7 +78,6 @@ jobs:
     uses: speakeasy-api/sdk-generation-action/.github/workflows/sdk-publish.yaml@v14 # Import the sdk publish workflow which will handle the publishing to the package managers
     with:
       publish_python: true # Tells the publish action to publish the Python SDK to PyPi
-      create_release: true
     secrets:
       github_access_token: ${{ secrets.GITHUB_TOKEN }}
       pypi_token: ${{ secrets.PYPI_TOKEN }}
@@ -253,8 +252,6 @@ Distribution of Swift SDKs is supported using the [Swift Package Manager](https:
 
 As such publishing a Swift package through the action creates a new git tag (and corresponding GitHub release) which allows the SDK to be easily imported into Swift projects by the GitHub repository's URL and corresponding version.
 
-**Note:** Because of the requirement on git tags and GitHub releases, the value of `create_release` is ignored when publishing a Swift SDK through the action.
-
 ### Terraform Registry
 
 Publishing a generated terraform provider is possible through the configuration of this action. In order to publish, you must do the following:
@@ -309,7 +306,7 @@ The action to run, valid options are `validate`, `generate`, `finalize`, `sugges
 
 The mode to run the action in, valid options are `direct` or `pr`, defaults to `direct`.
 
-- `direct` will create a commit with the changes to the SDKs and push them directly to the branch the workflow is configure to run on (normally 'main' or 'master'). If `create_release` is `true` this will happen immediately after the commit is created on the branch.
+- `direct` will create a commit with the changes to the SDKs and push them directly to the branch the workflow is configure to run on (normally 'main' or 'master'). 
 - `pr` will instead create a new branch to commit the changes to the SDKs to and then create a PR from this branch. The sdk-publish workflow will then need to be configured to run when the PR is merged to publish the SDKs and create a release.
 
 ### `speakeasy_version`
@@ -390,11 +387,6 @@ languages: |
 ```
 
 If multiple languages are present we will treat the repo as a mono repo, if a single language is present as a single language repo.
-
-### `create_release`
-
-Whether to create a release for the new SDK version if using `direct` mode. Default `"true"`.
-This will also create a tag for the release, allowing the Go SDK to be retrieved via a tag with Go modules.
 
 ### `publish_python`
 
