@@ -4,8 +4,10 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -21,7 +23,7 @@ type Git interface {
 	GetDownloadLink(version string) (string, string, error)
 }
 
-func Download(pinnedVersion string, g Git) (string, error) {
+func GetVersion(pinnedVersion string) string {
 	if pinnedVersion == "" {
 		pinnedVersion = "latest"
 	}
@@ -34,9 +36,19 @@ func Download(pinnedVersion string, g Git) (string, error) {
 		}
 	}
 
+	return version
+}
+
+func Download(pinnedVersion string, g Git) (string, error) {
+	version := GetVersion(pinnedVersion)
+
 	link, version, err := g.GetDownloadLink(version)
 	if err != nil {
 		return version, err
+	}
+
+	if _, err := os.Stat(filepath.Join(environment.GetBaseDir(), "bin", "speakeasy")); err == nil {
+		return version, nil
 	}
 
 	fmt.Println("Downloading speakeasy cli version: ", version)
@@ -182,4 +194,40 @@ func extractTarGZ(archive, dest string) error {
 	}
 
 	return nil
+}
+
+func CheckFreeUsageAccess() (bool, error) {
+	apiURL := "https://api.speakeasyapi.dev/v1/workspace/access?passive=true"
+
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return false, fmt.Errorf("error creating the request: %w", err)
+	}
+
+	apiKey := os.Getenv("SPEAKEASY_API_KEY")
+	req.Header.Set("x-api-key", apiKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, fmt.Errorf("error making the API request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return false, fmt.Errorf("API request failed with status code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, fmt.Errorf("error reading the response body: %w", err)
+	}
+	var accessDetails struct {
+		GenerationAllowed bool `json:"generation_allowed"`
+	}
+	if err := json.Unmarshal(body, &accessDetails); err != nil {
+		return false, fmt.Errorf("error unmarshaling the response: %w", err)
+	}
+
+	return accessDetails.GenerationAllowed, nil
 }

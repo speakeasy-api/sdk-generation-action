@@ -81,7 +81,6 @@ func GetPinnedSpeakeasyVersion() string {
 func GetMaxSuggestions() string {
 	return os.Getenv("INPUT_MAX_SUGGESTIONS")
 }
-
 func GetMaxValidationWarnings() (int, error) {
 	maxVal := os.Getenv("INPUT_MAX_VALIDATION_WARNINGS")
 	if maxVal == "" {
