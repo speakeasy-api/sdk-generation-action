@@ -124,7 +124,13 @@ func RunWorkflow() error {
 			return err
 		}
 
-		if _, err := g.CommitAndPush(docVersion, speakeasyVersion, "", environment.ActionRunWorkflow); err != nil {
+		if _, err := g.CommitAndPush(docVersion, speakeasyVersion, "", environment.ActionRunWorkflow, false); err != nil {
+			return err
+		}
+	}
+
+	if sourcesOnly {
+		if _, err := g.CommitAndPush("", resolvedVersion, "", environment.ActionRunWorkflow, sourcesOnly); err != nil {
 			return err
 		}
 	}
@@ -165,12 +171,15 @@ func finalize(outputs map[string]string, branchName string, anythingRegenerated 
 			return err
 		}
 
-		releaseInfo, err := getReleasesInfo()
-		if err != nil {
-			return err
+		var releaseInfo *releases.ReleasesInfo
+		if !sourcesOnly {
+			releaseInfo, err = getReleasesInfo()
+			if err != nil {
+				return err
+			}
 		}
 
-		if err := g.CreateOrUpdatePR(branchName, *releaseInfo, environment.GetPreviousGenVersion(), pr, sourcesOnly); err != nil {
+		if err := g.CreateOrUpdatePR(branchName, releaseInfo, environment.GetPreviousGenVersion(), pr, sourcesOnly); err != nil {
 			return err
 		}
 	case environment.ModeDirect:
