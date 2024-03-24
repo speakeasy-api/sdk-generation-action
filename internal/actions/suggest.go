@@ -34,7 +34,7 @@ func Suggest() error {
 
 	branchName := ""
 
-	branchName, _, err = g.FindExistingPR("", environment.ActionSuggest)
+	branchName, _, err = g.FindExistingPR("", environment.ActionSuggest, false)
 	if err != nil {
 		return err
 	}

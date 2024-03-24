@@ -123,13 +123,14 @@ jobs:
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: run-workflow
         name: Run Generation Workflow
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.1.0
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           github_access_token: ${{ secrets.github_access_token }}
           mode: ${{ inputs.mode }}
           force: ${{ inputs.force }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
           output_tests: ${{ inputs.output_tests }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           working_directory: ${{ inputs.working_directory }}

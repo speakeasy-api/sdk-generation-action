@@ -159,7 +159,7 @@ func (g *Git) CheckDirDirty(dir string, ignoreChangePatterns map[string]string) 
 	return IsGitDiffSignificant(diffOutput, ignoreChangePatterns)
 }
 
-func (g *Git) FindExistingPR(branchName string, action environment.Action) (string, *github.PullRequest, error) {
+func (g *Git) FindExistingPR(branchName string, action environment.Action, sourceGeneration bool) (string, *github.PullRequest, error) {
 	if g.repo == nil {
 		return "", nil, fmt.Errorf("repo not cloned")
 	}
@@ -172,6 +172,9 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action) (stri
 	var prTitle string
 	if action == environment.ActionRunWorkflow || action == environment.ActionFinalize {
 		prTitle = getGenPRTitle()
+		if sourceGeneration {
+			prTitle = getGenSourcesTitle()
+		}
 	} else if action == environment.ActionFinalize || action == environment.ActionFinalizeSuggestion {
 		prTitle = getSuggestPRTitle()
 	}
@@ -352,7 +355,7 @@ func (g *Git) Add(arg string) error {
 	return nil
 }
 
-func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo releases.ReleasesInfo, previousGenVersion string, pr *github.PullRequest) error {
+func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo releases.ReleasesInfo, previousGenVersion string, pr *github.PullRequest, sourceGeneration bool) error {
 	var changelog string
 	var err error
 
@@ -451,6 +454,8 @@ You have exceeded the limit of one free generated SDK. Please reach out to the S
 		title := getGenPRTitle()
 		if environment.IsDocsGeneration() {
 			title = getDocsPRTitle()
+		} else if sourceGeneration {
+			title = getGenSourcesTitle()
 		}
 
 		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
@@ -796,12 +801,17 @@ func getRepo() string {
 
 const (
 	speakeasyGenPRTitle     = "chore: 🐝 Update SDK - "
+	speakeasyGenSpecsTitle  = "chore: 🐝 Update Specs - "
 	speakeasySuggestPRTitle = "chore: 🐝 Suggest OpenAPI changes - "
 	speakeasyDocsPRTitle    = "chore: 🐝 Update SDK Docs - "
 )
 
 func getGenPRTitle() string {
 	return speakeasyGenPRTitle + environment.GetWorkflowName()
+}
+
+func getGenSourcesTitle() string {
+	return speakeasyGenSpecsTitle + environment.GetWorkflowName()
 }
 
 func getDocsPRTitle() string {

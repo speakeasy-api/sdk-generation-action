@@ -12,6 +12,9 @@ inputs:
   speakeasy_api_key:
     description: "The Speakeasy API key to authenticate the Speakeasy CLI with"
     required: true
+  openapi_doc_auth_token:
+    description: The auth token to use when fetching the OpenAPI document if it is not publicly hosted. For example `Bearer <token>` or `<token>`.
+    required: false
   force:
     description: "Force the SDK to be regenerated"
     default: "false"
@@ -134,7 +137,7 @@ outputs:
     description: "The location of the OpenAPI document used for generation"
 runs:
   using: "docker"
-  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v15"
+  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v15.1.0"
   env:
     SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
     SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
@@ -147,6 +150,7 @@ runs:
     - ${{ inputs.mode }}
     - ${{ inputs.action }}
     - ${{ inputs.branch_name }}
+    - ${{ inputs.openapi_doc_auth_token }}
     - ${{ inputs.cli_output }}
     - ${{ inputs.previous_gen_version }}
     - ${{ inputs.openapi_doc_output }}

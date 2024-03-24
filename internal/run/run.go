@@ -2,11 +2,11 @@ package run
 
 import (
 	"fmt"
-	"github.com/speakeasy-api/sdk-gen-config/workflow"
-	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/speakeasy-api/sdk-gen-config/workflow"
 
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
@@ -29,7 +29,7 @@ type Git interface {
 	CheckDirDirty(dir string, ignoreMap map[string]string) (bool, string, error)
 }
 
-func Run(g Git) (*GenerationInfo, map[string]string, error) {
+func Run(g Git, wf *workflow.Workflow) (*GenerationInfo, map[string]string, error) {
 	workspace := environment.GetWorkspace()
 	outputs := map[string]string{}
 
@@ -45,11 +45,6 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 	langGenerated := map[string]bool{}
 
 	globalPreviousGenVersion := ""
-
-	wf, err := configuration.GetWorkflowAndValidateLanguages(true)
-	if err != nil {
-		return nil, outputs, err
-	}
 
 	langConfigs := map[string]*config.LanguageConfig{}
 
@@ -107,7 +102,7 @@ func Run(g Git) (*GenerationInfo, map[string]string, error) {
 	}
 
 	// Run the workflow
-	if err := cli.Run(installationURLs, repoURL, repoSubdirectories); err != nil {
+	if err := cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories); err != nil {
 		return nil, outputs, err
 	}
 

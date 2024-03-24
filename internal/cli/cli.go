@@ -40,12 +40,16 @@ func GetSupportedLanguages() ([]string, error) {
 	return strings.Split(langs, ", "), nil
 }
 
-func Run(installationURLs map[string]string, repoURL string, repoSubdirectories map[string]string) error {
+func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, repoSubdirectories map[string]string) error {
 	args := []string{
 		"run",
 	}
 
-	args = append(args, "-t", "all")
+	if sourcesOnly {
+		args = append(args, "-s", "all")
+	} else {
+		args = append(args, "-t", "all")
+	}
 
 	urls, err := json.Marshal(installationURLs)
 	if err != nil {
