@@ -12,9 +12,6 @@ inputs:
   speakeasy_api_key:
     description: "The Speakeasy API key to authenticate the Speakeasy CLI with"
     required: true
-  openapi_doc_auth_token:
-    description: The auth token to use when fetching the OpenAPI document if it is not publicly hosted. For example `Bearer <token>` or `<token>`.
-    required: false
   force:
     description: "Force the SDK to be regenerated"
     default: "false"
@@ -150,7 +147,6 @@ runs:
     - ${{ inputs.mode }}
     - ${{ inputs.action }}
     - ${{ inputs.branch_name }}
-    - ${{ inputs.openapi_doc_auth_token }}
     - ${{ inputs.cli_output }}
     - ${{ inputs.previous_gen_version }}
     - ${{ inputs.openapi_doc_output }}
