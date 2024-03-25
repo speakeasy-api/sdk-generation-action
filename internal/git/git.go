@@ -159,7 +159,7 @@ func (g *Git) CheckDirDirty(dir string, ignoreChangePatterns map[string]string) 
 	return IsGitDiffSignificant(diffOutput, ignoreChangePatterns)
 }
 
-func (g *Git) FindExistingPR(branchName string, action environment.Action) (string, *github.PullRequest, error) {
+func (g *Git) FindExistingPR(branchName string, action environment.Action, sourceGeneration bool) (string, *github.PullRequest, error) {
 	if g.repo == nil {
 		return "", nil, fmt.Errorf("repo not cloned")
 	}
@@ -172,6 +172,9 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action) (stri
 	var prTitle string
 	if action == environment.ActionRunWorkflow || action == environment.ActionFinalize {
 		prTitle = getGenPRTitle()
+		if sourceGeneration {
+			prTitle = getGenSourcesTitle()
+		}
 	} else if action == environment.ActionFinalize || action == environment.ActionFinalizeSuggestion {
 		prTitle = getSuggestPRTitle()
 	}
@@ -297,7 +300,7 @@ func (g *Git) DeleteBranch(branchName string) error {
 	return nil
 }
 
-func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action) (string, error) {
+func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
@@ -316,6 +319,9 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	var commitMessage string
 	if action == environment.ActionRunWorkflow {
 		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
+		if sourcesOnly {
+			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
+		}
 	} else if action == environment.ActionSuggest {
 		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
 	}
@@ -352,7 +358,7 @@ func (g *Git) Add(arg string) error {
 	return nil
 }
 
-func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo releases.ReleasesInfo, previousGenVersion string, pr *github.PullRequest) error {
+func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo *releases.ReleasesInfo, previousGenVersion string, pr *github.PullRequest, sourceGeneration bool) error {
 	var changelog string
 	var err error
 
@@ -362,66 +368,73 @@ func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo releases.ReleasesI
 		previousGenVersions = strings.Split(previousGenVersion, ";")
 	}
 
-	for language, info := range releaseInfo.LanguagesGenerated {
-		genPath := path.Join(environment.GetWorkspace(), "repo", info.Path)
+	if releaseInfo != nil {
+		for language, info := range releaseInfo.LanguagesGenerated {
+			genPath := path.Join(environment.GetWorkspace(), "repo", info.Path)
 
-		var targetVersions map[string]string
+			var targetVersions map[string]string
 
-		cfg, err := genConfig.Load(genPath)
-		if err != nil {
-			logging.Debug("failed to load gen config for retrieving granular versions for changelog at path %s: %v", genPath, err)
-			continue
-		} else {
-			ok := false
-			targetVersions, ok = cfg.LockFile.Features[language]
-			if !ok {
-				logging.Debug("failed to find language %s in gen config for retrieving granular versions for changelog at path %s", language, genPath)
+			cfg, err := genConfig.Load(genPath)
+			if err != nil {
+				logging.Debug("failed to load gen config for retrieving granular versions for changelog at path %s: %v", genPath, err)
 				continue
+			} else {
+				ok := false
+				targetVersions, ok = cfg.LockFile.Features[language]
+				if !ok {
+					logging.Debug("failed to find language %s in gen config for retrieving granular versions for changelog at path %s", language, genPath)
+					continue
+				}
 			}
-		}
 
-		var previousVersions map[string]string
+			var previousVersions map[string]string
 
-		if len(previousGenVersions) > 0 {
-			for _, previous := range previousGenVersions {
-				langVersions := strings.Split(previous, ":")
+			if len(previousGenVersions) > 0 {
+				for _, previous := range previousGenVersions {
+					langVersions := strings.Split(previous, ":")
 
-				if len(langVersions) == 2 && langVersions[0] == language {
-					previousVersions = map[string]string{}
+					if len(langVersions) == 2 && langVersions[0] == language {
+						previousVersions = map[string]string{}
 
-					pairs := strings.Split(langVersions[1], ",")
-					for i := 0; i < len(pairs); i += 2 {
-						previousVersions[pairs[i]] = pairs[i+1]
+						pairs := strings.Split(langVersions[1], ",")
+						for i := 0; i < len(pairs); i += 2 {
+							previousVersions[pairs[i]] = pairs[i+1]
+						}
 					}
 				}
 			}
+
+			versionChangelog, err := cli.GetChangelog(language, releaseInfo.GenerationVersion, "", targetVersions, previousVersions)
+			if err != nil {
+				return fmt.Errorf("failed to get changelog for language %s: %w", language, err)
+			}
+
+			changelog += fmt.Sprintf("\n\n## %s CHANGELOG\n\n%s", strings.ToUpper(language), versionChangelog)
 		}
 
-		versionChangelog, err := cli.GetChangelog(language, releaseInfo.GenerationVersion, "", targetVersions, previousVersions)
-		if err != nil {
-			return fmt.Errorf("failed to get changelog for language %s: %w", language, err)
+		if changelog == "" {
+			// Not using granular version, grab old changelog
+			changelog, err = cli.GetChangelog("", releaseInfo.GenerationVersion, previousGenVersion, nil, nil)
+			if err != nil {
+				return fmt.Errorf("failed to get changelog: %w", err)
+			}
+			if strings.TrimSpace(changelog) != "" {
+				changelog = "\n\n\n## CHANGELOG\n\n" + changelog
+			}
+		} else {
+			changelog = "\n" + changelog
 		}
-
-		changelog += fmt.Sprintf("\n\n## %s CHANGELOG\n\n%s", strings.ToUpper(language), versionChangelog)
 	}
 
-	if changelog == "" {
-		// Not using granular version, grab old changelog
-		changelog, err = cli.GetChangelog("", releaseInfo.GenerationVersion, previousGenVersion, nil, nil)
-		if err != nil {
-			return fmt.Errorf("failed to get changelog: %w", err)
-		}
-		if strings.TrimSpace(changelog) != "" {
-			changelog = "\n\n\n## CHANGELOG\n\n" + changelog
-		}
+	var body string
+	if sourceGeneration {
+		body = "Update of compiled sources"
 	} else {
-		changelog = "\n" + changelog
-	}
-
-	body := fmt.Sprintf(`# SDK update
+		body = fmt.Sprintf(`# SDK update
 Based on:
 - OpenAPI Doc %s %s
 - Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s`, releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, changelog)
+	}
 
 	// TODO: To be removed after we start blocking on usage limits.
 	if accessAllowed, err := cli.CheckFreeUsageAccess(); err == nil && !accessAllowed {
@@ -451,6 +464,8 @@ You have exceeded the limit of one free generated SDK. Please reach out to the S
 		title := getGenPRTitle()
 		if environment.IsDocsGeneration() {
 			title = getDocsPRTitle()
+		} else if sourceGeneration {
+			title = getGenSourcesTitle()
 		}
 
 		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
@@ -796,12 +811,17 @@ func getRepo() string {
 
 const (
 	speakeasyGenPRTitle     = "chore: 🐝 Update SDK - "
+	speakeasyGenSpecsTitle  = "chore: 🐝 Update Specs - "
 	speakeasySuggestPRTitle = "chore: 🐝 Suggest OpenAPI changes - "
 	speakeasyDocsPRTitle    = "chore: 🐝 Update SDK Docs - "
 )
 
 func getGenPRTitle() string {
 	return speakeasyGenPRTitle + environment.GetWorkflowName()
+}
+
+func getGenSourcesTitle() string {
+	return speakeasyGenSpecsTitle + environment.GetWorkflowName()
 }
 
 func getDocsPRTitle() string {

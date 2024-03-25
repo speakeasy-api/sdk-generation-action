@@ -34,7 +34,7 @@ func Suggest() error {
 
 	branchName := ""
 
-	branchName, _, err = g.FindExistingPR("", environment.ActionSuggest)
+	branchName, _, err = g.FindExistingPR("", environment.ActionSuggest, false)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func Suggest() error {
 
 	outputs["cli_output"] = out
 
-	if _, err := g.CommitAndPush("", "", environment.GetOpenAPIDocOutput(), environment.ActionSuggest); err != nil {
+	if _, err := g.CommitAndPush("", "", environment.GetOpenAPIDocOutput(), environment.ActionSuggest, false); err != nil {
 		return err
 	}
 

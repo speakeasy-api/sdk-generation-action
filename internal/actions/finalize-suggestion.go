@@ -44,7 +44,7 @@ func FinalizeSuggestion() error {
 		return fmt.Errorf("suggestion action requires at least version %s of the speakeasy CLI", cli.MinimumSupportedCLIVersion)
 	}
 
-	branchName, _, err = g.FindExistingPR(branchName, environment.ActionFinalize)
+	branchName, _, err = g.FindExistingPR(branchName, environment.ActionFinalize, false)
 	if err != nil {
 		return err
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-version"
+	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
 	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 
@@ -31,11 +32,17 @@ func RunWorkflow() error {
 
 	mode := environment.GetMode()
 
-	branchName := ""
+	wf, err := configuration.GetWorkflowAndValidateLanguages(true)
+	if err != nil {
+		return err
+	}
 
+	sourcesOnly := wf.Targets == nil || len(wf.Targets) == 0
+
+	branchName := ""
 	if mode == environment.ModePR {
 		var err error
-		branchName, _, err = g.FindExistingPR("", environment.ActionRunWorkflow)
+		branchName, _, err = g.FindExistingPR("", environment.ActionRunWorkflow, sourcesOnly)
 		if err != nil {
 			return err
 		}
@@ -55,7 +62,7 @@ func RunWorkflow() error {
 		}
 	}()
 
-	genInfo, outputs, err := run.Run(g)
+	genInfo, outputs, err := run.Run(g, wf)
 	if err != nil {
 		if err := setOutputs(outputs); err != nil {
 			logging.Debug("failed to set outputs: %v", err)
@@ -117,12 +124,18 @@ func RunWorkflow() error {
 			return err
 		}
 
-		if _, err := g.CommitAndPush(docVersion, speakeasyVersion, "", environment.ActionRunWorkflow); err != nil {
+		if _, err := g.CommitAndPush(docVersion, speakeasyVersion, "", environment.ActionRunWorkflow, false); err != nil {
 			return err
 		}
 	}
 
-	if err = finalize(outputs, branchName, anythingRegenerated, g); err != nil {
+	if sourcesOnly {
+		if _, err := g.CommitAndPush("", resolvedVersion, "", environment.ActionRunWorkflow, sourcesOnly); err != nil {
+			return err
+		}
+	}
+
+	if err = finalize(outputs, branchName, anythingRegenerated, sourcesOnly, g); err != nil {
 		return err
 	}
 
@@ -132,9 +145,9 @@ func RunWorkflow() error {
 }
 
 // Sets outputs and creates or adds releases info
-func finalize(outputs map[string]string, branchName string, anythingRegenerated bool, g *git.Git) error {
+func finalize(outputs map[string]string, branchName string, anythingRegenerated bool, sourcesOnly bool, g *git.Git) error {
 	// If nothing was regenerated, we don't need to do anything
-	if !anythingRegenerated {
+	if !anythingRegenerated && !sourcesOnly {
 		return nil
 	}
 
@@ -153,17 +166,20 @@ func finalize(outputs map[string]string, branchName string, anythingRegenerated 
 
 	switch environment.GetMode() {
 	case environment.ModePR:
-		branchName, pr, err := g.FindExistingPR(branchName, environment.ActionFinalize)
+		branchName, pr, err := g.FindExistingPR(branchName, environment.ActionFinalize, sourcesOnly)
 		if err != nil {
 			return err
 		}
 
-		releaseInfo, err := getReleasesInfo()
-		if err != nil {
-			return err
+		var releaseInfo *releases.ReleasesInfo
+		if !sourcesOnly {
+			releaseInfo, err = getReleasesInfo()
+			if err != nil {
+				return err
+			}
 		}
 
-		if err := g.CreateOrUpdatePR(branchName, *releaseInfo, environment.GetPreviousGenVersion(), pr); err != nil {
+		if err := g.CreateOrUpdatePR(branchName, releaseInfo, environment.GetPreviousGenVersion(), pr, sourcesOnly); err != nil {
 			return err
 		}
 	case environment.ModeDirect:
