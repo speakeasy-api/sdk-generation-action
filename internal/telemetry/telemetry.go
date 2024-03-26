@@ -3,13 +3,14 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/google/uuid"
 	speakeasy "github.com/speakeasy-api/speakeasy-client-sdk-go/v3"
 	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/operations"
 	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
-	"os"
-	"strings"
-	"time"
 )
 
 type ContextKey string
@@ -18,6 +19,7 @@ const ExecutionKeyEnvironmentVariable = "SPEAKEASY_EXECUTION_ID"
 const SpeakeasySDKKey ContextKey = "speakeasy.SDK"
 const WorkspaceIDKey ContextKey = "speakeasy.workspaceID"
 const AccountTypeKey ContextKey = "speakeasy.accountType"
+
 // a random UUID. Change this to fan-out executions with the same gh run id.
 const speakeasyGithubActionNamespace = "360D564A-5583-4EF6-BC2B-99530BF036CC"
 
@@ -76,7 +78,11 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 	if runID == "" {
 		return fmt.Errorf("no GITHUB_RUN_ID provided")
 	}
-	executionKey := fmt.Sprintf("GITHUB_RUN_ID_%s", runID)
+	runAttempt := os.Getenv("GITHUB_RUN_ATTEMPT")
+	if runAttempt == "" {
+		return fmt.Errorf("no GITHUB_RUN_ATTEMPT provided")
+	}
+	executionKey := fmt.Sprintf("GITHUB_RUN_ID_%s, GITHUB_RUN_ATTEMPT_%s", runID, runAttempt)
 	namespace, err := uuid.Parse(speakeasyGithubActionNamespace)
 	if err != nil {
 		return err
