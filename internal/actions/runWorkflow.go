@@ -183,9 +183,12 @@ func finalize(outputs map[string]string, branchName string, anythingRegenerated 
 			return err
 		}
 	case environment.ModeDirect:
-		releaseInfo, err := getReleasesInfo()
-		if err != nil {
-			return err
+		var releaseInfo *releases.ReleasesInfo
+		if !sourcesOnly {
+			releaseInfo, err = getReleasesInfo()
+			if err != nil {
+				return err
+			}
 		}
 
 		commitHash, err := g.MergeBranch(branchName)
@@ -193,7 +196,7 @@ func finalize(outputs map[string]string, branchName string, anythingRegenerated 
 			return err
 		}
 
-		if environment.CreateGitRelease() {
+		if !sourcesOnly && environment.CreateGitRelease() {
 			if err := g.CreateRelease(*releaseInfo); err != nil {
 				return err
 			}
