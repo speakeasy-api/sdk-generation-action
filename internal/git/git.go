@@ -237,6 +237,7 @@ func (g *Git) FindAndCheckoutBranch(branchName string) (string, error) {
 }
 
 func (g *Git) Reset(args ...string) error {
+	logging.Info("Running git reset %s", strings.Join(args, ", "))
 	// We execute this manually because go-git doesn't support all the options we need
 	args = append([]string{"reset"}, args...)
 	cmd := exec.Command("git", args...)
@@ -264,7 +265,7 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 		defaultBranch, err := g.GetCurrentBranch()
 		if err != nil {
 			// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
-			logging.Debug("failed to get default branch: %s", err.Error())
+			logging.Info("failed to get default branch: %s", err.Error())
 		}
 
 		branchName, err := g.FindAndCheckoutBranch(branchName)
@@ -275,7 +276,7 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 		origin := fmt.Sprintf("origin/%s", defaultBranch)
 		if err = g.Reset("--hard", origin); err != nil {
 			// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
-			logging.Debug("failed to reset branch: %s", err.Error())
+			logging.Info("failed to reset branch: %s", err.Error())
 		}
 
 		return branchName, nil
