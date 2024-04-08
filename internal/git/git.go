@@ -200,7 +200,7 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action, sourc
 	return branchName, nil, nil
 }
 
-func (g *Git) FindBranch(branchName string) (string, error) {
+func (g *Git) FindAndCheckoutBranch(branchName string) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
@@ -261,13 +261,20 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 	}
 
 	if branchName != "" {
-		branchName, err := g.FindBranch(branchName)
+		defaultBranch, err := g.GetCurrentBranch()
+		if err != nil {
+			// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
+			logging.Debug("failed to get default branch: %s", err.Error())
+		}
+
+		branchName, err := g.FindAndCheckoutBranch(branchName)
 		if err != nil {
 			return "", err
 		}
 
-		// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
-		if err = g.Reset("--hard", "origin/main"); err != nil {
+		origin := fmt.Sprintf("origin/%s", defaultBranch)
+		if err = g.Reset("--hard", origin); err != nil {
+			// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
 			logging.Debug("failed to reset branch: %s", err.Error())
 		}
 
@@ -294,6 +301,19 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 	}
 
 	return branchName, nil
+}
+
+func (g *Git) GetCurrentBranch() (string, error) {
+	if g.repo == nil {
+		return "", fmt.Errorf("repo not cloned")
+	}
+
+	head, err := g.repo.Head()
+	if err != nil {
+		return "", fmt.Errorf("error getting head: %w", err)
+	}
+
+	return head.Name().String(), nil
 }
 
 func (g *Git) DeleteBranch(branchName string) error {

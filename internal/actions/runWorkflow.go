@@ -151,7 +151,7 @@ func finalize(outputs map[string]string, branchName string, anythingRegenerated 
 		return nil
 	}
 
-	branchName, err := g.FindBranch(branchName)
+	branchName, err := g.FindAndCheckoutBranch(branchName)
 	if err != nil {
 		return err
 	}
