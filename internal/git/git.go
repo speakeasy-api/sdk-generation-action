@@ -236,6 +236,20 @@ func (g *Git) FindBranch(branchName string) (string, error) {
 	return branchName, nil
 }
 
+func (g *Git) Reset(args ...string) error {
+	// We execute this manually because go-git doesn't support all the options we need
+	args = append([]string{"reset"}, args...)
+	cmd := exec.Command("git", args...)
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Env = os.Environ()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error running `git reset %s`: %w %s", strings.Join(args, ", "), err, string(output))
+	}
+
+	return nil
+}
+
 func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
@@ -247,16 +261,24 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 	}
 
 	if branchName != "" {
-		return g.FindBranch(branchName)
+		branchName, err := g.FindBranch(branchName)
+		if err != nil {
+			return "", err
+		}
+
+		// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
+		if err = g.Reset("--hard", "origin/main"); err != nil {
+			logging.Debug("failed to reset branch: %s", err.Error())
+		}
+
+		return branchName, nil
 	}
 
 	if action == environment.ActionRunWorkflow {
 		branchName = fmt.Sprintf("speakeasy-sdk-regen-%d", time.Now().Unix())
 	} else if action == environment.ActionSuggest {
 		branchName = fmt.Sprintf("speakeasy-openapi-suggestion-%d", time.Now().Unix())
-	}
-
-	if environment.IsDocsGeneration() {
+	} else if environment.IsDocsGeneration() {
 		branchName = fmt.Sprintf("speakeasy-sdk-docs-regen-%d", time.Now().Unix())
 	}
 
@@ -347,6 +369,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 }
 
 func (g *Git) Add(arg string) error {
+	// We execute this manually because go-git doesn't properly support gitignore
 	cmd := exec.Command("git", "add", arg)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
