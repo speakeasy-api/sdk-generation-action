@@ -197,7 +197,7 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action) (stri
 	return branchName, nil, nil
 }
 
-func (g *Git) FindBranch(branchName string) (string, error) {
+func (g *Git) FindAndCheckoutBranch(branchName string) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
@@ -233,6 +233,20 @@ func (g *Git) FindBranch(branchName string) (string, error) {
 	return branchName, nil
 }
 
+func (g *Git) Reset(args ...string) error {
+	// We execute this manually because go-git doesn't support all the options we need
+	args = append([]string{"reset"}, args...)
+	cmd := exec.Command("git", args...)
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Env = os.Environ()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error running `git reset %s`: %w %s", strings.Join(args, ", "), err, string(output))
+	}
+
+	return nil
+}
+
 func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
@@ -244,16 +258,31 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 	}
 
 	if branchName != "" {
-		return g.FindBranch(branchName)
+		defaultBranch, err := g.GetCurrentBranch()
+		if err != nil {
+			// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
+			logging.Debug("failed to get default branch: %s", err.Error())
+		}
+
+		branchName, err := g.FindAndCheckoutBranch(branchName)
+		if err != nil {
+			return "", err
+		}
+
+		origin := fmt.Sprintf("origin/%s", defaultBranch)
+		if err = g.Reset("--hard", origin); err != nil {
+			// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
+			logging.Debug("failed to reset branch: %s", err.Error())
+		}
+
+		return branchName, nil
 	}
 
 	if action == environment.ActionGenerate {
 		branchName = fmt.Sprintf("speakeasy-sdk-regen-%d", time.Now().Unix())
 	} else if action == environment.ActionSuggest {
 		branchName = fmt.Sprintf("speakeasy-openapi-suggestion-%d", time.Now().Unix())
-	}
-
-	if environment.IsDocsGeneration() {
+	} else if environment.IsDocsGeneration() {
 		branchName = fmt.Sprintf("speakeasy-sdk-docs-regen-%d", time.Now().Unix())
 	}
 
@@ -269,6 +298,19 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 	}
 
 	return branchName, nil
+}
+
+func (g *Git) GetCurrentBranch() (string, error) {
+	if g.repo == nil {
+		return "", fmt.Errorf("repo not cloned")
+	}
+
+	head, err := g.repo.Head()
+	if err != nil {
+		return "", fmt.Errorf("error getting head: %w", err)
+	}
+
+	return head.Name().String(), nil
 }
 
 func (g *Git) DeleteBranch(branchName string) error {
@@ -338,6 +380,19 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	}
 
 	return commitHash.String(), nil
+}
+
+func (g *Git) Add(arg string) error {
+	// We execute this manually because go-git doesn't properly support gitignore
+	cmd := exec.Command("git", "add", arg)
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Env = os.Environ()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error running `git add %s`: %w %s", arg, err, string(output))
+	}
+
+	return nil
 }
 
 func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo releases.ReleasesInfo, previousGenVersion string, pr *github.PullRequest) error {
