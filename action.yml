@@ -12,7 +12,7 @@ inputs:
   speakeasy_api_key:
     description: "The Speakeasy API key to authenticate the Speakeasy CLI with"
     required: true
-  spec_auth_token:
+  openapi_doc_auth_token:
     description: "An auth token to authenticate with a private OpenAPI spec"
     required: false
   force:
@@ -142,7 +142,7 @@ runs:
     SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
     SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
     OPENAI_API_KEY: ${{ inputs.openai_api_key }}
-    SPEC_AUTH_TOKEN: ${{ inputs.spec_auth_token }}
+    OPENAPI_DOC_AUTH_TOKEN: ${{ inputs.openapi_doc_auth_token }}
   args:
     - ${{ inputs.speakeasy_version }}
     - ${{ inputs.github_access_token }}
