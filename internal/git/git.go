@@ -240,14 +240,14 @@ func (g *Git) Reset(args ...string) error {
 	// We execute this manually because go-git doesn't support all the options we need
 	args = append([]string{"reset"}, args...)
 
-	logging.Info("Running git  %s", strings.Join(args, ", "))
+	logging.Info("Running git  %s", strings.Join(args, " "))
 
 	cmd := exec.Command("git", args...)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("error running `git %s`: %w %s", strings.Join(args, ", "), err, string(output))
+		return fmt.Errorf("error running `git %s`: %w %s", strings.Join(args, " "), err, string(output))
 	}
 
 	return nil
