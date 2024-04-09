@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/hashicorp/go-version"
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
@@ -19,6 +20,10 @@ func RunWorkflow() error {
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("WE ARE HERE")
+	fmt.Println(os.Getenv("INPUT_OPENAPI_DOC_AUTH_TOKEN"))
+	fmt.Println(os.Getenv("OPENAPI_DOC_AUTH_TOKEN"))
 
 	resolvedVersion, err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g)
 	if err != nil {
