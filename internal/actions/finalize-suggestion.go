@@ -31,7 +31,7 @@ func FinalizeSuggestion() error {
 		}
 	}()
 
-	branchName, err = g.FindBranch(branchName)
+	branchName, err = g.FindAndCheckoutBranch(branchName)
 	if err != nil {
 		return err
 	}
