@@ -12,6 +12,9 @@ inputs:
   speakeasy_api_key:
     description: "The Speakeasy API key to authenticate the Speakeasy CLI with"
     required: true
+  openapi_doc_auth_token:
+    description: "An auth token to authenticate with a private OpenAPI spec"
+    required: false
   force:
     description: "Force the SDK to be regenerated"
     default: "false"
@@ -153,3 +156,4 @@ runs:
     - ${{ inputs.output_tests }}
     - ${{ inputs.working_directory }}
     - ${{ inputs.gpg_fingerprint }}
+    - ${{ inputs.openapi_doc_auth_token }}
