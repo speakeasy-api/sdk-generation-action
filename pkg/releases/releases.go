@@ -109,6 +109,7 @@ func (r ReleasesInfo) String() string {
 	return fmt.Sprintf(`%s## %s
 ### Changes
 Based on:
+This is an automated Pull Request generated for the next release of this SDK. It is recommended to use either rebase-merge or squash-merge when merging this pull request to avoid merge conflicts
 - OpenAPI Doc %s %s
 - Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", r.ReleaseTitle, r.DocVersion, r.DocLocation, r.SpeakeasyVersion, r.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
 }
