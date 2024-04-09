@@ -383,7 +383,8 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	}
 
 	if err := g.repo.Push(&git.PushOptions{
-		Auth: getGithubAuth(g.accessToken),
+		Auth:  getGithubAuth(g.accessToken),
+		Force: true, // This is necessary because at the beginning of the workflow we reset the branch
 	}); err != nil {
 		return "", fmt.Errorf("error pushing changes: %w", err)
 	}
