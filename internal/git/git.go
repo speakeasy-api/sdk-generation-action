@@ -234,15 +234,17 @@ func (g *Git) FindAndCheckoutBranch(branchName string) (string, error) {
 }
 
 func (g *Git) Reset(args ...string) error {
-	logging.Info("Running git reset %s", strings.Join(args, ", "))
 	// We execute this manually because go-git doesn't support all the options we need
 	args = append([]string{"reset"}, args...)
+
+	logging.Info("Running git  %s", strings.Join(args, " "))
+
 	cmd := exec.Command("git", args...)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("error running `git reset %s`: %w %s", strings.Join(args, ", "), err, string(output))
+		return fmt.Errorf("error running `git %s`: %w %s", strings.Join(args, " "), err, string(output))
 	}
 
 	return nil
@@ -311,7 +313,7 @@ func (g *Git) GetCurrentBranch() (string, error) {
 		return "", fmt.Errorf("error getting head: %w", err)
 	}
 
-	return head.Name().String(), nil
+	return head.Name().Short(), nil
 }
 
 func (g *Git) DeleteBranch(branchName string) error {
@@ -375,7 +377,8 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	}
 
 	if err := g.repo.Push(&git.PushOptions{
-		Auth: getGithubAuth(g.accessToken),
+		Auth:  getGithubAuth(g.accessToken),
+		Force: true, // This is necessary because at the beginning of the workflow we reset the branch
 	}); err != nil {
 		return "", fmt.Errorf("error pushing changes: %w", err)
 	}
