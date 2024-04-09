@@ -22,8 +22,21 @@ func RunWorkflow() error {
 	}
 
 	fmt.Println("WE ARE HERE")
-	fmt.Println(os.Getenv("INPUT_OPENAPI_DOC_AUTH_TOKEN"))
-	fmt.Println(os.Getenv("OPENAPI_DOC_AUTH_TOKEN"))
+	if os.Getenv("INPUT_OPENAPI_DOC_AUTH_TOKEN") != "" {
+		fmt.Println("WE ARE HERE1")
+	}
+
+	if os.Getenv("OPENAPI_DOC_AUTH_TOKEN") != "" {
+		fmt.Println("WE ARE HERE2")
+	}
+
+	if os.Getenv("INPUT_openapi_doc_auth_token") != "" {
+		fmt.Println("WE ARE HERE3")
+	}
+
+	if os.Getenv("openapi_doc_auth_token") != "" {
+		fmt.Println("WE ARE HERE4")
+	}
 
 	resolvedVersion, err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g)
 	if err != nil {
