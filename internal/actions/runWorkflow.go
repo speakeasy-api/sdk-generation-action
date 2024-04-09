@@ -2,7 +2,6 @@ package actions
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/hashicorp/go-version"
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
@@ -19,23 +18,6 @@ func RunWorkflow() error {
 	g, err := initAction()
 	if err != nil {
 		return err
-	}
-
-	fmt.Println("WE ARE HERE")
-	if os.Getenv("INPUT_OPENAPI_DOC_AUTH_TOKEN") != "" {
-		fmt.Println("WE ARE HERE1")
-	}
-
-	if os.Getenv("OPENAPI_DOC_AUTH_TOKEN") != "" {
-		fmt.Println("WE ARE HERE2")
-	}
-
-	if os.Getenv("INPUT_openapi_doc_auth_token") != "" {
-		fmt.Println("WE ARE HERE3")
-	}
-
-	if os.Getenv("openapi_doc_auth_token") != "" {
-		fmt.Println("WE ARE HERE4")
 	}
 
 	resolvedVersion, err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g)
