@@ -133,6 +133,7 @@ jobs:
           output_tests: ${{ inputs.output_tests }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           working_directory: ${{ inputs.working_directory }}
+          spec_auth_token: ${{ secrets.spec_auth_token }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
