@@ -21,7 +21,7 @@ func RunWorkflow() error {
 		return err
 	}
 
-	wf, workflowPath, err := configuration.GetWorkflowAndValidateLanguages(true)
+	wf, workflowPath, err := configuration.GetWorkflowAndValidateLanguages(false)
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func RunWorkflow() error {
 			return err
 		}
 
-		return runWorkflow(g, resolvedVersion, wf)
+		return runWorkflow(g, resolvedVersion)
 	}
 
 	pinnedVersion := wf.SpeakeasyVersion.String()
@@ -53,7 +53,7 @@ func RunWorkflow() error {
 		logging.Info("Attempting auto-upgrade from Speakeasy version %s to %s", pinnedVersion, resolvedVersion)
 	}
 
-	err = runWorkflow(g, resolvedVersion, wf)
+	err = runWorkflow(g, resolvedVersion)
 	if attemptingAutoUpgrade {
 		// If we tried to upgrade and the run succeeded, update the workflow file with the new version
 		if err == nil {
@@ -73,14 +73,19 @@ func RunWorkflow() error {
 				return err
 			}
 
-			return runWorkflow(g, resolvedVersion, wf)
+			return runWorkflow(g, resolvedVersion)
 		}
 	}
 
 	return err
 }
 
-func runWorkflow(g *git.Git, resolvedVersion string, wf *workflow.Workflow) error {
+func runWorkflow(g *git.Git, resolvedVersion string) error {
+	wf, _, err := configuration.GetWorkflowAndValidateLanguages(true)
+	if err != nil {
+		return err
+	}
+
 	minimumVersionForRun := version.Must(version.NewVersion("1.161.0"))
 	if !cli.IsAtLeastVersion(minimumVersionForRun) {
 		return fmt.Errorf("action requires at least version %s of the speakeasy CLI", minimumVersionForRun)
@@ -99,7 +104,7 @@ func runWorkflow(g *git.Git, resolvedVersion string, wf *workflow.Workflow) erro
 		}
 	}
 
-	branchName, err := g.FindOrCreateBranch(branchName, environment.ActionRunWorkflow)
+	branchName, err = g.FindOrCreateBranch(branchName, environment.ActionRunWorkflow)
 	if err != nil {
 		return err
 	}
