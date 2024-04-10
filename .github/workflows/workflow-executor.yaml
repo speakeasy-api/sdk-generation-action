@@ -8,6 +8,11 @@ on:
         default: latest
         required: false
         type: string
+      auto_upgrade:
+        description: "Automatically upgrade Speakeasy version to the latest version"
+        default: "false"
+        required: false
+        type: string
       mode:
         description: |-
           The mode to run the workflow in, valid options are 'direct' or 'pr', defaults to 'direct'.
@@ -127,9 +132,10 @@ jobs:
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: run-workflow
         name: Run Generation Workflow
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15-test
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
+          auto_upgrade: ${{ inputs.auto_upgrade }}
           github_access_token: ${{ secrets.github_access_token }}
           mode: ${{ inputs.mode }}
           force: ${{ inputs.force }}

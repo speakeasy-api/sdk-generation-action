@@ -2,15 +2,13 @@ package actions
 
 import (
 	"fmt"
-
 	"github.com/hashicorp/go-version"
-	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
-	"github.com/speakeasy-api/sdk-generation-action/internal/git"
-	"github.com/speakeasy-api/sdk-generation-action/internal/run"
-
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
+	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/sdk-generation-action/internal/git"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
+	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 )
 
@@ -20,11 +18,36 @@ func RunWorkflow() error {
 		return err
 	}
 
-	resolvedVersion, err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g)
+	pinnedVersion := cli.GetVersion(environment.GetPinnedSpeakeasyVersion())
+	firstRunVersion := pinnedVersion
+	if environment.ShouldAutoUpgradeSpeakeasyVersion() {
+		firstRunVersion = "latest"
+	}
+
+	resolvedVersion, err := cli.Download(firstRunVersion, g)
 	if err != nil {
 		return err
 	}
 
+	// Only bother doing the second run if it will be with a different version than the first
+	autoUpgradeAttempted := pinnedVersion != "latest" && pinnedVersion != resolvedVersion
+
+	err = runWorkflow(g, resolvedVersion)
+	if err != nil && autoUpgradeAttempted {
+		logging.Info("Error running workflow with version %s: %v", firstRunVersion, err)
+		logging.Info("Trying again with pinned version %s", pinnedVersion)
+
+		resolvedVersion, err := cli.Download(firstRunVersion, g)
+		if err != nil {
+			return err
+		}
+
+		return runWorkflow(g, resolvedVersion)
+	}
+	return err
+}
+
+func runWorkflow(g *git.Git, resolvedVersion string) error {
 	minimumVersionForRun := version.Must(version.NewVersion("1.161.0"))
 	if !cli.IsAtLeastVersion(minimumVersionForRun) {
 		return fmt.Errorf("action requires at least version %s of the speakeasy CLI", minimumVersionForRun)

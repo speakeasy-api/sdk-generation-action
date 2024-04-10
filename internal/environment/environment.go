@@ -82,6 +82,10 @@ func GetPinnedSpeakeasyVersion() string {
 	return os.Getenv("INPUT_SPEAKEASY_VERSION")
 }
 
+func ShouldAutoUpgradeSpeakeasyVersion() bool {
+	return os.Getenv("INPUT_AUTO_UPGRADE") == "true"
+}
+
 func GetMaxSuggestions() string {
 	return os.Getenv("INPUT_MAX_SUGGESTIONS")
 }

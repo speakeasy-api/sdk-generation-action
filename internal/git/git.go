@@ -715,11 +715,19 @@ func (g *Git) GetLatestTag() (string, error) {
 }
 
 func (g *Git) GetDownloadLink(version string) (string, string, error) {
-	page := 0
-
-	// Iterate through pages until we find the release, or we run out of results
-	for {
-		releases, response, err := g.client.Repositories.ListReleases(context.Background(), "speakeasy-api", "speakeasy", &github.ListOptions{Page: page})
+	if version != "latest" {
+		release, _, err := g.client.Repositories.GetReleaseByTag(context.Background(), "speakeasy-api", "speakeasy", version)
+		if err != nil {
+			return "", "", err
+		}
+		link, tag := getDownloadLinkFromRelease(release)
+		if link == nil || tag == nil {
+			return "", "", fmt.Errorf("no download link found for version %s", version)
+		}
+		return *link, *tag, nil
+	} else {
+		// Get first matching release
+		releases, _, err := g.client.Repositories.ListReleases(context.Background(), "speakeasy-api", "speakeasy", nil)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to get speakeasy cli releases: %w", err)
 		}
@@ -729,8 +737,7 @@ func (g *Git) GetDownloadLink(version string) (string, string, error) {
 		} else {
 			link, tag := getDownloadLinkFromReleases(releases, version)
 			if link == nil || tag == nil {
-				page = response.NextPage
-				continue
+				return "", "", fmt.Errorf("no download link found for version %s", version)
 			}
 
 			return *link, *tag, nil
@@ -740,20 +747,29 @@ func (g *Git) GetDownloadLink(version string) (string, string, error) {
 
 func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version string) (*string, *string) {
 	for _, release := range releases {
-		for _, asset := range release.Assets {
-			if version == "latest" || version == release.GetTagName() {
-				curOS := runtime.GOOS
-				curArch := runtime.GOARCH
-				downloadUrl := asset.GetBrowserDownloadURL()
-
-				// https://github.com/speakeasy-api/sdk-generation-action/pull/28#discussion_r1213129634
-				if curOS == "linux" && (strings.Contains(strings.ToLower(asset.GetName()), "_linux_x86_64") || strings.Contains(strings.ToLower(asset.GetName()), "_linux_amd64")) {
-					return &downloadUrl, release.TagName
-				} else if strings.Contains(strings.ToLower(asset.GetName()), curOS) &&
-					strings.Contains(strings.ToLower(asset.GetName()), curArch) {
-					return &downloadUrl, release.TagName
-				}
+		if version == "latest" || version == release.GetTagName() {
+			url, tag := getDownloadLinkFromRelease(release)
+			if url != nil {
+				return url, tag
 			}
+		}
+	}
+
+	return nil, nil
+}
+
+func getDownloadLinkFromRelease(release *github.RepositoryRelease) (*string, *string) {
+	for _, asset := range release.Assets {
+		curOS := runtime.GOOS
+		curArch := runtime.GOARCH
+		downloadUrl := asset.GetBrowserDownloadURL()
+
+		// https://github.com/speakeasy-api/sdk-generation-action/pull/28#discussion_r1213129634
+		if curOS == "linux" && (strings.Contains(strings.ToLower(asset.GetName()), "_linux_x86_64") || strings.Contains(strings.ToLower(asset.GetName()), "_linux_amd64")) {
+			return &downloadUrl, release.TagName
+		} else if strings.Contains(strings.ToLower(asset.GetName()), curOS) &&
+			strings.Contains(strings.ToLower(asset.GetName()), curArch) {
+			return &downloadUrl, release.TagName
 		}
 	}
 
