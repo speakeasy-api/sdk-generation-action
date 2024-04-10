@@ -30,17 +30,21 @@ type logProxyEntry struct {
 }
 
 func LogActionResult() error {
-	key := os.Getenv("SPEAKEASY_API_KEY")
-	if key == "" {
-		fmt.Print("no SPEAKEASY_API_KEY provided.")
-		return nil
-	}
-
 	logLevel := logProxyLevelInfo
 	logMessage := "Success in Github Action"
 	if !strings.Contains(strings.ToLower(os.Getenv("GH_ACTION_RESULT")), "success") {
 		logLevel = logProxyLevelError
 		logMessage = "Failure in Github Action"
+	}
+
+	return sendLog(logLevel, logMessage)
+}
+
+func sendLog(logLevel logProxyLevel, logMessage string) error {
+	key := os.Getenv("SPEAKEASY_API_KEY")
+	if key == "" {
+		fmt.Print("no SPEAKEASY_API_KEY provided.")
+		return nil
 	}
 
 	request := logProxyEntry{

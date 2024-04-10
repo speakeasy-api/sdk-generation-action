@@ -68,12 +68,14 @@ func RunWorkflow() error {
 			logging.Info("Error running workflow with version %s: %v", firstRunVersion, err)
 			logging.Info("Trying again with pinned version %s", pinnedVersion)
 
+			_ = sendLog(logProxyLevelError, fmt.Sprintf("failed to auto-upgrade Speakeasy version from %s to %s: %v", pinnedVersion, resolvedVersion, err))
+
 			// Before re-running, reset anything we already did
 			if err := g.HardResetToDefault(); err != nil {
 				return err
 			}
 
-			resolvedVersion, err := cli.Download(firstRunVersion, g)
+			resolvedVersion, err := cli.Download(pinnedVersion, g)
 			if err != nil {
 				return err
 			}
