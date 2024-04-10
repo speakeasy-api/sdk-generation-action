@@ -33,7 +33,7 @@ func RunWorkflow() error {
 			return err
 		}
 
-		return runWorkflow(g, resolvedVersion, false)
+		return runWorkflow(g, resolvedVersion)
 	}
 
 	pinnedVersion := wf.SpeakeasyVersion.String()
@@ -53,7 +53,7 @@ func RunWorkflow() error {
 		logging.Info("Attempting auto-upgrade from Speakeasy version %s to %s", pinnedVersion, resolvedVersion)
 	}
 
-	err = runWorkflow(g, resolvedVersion, true)
+	err = runWorkflow(g, resolvedVersion)
 	if attemptingAutoUpgrade {
 		// If we tried to upgrade and the run succeeded, update the workflow file with the new version
 		if err == nil {
@@ -80,14 +80,14 @@ func RunWorkflow() error {
 				return err
 			}
 
-			return runWorkflow(g, resolvedVersion, false)
+			return runWorkflow(g, resolvedVersion)
 		}
 	}
 
 	return err
 }
 
-func runWorkflow(g *git.Git, resolvedVersion string, forceFail bool) error {
+func runWorkflow(g *git.Git, resolvedVersion string) error {
 	wf, _, err := configuration.GetWorkflowAndValidateLanguages(true)
 	if err != nil {
 		return err
@@ -200,10 +200,6 @@ func runWorkflow(g *git.Git, resolvedVersion string, forceFail bool) error {
 
 	if err = finalize(outputs, branchName, anythingRegenerated, sourcesOnly, g); err != nil {
 		return err
-	}
-
-	if forceFail {
-		return fmt.Errorf("force fail")
 	}
 
 	success = true
