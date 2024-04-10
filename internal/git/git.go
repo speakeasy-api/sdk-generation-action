@@ -33,9 +33,10 @@ import (
 )
 
 type Git struct {
-	accessToken string
-	repo        *git.Repository
-	client      *github.Client
+	accessToken    string
+	repo           *git.Repository
+	client         *github.Client
+	defaultBreanch string
 }
 
 func New(accessToken string) *Git {
@@ -84,6 +85,13 @@ func (g *Git) CloneRepo() error {
 		return fmt.Errorf("failed to clone repo: %w", err)
 	}
 	g.repo = r
+
+	defaultBranch, err := g.GetCurrentBranch()
+	if err != nil {
+		// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
+		logging.Info("failed to get default branch: %s", err.Error())
+	}
+	g.defaultBreanch = defaultBranch
 
 	return nil
 }
@@ -236,6 +244,11 @@ func (g *Git) FindAndCheckoutBranch(branchName string) (string, error) {
 	return branchName, nil
 }
 
+func (g *Git) HardResetToDefault() error {
+	origin := fmt.Sprintf("origin/%s", g.defaultBreanch)
+	return g.Reset("--hard", origin)
+}
+
 func (g *Git) Reset(args ...string) error {
 	// We execute this manually because go-git doesn't support all the options we need
 	args = append([]string{"reset"}, args...)
@@ -264,24 +277,12 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 	}
 
 	if branchName != "" {
-		defaultBranch, err := g.GetCurrentBranch()
-		if err != nil {
-			// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
-			logging.Info("failed to get default branch: %s", err.Error())
-		}
-
 		branchName, err := g.FindAndCheckoutBranch(branchName)
 		if err != nil {
 			return "", err
 		}
 
-		origin := fmt.Sprintf("origin/%s", defaultBranch)
-		if err = g.Reset("--hard", origin); err != nil {
-			// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
-			logging.Info("failed to reset branch: %s", err.Error())
-		}
-
-		return branchName, nil
+		return branchName, g.HardResetToDefault()
 	}
 
 	if action == environment.ActionRunWorkflow {
