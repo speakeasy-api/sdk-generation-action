@@ -349,7 +349,20 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
+	var commitMessage string
+	if action == environment.ActionRunWorkflow {
+		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
+		if sourcesOnly {
+			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
+		}
+	} else if action == environment.ActionSuggest {
+		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
+	}
 
+	return g.CommitAndPushWithMessage(commitMessage)
+}
+
+func (g *Git) CommitAndPushWithMessage(commitMessage string) (string, error) {
 	w, err := g.repo.Worktree()
 	if err != nil {
 		return "", fmt.Errorf("error getting worktree: %w", err)
@@ -361,15 +374,6 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
-	var commitMessage string
-	if action == environment.ActionRunWorkflow {
-		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
-		if sourcesOnly {
-			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
-		}
-	} else if action == environment.ActionSuggest {
-		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
-	}
 	commitHash, err := w.Commit(commitMessage, &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "speakeasybot",

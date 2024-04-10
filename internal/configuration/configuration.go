@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 )
 
-func GetWorkflowAndValidateLanguages(checkLangSupported bool) (*workflow.Workflow, error) {
-	wf, err := getWorkflow()
+func GetWorkflowAndValidateLanguages(checkLangSupported bool) (*workflow.Workflow, string, error) {
+	wf, path, err := getWorkflow()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load workflow file: %w", err)
+		return nil, path, fmt.Errorf("failed to load workflow file: %w", err)
 	}
 
 	var langs []string
@@ -22,24 +22,19 @@ func GetWorkflowAndValidateLanguages(checkLangSupported bool) (*workflow.Workflo
 
 	if checkLangSupported {
 		if err := AssertLangsSupported(langs); err != nil {
-			return nil, err
+			return nil, path, err
 		}
 	}
 
-	return wf, nil
+	return wf, path, nil
 }
 
-func getWorkflow() (*workflow.Workflow, error) {
+func getWorkflow() (*workflow.Workflow, string, error) {
 	workspace := environment.GetWorkspace()
 
 	localPath := filepath.Join(workspace, "repo")
 
-	wf, _, err := workflow.Load(localPath)
-	if err != nil {
-		return nil, err
-	}
-
-	return wf, err
+	return workflow.Load(localPath)
 }
 
 func AssertLangsSupported(langs []string) error {

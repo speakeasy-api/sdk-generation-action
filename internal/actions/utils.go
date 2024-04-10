@@ -7,7 +7,7 @@ import (
 func getReleasesDir() (string, error) {
 	releasesDir := "."
 	// Find releases file
-	wf, err := configuration.GetWorkflowAndValidateLanguages(false)
+	wf, _, err := configuration.GetWorkflowAndValidateLanguages(false)
 	if err != nil {
 		return "", err
 	}

@@ -3,6 +3,7 @@ package actions
 import (
 	"fmt"
 	"github.com/hashicorp/go-version"
+	"github.com/speakeasy-api/sdk-gen-config/workflow"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
@@ -10,6 +11,8 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
+	"gopkg.in/yaml.v3"
+	"os"
 )
 
 func RunWorkflow() error {
@@ -18,7 +21,22 @@ func RunWorkflow() error {
 		return err
 	}
 
-	pinnedVersion := cli.GetVersion(environment.GetPinnedSpeakeasyVersion())
+	wf, workflowPath, err := configuration.GetWorkflowAndValidateLanguages(true)
+	if err != nil {
+		return err
+	}
+
+	// Override workflow.yaml speakeasyVersion with GH action speakeasyVersion
+	if v := cli.GetVersion(environment.GetPinnedSpeakeasyVersion()); v != "latest" {
+		resolvedVersion, err := cli.Download(v, g)
+		if err != nil {
+			return err
+		}
+
+		return runWorkflow(g, resolvedVersion, wf)
+	}
+
+	pinnedVersion := wf.SpeakeasyVersion.String()
 	firstRunVersion := pinnedVersion
 	if environment.ShouldAutoUpgradeSpeakeasyVersion() {
 		firstRunVersion = "latest"
@@ -29,36 +47,46 @@ func RunWorkflow() error {
 		return err
 	}
 
-	// Only bother doing the second run if it will be with a different version than the first
-	autoUpgradeAttempted := pinnedVersion != "latest" && pinnedVersion != resolvedVersion
-
-	err = runWorkflow(g, resolvedVersion)
-	if err != nil && autoUpgradeAttempted {
-		logging.Info("Error running workflow with version %s: %v", firstRunVersion, err)
-		logging.Info("Trying again with pinned version %s", pinnedVersion)
-
-		resolvedVersion, err := cli.Download(firstRunVersion, g)
-		if err != nil {
-			return err
-		}
-
-		return runWorkflow(g, resolvedVersion)
+	// We will only bother doing the second run if it will be with a different version than the first
+	attemptingAutoUpgrade := pinnedVersion != "latest" && pinnedVersion != resolvedVersion
+	if attemptingAutoUpgrade {
+		logging.Info("Attempting auto-upgrade from Speakeasy version %s to %s", pinnedVersion, resolvedVersion)
 	}
+
+	err = runWorkflow(g, resolvedVersion, wf)
+	if attemptingAutoUpgrade {
+		// If we tried to upgrade and the run succeeded, update the workflow file with the new version
+		if err == nil {
+			logging.Info("Successfully ran workflow with updated version %s", resolvedVersion)
+			if err := updateSpeakeasyVersion(wf, resolvedVersion, workflowPath); err != nil {
+				return err
+			}
+
+			_, err = g.CommitAndPushWithMessage(fmt.Sprintf("ci: update speakeasyVersion to %s", resolvedVersion))
+			return err
+		} else {
+			logging.Info("Error running workflow with version %s: %v", firstRunVersion, err)
+			logging.Info("Trying again with pinned version %s", pinnedVersion)
+
+			resolvedVersion, err := cli.Download(firstRunVersion, g)
+			if err != nil {
+				return err
+			}
+
+			return runWorkflow(g, resolvedVersion, wf)
+		}
+	}
+
 	return err
 }
 
-func runWorkflow(g *git.Git, resolvedVersion string) error {
+func runWorkflow(g *git.Git, resolvedVersion string, wf *workflow.Workflow) error {
 	minimumVersionForRun := version.Must(version.NewVersion("1.161.0"))
 	if !cli.IsAtLeastVersion(minimumVersionForRun) {
 		return fmt.Errorf("action requires at least version %s of the speakeasy CLI", minimumVersionForRun)
 	}
 
 	mode := environment.GetMode()
-
-	wf, err := configuration.GetWorkflowAndValidateLanguages(true)
-	if err != nil {
-		return err
-	}
 
 	sourcesOnly := wf.Targets == nil || len(wf.Targets) == 0
 
@@ -71,7 +99,7 @@ func runWorkflow(g *git.Git, resolvedVersion string) error {
 		}
 	}
 
-	branchName, err = g.FindOrCreateBranch(branchName, environment.ActionRunWorkflow)
+	branchName, err := g.FindOrCreateBranch(branchName, environment.ActionRunWorkflow)
 	if err != nil {
 		return err
 	}
@@ -243,4 +271,26 @@ func getReleasesInfo() (*releases.ReleasesInfo, error) {
 	}
 
 	return releasesInfo, nil
+}
+
+func updateSpeakeasyVersion(wf *workflow.Workflow, newVersion, workflowFilepath string) error {
+	wf.SpeakeasyVersion = workflow.Version(newVersion)
+
+	f, err := os.OpenFile(workflowFilepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
+	if err != nil {
+		return fmt.Errorf("error opening workflow file: %w", err)
+	}
+	defer f.Close()
+
+	out, err := yaml.Marshal(wf)
+	if err != nil {
+		return fmt.Errorf("error marshalling workflow file: %w", err)
+	}
+
+	_, err = f.Write(out)
+	if err != nil {
+		return fmt.Errorf("error writing to workflow file: %w", err)
+	}
+
+	return nil
 }
