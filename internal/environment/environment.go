@@ -56,6 +56,10 @@ func ForceGeneration() bool {
 	return os.Getenv("INPUT_FORCE") == "true"
 }
 
+func SpecifiedTarget() string {
+	return os.Getenv("INPUT_TARGET")
+}
+
 func GetMode() Mode {
 	mode := os.Getenv("INPUT_MODE")
 	if mode == "" {

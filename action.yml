@@ -19,6 +19,9 @@ inputs:
     description: "Force the SDK to be regenerated"
     default: "false"
     required: false
+  target:
+    description: "Generate a specific target by name"
+    required: false
   max_suggestions:
     description: "The maximum number of suggestions to apply when using the 'suggest' action step."
     default: "5"
@@ -137,7 +140,7 @@ outputs:
     description: "The location of the OpenAPI document used for generation"
 runs:
   using: "docker"
-  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v15"
+  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v15.2.5"
   env:
     SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
     SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
@@ -157,3 +160,4 @@ runs:
     - ${{ inputs.working_directory }}
     - ${{ inputs.gpg_fingerprint }}
     - ${{ inputs.openapi_doc_auth_token }}
+    - ${{ inputs.target }}

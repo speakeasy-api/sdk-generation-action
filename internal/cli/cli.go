@@ -48,7 +48,12 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	if sourcesOnly {
 		args = append(args, "-s", "all")
 	} else {
-		args = append(args, "-t", "all")
+		specifiedTarget := environment.SpecifiedTarget()
+		if specifiedTarget != "" {
+			args = append(args, "-t", specifiedTarget)
+		} else {
+			args = append(args, "-t", "all")
+		}
 		urls, err := json.Marshal(installationURLs)
 		if err != nil {
 			return fmt.Errorf("error marshalling installation urls: %w", err)

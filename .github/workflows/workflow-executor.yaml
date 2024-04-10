@@ -19,6 +19,10 @@ on:
         default: "direct"
         required: false
         type: string
+      target:
+        description: "Generate a specific target by name"
+        required: false
+        type: string
       force:
         description: "Force the generation of the SDKs"
         default: "false"
@@ -123,7 +127,7 @@ jobs:
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: run-workflow
         name: Run Generation Workflow
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.2.5
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           github_access_token: ${{ secrets.github_access_token }}
@@ -134,6 +138,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           working_directory: ${{ inputs.working_directory }}
           openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
+          target: ${{ inputs.target }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
