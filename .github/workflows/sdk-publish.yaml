@@ -43,6 +43,12 @@ on:
       java_gpg_passphrase:
         description: The passphrase for the GPG secret key
         required: false
+      terraform_gpg_secret_key:
+        description: The GPG secret key to use for signing the Terraform Provider binary
+        required: false
+      terraform_gpg_passphrase:
+        description: The passphrase for the associated terraform provider key
+        required: false
       slack_webhook_url:
         description: A Slack webhook URL that pipeline failures will be posted to
         required: false
@@ -298,8 +304,8 @@ jobs:
         uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549 # v5.2.0
         id: import_gpg
         with:
-          gpg_private_key: ${{ secrets.TERRAFORM_GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.TERRAFORM_GPG_PASSPHRASE }}
+          gpg_private_key: ${{ secrets.terraform_gpg_secret_key }}
+          passphrase: ${{ secrets.terraform_gpg_passphrase }}
       - id: release
         uses: speakeasy-api/sdk-generation-action@v15
         with:
