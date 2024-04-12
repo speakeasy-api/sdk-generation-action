@@ -46,13 +46,14 @@ RUN dotnet --list-sdks
 RUN apk --update --no-cache add wget \
 		     curl \
 		     git \
-		     php \
+		     php82 \
          php-ctype php-dom php-json php-mbstring php-phar php-tokenizer php-xml php-xmlwriter \
 		     php-curl \
 		     php-openssl \
 		     php-iconv \
 		    --repository http://nl.alpinelinux.org/alpine/edge/testing/
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
+
+RUN curl -sS https://getcomposer.org/installer | php82 -- --install-dir=/usr/bin --filename=composer
 RUN mkdir -p /var/www
 WORKDIR /var/www
 COPY . /var/www
