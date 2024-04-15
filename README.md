@@ -6,13 +6,6 @@ The included workflows provides option for publishing the SDKs to various packag
 
 This action provides a self contained solution for automatically generating new versions of a client SDK when either the reference OpenAPI doc is updated or the Speakeasy CLI that is used to generate the SDKs is updated.
 
-The action can be used in a number of ways:
-
-- Configured to run validation check on an OpenAPI doc, this is known as the `validate` action.
-- Configured to generate and commit directly to a branch in the repo (such as `main` or `master`). This mode is known as the `generate` action in `direct` mode.
-- Configured to generate and commit to an auto-generated branch, then create a PR to merge the changes back into the main repo. This mode is known as the `generate` action in `pr` mode.
-- Configured to apply suggestions to an OpenAPI doc and create a PR to merge the changes back into the main repo. This mode is known as the `suggest` action.
-
 For more information please see our docsite linked below. 
 
 ## Workflow usage
