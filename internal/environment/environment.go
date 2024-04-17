@@ -218,3 +218,7 @@ func GetWorkspace() string {
 func ShouldOutputTests() bool {
 	return os.Getenv("INPUT_OUTPUT_TESTS") == "true"
 }
+
+func SetCLIVersionToUse(version string) error {
+	return os.Setenv("PINNED_VERSION", version)
+}

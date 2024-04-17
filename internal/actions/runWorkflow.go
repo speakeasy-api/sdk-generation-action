@@ -2,8 +2,6 @@ package actions
 
 import (
 	"fmt"
-
-	"github.com/hashicorp/go-version"
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
 	"github.com/speakeasy-api/sdk-generation-action/internal/run"
@@ -20,14 +18,19 @@ func RunWorkflow() error {
 		return err
 	}
 
-	resolvedVersion, err := cli.Download(environment.GetPinnedSpeakeasyVersion(), g)
+	// The top-level CLI can always use latest. The CLI itself manages pinned versions.
+	resolvedVersion, err := cli.Download("latest", g)
 	if err != nil {
 		return err
 	}
 
-	minimumVersionForRun := version.Must(version.NewVersion("1.161.0"))
-	if !cli.IsAtLeastVersion(minimumVersionForRun) {
-		return fmt.Errorf("action requires at least version %s of the speakeasy CLI", minimumVersionForRun)
+	pinnedVersion := cli.GetVersion(environment.GetPinnedSpeakeasyVersion())
+	if pinnedVersion != "latest" {
+		resolvedVersion = pinnedVersion
+		// This environment variable is read by the CLI to determine which version should be used to execute `run`
+		if err := environment.SetCLIVersionToUse(pinnedVersion); err != nil {
+			return fmt.Errorf("failed to set pinned speakeasy version: %w", err)
+		}
 	}
 
 	mode := environment.GetMode()
