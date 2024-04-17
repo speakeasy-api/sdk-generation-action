@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
@@ -24,6 +25,9 @@ func RunWorkflow() error {
 	if err != nil {
 		return err
 	}
+
+	// TODO: remove before ship
+	os.Setenv("VERSION_PINNING", "true")
 
 	pinnedVersion := cli.GetVersion(environment.GetPinnedSpeakeasyVersion())
 	if pinnedVersion != "latest" {
