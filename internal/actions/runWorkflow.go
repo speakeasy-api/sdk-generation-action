@@ -26,7 +26,7 @@ func RunWorkflow() error {
 		return err
 	}
 
-	// TODO: remove before ship
+	// TODO: remove when we are comfortable not having flag anymore
 	os.Setenv("VERSION_PINNING", "true")
 
 	pinnedVersion := cli.GetVersion(environment.GetPinnedSpeakeasyVersion())
