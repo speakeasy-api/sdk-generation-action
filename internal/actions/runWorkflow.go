@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
 	"github.com/speakeasy-api/sdk-generation-action/internal/run"
@@ -65,7 +66,7 @@ func RunWorkflow() error {
 		}
 	}()
 
-	genInfo, outputs, err := run.Run(g, wf)
+	runRes, outputs, err := run.Run(g, wf)
 	if err != nil {
 		if err := setOutputs(outputs); err != nil {
 			logging.Debug("failed to set outputs: %v", err)
@@ -76,15 +77,15 @@ func RunWorkflow() error {
 
 	anythingRegenerated := false
 
-	if genInfo != nil {
-		docVersion := genInfo.OpenAPIDocVersion
-		speakeasyVersion := genInfo.SpeakeasyVersion
+	if runRes.GenInfo != nil {
+		docVersion := runRes.GenInfo.OpenAPIDocVersion
+		speakeasyVersion := runRes.GenInfo.SpeakeasyVersion
 
 		releaseInfo := releases.ReleasesInfo{
 			ReleaseTitle:       environment.GetInvokeTime().Format("2006-01-02 15:04:05"),
 			DocVersion:         docVersion,
 			SpeakeasyVersion:   speakeasyVersion,
-			GenerationVersion:  genInfo.GenerationVersion,
+			GenerationVersion:  runRes.GenInfo.GenerationVersion,
 			DocLocation:        environment.GetOpenAPIDocLocation(),
 			Languages:          map[string]releases.LanguageReleaseInfo{},
 			LanguagesGenerated: map[string]releases.GenerationInfo{},
@@ -96,7 +97,7 @@ func RunWorkflow() error {
 		}
 
 		for _, lang := range supportedLanguages {
-			langGenInfo, ok := genInfo.Languages[lang]
+			langGenInfo, ok := runRes.GenInfo.Languages[lang]
 
 			if ok && outputs[fmt.Sprintf("%s_regenerated", lang)] == "true" {
 				anythingRegenerated = true
@@ -138,7 +139,14 @@ func RunWorkflow() error {
 		}
 	}
 
-	if err = finalize(outputs, branchName, anythingRegenerated, sourcesOnly, g); err != nil {
+	if err := finalize(finalizeInputs{
+		Outputs:             outputs,
+		BranchName:          branchName,
+		AnythingRegenerated: anythingRegenerated,
+		SourcesOnly:         sourcesOnly,
+		Git:                 g,
+		LintingReport:       runRes.LintingReport,
+	}); err != nil {
 		return err
 	}
 
@@ -147,65 +155,81 @@ func RunWorkflow() error {
 	return nil
 }
 
+type finalizeInputs struct {
+	Outputs             map[string]string
+	BranchName          string
+	AnythingRegenerated bool
+	SourcesOnly         bool
+	Git                 *git.Git
+	LintingReport       string
+}
+
 // Sets outputs and creates or adds releases info
-func finalize(outputs map[string]string, branchName string, anythingRegenerated bool, sourcesOnly bool, g *git.Git) error {
+func finalize(inputs finalizeInputs) error {
 	// If nothing was regenerated, we don't need to do anything
-	if !anythingRegenerated && !sourcesOnly {
+	if !inputs.AnythingRegenerated && !inputs.SourcesOnly {
 		return nil
 	}
 
-	branchName, err := g.FindAndCheckoutBranch(branchName)
+	branchName, err := inputs.Git.FindAndCheckoutBranch(inputs.BranchName)
 	if err != nil {
 		return err
 	}
 
 	defer func() {
-		outputs["branch_name"] = branchName
+		inputs.Outputs["branch_name"] = branchName
 
-		if err := setOutputs(outputs); err != nil {
+		if err := setOutputs(inputs.Outputs); err != nil {
 			logging.Debug("failed to set outputs: %v", err)
 		}
 	}()
 
 	switch environment.GetMode() {
 	case environment.ModePR:
-		branchName, pr, err := g.FindExistingPR(branchName, environment.ActionFinalize, sourcesOnly)
+		branchName, pr, err := inputs.Git.FindExistingPR(branchName, environment.ActionFinalize, inputs.SourcesOnly)
 		if err != nil {
 			return err
 		}
 
 		var releaseInfo *releases.ReleasesInfo
-		if !sourcesOnly {
+		if !inputs.SourcesOnly {
 			releaseInfo, err = getReleasesInfo()
 			if err != nil {
 				return err
 			}
 		}
 
-		if err := g.CreateOrUpdatePR(branchName, releaseInfo, environment.GetPreviousGenVersion(), pr, sourcesOnly); err != nil {
+		if err := inputs.Git.CreateOrUpdatePR(git.PRInfo{
+			BranchName:         branchName,
+			ReleaseInfo:        releaseInfo,
+			PreviousGenVersion: environment.GetPreviousGenVersion(),
+			PR:                 pr,
+			SourceGeneration:   inputs.SourcesOnly,
+			LintingReport:      inputs.LintingReport,
+		}); err != nil {
 			return err
 		}
 	case environment.ModeDirect:
 		var releaseInfo *releases.ReleasesInfo
-		if !sourcesOnly {
+		if !inputs.SourcesOnly {
 			releaseInfo, err = getReleasesInfo()
 			if err != nil {
 				return err
 			}
 		}
 
-		commitHash, err := g.MergeBranch(branchName)
+		commitHash, err := inputs.Git.MergeBranch(branchName)
 		if err != nil {
 			return err
 		}
 
-		if !sourcesOnly && environment.CreateGitRelease() {
-			if err := g.CreateRelease(*releaseInfo); err != nil {
+		if !inputs.SourcesOnly && environment.CreateGitRelease() {
+			if err := inputs.Git.CreateRelease(*releaseInfo); err != nil {
 				return err
 			}
 		}
 
-		outputs["commit_hash"] = commitHash
+		inputs.Outputs["commit_hash"] = commitHash
 	}
 
 	return nil
