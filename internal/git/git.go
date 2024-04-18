@@ -112,9 +112,13 @@ func (g *Git) CheckDirDirty(dir string, ignoreChangePatterns map[string]string) 
 	fileChangesFound := false
 	newFiles := []string{}
 
+	filesToIgnore := []string{"gen.yaml", "gen.lock", "workflow.yaml", "workflow.lock"}
+
 	for f, s := range status {
-		if strings.Contains(f, "gen.yaml") || strings.Contains(f, "gen.lock") {
-			continue
+		for _, fileToIgnore := range filesToIgnore {
+			if strings.Contains(f, fileToIgnore) {
+				continue
+			}
 		}
 
 		if strings.HasPrefix(f, cleanedDir) {
