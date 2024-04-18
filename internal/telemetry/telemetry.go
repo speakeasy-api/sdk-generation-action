@@ -25,7 +25,13 @@ const speakeasyGithubActionNamespace = "360D564A-5583-4EF6-BC2B-99530BF036CC"
 
 func NewContextWithSDK(ctx context.Context, apiKey string) (context.Context, *speakeasy.Speakeasy, string, error) {
 	security := shared.Security{APIKey: &apiKey}
-	sdk := speakeasy.New(speakeasy.WithSecurity(security))
+
+	opts := []speakeasy.SDKOption{speakeasy.WithSecurity(security)}
+	if os.Getenv("SPEAKEASY_SERVER_URL") != "" {
+		opts = append(opts, speakeasy.WithServerURL(os.Getenv("SPEAKEASY_SERVER_URL")))
+	}
+
+	sdk := speakeasy.New(opts...)
 	validated, err := sdk.Auth.ValidateAPIKey(ctx)
 	if err != nil {
 		return ctx, nil, "", err
