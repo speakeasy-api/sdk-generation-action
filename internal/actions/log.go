@@ -30,6 +30,11 @@ type logProxyEntry struct {
 }
 
 func LogActionResult() error {
+	serverURL := defaultAPIURL
+	if s := os.Getenv("SPEAKEASY_SERVER_URL"); s != "" {
+		serverURL = s
+	}
+
 	key := os.Getenv("SPEAKEASY_API_KEY")
 	if key == "" {
 		fmt.Print("no SPEAKEASY_API_KEY provided.")
@@ -95,7 +100,7 @@ func LogActionResult() error {
 
 	baseURL := os.Getenv("SPEAKEASY_SERVER_URL")
 	if baseURL == "" {
-		baseURL = defaultAPIURL
+		baseURL = serverURL
 	}
 
 	req, err := http.NewRequest("POST", baseURL+"/v1/log/proxy", bytes.NewBuffer(body))

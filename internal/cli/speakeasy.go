@@ -83,6 +83,8 @@ func runSpeakeasyCommand(args ...string) (string, error) {
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "SPEAKEASY_RUN_LOCATION=action")
+	cmd.Env = append(cmd.Env, "SPEAKEASY_ENVIRONMENT=github")
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return string(output), fmt.Errorf("error running speakeasy command: speakeasy %s - %w\n %s", strings.Join(args, " "), err, string(output))
