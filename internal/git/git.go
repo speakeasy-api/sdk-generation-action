@@ -405,19 +405,28 @@ func (g *Git) Add(arg string) error {
 	return nil
 }
 
-func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo *releases.ReleasesInfo, previousGenVersion string, pr *github.PullRequest, sourceGeneration bool) error {
+type PRInfo struct {
+	BranchName         string
+	ReleaseInfo        *releases.ReleasesInfo
+	PreviousGenVersion string
+	PR                 *github.PullRequest
+	SourceGeneration   bool
+	LintingReport      string
+}
+
+func (g *Git) CreateOrUpdatePR(info PRInfo) error {
 	var changelog string
 	var err error
 
 	var previousGenVersions []string
 
-	if previousGenVersion != "" {
-		previousGenVersions = strings.Split(previousGenVersion, ";")
+	if info.PreviousGenVersion != "" {
+		previousGenVersions = strings.Split(info.PreviousGenVersion, ";")
 	}
 
-	if releaseInfo != nil {
-		for language, info := range releaseInfo.LanguagesGenerated {
-			genPath := path.Join(environment.GetWorkspace(), "repo", info.Path)
+	if info.ReleaseInfo != nil {
+		for language, genInfo := range info.ReleaseInfo.LanguagesGenerated {
+			genPath := path.Join(environment.GetWorkspace(), "repo", genInfo.Path)
 
 			var targetVersions map[string]string
 
@@ -451,7 +460,7 @@ func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo *releases.Releases
 				}
 			}
 
-			versionChangelog, err := cli.GetChangelog(language, releaseInfo.GenerationVersion, "", targetVersions, previousVersions)
+			versionChangelog, err := cli.GetChangelog(language, info.ReleaseInfo.GenerationVersion, "", targetVersions, previousVersions)
 			if err != nil {
 				return fmt.Errorf("failed to get changelog for language %s: %w", language, err)
 			}
@@ -461,7 +470,7 @@ func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo *releases.Releases
 
 		if changelog == "" {
 			// Not using granular version, grab old changelog
-			changelog, err = cli.GetChangelog("", releaseInfo.GenerationVersion, previousGenVersion, nil, nil)
+			changelog, err = cli.GetChangelog("", info.ReleaseInfo.GenerationVersion, info.PreviousGenVersion, nil, nil)
 			if err != nil {
 				return fmt.Errorf("failed to get changelog: %w", err)
 			}
@@ -474,13 +483,20 @@ func (g *Git) CreateOrUpdatePR(branchName string, releaseInfo *releases.Releases
 	}
 
 	var body string
-	if sourceGeneration {
-		body = "Update of compiled sources"
+
+	if info.LintingReport != "" {
+		body = fmt.Sprintf(`> [!IMPORTANT]
+> Linting report available at: <%s>
+`, info.LintingReport)
+	}
+
+	if info.SourceGeneration {
+		body += "Update of compiled sources"
 	} else {
-		body = fmt.Sprintf(`# SDK update
+		body += fmt.Sprintf(`# SDK update
 Based on:
 - OpenAPI Doc %s %s
-- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s`, releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, changelog)
+- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s`, info.ReleaseInfo.DocVersion, info.ReleaseInfo.DocLocation, info.ReleaseInfo.SpeakeasyVersion, info.ReleaseInfo.GenerationVersion, changelog)
 	}
 
 	// TODO: To be removed after we start blocking on usage limits.
@@ -497,11 +513,11 @@ You have exceeded the limit of one free generated SDK. Please reach out to the S
 		body = body[:maxBodyLength-3] + "..."
 	}
 
-	if pr != nil {
+	if info.PR != nil {
 		logging.Info("Updating PR")
 
-		pr.Body = github.String(body)
-		pr, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), pr.GetNumber(), pr)
+		info.PR.Body = github.String(body)
+		info.PR, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), info.PR)
 		if err != nil {
 			return fmt.Errorf("failed to update PR: %w", err)
 		}
@@ -511,14 +527,14 @@ You have exceeded the limit of one free generated SDK. Please reach out to the S
 		title := getGenPRTitle()
 		if environment.IsDocsGeneration() {
 			title = getDocsPRTitle()
-		} else if sourceGeneration {
+		} else if info.SourceGeneration {
 			title = getGenSourcesTitle()
 		}
 
-		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
+		info.PR, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
 			Title:               github.String(title),
 			Body:                github.String(body),
-			Head:                github.String(branchName),
+			Head:                github.String(info.BranchName),
 			Base:                github.String(environment.GetRef()),
 			MaintainerCanModify: github.Bool(true),
 		})
@@ -532,8 +548,8 @@ You have exceeded the limit of one free generated SDK. Please reach out to the S
 	}
 
 	url := ""
-	if pr.URL != nil {
-		url = *pr.HTMLURL
+	if info.PR.URL != nil {
+		url = *info.PR.HTMLURL
 	}
 
 	logging.Info("PR: %s", url)

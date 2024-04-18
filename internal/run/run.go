@@ -25,11 +25,16 @@ type GenerationInfo struct {
 	Languages         map[string]LanguageGenInfo
 }
 
+type RunResult struct {
+	GenInfo       *GenerationInfo
+	LintingReport string
+}
+
 type Git interface {
 	CheckDirDirty(dir string, ignoreMap map[string]string) (bool, string, error)
 }
 
-func Run(g Git, wf *workflow.Workflow) (*GenerationInfo, map[string]string, error) {
+func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 	workspace := environment.GetWorkspace()
 	outputs := map[string]string{}
 
@@ -82,13 +87,13 @@ func Run(g Git, wf *workflow.Workflow) (*GenerationInfo, map[string]string, erro
 		}
 
 		published := target.IsPublished()
-		outputs[fmt.Sprintf("publish_%s", lang)] = fmt.Sprintf("%t", published)
 		fmt.Printf("Generating %s SDK in %s", lang, outputDir)
 
 		installationURL := getInstallationURL(lang, dir)
 		if installationURL == "" {
 			published = true // Treat as published if we don't have an installation URL
 		}
+		outputs[fmt.Sprintf("publish_%s", lang)] = fmt.Sprintf("%t", published)
 
 		if installationURL != "" {
 			installationURLs[targetID] = installationURL
@@ -102,7 +107,8 @@ func Run(g Git, wf *workflow.Workflow) (*GenerationInfo, map[string]string, erro
 	}
 
 	// Run the workflow
-	if err := cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories); err != nil {
+	runRes, err := cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories)
+	if err != nil {
 		return nil, outputs, err
 	}
 
@@ -187,12 +193,15 @@ func Run(g Git, wf *workflow.Workflow) (*GenerationInfo, map[string]string, erro
 		genInfo = &GenerationInfo{
 			SpeakeasyVersion:  speakeasyVersion.String(),
 			GenerationVersion: generationVersion.String(),
-			//OpenAPIDocVersion: docVersion, //TODO
+			// OpenAPIDocVersion: docVersion, //TODO
 			Languages: langGenInfo,
 		}
 	}
 
-	return genInfo, outputs, nil
+	return &RunResult{
+		GenInfo:       genInfo,
+		LintingReport: runRes.LintingReport,
+	}, outputs, nil
 }
 
 func getPreviousGenVersion(lockFile *config.LockFile, lang, globalPreviousGenVersion string) (string, error) {
