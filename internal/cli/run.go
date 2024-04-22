@@ -10,7 +10,8 @@ import (
 )
 
 type RunResults struct {
-	LintingReport string
+	LintingReportURL string
+	ChangesReportURL string
 }
 
 func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, repoSubdirectories map[string]string) (*RunResults, error) {
@@ -59,17 +60,31 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	}
 
 	lintingReportURL := getLintingReportURL(out)
+	changesReportURL := getChangesReportURL(out)
 
 	fmt.Println(out)
 	return &RunResults{
-		LintingReport: lintingReportURL,
+		LintingReportURL: lintingReportURL,
+		ChangesReportURL: changesReportURL,
 	}, nil
 }
 
-var lintingReportRegex = regexp.MustCompile(`(?m).*?(https:\/\/app.speakeasyapi.dev\/org\/.*?\/.*?\/linting-report\/.*?)\s`)
+var (
+	lintingReportRegex = regexp.MustCompile(`(?m).*?(https:\/\/app.speakeasyapi.dev\/org\/.*?\/.*?\/linting-report\/.*?)\s`)
+	changesReportRegex = regexp.MustCompile(`(?m).*?(https:\/\/app.speakeasyapi.dev\/org\/.*?\/.*?\/changes-report\/.*?)\s`)
+)
 
 func getLintingReportURL(out string) string {
 	matches := lintingReportRegex.FindStringSubmatch(out)
+	if len(matches) > 1 {
+		return matches[1]
+	}
+
+	return ""
+}
+
+func getChangesReportURL(out string) string {
+	matches := changesReportRegex.FindStringSubmatch(out)
 	if len(matches) > 1 {
 		return matches[1]
 	}

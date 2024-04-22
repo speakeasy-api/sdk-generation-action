@@ -145,7 +145,8 @@ func RunWorkflow() error {
 		AnythingRegenerated: anythingRegenerated,
 		SourcesOnly:         sourcesOnly,
 		Git:                 g,
-		LintingReport:       runRes.LintingReport,
+		LintingReportURL:    runRes.LintingReportURL,
+		ChangesReportURL:    runRes.ChangesReportURL,
 	}); err != nil {
 		return err
 	}
@@ -161,7 +162,8 @@ type finalizeInputs struct {
 	AnythingRegenerated bool
 	SourcesOnly         bool
 	Git                 *git.Git
-	LintingReport       string
+	LintingReportURL    string
+	ChangesReportURL    string
 }
 
 // Sets outputs and creates or adds releases info
@@ -205,7 +207,8 @@ func finalize(inputs finalizeInputs) error {
 			PreviousGenVersion: environment.GetPreviousGenVersion(),
 			PR:                 pr,
 			SourceGeneration:   inputs.SourcesOnly,
-			LintingReport:      inputs.LintingReport,
+			LintingReportURL:   inputs.LintingReportURL,
+			ChangesReportURL:   inputs.ChangesReportURL,
 		}); err != nil {
 			return err
 		}

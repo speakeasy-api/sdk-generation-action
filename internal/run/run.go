@@ -26,8 +26,9 @@ type GenerationInfo struct {
 }
 
 type RunResult struct {
-	GenInfo       *GenerationInfo
-	LintingReport string
+	GenInfo          *GenerationInfo
+	LintingReportURL string
+	ChangesReportURL string
 }
 
 type Git interface {
@@ -199,8 +200,9 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 	}
 
 	return &RunResult{
-		GenInfo:       genInfo,
-		LintingReport: runRes.LintingReport,
+		GenInfo:          genInfo,
+		LintingReportURL: runRes.LintingReportURL,
+		ChangesReportURL: runRes.ChangesReportURL,
 	}, outputs, nil
 }
 
