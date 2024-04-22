@@ -415,7 +415,8 @@ type PRInfo struct {
 	PreviousGenVersion string
 	PR                 *github.PullRequest
 	SourceGeneration   bool
-	LintingReport      string
+	LintingReportURL   string
+	ChangesReportURL   string
 }
 
 func (g *Git) CreateOrUpdatePR(info PRInfo) error {
@@ -488,10 +489,16 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) error {
 
 	var body string
 
-	if info.LintingReport != "" {
+	if info.LintingReportURL != "" {
 		body = fmt.Sprintf(`> [!IMPORTANT]
 > Linting report available at: <%s>
-`, info.LintingReport)
+`, info.LintingReportURL)
+	}
+
+	if info.ChangesReportURL != "" {
+		body = fmt.Sprintf(`> [!IMPORTANT]
+> OpenAPI Change report available at: <%s>
+`, info.ChangesReportURL)
 	}
 
 	if info.SourceGeneration {
