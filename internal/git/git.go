@@ -419,6 +419,7 @@ type PRInfo struct {
 	SourceGeneration   bool
 	LintingReportURL   string
 	ChangesReportURL   string
+	Summary            string
 }
 
 func (g *Git) CreateOrUpdatePR(info PRInfo) error {
@@ -489,17 +490,20 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) error {
 		}
 	}
 
-	var body string
+	body := ""
+
+	if info.LintingReportURL != "" || info.LintingReportURL != "" {
+		body += fmt.Sprintf(`> [!IMPORTANT]
+`)
+	}
 
 	if info.LintingReportURL != "" {
-		body = fmt.Sprintf(`> [!IMPORTANT]
-> Linting report available at: <%s>
+		body += fmt.Sprintf(`> Linting report available at: <%s>
 `, info.LintingReportURL)
 	}
 
 	if info.ChangesReportURL != "" {
-		body = fmt.Sprintf(`> [!IMPORTANT]
-> OpenAPI Change report available at: <%s>
+		body += fmt.Sprintf(`> OpenAPI Change report available at: <%s>
 `, info.ChangesReportURL)
 	}
 
