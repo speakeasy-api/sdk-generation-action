@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strings"
 	"time"
 
@@ -115,10 +116,11 @@ func (g *Git) CheckDirDirty(dir string, ignoreChangePatterns map[string]string) 
 	filesToIgnore := []string{"gen.yaml", "gen.lock", "workflow.yaml", "workflow.lock"}
 
 	for f, s := range status {
-		for _, fileToIgnore := range filesToIgnore {
-			if strings.Contains(f, fileToIgnore) {
-				continue
-			}
+		shouldSkip := slices.ContainsFunc(filesToIgnore, func(fileToIgnore string) bool {
+			return strings.Contains(f, fileToIgnore)
+		})
+		if shouldSkip {
+			continue
 		}
 
 		if strings.HasPrefix(f, cleanedDir) {
