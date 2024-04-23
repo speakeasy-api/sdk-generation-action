@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 )
 
 type RunResults struct {
-	LintingReportURL string
+	LintingReportURL     string
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
 }
@@ -44,6 +45,12 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 
 	if repoURL != "" {
 		args = append(args, "-r", repoURL)
+	}
+
+	tags := processRegistryTags()
+	for _, tag := range tags {
+		// TODO: Just an example. This will be actual arguments to speakeasy run
+		fmt.Println(fmt.Sprintf("--bundle-tag: \"%s\"", tag))
 	}
 
 	if environment.ForceGeneration() {
@@ -105,4 +112,25 @@ func getChangesReportURL(out string) string {
 	}
 
 	return ""
+}
+
+func processRegistryTags() []string {
+	var tags []string
+	tagsInput := environment.RegistryTags()
+	if len(strings.Trim(tagsInput, " ")) == 0 {
+		return tags
+	}
+
+	var processedTags []string
+	if strings.Contains(tagsInput, "\n") {
+		processedTags = strings.Split(tagsInput, "\n")
+	} else {
+		processedTags = strings.Split(tagsInput, ",")
+	}
+
+	for _, tag := range processedTags {
+		tags = append(tags, strings.Trim(tag, " "))
+	}
+
+	return tags
 }
