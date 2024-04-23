@@ -513,14 +513,18 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) error {
 		body += fmt.Sprintf(`# SDK update
 Based on:
 - OpenAPI Doc %s %s
-- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s`, info.ReleaseInfo.DocVersion, info.ReleaseInfo.DocLocation, info.ReleaseInfo.SpeakeasyVersion, info.ReleaseInfo.GenerationVersion, changelog)
+- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy
+`, info.ReleaseInfo.DocVersion, info.ReleaseInfo.DocLocation, info.ReleaseInfo.SpeakeasyVersion, info.ReleaseInfo.GenerationVersion)
 	}
 
 	if len(info.OpenAPIChangeSummary) > 0 {
 		body += fmt.Sprintf(`## OpenAPI Change Summary
 
-%s`, info.OpenAPIChangeSummary)
+%s
+`, stripCodes(info.OpenAPIChangeSummary))
 	}
+
+	body += changelog
 
 	// TODO: To be removed after we start blocking on usage limits.
 	if accessAllowed, err := cli.CheckFreeUsageAccess(); err == nil && !accessAllowed {
@@ -578,6 +582,12 @@ You have exceeded the limit of one free generated SDK. Please reach out to the S
 	logging.Info("PR: %s", url)
 
 	return nil
+}
+
+func stripCodes(str string) string {
+	const ansi = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
+	var re = regexp.MustCompile(ansi)
+	return re.ReplaceAllString(str, "")
 }
 
 func (g *Git) CreateOrUpdateDocsPR(branchName string, releaseInfo releases.ReleasesInfo, previousGenVersion string, pr *github.PullRequest) error {
