@@ -147,6 +147,7 @@ func RunWorkflow() error {
 		Git:                 g,
 		LintingReportURL:    runRes.LintingReportURL,
 		ChangesReportURL:    runRes.ChangesReportURL,
+		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
 	}); err != nil {
 		return err
 	}
@@ -163,7 +164,8 @@ type finalizeInputs struct {
 	SourcesOnly         bool
 	Git                 *git.Git
 	LintingReportURL    string
-	ChangesReportURL    string
+	ChangesReportURL     string
+	OpenAPIChangeSummary string
 }
 
 // Sets outputs and creates or adds releases info
@@ -202,13 +204,14 @@ func finalize(inputs finalizeInputs) error {
 		}
 
 		if err := inputs.Git.CreateOrUpdatePR(git.PRInfo{
-			BranchName:         branchName,
-			ReleaseInfo:        releaseInfo,
-			PreviousGenVersion: environment.GetPreviousGenVersion(),
-			PR:                 pr,
-			SourceGeneration:   inputs.SourcesOnly,
-			LintingReportURL:   inputs.LintingReportURL,
-			ChangesReportURL:   inputs.ChangesReportURL,
+			BranchName:           branchName,
+			ReleaseInfo:          releaseInfo,
+			PreviousGenVersion:   environment.GetPreviousGenVersion(),
+			PR:                   pr,
+			SourceGeneration:     inputs.SourcesOnly,
+			LintingReportURL:     inputs.LintingReportURL,
+			ChangesReportURL:     inputs.ChangesReportURL,
+			OpenAPIChangeSummary: inputs.OpenAPIChangeSummary,
 		}); err != nil {
 			return err
 		}

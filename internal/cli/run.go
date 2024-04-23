@@ -11,7 +11,8 @@ import (
 
 type RunResults struct {
 	LintingReportURL string
-	ChangesReportURL string
+	ChangesReportURL     string
+	OpenAPIChangeSummary string
 }
 
 func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, repoSubdirectories map[string]string) (*RunResults, error) {
@@ -53,6 +54,15 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	//if environment.ShouldOutputTests() {
 	// TODO: Add CLI flag for outputting tests
 	//}
+	file, err := os.CreateTemp(os.TempDir(), "speakeasy-change-summary")
+	if err != nil {
+		return nil, fmt.Errorf("error creating change summary file: %w", err)
+	}
+	os.Setenv("SPEAKEASY_OPENAPI_CHANGE_SUMMARY", file.Name())
+	err = file.Close()
+	if err != nil {
+		return nil, fmt.Errorf("error closing change summary file: %w", err)
+	}
 
 	out, err := runSpeakeasyCommand(args...)
 	if err != nil {
@@ -61,11 +71,16 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 
 	lintingReportURL := getLintingReportURL(out)
 	changesReportURL := getChangesReportURL(out)
+	// read from file
+	// ignore errors: the change summary is optional
+	// and won't be available first run
+	changeSummary, _ := os.ReadFile(file.Name())
 
 	fmt.Println(out)
 	return &RunResults{
-		LintingReportURL: lintingReportURL,
-		ChangesReportURL: changesReportURL,
+		LintingReportURL:     lintingReportURL,
+		ChangesReportURL:     changesReportURL,
+		OpenAPIChangeSummary: string(changeSummary),
 	}, nil
 }
 

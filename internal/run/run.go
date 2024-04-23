@@ -27,6 +27,7 @@ type GenerationInfo struct {
 
 type RunResult struct {
 	GenInfo          *GenerationInfo
+	OpenAPIChangeSummary string
 	LintingReportURL string
 	ChangesReportURL string
 }
@@ -201,6 +202,7 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 
 	return &RunResult{
 		GenInfo:          genInfo,
+		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
 		LintingReportURL: runRes.LintingReportURL,
 		ChangesReportURL: runRes.ChangesReportURL,
 	}, outputs, nil
