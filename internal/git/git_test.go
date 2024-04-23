@@ -7,10 +7,12 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/stretchr/testify/require"
 )
@@ -60,7 +62,13 @@ func newTestRepo(t *testing.T) (*git.Repository, billy.Filesystem) {
 	_, err = wt.Add(".")
 	require.NoError(t, err, "expected to add all files")
 
-	_, err = wt.Commit("initial commit", &git.CommitOptions{})
+	_, err = wt.Commit("initial commit", &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  "Test User",
+			Email: "test@example.com",
+			When:  time.Unix(0, 0),
+		},
+	})
 	require.NoError(t, err, "expected to commit all files")
 
 	return repo, mfs
