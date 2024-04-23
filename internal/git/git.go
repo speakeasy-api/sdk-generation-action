@@ -492,7 +492,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) error {
 
 	body := ""
 
-	if info.LintingReportURL != "" || info.LintingReportURL != "" {
+	if info.LintingReportURL != "" || info.ChangesReportURL != "" {
 		body += fmt.Sprintf(`> [!IMPORTANT]
 `)
 	}
