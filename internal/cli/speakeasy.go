@@ -79,8 +79,6 @@ func runSpeakeasyCommand(args ...string) (string, error) {
 
 	cmdPath := filepath.Join(baseDir, "bin", "speakeasy")
 
-	fmt.Println("args", args)
-
 	cmd := exec.Command(cmdPath, args...)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
