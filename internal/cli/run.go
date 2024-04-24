@@ -47,8 +47,12 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		args = append(args, "-r", repoURL)
 	}
 
-	//tags := processRegistryTags()
-	args = append(args, "--registry-tags ryan")
+	tags := processRegistryTags()
+	if len(tags) > 0 {
+		tagString := strings.Join(tags, ",")
+		fmt.Println("registry tags: ", tagString)
+		args = append(args, "--registry-tags", tagString)
+	}
 
 	if environment.ForceGeneration() {
 		fmt.Println("force input enabled - setting SPEAKEASY_FORCE_GENERATION=true")
@@ -114,7 +118,7 @@ func getChangesReportURL(out string) string {
 func processRegistryTags() []string {
 	var tags []string
 	tagsInput := environment.RegistryTags()
-	if len(strings.Trim(tagsInput, " ")) == 0 {
+	if len(strings.Replace(tagsInput, " ", "", -1)) == 0 {
 		return tags
 	}
 
@@ -126,7 +130,7 @@ func processRegistryTags() []string {
 	}
 
 	for _, tag := range processedTags {
-		tag = strings.Trim(tag, " ")
+		tag = strings.Replace(tag, " ", "", -1)
 		if len(tag) > 0 {
 			tags = append(tags, tag)
 		}
