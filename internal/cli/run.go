@@ -50,7 +50,7 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	tags := processRegistryTags()
 	if len(tags) > 0 {
 		tagString := strings.Join(tags, ",")
-		args = append(args, "--registry-tags", fmt.Sprintf("\"%s\"", tagString))
+		args = append(args, "--registry-tags", tagString)
 	}
 
 	if environment.ForceGeneration() {
