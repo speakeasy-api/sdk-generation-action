@@ -36,6 +36,10 @@ on:
         description: "The working directory for running Speakeasy CLI commands in the action"
         required: false
         type: string
+      registry_tags:
+        description: "Multi-line or single-line string input of tags to apply to speakeasy registry builds"
+        required: false
+        type: string
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -139,6 +143,7 @@ jobs:
           working_directory: ${{ inputs.working_directory }}
           openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
           target: ${{ inputs.target }}
+          registry_tags: ${{ inputs.registry_tags }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:

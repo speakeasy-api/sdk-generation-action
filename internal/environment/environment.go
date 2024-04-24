@@ -56,6 +56,10 @@ func ForceGeneration() bool {
 	return os.Getenv("INPUT_FORCE") == "true"
 }
 
+func RegistryTags() string {
+	return os.Getenv("INPUT_REGISTRY_TAGS")
+}
+
 func SpecifiedTarget() string {
 	return os.Getenv("INPUT_TARGET")
 }
