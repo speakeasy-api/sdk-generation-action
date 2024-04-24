@@ -48,9 +48,9 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	}
 
 	tags := processRegistryTags()
-	for _, tag := range tags {
-		// TODO: Replace with actual speakeasy run argument
-		fmt.Println(fmt.Sprintf("--bundle-tag: \"%s\"", tag))
+	if len(tags) > 0 {
+		tagString := strings.Join(tags, ",")
+		args = append(args, "--registry-tags", fmt.Sprintf("\"%s\"", tagString))
 	}
 
 	if environment.ForceGeneration() {
