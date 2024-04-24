@@ -47,10 +47,8 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		args = append(args, "-r", repoURL)
 	}
 
-	tags := processRegistryTags()
-	for _, tag := range tags {
-		args = append(args, "--registry-tags", tag)
-	}
+	//tags := processRegistryTags()
+	args = append(args, "--registry-tags ryan")
 
 	if environment.ForceGeneration() {
 		fmt.Println("force input enabled - setting SPEAKEASY_FORCE_GENERATION=true")
