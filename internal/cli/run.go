@@ -49,7 +49,7 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 
 	tags := processRegistryTags()
 	for _, tag := range tags {
-		// TODO: Just an example. This will be actual arguments to speakeasy run
+		// TODO: Replace with actual speakeasy run argument
 		fmt.Println(fmt.Sprintf("--bundle-tag: \"%s\"", tag))
 	}
 
