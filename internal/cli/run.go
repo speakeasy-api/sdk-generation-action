@@ -130,7 +130,7 @@ func processRegistryTags() []string {
 
 	for _, tag := range processedTags {
 		tag = strings.Trim(tag, " ")
-		if len(tag) == 0 {
+		if len(tag) > 0 {
 			tags = append(tags, tag)
 		}
 	}
