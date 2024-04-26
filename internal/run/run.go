@@ -26,10 +26,10 @@ type GenerationInfo struct {
 }
 
 type RunResult struct {
-	GenInfo          *GenerationInfo
+	GenInfo              *GenerationInfo
 	OpenAPIChangeSummary string
-	LintingReportURL string
-	ChangesReportURL string
+	LintingReportURL     string
+	ChangesReportURL     string
 }
 
 type Git interface {
@@ -88,7 +88,7 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 			return nil, outputs, err
 		}
 
-		published := target.IsPublished()
+		published := target.IsPublished() || target.Target == "go"
 		fmt.Printf("Generating %s SDK in %s", lang, outputDir)
 
 		installationURL := getInstallationURL(lang, dir)
@@ -201,10 +201,10 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 	}
 
 	return &RunResult{
-		GenInfo:          genInfo,
+		GenInfo:              genInfo,
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
-		LintingReportURL: runRes.LintingReportURL,
-		ChangesReportURL: runRes.ChangesReportURL,
+		LintingReportURL:     runRes.LintingReportURL,
+		ChangesReportURL:     runRes.ChangesReportURL,
 	}, outputs, nil
 }
 
