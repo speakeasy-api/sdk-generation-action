@@ -91,7 +91,7 @@ func addPublishOutputs(dir string, outputs map[string]string) error {
 		}
 
 		lang := target.Target
-		published := target.IsPublished()
+		published := target.IsPublished() || target.Target == "go"
 		outputs[fmt.Sprintf("publish_%s", lang)] = fmt.Sprintf("%t", published)
 
 		if published && lang == "java" && target.Publishing.Java != nil {
