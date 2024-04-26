@@ -51,9 +51,6 @@ func Release() error {
 		return err
 	}
 
-	fmt.Println("Latest release info:")
-	fmt.Println(latestRelease)
-
 	if environment.CreateGitRelease() {
 		if err := g.CreateRelease(*latestRelease); err != nil {
 			return err
