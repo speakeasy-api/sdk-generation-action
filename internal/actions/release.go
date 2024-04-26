@@ -3,10 +3,11 @@ package actions
 import (
 	"errors"
 	"fmt"
-	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
@@ -49,6 +50,9 @@ func Release() error {
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("Latest release info:")
+	fmt.Println(latestRelease)
 
 	if environment.CreateGitRelease() {
 		if err := g.CreateRelease(*latestRelease); err != nil {

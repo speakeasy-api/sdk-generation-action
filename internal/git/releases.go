@@ -30,6 +30,9 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo) error {
 
 	commitHash := headRef.Hash().String()
 
+	fmt.Println("Release Info")
+	fmt.Println(releaseInfo)
+
 	for lang, info := range releaseInfo.Languages {
 		tag := "v" + info.Version
 		if info.Path != "." {
