@@ -89,6 +89,7 @@ func GetPinnedSpeakeasyVersion() string {
 func GetMaxSuggestions() string {
 	return os.Getenv("INPUT_MAX_SUGGESTIONS")
 }
+
 func GetMaxValidationWarnings() (int, error) {
 	maxVal := os.Getenv("INPUT_MAX_VALIDATION_WARNINGS")
 	if maxVal == "" {
@@ -197,10 +198,6 @@ func GetCliOutput() string {
 
 func GetRef() string {
 	return os.Getenv("GITHUB_REF")
-}
-
-func GetPreviousGenVersion() string {
-	return os.Getenv("INPUT_PREVIOUS_GEN_VERSION")
 }
 
 func GetWorkingDirectory() string {
