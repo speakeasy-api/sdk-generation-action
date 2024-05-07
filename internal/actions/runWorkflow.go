@@ -140,13 +140,13 @@ func RunWorkflow() error {
 	}
 
 	if err := finalize(finalizeInputs{
-		Outputs:             outputs,
-		BranchName:          branchName,
-		AnythingRegenerated: anythingRegenerated,
-		SourcesOnly:         sourcesOnly,
-		Git:                 g,
-		LintingReportURL:    runRes.LintingReportURL,
-		ChangesReportURL:    runRes.ChangesReportURL,
+		Outputs:              outputs,
+		BranchName:           branchName,
+		AnythingRegenerated:  anythingRegenerated,
+		SourcesOnly:          sourcesOnly,
+		Git:                  g,
+		LintingReportURL:     runRes.LintingReportURL,
+		ChangesReportURL:     runRes.ChangesReportURL,
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
 	}); err != nil {
 		return err
@@ -158,12 +158,12 @@ func RunWorkflow() error {
 }
 
 type finalizeInputs struct {
-	Outputs             map[string]string
-	BranchName          string
-	AnythingRegenerated bool
-	SourcesOnly         bool
-	Git                 *git.Git
-	LintingReportURL    string
+	Outputs              map[string]string
+	BranchName           string
+	AnythingRegenerated  bool
+	SourcesOnly          bool
+	Git                  *git.Git
+	LintingReportURL     string
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
 }
@@ -206,7 +206,7 @@ func finalize(inputs finalizeInputs) error {
 		if err := inputs.Git.CreateOrUpdatePR(git.PRInfo{
 			BranchName:           branchName,
 			ReleaseInfo:          releaseInfo,
-			PreviousGenVersion:   environment.GetPreviousGenVersion(),
+			PreviousGenVersion:   inputs.Outputs["previous_gen_version"],
 			PR:                   pr,
 			SourceGeneration:     inputs.SourcesOnly,
 			LintingReportURL:     inputs.LintingReportURL,
