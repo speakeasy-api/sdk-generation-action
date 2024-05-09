@@ -25,6 +25,9 @@ func PublishEvent() error {
 			return err
 		}
 
+		fmt.Println(workingDir)
+		fmt.Println(os.Getenv("INPUT_TARGET_DIRECTORY"))
+
 		loadedCfg, err := config.Load(workingDir)
 		if err != nil {
 			return err
