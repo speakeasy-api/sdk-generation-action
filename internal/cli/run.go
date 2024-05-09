@@ -83,6 +83,9 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	// and won't be available first run
 	changeSummary, _ := os.ReadFile(file.Name())
 
+	fmt.Println("CHANGE SUMMARY")
+	fmt.Println(string(changeSummary))
+
 	fmt.Println(out)
 	return &RunResults{
 		LintingReportURL:     lintingReportURL,
