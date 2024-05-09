@@ -3,6 +3,7 @@ module github.com/speakeasy-api/sdk-generation-action
 go 1.21.0
 
 require (
+	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/google/go-github/v54 v54.0.0
 	github.com/google/uuid v1.6.0
@@ -10,7 +11,7 @@ require (
 	github.com/pb33f/libopenapi v0.14.0
 	github.com/speakeasy-api/git-diff-parser v0.0.3
 	github.com/speakeasy-api/sdk-gen-config v1.7.4
-	github.com/speakeasy-api/speakeasy-client-sdk-go/v3 v3.4.1
+	github.com/speakeasy-api/speakeasy-client-sdk-go/v3 v3.7.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e
 	golang.org/x/oauth2 v0.11.0
@@ -33,7 +34,6 @@ require (
 	github.com/ericlagergren/decimal v0.0.0-20240305081647-93d586550569 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
-	github.com/go-git/go-billy/v5 v5.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect

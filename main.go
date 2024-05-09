@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/speakeasy-api/sdk-generation-action/internal/telemetry"
-	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
 	"os"
 	"strings"
+
+	"github.com/speakeasy-api/sdk-generation-action/internal/telemetry"
+	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/actions"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
@@ -38,21 +39,22 @@ func main() {
 
 	err = telemetry.Track(context.Background(), shared.InteractionTypeCiExec, func(ctx context.Context, event *shared.CliEvent) error {
 		switch environment.GetAction() {
-	case environment.ActionSuggest:
-		return actions.Suggest()
-	case environment.ActionRunWorkflow:
-		return actions.RunWorkflow()
-	case environment.ActionFinalizeSuggestion:
-		return actions.FinalizeSuggestion()
-	case environment.ActionRelease:
-		return actions.Release()
-	case environment.ActionLog:
-		return actions.LogActionResult()
-	default:
-		return fmt.Errorf("unknown action: %s", environment.GetAction())
+		case environment.ActionSuggest:
+			return actions.Suggest()
+		case environment.ActionRunWorkflow:
+			return actions.RunWorkflow()
+		case environment.ActionFinalizeSuggestion:
+			return actions.FinalizeSuggestion()
+		case environment.ActionRelease:
+			return actions.Release()
+		case environment.ActionLog:
+			return actions.LogActionResult()
+		case environment.ActionPublishEvent:
+			return actions.PublishEvent()
+		default:
+			return fmt.Errorf("unknown action: %s", environment.GetAction())
 		}
 	})
-
 
 	if err != nil {
 		fmt.Printf("::error title=failed::%v\n", err)

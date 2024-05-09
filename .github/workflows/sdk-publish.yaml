@@ -136,6 +136,18 @@ jobs:
         run: |
           python setup.py sdist bdist_wheel
           twine upload dist/*
+      - id: publish-event
+        uses: speakeasy-api/sdk-generation-action@v15
+        if: always()
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          action: publish-event
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          registry_name: "pypi"
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          GH_ACTION_VERSION: "v15"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:

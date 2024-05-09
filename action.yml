@@ -141,6 +141,8 @@ outputs:
     description: "The version of the previous generation"
   openapi_doc:
     description: "The location of the OpenAPI document used for generation"
+  registry_name:
+    description: "The name of the publishing registry"
 runs:
   using: "docker"
   image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v15"
@@ -165,3 +167,5 @@ runs:
     - ${{ inputs.openapi_doc_auth_token }}
     - ${{ inputs.target }}
     - ${{ inputs.registry_tags }}
+    - ${{ inputs.registry_name }}
+
