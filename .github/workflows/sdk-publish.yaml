@@ -137,7 +137,7 @@ jobs:
           python setup.py sdist bdist_wheel
           twine upload dist/*
       - id: publish-event
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.9.0
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}

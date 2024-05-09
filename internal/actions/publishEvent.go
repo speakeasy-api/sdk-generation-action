@@ -16,6 +16,8 @@ func PublishEvent() error {
 		registryName := os.Getenv("INPUT_REGISTRY_NAME")
 		if registryName != "" {
 			event.PublishPackageRegistryName = &registryName
+			fmt.Println("REGISTRY NAME")
+			fmt.Println(registryName)
 		}
 
 		workingDir, err := os.Getwd() // in publishing working dir is the SDK output directory
@@ -71,11 +73,15 @@ func processPyPI(cfg *config.Config, event *shared.CliEvent, workingDir string, 
 
 	if packageName != "" {
 		event.PublishPackageName = &packageName
+		fmt.Println("PACKAGE NAME")
+		fmt.Println(packageName)
 	}
 
 	if packageName != "" && version != "" {
 		publishURL := fmt.Sprintf("https://pypi.org/project/%s/%s/", packageName, version)
 		event.PublishPackageURL = &publishURL
+		fmt.Println("PUBLISH URL")
+		fmt.Println(publishURL)
 	}
 
 	return nil
@@ -85,10 +91,14 @@ func processPyPI(cfg *config.Config, event *shared.CliEvent, workingDir string, 
 func processLockFile(lockFile config.LockFile, event *shared.CliEvent) string {
 	if lockFile.ID != "" {
 		event.GenerateGenLockID = &lockFile.ID
+		fmt.Println("Lock File ID")
+		fmt.Println(lockFile.ID)
 	}
 
 	if lockFile.Management.ReleaseVersion != "" {
 		event.PublishPackageVersion = &lockFile.Management.ReleaseVersion
+		fmt.Println("RELEASE VERSION")
+		fmt.Println(lockFile.Management.ReleaseVersion)
 	}
 
 	if lockFile.Management.SpeakeasyVersion != "" {
