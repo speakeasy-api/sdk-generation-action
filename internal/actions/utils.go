@@ -2,6 +2,7 @@ package actions
 
 import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 )
 
 func getReleasesDir() (string, error) {
@@ -10,6 +11,13 @@ func getReleasesDir() (string, error) {
 	wf, err := configuration.GetWorkflowAndValidateLanguages(false)
 	if err != nil {
 		return "", err
+	}
+
+	// Checking for multiple targets ensures backward compatibility with the code below
+	if len(wf.Targets) > 1 && environment.SpecifiedTarget() != "" {
+		if target, ok := wf.Targets[environment.SpecifiedTarget()]; ok && target.Output != nil {
+			return *target.Output, nil
+		}
 	}
 
 	for _, target := range wf.Targets {
