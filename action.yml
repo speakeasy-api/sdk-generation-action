@@ -143,6 +143,8 @@ outputs:
     description: "The location of the OpenAPI document used for generation"
   registry_name:
     description: "The name of the publishing registry"
+  target_directory:
+    description: "The directory the SDK target was generated to"
 runs:
   using: "docker"
   image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v15"
@@ -168,4 +170,5 @@ runs:
     - ${{ inputs.target }}
     - ${{ inputs.registry_tags }}
     - ${{ inputs.registry_name }}
+    - ${{ inputs.target_directory }}
 
