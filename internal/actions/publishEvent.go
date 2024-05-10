@@ -26,11 +26,7 @@ func PublishEvent() error {
 		registryName := os.Getenv("INPUT_REGISTRY_NAME")
 		if registryName != "" {
 			event.PublishPackageRegistryName = &registryName
-			fmt.Println("REGISTRY NAME")
-			fmt.Println(registryName)
 		}
-
-		fmt.Println(path)
 
 		loadedCfg, err := config.Load(path)
 		if err != nil {
@@ -45,7 +41,7 @@ func PublishEvent() error {
 
 		var processingErr error
 		switch os.Getenv("INPUT_REGISTRY_NAME") {
-		case "pypy":
+		case "pypi":
 			processingErr = processPyPI(loadedCfg, event, path, version)
 		}
 
