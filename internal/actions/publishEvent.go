@@ -14,6 +14,10 @@ import (
 )
 
 func PublishEvent() error {
+	if _, err := initAction(); err != nil {
+		return err
+	}
+
 	workspace := environment.GetWorkspace()
 	path := filepath.Join(workspace, "repo")
 	path = filepath.Join(path, os.Getenv("INPUT_TARGET_DIRECTORY"))
