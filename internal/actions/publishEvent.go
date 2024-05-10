@@ -74,15 +74,11 @@ func processPyPI(cfg *config.Config, event *shared.CliEvent, path string, versio
 
 	if packageName != "" {
 		event.PublishPackageName = &packageName
-		fmt.Println("PACKAGE NAME")
-		fmt.Println(packageName)
 	}
 
 	if packageName != "" && version != "" {
-		publishURL := fmt.Sprintf("https://pypi.org/project/%s/%s/", packageName, version)
+		publishURL := fmt.Sprintf("https://pypi.org/project/%s/%s", packageName, version)
 		event.PublishPackageURL = &publishURL
-		fmt.Println("PUBLISH URL")
-		fmt.Println(publishURL)
 	}
 
 	return nil
@@ -92,19 +88,15 @@ func processPyPI(cfg *config.Config, event *shared.CliEvent, path string, versio
 func processLockFile(lockFile config.LockFile, event *shared.CliEvent) string {
 	if lockFile.ID != "" {
 		event.GenerateGenLockID = &lockFile.ID
-		fmt.Println("Lock File ID")
-		fmt.Println(lockFile.ID)
 	}
 
 	if lockFile.Management.ReleaseVersion != "" {
 		event.PublishPackageVersion = &lockFile.Management.ReleaseVersion
-		fmt.Println("RELEASE VERSION")
-		fmt.Println(lockFile.Management.ReleaseVersion)
 	}
 
 	if lockFile.Management.SpeakeasyVersion != "" {
 		event.SpeakeasyVersion = lockFile.Management.SpeakeasyVersion
 	}
 
-	return lockFile.Management.SpeakeasyVersion
+	return lockFile.Management.ReleaseVersion
 }
