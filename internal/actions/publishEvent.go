@@ -49,9 +49,7 @@ func PublishEvent() error {
 			return processingErr
 		}
 
-		if !strings.Contains(strings.ToLower(os.Getenv("GH_ACTION_RESULT")), "success") {
-			return fmt.Errorf("failure in publishing: %s", os.Getenv("GH_ACTION_RESULT"))
-		}
+		event.Success = strings.Contains(strings.ToLower(os.Getenv("GH_ACTION_RESULT")), "success")
 
 		return nil
 	})

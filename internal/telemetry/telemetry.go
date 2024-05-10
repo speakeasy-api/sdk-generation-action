@@ -129,7 +129,11 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 	runEvent.LocalCompletedAt = &curTime
 	duration := runEvent.LocalCompletedAt.Sub(runEvent.LocalStartedAt).Milliseconds()
 	runEvent.DurationMs = &duration
-	runEvent.Success = err == nil
+
+	// For publishing events runEvent success is set by publishEvent.go
+	if exec != shared.InteractionTypePublish {
+		runEvent.Success = err == nil
+	}
 	currentIntegrationEnvironment := "GITHUB_ACTIONS"
 	runEvent.ContinuousIntegrationEnvironment = &currentIntegrationEnvironment
 
