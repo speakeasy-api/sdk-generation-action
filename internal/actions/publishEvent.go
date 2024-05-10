@@ -43,6 +43,18 @@ func PublishEvent() error {
 		switch os.Getenv("INPUT_REGISTRY_NAME") {
 		case "pypi":
 			processingErr = processPyPI(loadedCfg, event, path, version)
+		case "npm":
+			processingErr = processNPM(loadedCfg, event, path, version)
+		case "packagist":
+			processingErr = processPackagist(loadedCfg, event, path)
+		case "nuget":
+			processingErr = processNuget(loadedCfg, event, path, version)
+		case "gems":
+			processingErr = processGems(loadedCfg, event, path)
+		case "sonatype":
+			processingErr = processSonatype(loadedCfg, event, path)
+		case "terraform":
+			processingErr = processTerraform(loadedCfg, event, path, version)
 		}
 
 		if processingErr != nil {
@@ -56,14 +68,17 @@ func PublishEvent() error {
 }
 
 func processPyPI(cfg *config.Config, event *shared.CliEvent, path string, version string) error {
+	lang := "python"
 	if cfg.Config == nil {
-		return fmt.Errorf("empty config for python language target in directory %s", path)
+		return fmt.Errorf("empty config for %s language target in directory %s", lang, path)
 	}
 
-	langCfg, ok := cfg.Config.Languages["python"]
+	langCfg, ok := cfg.Config.Languages[lang]
 	if !ok {
-		return fmt.Errorf("no python config in directory %s", path)
+		return fmt.Errorf("no %s config in directory %s", lang, path)
 	}
+
+	event.GenerateTarget = &lang
 
 	var packageName string
 	if name, ok := langCfg.Cfg["packageName"]; ok {
@@ -82,7 +97,209 @@ func processPyPI(cfg *config.Config, event *shared.CliEvent, path string, versio
 	}
 
 	return nil
+}
 
+func processNPM(cfg *config.Config, event *shared.CliEvent, path string, version string) error {
+	lang := "typescript"
+	if cfg.Config == nil {
+		return fmt.Errorf("empty config for %s language target in directory %s", lang, path)
+	}
+
+	langCfg, ok := cfg.Config.Languages[lang]
+	if !ok {
+		return fmt.Errorf("no %s config in directory %s", lang, path)
+	}
+
+	event.GenerateTarget = &lang
+
+	var packageName string
+	if name, ok := langCfg.Cfg["packageName"]; ok {
+		if strName, ok := name.(string); ok {
+			packageName = strName
+		}
+	}
+
+	if packageName != "" {
+		event.PublishPackageName = &packageName
+	}
+
+	if packageName != "" && version != "" {
+		publishURL := fmt.Sprintf("https://www.npmjs.com/package/%s/v/%s", packageName, version)
+		event.PublishPackageURL = &publishURL
+	}
+
+	return nil
+}
+
+func processPackagist(cfg *config.Config, event *shared.CliEvent, path string) error {
+	lang := "php"
+	if cfg.Config == nil {
+		return fmt.Errorf("empty config for %s language target in directory %s", lang, path)
+	}
+
+	langCfg, ok := cfg.Config.Languages[lang]
+	if !ok {
+		return fmt.Errorf("no %s config in directory %s", lang, path)
+	}
+
+	event.GenerateTarget = &lang
+
+	var packageName string
+	if name, ok := langCfg.Cfg["packageName"]; ok {
+		if strName, ok := name.(string); ok {
+			packageName = strName
+		}
+	}
+
+	if packageName != "" {
+		event.PublishPackageName = &packageName
+	}
+
+	if packageName != "" {
+		publishURL := fmt.Sprintf("https://packagist.org/packages/%s", packageName)
+		event.PublishPackageURL = &publishURL
+	}
+
+	return nil
+}
+
+func processNuget(cfg *config.Config, event *shared.CliEvent, path string, version string) error {
+	lang := "csharp"
+	if cfg.Config == nil {
+		return fmt.Errorf("empty config for %s language target in directory %s", lang, path)
+	}
+
+	langCfg, ok := cfg.Config.Languages[lang]
+	if !ok {
+		return fmt.Errorf("no %s config in directory %s", lang, path)
+	}
+
+	event.GenerateTarget = &lang
+
+	var packageName string
+	if name, ok := langCfg.Cfg["packageName"]; ok {
+		if strName, ok := name.(string); ok {
+			packageName = strName
+		}
+	}
+
+	if packageName != "" {
+		event.PublishPackageName = &packageName
+	}
+
+	if packageName != "" && version != "" {
+		publishURL := fmt.Sprintf("https://www.nuget.org/packages/%s/%s", packageName, version)
+		event.PublishPackageURL = &publishURL
+	}
+
+	return nil
+}
+
+func processGems(cfg *config.Config, event *shared.CliEvent, path string) error {
+	lang := "ruby"
+	if cfg.Config == nil {
+		return fmt.Errorf("empty config for %s language target in directory %s", lang, path)
+	}
+
+	langCfg, ok := cfg.Config.Languages[lang]
+	if !ok {
+		return fmt.Errorf("no %s config in directory %s", lang, path)
+	}
+
+	event.GenerateTarget = &lang
+
+	var packageName string
+	if name, ok := langCfg.Cfg["packageName"]; ok {
+		if strName, ok := name.(string); ok {
+			packageName = strName
+		}
+	}
+
+	if packageName != "" {
+		event.PublishPackageName = &packageName
+	}
+
+	if packageName != "" {
+		publishURL := fmt.Sprintf("https://rubygems.org/gems/%s", packageName)
+		event.PublishPackageURL = &publishURL
+	}
+
+	return nil
+}
+
+func processSonatype(cfg *config.Config, event *shared.CliEvent, path string) error {
+	lang := "java"
+	if cfg.Config == nil {
+		return fmt.Errorf("empty config for %s language target in directory %s", lang, path)
+	}
+
+	langCfg, ok := cfg.Config.Languages[lang]
+	if !ok {
+		return fmt.Errorf("no %s config in directory %s", lang, path)
+	}
+
+	event.GenerateTarget = &lang
+
+	var groupID string
+	if name, ok := langCfg.Cfg["groupID"]; ok {
+		if strName, ok := name.(string); ok {
+			groupID = strName
+		}
+	}
+
+	var artifactID string
+	if name, ok := langCfg.Cfg["artifactID"]; ok {
+		if strName, ok := name.(string); ok {
+			artifactID = strName
+		}
+	}
+
+	// TODO: Figure out how to better represent java published package and the publish URL
+	if groupID != "" && artifactID != "" {
+		combinedPackage := fmt.Sprintf("%s:%s", groupID, artifactID)
+		event.PublishPackageName = &combinedPackage
+	}
+
+	return nil
+}
+
+func processTerraform(cfg *config.Config, event *shared.CliEvent, path string, version string) error {
+	lang := "terraform"
+	if cfg.Config == nil {
+		return fmt.Errorf("empty config for %s language target in directory %s", lang, path)
+	}
+
+	langCfg, ok := cfg.Config.Languages[lang]
+	if !ok {
+		return fmt.Errorf("no %s config in directory %s", lang, path)
+	}
+
+	event.GenerateTarget = &lang
+
+	var packageName string
+	if name, ok := langCfg.Cfg["packageName"]; ok {
+		if strName, ok := name.(string); ok {
+			packageName = strName
+		}
+	}
+
+	var author string
+	if name, ok := langCfg.Cfg["author"]; ok {
+		if strName, ok := name.(string); ok {
+			author = strName
+		}
+	}
+
+	if packageName != "" {
+		event.PublishPackageName = &packageName
+	}
+
+	if packageName != "" && author != "" && version != "" {
+		publishURL := fmt.Sprintf("https://registry.terraform.io/providers/%s/%s/%s", author, packageName, version)
+		event.PublishPackageURL = &publishURL
+	}
+
+	return nil
 }
 
 func processLockFile(lockFile config.LockFile, event *shared.CliEvent) string {
