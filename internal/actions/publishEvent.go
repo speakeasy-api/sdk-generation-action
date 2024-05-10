@@ -4,14 +4,20 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	config "github.com/speakeasy-api/sdk-gen-config"
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/telemetry"
 	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
 )
 
 func PublishEvent() error {
+	workspace := environment.GetWorkspace()
+	path := filepath.Join(workspace, "repo")
+	path = filepath.Join(path, os.Getenv("INPUT_TARGET_DIRECTORY"))
+
 	return telemetry.Track(context.Background(), shared.InteractionTypePublish, func(ctx context.Context, event *shared.CliEvent) error {
 		registryName := os.Getenv("INPUT_REGISTRY_NAME")
 		if registryName != "" {
@@ -20,21 +26,15 @@ func PublishEvent() error {
 			fmt.Println(registryName)
 		}
 
-		workingDir, err := os.Getwd() // in publishing working dir is the SDK output directory
-		if err != nil {
-			return err
-		}
+		fmt.Println(path)
 
-		fmt.Println(workingDir)
-		fmt.Println(os.Getenv("INPUT_TARGET_DIRECTORY"))
-
-		loadedCfg, err := config.Load(workingDir)
+		loadedCfg, err := config.Load(path)
 		if err != nil {
 			return err
 		}
 
 		if loadedCfg.LockFile == nil {
-			return fmt.Errorf("empty lock file for python language target in directory %s", workingDir)
+			return fmt.Errorf("empty lock file for python language target in directory %s", path)
 		}
 
 		version := processLockFile(*loadedCfg.LockFile, event)
@@ -42,7 +42,7 @@ func PublishEvent() error {
 		var processingErr error
 		switch os.Getenv("INPUT_REGISTRY_NAME") {
 		case "pypy":
-			processingErr = processPyPI(loadedCfg, event, workingDir, version)
+			processingErr = processPyPI(loadedCfg, event, path, version)
 		}
 
 		if processingErr != nil {
@@ -57,14 +57,14 @@ func PublishEvent() error {
 	})
 }
 
-func processPyPI(cfg *config.Config, event *shared.CliEvent, workingDir string, version string) error {
+func processPyPI(cfg *config.Config, event *shared.CliEvent, path string, version string) error {
 	if cfg.Config == nil {
-		return fmt.Errorf("empty config for python language target in directory %s", workingDir)
+		return fmt.Errorf("empty config for python language target in directory %s", path)
 	}
 
 	langCfg, ok := cfg.Config.Languages["python"]
 	if !ok {
-		return fmt.Errorf("no python config in directory %s", workingDir)
+		return fmt.Errorf("no python config in directory %s", path)
 	}
 
 	var packageName string
