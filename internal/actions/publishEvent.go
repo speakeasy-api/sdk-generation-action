@@ -260,7 +260,7 @@ func processSonatype(cfg *config.Config, event *shared.CliEvent, path string, ve
 		event.PublishPackageName = &combinedPackage
 	}
 
-	if artifactID != "" && groupID != "" && version != "" {
+	if groupID != "" && artifactID != "" && version != "" {
 		publishURL := fmt.Sprintf("https://central.sonatype.com/artifact/%s/%s/%s", groupID, artifactID, version)
 		event.PublishPackageURL = &publishURL
 	}
