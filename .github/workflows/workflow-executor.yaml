@@ -203,6 +203,16 @@ jobs:
         run: |
           python setup.py sdist bdist_wheel
           twine upload dist/*
+      - id: publish-event
+        uses: speakeasy-api/sdk-generation-action@v15
+        if: always()
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          action: publish-event
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          target_directory: ${{ needs.run-workflow.outputs.python_directory }}
+          registry_name: "pypi"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -258,6 +268,16 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: npm publish --access public
+      - id: publish-event
+        uses: speakeasy-api/sdk-generation-action@v15
+        if: always()
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          action: publish-event
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          target_directory: ${{ needs.run-workflow.outputs.typescript_directory }}
+          registry_name: "npm"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -329,6 +349,16 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.ossrh_password }}
           SONATYPE_SIGNING_KEY: ${{ secrets.java_gpg_secret_key }}
           SIGNING_KEY_PASSPHRASE: ${{ secrets.java_gpg_passphrase }}
+      - id: publish-event
+        uses: speakeasy-api/sdk-generation-action@v15
+        if: always()
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          action: publish-event
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          target_directory: ${{ needs.run-workflow.outputs.java_directory }}
+          registry_name: "sonatype"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -389,6 +419,16 @@ jobs:
           printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
           gem build *.gemspec
           gem push *.gem
+      - id: publish-event
+        uses: speakeasy-api/sdk-generation-action@v15
+        if: always()
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          action: publish-event
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          target_directory: ${{ needs.run-workflow.outputs.ruby_directory }}
+          registry_name: "gems"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -439,6 +479,16 @@ jobs:
           dotnet-version: ${{ inputs.dotnet_version }}
       - name: Publish
         run: dotnet pack -o . && dotnet nuget push *.nupkg --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
+      - id: publish-event
+        uses: speakeasy-api/sdk-generation-action@v15
+        if: always()
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          action: publish-event
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          target_directory: ${{ needs.run-workflow.outputs.csharp_directory }}
+          registry_name: "nuget"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -487,6 +537,16 @@ jobs:
           api_token: ${{ secrets.packagist_token }}
           package_name: ${{ github.repository }}
           package_base_url: ${{ github.server_url }}
+      - id: publish-event
+        uses: speakeasy-api/sdk-generation-action@v15
+        if: always()
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          action: publish-event
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          target_directory: ${{ needs.run-workflow.outputs.php_directory }}
+          registry_name: "packagist"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
