@@ -50,9 +50,9 @@ func PublishEvent() error {
 		case "nuget":
 			processingErr = processNuget(loadedCfg, event, path, version)
 		case "gems":
-			processingErr = processGems(loadedCfg, event, path)
+			processingErr = processGems(loadedCfg, event, path, version)
 		case "sonatype":
-			processingErr = processSonatype(loadedCfg, event, path)
+			processingErr = processSonatype(loadedCfg, event, path, version)
 		case "terraform":
 			processingErr = processTerraform(loadedCfg, event, path, version)
 		}
@@ -195,7 +195,7 @@ func processNuget(cfg *config.Config, event *shared.CliEvent, path string, versi
 	return nil
 }
 
-func processGems(cfg *config.Config, event *shared.CliEvent, path string) error {
+func processGems(cfg *config.Config, event *shared.CliEvent, path string, version string) error {
 	lang := "ruby"
 	if cfg.Config == nil {
 		return fmt.Errorf("empty config for %s language target in directory %s", lang, path)
@@ -219,15 +219,15 @@ func processGems(cfg *config.Config, event *shared.CliEvent, path string) error 
 		event.PublishPackageName = &packageName
 	}
 
-	if packageName != "" {
-		publishURL := fmt.Sprintf("https://rubygems.org/gems/%s", packageName)
+	if packageName != "" && version != "" {
+		publishURL := fmt.Sprintf("https://rubygems.org/gems/%s/%s", packageName, version)
 		event.PublishPackageURL = &publishURL
 	}
 
 	return nil
 }
 
-func processSonatype(cfg *config.Config, event *shared.CliEvent, path string) error {
+func processSonatype(cfg *config.Config, event *shared.CliEvent, path string, version string) error {
 	lang := "java"
 	if cfg.Config == nil {
 		return fmt.Errorf("empty config for %s language target in directory %s", lang, path)
@@ -254,10 +254,15 @@ func processSonatype(cfg *config.Config, event *shared.CliEvent, path string) er
 		}
 	}
 
-	// TODO: Figure out how to better represent java published package and the publish URL
+	// TODO: Figure out how to represent java legacy publish URL
 	if groupID != "" && artifactID != "" {
-		combinedPackage := fmt.Sprintf("%s:%s", groupID, artifactID)
+		combinedPackage := fmt.Sprintf("%s/%s", groupID, artifactID)
 		event.PublishPackageName = &combinedPackage
+	}
+
+	if groupID != "" && artifactID != "" && version != "" {
+		publishURL := fmt.Sprintf("https://central.sonatype.com/artifact/%s/%s/%s", groupID, artifactID, version)
+		event.PublishPackageURL = &publishURL
 	}
 
 	return nil
