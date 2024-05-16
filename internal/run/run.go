@@ -92,7 +92,8 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 		fmt.Printf("Generating %s SDK in %s", lang, outputDir)
 
 		installationURL := getInstallationURL(lang, dir)
-		if installationURL == "" {
+		// TODO: Temporary check to fix Java. We may remove this entirely, pending conversation
+		if installationURL == "" && target.Target != "java" {
 			published = true // Treat as published if we don't have an installation URL
 		}
 		outputs[fmt.Sprintf("publish_%s", lang)] = fmt.Sprintf("%t", published)
