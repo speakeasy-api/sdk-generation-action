@@ -167,7 +167,7 @@ jobs:
         env:
           GH_ACTION_RESULT: ${{ job.status }}
           RESOLVED_SPEAKEASY_VERSION: ${{ steps.run-workflow.outputs.resolved_speakeasy_version }}
-          GH_ACTION_VERSION: "v14"
+          GH_ACTION_VERSION: "v15"
           GH_ACTION_STEP: ${{ github.job }}
   publish-pypi:
     if: ${{ always() &&
