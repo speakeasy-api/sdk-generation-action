@@ -235,7 +235,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v14"
+          GH_ACTION_VERSION: "v15"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-npm:
@@ -300,7 +300,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v14"
+          GH_ACTION_VERSION: ""
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-java:
@@ -381,7 +381,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v14"
+          GH_ACTION_VERSION: "v15"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-gems:
@@ -451,7 +451,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v14"
+          GH_ACTION_VERSION: "v15"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-nuget:
@@ -511,7 +511,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v14"
+          GH_ACTION_VERSION: "v15"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-packagist:
@@ -569,6 +569,6 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v14"
+          GH_ACTION_VERSION: "v15"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
