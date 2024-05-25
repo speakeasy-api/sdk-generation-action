@@ -88,6 +88,7 @@ jobs:
       csharp_directory: ${{ steps.release.outputs.csharp_directory }}
       swift_regenerated: ${{ steps.release.outputs.swift_regenerated }}
       swift_directory: ${{ steps.release.outputs.swift_directory }}
+      use_sonatype_legacy: ${{ steps.release.outputs.use_sonatype_legacy }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
