@@ -323,6 +323,9 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 		}
 	}
 
+	fmt.Println("RELEASE INFO")
+	fmt.Println(info)
+
 	return info, nil
 }
 
