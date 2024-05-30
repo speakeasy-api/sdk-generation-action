@@ -323,9 +323,6 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 		}
 	}
 
-	fmt.Println("INFO")
-	fmt.Println(info.Languages)
-
 	return info, nil
 }
 
