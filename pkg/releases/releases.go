@@ -134,16 +134,16 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
 
 var (
 	releaseInfoRegex        = regexp.MustCompile(`(?s)## (.*?)\n### Changes\nBased on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) (\((.*?)\))?.*?`)
-	generatedLanguagesRegex = regexp.MustCompile(`- \[([a-z]+) v(\d+\.\d+\.\d+)\] (.*)`)
-	npmReleaseRegex         = regexp.MustCompile(`- \[NPM v(\d+\.\d+\.\d+)\] (https:\/\/www\.npmjs\.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+) - (.*)`)
-	pypiReleaseRegex        = regexp.MustCompile(`- \[PyPI v(\d+\.\d+\.\d+)\] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
-	goReleaseRegex          = regexp.MustCompile(`- \[Go v(\d+\.\d+\.\d+)\] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+) - (.*)`)
-	composerReleaseRegex    = regexp.MustCompile(`- \[Composer v(\d+\.\d+\.\d+)\] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+) - (.*)`)
-	mavenReleaseRegex       = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+)\] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
-	terraformReleaseRegex   = regexp.MustCompile(`- \[Terraform v(\d+\.\d+\.\d+)\] (https:\/\/registry\.terraform\.io\/providers\/(.*?)\/(.*?)\/.*?) - (.*)`)
-	rubyGemReleaseRegex     = regexp.MustCompile(`- \[Ruby Gems v(\d+\.\d+\.\d+)\] (https:\/\/rubygems\.org\/gems\/(.*?)\/versions\/.*?) - (.*)`)
-	nugetReleaseRegex       = regexp.MustCompile(`- \[NuGet v(\d+\.\d+\.\d+)\] (https:\/\/www\.nuget\.org\/packages\/(.*?)\/\d+\.\d+\.\d+) - (.*)`)
-	swiftReleaseRegex       = regexp.MustCompile(`- \[Swift Package Manager v(\d+\.\d+\.\d+)\] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+) - (.*)`)
+	generatedLanguagesRegex = regexp.MustCompile(`- \[([a-z]+) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (.*)`)
+	npmReleaseRegex         = regexp.MustCompile(`- \[NPM v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/www\.npmjs\.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?) - (.*)`)
+	pypiReleaseRegex        = regexp.MustCompile(`- \[PyPI v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?) - (.*)`)
+	goReleaseRegex          = regexp.MustCompile(`- \[Go v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?) - (.*)`)
+	composerReleaseRegex    = regexp.MustCompile(`- \[Composer v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/packagist\.org\/packages\/(.*?)#v\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?) - (.*)`)
+	mavenReleaseRegex       = regexp.MustCompile(`- \[Maven Central v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/central\.sonatype\.com\/artifact\/(.*?)\/(.*?)\/.*?) - (.*)`)
+	terraformReleaseRegex   = regexp.MustCompile(`- \[Terraform v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/registry\.terraform\.io\/providers\/(.*?)\/(.*?)\/.*?) - (.*)`)
+	rubyGemReleaseRegex     = regexp.MustCompile(`- \[Ruby Gems v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/rubygems\.org\/gems\/(.*?)\/versions\/.*?) - (.*)`)
+	nugetReleaseRegex       = regexp.MustCompile(`- \[NuGet v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/www\.nuget\.org\/packages\/(.*?)\/\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?) - (.*)`)
+	swiftReleaseRegex       = regexp.MustCompile(`- \[Swift Package Manager v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?) - (.*)`)
 )
 
 func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
@@ -322,6 +322,9 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 			Path:        path,
 		}
 	}
+
+	fmt.Println("INFO")
+	fmt.Println(info.Languages)
 
 	return info, nil
 }
