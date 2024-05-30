@@ -70,7 +70,7 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 			})
 			if err != nil {
 				if release, _, err := g.client.Repositories.GetReleaseByTag(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *tagName); err == nil && release != nil {
-					fmt.Println(fmt.Sprintf("a github release with tag %s already existing ... skipping publishing"), *tagName)
+					fmt.Println(fmt.Sprintf("a github release with tag %s already existing ... skipping publishing", *tagName))
 					fmt.Println(fmt.Sprintf("to publish this version again delete the github tag and release"))
 					if _, ok := outputs[fmt.Sprintf("publish_%s", lang)]; ok {
 						outputs[fmt.Sprintf("publish_%s", lang)] = "false"
