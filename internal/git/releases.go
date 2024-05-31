@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/go-github/v54/github"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
@@ -15,6 +16,31 @@ import (
 
 //go:embed goreleaser.yml
 var tfGoReleaserConfig string
+
+func (g *Git) SetReleaseToPublished(version string) error {
+	if g.repo == nil {
+		return fmt.Errorf("repo not cloned")
+	}
+	tag := "v" + version
+
+	release, _, err := g.client.Repositories.GetReleaseByTag(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), tag)
+	if err != nil {
+		return fmt.Errorf("failed to get release for tag %s: %w", tag, err)
+	}
+
+	if release != nil && release.ID != nil {
+		if release.Body != nil && !strings.Contains(*release.Body, "Publishing Completed") {
+			body := *release.Body + "\n\nPublishing Completed"
+			release.Body = &body
+		}
+
+		if _, _, err = g.client.Repositories.EditRelease(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *release.ID, release); err != nil {
+			return fmt.Errorf("failed to add to release body for tag %s: %w", tag, err)
+		}
+	}
+
+	return nil
+}
 
 func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[string]string) error {
 	if g.repo == nil {
@@ -70,12 +96,14 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 			})
 			if err != nil {
 				if release, _, err := g.client.Repositories.GetReleaseByTag(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *tagName); err == nil && release != nil {
-					fmt.Println(fmt.Sprintf("a github release with tag %s already existing ... skipping publishing", *tagName))
-					fmt.Println(fmt.Sprintf("to publish this version again delete the github tag and release"))
-					if _, ok := outputs[fmt.Sprintf("publish_%s", lang)]; ok {
-						outputs[fmt.Sprintf("publish_%s", lang)] = "false"
+					if release.Body != nil && strings.Contains(*release.Body, "Publishing Completed") {
+						fmt.Println(fmt.Sprintf("a github release with tag %s already existing ... skipping publishing", *tagName))
+						fmt.Println(fmt.Sprintf("to publish this version again delete the github tag and release"))
+						if _, ok := outputs[fmt.Sprintf("publish_%s", lang)]; ok {
+							outputs[fmt.Sprintf("publish_%s", lang)] = "false"
+						}
 					}
-
+					// TODO: Consider deleting and recreating the release if we are moving forward with publishing
 					return nil
 				}
 
