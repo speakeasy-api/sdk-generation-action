@@ -51,12 +51,6 @@ func Release() error {
 		return err
 	}
 
-	if environment.CreateGitRelease() {
-		if err := g.CreateRelease(*latestRelease); err != nil {
-			return err
-		}
-	}
-
 	outputs := map[string]string{}
 
 	for lang, info := range latestRelease.Languages {
@@ -66,6 +60,12 @@ func Release() error {
 
 	if err = addPublishOutputs(dir, outputs); err != nil {
 		return err
+	}
+
+	if environment.CreateGitRelease() {
+		if err := g.CreateRelease(*latestRelease, outputs); err != nil {
+			return err
+		}
 	}
 
 	if err = setOutputs(outputs); err != nil {
