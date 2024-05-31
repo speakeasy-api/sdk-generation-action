@@ -40,7 +40,7 @@ func PublishEvent() error {
 
 		version := processLockFile(*loadedCfg.LockFile, event)
 
-		if !strings.Contains(strings.ToLower(os.Getenv("GH_ACTION_RESULT")), "success") {
+		if strings.Contains(strings.ToLower(os.Getenv("GH_ACTION_RESULT")), "success") {
 			if err = g.SetReleaseToPublished(version); err != nil {
 				fmt.Println("Failed to set release to published %w", err)
 			}

@@ -185,7 +185,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: npm publish --access public
       - id: publish-event
-        uses: speakeasy-api/sdk-generation-action@v15.11.0
+        uses: speakeasy-api/sdk-generation-action@v15
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
