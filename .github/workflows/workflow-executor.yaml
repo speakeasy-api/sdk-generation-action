@@ -478,7 +478,7 @@ jobs:
         with:
           dotnet-version: ${{ inputs.dotnet_version }}
       - name: Publish
-        run: dotnet pack -o . && dotnet nuget push *.nupkg --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
+        run: dotnet pack -c Release -o . && dotnet nuget push *.nupkg --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
       - id: publish-event
         uses: speakeasy-api/sdk-generation-action@v15
         if: always()
