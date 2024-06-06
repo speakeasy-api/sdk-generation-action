@@ -57,6 +57,10 @@ func ForceGeneration() bool {
 	return os.Getenv("INPUT_FORCE") == "true"
 }
 
+func PushCodeSamplesOnly() bool {
+	return os.Getenv("INPUT_PUSH_CODE_SAMPLES_ONLY") == "true"
+}
+
 func RegistryTags() string {
 	return os.Getenv("INPUT_REGISTRY_TAGS")
 }

@@ -72,6 +72,9 @@ inputs:
   gpg_fingerprint:
     description: "The GPG fingerprint to sign the release with"
     required: false
+  push_code_samples_only:
+    description: "This will generate code samples, tag them with the `main` branch name, and push them to the registry. It will not create a pull request or commit any code. This is useful for pushing up some code samples to the registry the first time when there are no code samples in the registry."
+    required: false
 outputs:
   publish_python:
     description: "Whether the Python SDK will be published to PyPi"

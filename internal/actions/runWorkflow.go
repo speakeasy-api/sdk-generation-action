@@ -52,9 +52,12 @@ func RunWorkflow() error {
 		}
 	}
 
-	branchName, err = g.FindOrCreateBranch(branchName, environment.ActionRunWorkflow)
-	if err != nil {
-		return err
+	// We want to stay on main if we're pushing code samples because we want to tag the code samples with `main`
+	if !environment.PushCodeSamplesOnly() {
+		branchName, err = g.FindOrCreateBranch(branchName, environment.ActionRunWorkflow)
+		if err != nil {
+			return err
+		}
 	}
 
 	success := false
@@ -117,6 +120,11 @@ func RunWorkflow() error {
 					}
 				}
 			}
+		}
+
+		if environment.PushCodeSamplesOnly() {
+			// If we're just pushing code samples we don't want to raise a PR
+			return nil
 		}
 
 		releasesDir, err := getReleasesDir()
