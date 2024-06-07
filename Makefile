@@ -9,6 +9,9 @@ test-direct-mode-multi-sdk:
 test-pr-mode:
 	./testing/test.sh ./testing/pr-mode.env
 
+test-push-code-samples-only:
+	./testing/test.sh ./testing/push-code-samples-only.env
+
 test-release-mode:
 	./testing/test.sh ./testing/release-mode.env
 
