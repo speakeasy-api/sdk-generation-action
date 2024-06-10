@@ -235,7 +235,7 @@ func CheckFreeUsageAccess() (bool, error) {
 }
 
 func Tag(tags, sources, codeSamples []string) error {
-	args := []string{"tag"}
+	args := []string{"tag", "promote"}
 
 	if len(tags) == 0 {
 		return fmt.Errorf("please specify at least one tag")

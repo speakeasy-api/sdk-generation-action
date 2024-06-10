@@ -3,7 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/speakeasy-api/sdk-generation-action/internal/actions"
+	"github.com/speakeasy-api/sdk-generation-action/internal/registry"
 	"os"
 	"regexp"
 	"strings"
@@ -48,7 +48,7 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		args = append(args, "-r", repoURL)
 	}
 
-	tags := actions.ProcessRegistryTags()
+	tags := registry.ProcessRegistryTags()
 	if len(tags) > 0 {
 		tagString := strings.Join(tags, ",")
 		args = append(args, "--registry-tags", tagString)
