@@ -1,0 +1,37 @@
+name: Speakeasy Registry Tagger
+
+on:
+  workflow_call:
+    inputs:
+      sources:
+        description: "The sources to tag (comma or newline separated)"
+        required: false
+        type: string
+      code_samples:
+        description: "The targets to tag code samples for (comma or newline separated)"
+        required: false
+        type: string
+      registry_tags:
+        description: "Multi-line or single-line string input of tags to apply to speakeasy registry builds"
+        required: false
+        type: string
+    secrets:
+      speakeasy_api_key:
+        description: The API key to use to authenticate the Speakeasy CLI
+        required: true
+jobs:
+  run-workflow:
+    name: Apply Tags in Speakeasy Registry
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - id: apply-tags
+        name: Apply Tags
+        uses: speakeasy-api/sdk-generation-action@v15
+        with:
+          action: "tag"
+          sources: ${{ inputs.sources }}
+          code_samples: ${{ inputs.code_samples }}
+          registry_tags: ${{ inputs.registry_tags }}
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}

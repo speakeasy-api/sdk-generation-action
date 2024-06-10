@@ -51,6 +51,8 @@ func main() {
 			return actions.LogActionResult()
 		case environment.ActionPublishEvent:
 			return actions.PublishEvent()
+		case environment.ActionTag:
+			return actions.Tag()
 		default:
 			return fmt.Errorf("unknown action: %s", environment.GetAction())
 		}

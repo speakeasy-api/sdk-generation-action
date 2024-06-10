@@ -26,6 +26,7 @@ const (
 	ActionRelease            Action = "release"
 	ActionLog                Action = "log-result"
 	ActionPublishEvent       Action = "publish-event"
+	ActionTag                Action = "tag"
 )
 
 const (
@@ -67,6 +68,14 @@ func RegistryTags() string {
 
 func SpecifiedTarget() string {
 	return os.Getenv("INPUT_TARGET")
+}
+
+func SpecifiedSources() []string {
+	return parseArrayInput(os.Getenv("INPUT_SOURCES"))
+}
+
+func SpecifiedCodeSamplesTargets() []string {
+	return parseArrayInput(os.Getenv("INPUT_CODE_SAMPLES"))
 }
 
 func GetMode() Mode {
@@ -227,4 +236,16 @@ func ShouldOutputTests() bool {
 
 func SetCLIVersionToUse(version string) error {
 	return os.Setenv("PINNED_VERSION", version)
+}
+
+func parseArrayInput(input string) []string {
+	if input == "" {
+		return []string{}
+	}
+
+	if strings.Contains(input, "\n") {
+		return strings.Split(input, "\n")
+	}
+
+	return strings.Split(input, ",")
 }
