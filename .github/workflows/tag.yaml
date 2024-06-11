@@ -38,3 +38,4 @@ jobs:
           code_samples: ${{ inputs.code_samples }}
           registry_tags: ${{ inputs.registry_tags }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          github_access_token: ${{ secrets.github_access_token }}
