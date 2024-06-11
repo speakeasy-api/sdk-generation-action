@@ -233,3 +233,30 @@ func CheckFreeUsageAccess() (bool, error) {
 
 	return accessDetails.GenerationAllowed, nil
 }
+
+func Tag(tags, sources, codeSamples []string) error {
+	args := []string{"tag", "promote"}
+
+	if len(tags) == 0 {
+		return fmt.Errorf("please specify at least one tag")
+	}
+	if len(sources) == 0 && len(codeSamples) == 0 {
+		return fmt.Errorf("please specify at least one source or target (codeSamples) to tag")
+	}
+
+	if len(sources) > 0 {
+		args = append(args, "-s", strings.Join(sources, ","))
+	}
+	if len(codeSamples) > 0 {
+		args = append(args, "-c", strings.Join(codeSamples, ","))
+	}
+
+	args = append(args, "-t", strings.Join(tags, ","))
+	out, err := runSpeakeasyCommand(args...)
+	if err != nil {
+		return fmt.Errorf("error running speakeasy tag: %w\n %s", err, out)
+	}
+
+	fmt.Println(out)
+	return nil
+}
