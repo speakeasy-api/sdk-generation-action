@@ -252,7 +252,7 @@ func Tag(tags, sources, codeSamples []string) error {
 	}
 
 	args = append(args, "-t", strings.Join(tags, ","))
-	out, err := runSpeakeasyCommand("tag")
+	out, err := runSpeakeasyCommand("tag", args)
 	if err != nil {
 		return fmt.Errorf("error running speakeasy tag: %w\n %s", err, out)
 	}
