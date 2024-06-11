@@ -16,6 +16,9 @@ on:
         required: false
         type: string
     secrets:
+      github_access_token:
+        description: A GitHub access token with read access to the repo
+        required: true
       speakeasy_api_key:
         description: The API key to use to authenticate the Speakeasy CLI
         required: true
