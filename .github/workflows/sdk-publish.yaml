@@ -126,15 +126,26 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.8"
-      - name: Install dependencies
+      - name: Check for publish.sh
+        id: check-publish
         run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel twine
-      - name: Build and publish
+          if [ -f scripts/publish.sh ]; then
+            echo "publish_with_makefile=true" >> $GITHUB_OUTPUT
+          fi
+      - name: Publish with Makefile
+        if: steps.check-publish.outputs.publish_with_makefile == 'true'
+        env:
+          PYPI_TOKEN: ${{ secrets.pypi_token }}
+        run: |
+          make publish
+      - name: Legacy publish
+        if: steps.check-publish.outputs.publish_with_makefile != 'true'
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi_token }}
         run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine
           python setup.py sdist bdist_wheel
           twine upload dist/*
       - id: publish-event
