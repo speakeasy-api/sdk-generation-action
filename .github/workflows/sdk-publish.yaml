@@ -134,16 +134,16 @@ jobs:
         id: check-publish
         run: |
           if [ -f scripts/publish.sh ]; then
-            echo "publish_with_makefile=true" >> $GITHUB_OUTPUT
+            echo "publish_with_script=true" >> $GITHUB_OUTPUT
           fi
-      - name: Publish with Makefile
-        if: steps.check-publish.outputs.publish_with_makefile == 'true'
+      - name: Publish with script
+        if: steps.check-publish.outputs.publish_with_script == 'true'
         env:
           PYPI_TOKEN: ${{ secrets.pypi_token }}
         run: |
-          make publish
+          ./scripts/publish.sh
       - name: Legacy publish
-        if: steps.check-publish.outputs.publish_with_makefile != 'true'
+        if: steps.check-publish.outputs.publish_with_script != 'true'
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi_token }}
