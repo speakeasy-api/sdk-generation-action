@@ -62,6 +62,10 @@ func PushCodeSamplesOnly() bool {
 	return os.Getenv("INPUT_PUSH_CODE_SAMPLES_ONLY") == "true"
 }
 
+func SetVersion() string {
+	return os.Getenv("INPUT_SET_VERSION")
+}
+
 func RegistryTags() string {
 	return os.Getenv("INPUT_REGISTRY_TAGS")
 }

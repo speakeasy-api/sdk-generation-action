@@ -412,12 +412,12 @@ func (g *Git) Add(arg string) error {
 }
 
 type PRInfo struct {
-	BranchName         string
-	ReleaseInfo        *releases.ReleasesInfo
-	PreviousGenVersion string
-	PR                 *github.PullRequest
-	SourceGeneration   bool
-	LintingReportURL   string
+	BranchName           string
+	ReleaseInfo          *releases.ReleasesInfo
+	PreviousGenVersion   string
+	PR                   *github.PullRequest
+	SourceGeneration     bool
+	LintingReportURL     string
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
 }
@@ -761,6 +761,10 @@ func (g *Git) GetLatestTag() (string, error) {
 	}
 
 	return tags[0].GetName(), nil
+}
+
+func (g *Git) GetReleaseByTag(ctx context.Context, tag string) (*github.RepositoryRelease, *github.Response, error) {
+	return g.client.Repositories.GetReleaseByTag(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), tag)
 }
 
 func (g *Git) GetDownloadLink(version string) (string, string, error) {

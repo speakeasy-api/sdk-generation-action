@@ -3,10 +3,11 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/speakeasy-api/sdk-generation-action/internal/registry"
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/speakeasy-api/sdk-generation-action/internal/registry"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 )
@@ -52,6 +53,10 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	if len(tags) > 0 {
 		tagString := strings.Join(tags, ",")
 		args = append(args, "--registry-tags", tagString)
+	}
+
+	if environment.SetVersion() != "" {
+		args = append(args, "--version", environment.SetVersion())
 	}
 
 	if environment.ForceGeneration() {

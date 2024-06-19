@@ -1,7 +1,9 @@
 package actions
 
 import (
+	"context"
 	"fmt"
+	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
@@ -68,6 +70,19 @@ func RunWorkflow() error {
 			}
 		}
 	}()
+
+	setVersion := environment.SetVersion()
+	if setVersion != "" {
+		tagName := setVersion
+		if !strings.HasPrefix(tagName, "v") {
+			tagName = "v" + tagName
+		}
+		if release, _, err := g.GetReleaseByTag(context.Background(), tagName); err == nil && release != nil {
+			logging.Debug("cannot manually set a version: %s that has already been released", setVersion)
+		}
+
+		return fmt.Errorf("cannot manually set a version: %s that has already been released", setVersion)
+	}
 
 	runRes, outputs, err := run.Run(g, wf)
 	if err != nil {

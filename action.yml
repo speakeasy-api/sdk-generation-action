@@ -84,6 +84,9 @@ inputs:
   registry_name:
     description: "The name of the publishing registry"
     required: false
+  set_version:
+    description: "Version to manually set for SDK generation"
+    required: false
 outputs:
   publish_python:
     description: "Whether the Python SDK will be published to PyPi"
@@ -185,3 +188,4 @@ runs:
     - ${{ inputs.target_directory }}
     - ${{ inputs.sources }}
     - ${{ inputs.code_samples }}
+    - ${{ inputs.set_version }}
