@@ -917,7 +917,11 @@ const (
 )
 
 func getGenPRTitle() string {
-	return speakeasyGenPRTitle + environment.GetWorkflowName()
+	title := speakeasyGenPRTitle + environment.GetWorkflowName()
+	if environment.SpecifiedTarget() != "" && !strings.Contains(title, strings.ToUpper(environment.SpecifiedTarget())) {
+		title += " " + strings.ToUpper(environment.SpecifiedTarget())
+	}
+	return title
 }
 
 func getGenSourcesTitle() string {
