@@ -238,6 +238,9 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.run-workflow.outputs.python_directory }}
           registry_name: "pypi"
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          GH_ACTION_VERSION: "v15"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -303,6 +306,9 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.run-workflow.outputs.typescript_directory }}
           registry_name: "npm"
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          GH_ACTION_VERSION: "v15"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -384,6 +390,9 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.run-workflow.outputs.java_directory }}
           registry_name: "sonatype"
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          GH_ACTION_VERSION: "v15"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -454,6 +463,9 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.run-workflow.outputs.ruby_directory }}
           registry_name: "gems"
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          GH_ACTION_VERSION: "v15"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -514,6 +526,9 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.run-workflow.outputs.csharp_directory }}
           registry_name: "nuget"
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          GH_ACTION_VERSION: "v15"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -572,6 +587,9 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.run-workflow.outputs.php_directory }}
           registry_name: "packagist"
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          GH_ACTION_VERSION: "v15"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
