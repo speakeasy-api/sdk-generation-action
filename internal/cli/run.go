@@ -56,7 +56,7 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	}
 
 	if environment.SetVersion() != "" {
-		args = append(args, "--version", environment.SetVersion())
+		args = append(args, "--set-version", environment.SetVersion())
 	}
 
 	if environment.ForceGeneration() {
