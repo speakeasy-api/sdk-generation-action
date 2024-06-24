@@ -110,7 +110,7 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 				}
 				// Go has no publishing job, so we publish a CLI event on github release here
 				if lang == "go" {
-					if publishEventErr := telemetry.TriggerPublishingEvent(g, info.Path, "failed", "go"); publishEventErr != nil {
+					if _, publishEventErr := telemetry.TriggerPublishingEvent(info.Path, "failed", "go"); publishEventErr != nil {
 						fmt.Printf("failed to write publishing event: %v\n", publishEventErr)
 					}
 				}
@@ -119,7 +119,7 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 			} else {
 				// Go has no publishing job, so we publish a CLI event on github release here
 				if lang == "go" {
-					if publishEventErr := telemetry.TriggerPublishingEvent(g, info.Path, "success", "go"); publishEventErr != nil {
+					if _, publishEventErr := telemetry.TriggerPublishingEvent(info.Path, "success", "go"); publishEventErr != nil {
 						fmt.Printf("failed to write publishing event: %v\n", publishEventErr)
 					}
 				}

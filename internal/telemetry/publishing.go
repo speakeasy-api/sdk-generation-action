@@ -9,16 +9,16 @@ import (
 
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
-	"github.com/speakeasy-api/sdk-generation-action/internal/git"
 	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
 )
 
-func TriggerPublishingEvent(g *git.Git, targetDirectory, result, registryName string) error {
+func TriggerPublishingEvent(targetDirectory, result, registryName string) (string, error) {
 	workspace := environment.GetWorkspace()
 	path := filepath.Join(workspace, "repo")
 	path = filepath.Join(path, targetDirectory)
 
-	return Track(context.Background(), shared.InteractionTypePublish, func(ctx context.Context, event *shared.CliEvent) error {
+	var packageVersion string
+	return packageVersion, Track(context.Background(), shared.InteractionTypePublish, func(ctx context.Context, event *shared.CliEvent) error {
 		if registryName != "" {
 			event.PublishPackageRegistryName = &registryName
 		}
@@ -33,12 +33,7 @@ func TriggerPublishingEvent(g *git.Git, targetDirectory, result, registryName st
 		}
 
 		version := processLockFile(*loadedCfg.LockFile, event)
-
-		if strings.Contains(strings.ToLower(result), "success") {
-			if err = g.SetReleaseToPublished(version); err != nil {
-				fmt.Println("Failed to set release to published %w", err)
-			}
-		}
+		packageVersion = version
 
 		var processingErr error
 		switch registryName {
