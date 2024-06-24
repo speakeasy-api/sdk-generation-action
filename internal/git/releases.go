@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v54/github"
-	"github.com/speakeasy-api/sdk-generation-action/internal/actions"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/sdk-generation-action/internal/telemetry"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 )
 
@@ -110,7 +110,7 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 				}
 				// Go has no publishing job, so we publish a CLI event on github release here
 				if lang == "go" {
-					if publishEventErr := actions.TriggerPublishingEvent(info.Path, "failed", "go"); publishEventErr != nil {
+					if publishEventErr := telemetry.TriggerPublishingEvent(g, info.Path, "failed", "go"); publishEventErr != nil {
 						fmt.Printf("failed to write publishing event: %v\n", publishEventErr)
 					}
 				}
@@ -119,7 +119,7 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 			} else {
 				// Go has no publishing job, so we publish a CLI event on github release here
 				if lang == "go" {
-					if publishEventErr := actions.TriggerPublishingEvent(info.Path, "success", "go"); publishEventErr != nil {
+					if publishEventErr := telemetry.TriggerPublishingEvent(g, info.Path, "success", "go"); publishEventErr != nil {
 						fmt.Printf("failed to write publishing event: %v\n", publishEventErr)
 					}
 				}
