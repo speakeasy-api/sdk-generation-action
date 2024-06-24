@@ -13,7 +13,15 @@ import (
 	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
 )
 
-func PublishEvent() error {
+func PublishEventAction() error {
+	if err := PublishEvent(os.Getenv("INPUT_TARGET_DIRECTORY"), os.Getenv("GH_ACTION_RESULT"), os.Getenv("INPUT_REGISTRY_NAME")); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func PublishEvent(targetDirectory, result, registryName string) error {
 	g, err := initAction()
 	if err != nil {
 		return err
@@ -21,10 +29,9 @@ func PublishEvent() error {
 
 	workspace := environment.GetWorkspace()
 	path := filepath.Join(workspace, "repo")
-	path = filepath.Join(path, os.Getenv("INPUT_TARGET_DIRECTORY"))
+	path = filepath.Join(path, targetDirectory)
 
 	return telemetry.Track(context.Background(), shared.InteractionTypePublish, func(ctx context.Context, event *shared.CliEvent) error {
-		registryName := os.Getenv("INPUT_REGISTRY_NAME")
 		if registryName != "" {
 			event.PublishPackageRegistryName = &registryName
 		}
@@ -40,14 +47,14 @@ func PublishEvent() error {
 
 		version := processLockFile(*loadedCfg.LockFile, event)
 
-		if strings.Contains(strings.ToLower(os.Getenv("GH_ACTION_RESULT")), "success") {
+		if strings.Contains(strings.ToLower(result), "success") {
 			if err = g.SetReleaseToPublished(version); err != nil {
 				fmt.Println("Failed to set release to published %w", err)
 			}
 		}
 
 		var processingErr error
-		switch os.Getenv("INPUT_REGISTRY_NAME") {
+		switch registryName {
 		case "pypi":
 			processingErr = processPyPI(loadedCfg, event, path, version)
 		case "npm":
@@ -62,13 +69,15 @@ func PublishEvent() error {
 			processingErr = processSonatype(loadedCfg, event, path, version)
 		case "terraform":
 			processingErr = processTerraform(loadedCfg, event, path, version)
+		case "go":
+			processingErr = processGo(loadedCfg, event, path, version)
 		}
 
 		if processingErr != nil {
 			return processingErr
 		}
 
-		event.Success = strings.Contains(strings.ToLower(os.Getenv("GH_ACTION_RESULT")), "success")
+		event.Success = strings.Contains(strings.ToLower(result), "success")
 
 		return nil
 	})
@@ -132,6 +141,44 @@ func processNPM(cfg *config.Config, event *shared.CliEvent, path string, version
 
 	if packageName != "" && version != "" {
 		publishURL := fmt.Sprintf("https://www.npmjs.com/package/%s/v/%s", packageName, version)
+		event.PublishPackageURL = &publishURL
+	}
+
+	return nil
+}
+
+func processGo(cfg *config.Config, event *shared.CliEvent, path string, version string) error {
+	lang := "go"
+	if cfg.Config == nil {
+		return fmt.Errorf("empty config for %s language target in directory %s", lang, path)
+	}
+
+	langCfg, ok := cfg.Config.Languages[lang]
+	if !ok {
+		return fmt.Errorf("no %s config in directory %s", lang, path)
+	}
+
+	event.GenerateTarget = &lang
+
+	var packageName string
+	if name, ok := langCfg.Cfg["packageName"]; ok {
+		if strName, ok := name.(string); ok {
+			packageName = strName
+		}
+	}
+
+	if packageName != "" {
+		event.PublishPackageName = &packageName
+	}
+
+	if packageName != "" && version != "" {
+
+		tag := fmt.Sprintf("v%s", version)
+		if path != "" && path != "." && path != "./" {
+			tag = fmt.Sprintf("%s/%s", path, tag)
+		}
+
+		publishURL := fmt.Sprintf("https://github.com/%s/releases/tag/%s", os.Getenv("GITHUB_REPOSITORY"), tag)
 		event.PublishPackageURL = &publishURL
 	}
 
