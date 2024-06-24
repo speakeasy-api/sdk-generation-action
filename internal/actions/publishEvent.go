@@ -172,10 +172,14 @@ func processGo(cfg *config.Config, event *shared.CliEvent, path string, version 
 	}
 
 	if packageName != "" && version != "" {
+		relPath, err := filepath.Rel(filepath.Join(environment.GetWorkspace(), "repo"), path)
+		if err != nil {
+			return err
+		}
 
 		tag := fmt.Sprintf("v%s", version)
-		if path != "" && path != "." && path != "./" {
-			tag = fmt.Sprintf("%s/%s", path, tag)
+		if relPath != "" && relPath != "." && relPath != "./" {
+			tag = fmt.Sprintf("%s/%s", relPath, tag)
 		}
 
 		publishURL := fmt.Sprintf("https://github.com/%s/releases/tag/%s", os.Getenv("GITHUB_REPOSITORY"), tag)
