@@ -50,7 +50,7 @@ func main() {
 		case environment.ActionLog:
 			return actions.LogActionResult()
 		case environment.ActionPublishEvent:
-			return actions.PublishEvent()
+			return actions.PublishEventAction()
 		case environment.ActionTag:
 			return actions.Tag()
 		default:
