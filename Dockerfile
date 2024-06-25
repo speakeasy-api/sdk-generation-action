@@ -26,6 +26,10 @@ RUN apk add --update --no-cache nodejs npm
 ### Install Python
 RUN apk add --update --no-cache python3 py3-pip python3-dev
 
+### Install Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+
+
 ### Install Java
 RUN apk add --update --no-cache openjdk11 gradle
 
