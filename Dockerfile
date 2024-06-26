@@ -26,7 +26,7 @@ RUN apk add --update --no-cache nodejs npm
 ### Install Python
 RUN apk add --update --no-cache python3 py3-pip python3-dev
 
-### Install Poetry and set up PATH
+### Install Poetry and validate
 RUN pip3 install poetry
 RUN poetry --version
 
