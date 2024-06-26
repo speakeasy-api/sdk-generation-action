@@ -27,9 +27,8 @@ RUN apk add --update --no-cache nodejs npm
 RUN apk add --update --no-cache python3 py3-pip python3-dev
 
 ### Install Poetry and set up PATH
-ENV POETRY_HOME="/opt/poetry"
-ENV PATH="$POETRY_HOME/bin:$PATH"
-RUN curl -sSL https://install.python-poetry.org | python3 -
+RUN pip3 install poetry
+RUN pip3 list -v
 RUN poetry --version
 
 ### Install Java
