@@ -30,6 +30,7 @@ RUN apk add --update --no-cache python3 py3-pip python3-dev
 ENV POETRY_HOME="/opt/poetry"
 ENV PATH="$POETRY_HOME/bin:$PATH"
 RUN curl -sSL https://install.python-poetry.org | python3 -
+RUN poetry --version
 
 ### Install Java
 RUN apk add --update --no-cache openjdk11 gradle
