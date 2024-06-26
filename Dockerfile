@@ -28,7 +28,6 @@ RUN apk add --update --no-cache python3 py3-pip python3-dev
 
 ### Install Poetry and set up PATH
 RUN pip3 install poetry
-RUN pip3 list -v
 RUN poetry --version
 
 ### Install Java
