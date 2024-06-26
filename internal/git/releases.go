@@ -18,11 +18,14 @@ import (
 //go:embed goreleaser.yml
 var tfGoReleaserConfig string
 
-func (g *Git) SetReleaseToPublished(version string) error {
+func (g *Git) SetReleaseToPublished(version, directory string) error {
 	if g.repo == nil {
 		return fmt.Errorf("repo not cloned")
 	}
 	tag := "v" + version
+	if directory != "" && directory != "." && directory != "./" {
+		tag = fmt.Sprintf("%s/%s", directory, tag)
+	}
 
 	release, _, err := g.client.Repositories.GetReleaseByTag(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), tag)
 	if err != nil {
