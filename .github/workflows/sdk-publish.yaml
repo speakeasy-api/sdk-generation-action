@@ -196,7 +196,7 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Publish
-        working-directory: ${{ needs.run-workflow.outputs.typescript_directory }}
+        working-directory: ${{ needs.release.outputs.typescript_directory }}
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
