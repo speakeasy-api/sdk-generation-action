@@ -293,10 +293,12 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Publish
+        working-directory: ${{ needs.run-workflow.outputs.typescript_directory }}
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
-        run: npm publish --access public
       - id: publish-event
+        name: Notify
         uses: speakeasy-api/sdk-generation-action@v15
         if: always()
         with:
@@ -321,6 +323,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
+        name: Log Result
         uses: speakeasy-api/sdk-generation-action@v15
         if: always()
         with:
