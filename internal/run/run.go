@@ -124,6 +124,10 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 
 	// Check for changes
 	for targetID, target := range wf.Targets {
+		if environment.SpecifiedTarget() != "" && environment.SpecifiedTarget() != targetID {
+			continue
+		}
+		
 		lang := target.Target
 		dir, outputDir := getDirAndOutputDir(target)
 
