@@ -102,6 +102,7 @@ jobs:
     name: Generate Target
     runs-on: ubuntu-latest
     outputs:
+      commit_hash: ${{ steps.run-workflow.outputs.commit_hash }}
       publish_python: ${{ steps.run-workflow.outputs.publish_python }}
       publish_typescript: ${{ steps.run-workflow.outputs.publish_typescript }}
       publish_terraform: ${{ steps.run-workflow.outputs.publish_terraform }}
@@ -283,13 +284,13 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.run-workflow.outputs.commit_hash }}
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
           node-version: "16.x"
           registry-url: "https://registry.npmjs.org"
-      - name: Clear npm cache
-        run: npm cache clean --force
       - name: Install dependencies
         run: npm install
       - name: Publish
