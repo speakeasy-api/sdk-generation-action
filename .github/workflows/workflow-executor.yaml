@@ -283,8 +283,6 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.run-workflow.outputs.commit_hash }}
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
