@@ -284,12 +284,14 @@ jobs:
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - uses: actions/checkout@v3
         with:
-          ref: main
+          ref: ${{ needs.run-workflow.outputs.commit_hash }}
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
           node-version: "16.x"
           registry-url: "https://registry.npmjs.org"
+      - name: Clear npm cache
+        run: npm cache clean --force
       - name: Install dependencies
         run: npm install
       - name: Publish
