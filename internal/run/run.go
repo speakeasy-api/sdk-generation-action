@@ -1,7 +1,10 @@
 package run
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/go-version"
+	"github.com/speakeasy-api/versioning-reports/versioning"
 	"path"
 	"path/filepath"
 	"strings"
@@ -112,9 +115,23 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 	}
 
 	// Run the workflow
-	runRes, err := cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories)
+	var runRes *cli.RunResults
+	var changereport *versioning.MergedVersionReport
+	// todo: change me
+	var ReduceSDKFluxReleaseVersion = version.Must(version.NewVersion("1.300.0"))
+	if cli.IsAtLeastVersion(ReduceSDKFluxReleaseVersion) {
+		changereport, runRes, err = versioning.WithVersionReportCapture[*cli.RunResults](context.Background(), func(ctx context.Context) (*RunResults, error) {
+			return cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories)
+		});
+	} else {
+		runRes, err = cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories)
+	}
 	if err != nil {
 		return nil, outputs, err
+	}
+	if changereport != nil && !changereport.MustGenerate() && !environment.ForceGeneration() {
+		// no further steps
+		return nil, outputs, nil
 	}
 
 	// For terraform, we also trigger "go generate ./..." to regenerate docs
