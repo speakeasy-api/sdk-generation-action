@@ -120,7 +120,7 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 	// todo: change me
 	var ReduceSDKFluxReleaseVersion = version.Must(version.NewVersion("1.300.0"))
 	if cli.IsAtLeastVersion(ReduceSDKFluxReleaseVersion) {
-		changereport, runRes, err = versioning.WithVersionReportCapture[*cli.RunResults](context.Background(), func(ctx context.Context) (*RunResults, error) {
+		changereport, runRes, err = versioning.WithVersionReportCapture[*cli.RunResults](context.Background(), func(ctx context.Context) (*cli.RunResults, error) {
 			return cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories)
 		});
 	} else {
@@ -130,6 +130,7 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 		return nil, outputs, err
 	}
 	if changereport != nil && !changereport.MustGenerate() && !environment.ForceGeneration() {
+
 		// no further steps
 		return nil, outputs, nil
 	}
