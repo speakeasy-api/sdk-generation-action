@@ -392,7 +392,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		Auth:  getGithubAuth(g.accessToken),
 		Force: true, // This is necessary because at the beginning of the workflow we reset the branch
 	}); err != nil {
-		return "", fmt.Errorf("error pushing changes: %w", err)
+		return "", pushErr(err)
 	}
 
 	return commitHash.String(), nil
@@ -744,7 +744,7 @@ func (g *Git) MergeBranch(branchName string) (string, error) {
 	if err := g.repo.Push(&git.PushOptions{
 		Auth: getGithubAuth(g.accessToken),
 	}); err != nil {
-		return "", fmt.Errorf("error pushing changes: %w", err)
+		return "", pushErr(err)
 	}
 
 	return headRef.Hash().String(), nil
@@ -947,4 +947,14 @@ func runGitCommand(args ...string) (string, error) {
 	}
 
 	return outb.String(), nil
+}
+
+func pushErr(err error) error {
+	if err != nil {
+		if strings.Contains(err.Error(), "protected branch hook declined") {
+			return fmt.Errorf("error pushing changes: %w\nThis is likely due to a branch protection rule. Please ensure that the branch is not protected (repo > settings > branches).", err)
+		}
+		return fmt.Errorf("error pushing changes: %w", err)
+	}
+	return nil
 }
