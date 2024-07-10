@@ -103,6 +103,8 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 		}
 		if dir != "." {
 			repoSubdirectories[targetID] = filepath.Clean(dir)
+		} else {
+			repoSubdirectories[targetID] = ""
 		}
 		if lang == "terraform" {
 			includesTerraform = true
