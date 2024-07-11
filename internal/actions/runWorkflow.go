@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
+	"github.com/google/go-github/v54/github"
 	"github.com/speakeasy-api/versioning-reports/versioning"
 	"strings"
 
@@ -47,9 +48,10 @@ func RunWorkflow() error {
 	sourcesOnly := wf.Targets == nil || len(wf.Targets) == 0
 
 	branchName := ""
+	var pr *github.PullRequest
 	if mode == environment.ModePR {
 		var err error
-		branchName, _, err = g.FindExistingPR("", environment.ActionRunWorkflow, sourcesOnly)
+		branchName, pr, err = g.FindExistingPR("", environment.ActionRunWorkflow, sourcesOnly)
 		if err != nil {
 			return err
 		}
@@ -84,7 +86,7 @@ func RunWorkflow() error {
 		}
 	}
 
-	runRes, outputs, err := run.Run(g, wf)
+	runRes, outputs, err := run.Run(g, pr, wf)
 	if err != nil {
 		if err := setOutputs(outputs); err != nil {
 			logging.Debug("failed to set outputs: %v", err)

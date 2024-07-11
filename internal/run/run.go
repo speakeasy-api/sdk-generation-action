@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"github.com/google/go-github/v54/github"
 	"github.com/speakeasy-api/versioning-reports/versioning"
 	"path"
 	"path/filepath"
@@ -39,7 +40,7 @@ type Git interface {
 	CheckDirDirty(dir string, ignoreMap map[string]string) (bool, string, error)
 }
 
-func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
+func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 	workspace := environment.GetWorkspace()
 	outputs := map[string]string{}
 
@@ -117,7 +118,7 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 	// Run the workflow
 	var runRes *cli.RunResults
 	var changereport *versioning.MergedVersionReport
-	// todo: change me
+
 	changereport, runRes, err = versioning.WithVersionReportCapture[*cli.RunResults](context.Background(), func(ctx context.Context) (*cli.RunResults, error) {
 		return cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories)
 	});
@@ -128,7 +129,7 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 		// Assume it's not yet enabled (e.g. CLI version too old)
 		changereport = nil
 	}
-	if changereport != nil && !changereport.MustGenerate() && !environment.ForceGeneration() {
+	if changereport != nil && !changereport.MustGenerate() && !environment.ForceGeneration() && pr != nil {
 		// no further steps
 		fmt.Printf("No required changes that require us to regenerate the PR\nMustGenerate = %s\n%s", changereport.MustGenerate(), changereport.GetMarkdownSection())
 		return nil, outputs, nil
