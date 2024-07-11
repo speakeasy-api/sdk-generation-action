@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
+	"github.com/speakeasy-api/versioning-reports/versioning"
 	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
@@ -167,6 +168,7 @@ func RunWorkflow() error {
 		AnythingRegenerated:  anythingRegenerated,
 		SourcesOnly:          sourcesOnly,
 		Git:                  g,
+		VersioningReport:     runRes.VersioningReport,
 		LintingReportURL:     runRes.LintingReportURL,
 		ChangesReportURL:     runRes.ChangesReportURL,
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
@@ -188,6 +190,7 @@ type finalizeInputs struct {
 	LintingReportURL     string
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
+	VersioningReport     *versioning.MergedVersionReport
 }
 
 // Sets outputs and creates or adds releases info
@@ -233,6 +236,7 @@ func finalize(inputs finalizeInputs) error {
 			SourceGeneration:     inputs.SourcesOnly,
 			LintingReportURL:     inputs.LintingReportURL,
 			ChangesReportURL:     inputs.ChangesReportURL,
+			VersioningReport:     inputs.VersioningReport,
 			OpenAPIChangeSummary: inputs.OpenAPIChangeSummary,
 		}); err != nil {
 			return err

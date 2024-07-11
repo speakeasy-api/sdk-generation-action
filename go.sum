@@ -144,6 +144,10 @@ github.com/speakeasy-api/versioning-reports v0.2.0 h1:ha0B8q8rY+KD6ETTOKXkfs/p3T
 github.com/speakeasy-api/versioning-reports v0.2.0/go.mod h1:e3cvYTwPB3RJdgAPbf7Gc6BDfBM63bF3V+In2yKbHWs=
 github.com/speakeasy-api/versioning-reports v0.2.1 h1:bf6PayXjF2vpvy8St7XTUcQA2Jd0rPvxsrimOrn/ASg=
 github.com/speakeasy-api/versioning-reports v0.2.1/go.mod h1:e3cvYTwPB3RJdgAPbf7Gc6BDfBM63bF3V+In2yKbHWs=
+github.com/speakeasy-api/versioning-reports v0.3.1 h1:AtynRZBTAc1BcHWU984yHNBLoyBrf0M6F0xUWEIWFHI=
+github.com/speakeasy-api/versioning-reports v0.3.1/go.mod h1:LW5FABrvi5SBbeiD3HJYw0JZYe6Rw2Xna59pFJ2BmLI=
+github.com/speakeasy-api/versioning-reports v0.4.0 h1:B1AxSUZ7iB2iM7yz5D3fKR4u1UtLw1o5+VQucuLg0Yg=
+github.com/speakeasy-api/versioning-reports v0.4.0/go.mod h1:LW5FABrvi5SBbeiD3HJYw0JZYe6Rw2Xna59pFJ2BmLI=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=

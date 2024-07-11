@@ -33,6 +33,7 @@ type RunResult struct {
 	OpenAPIChangeSummary string
 	LintingReportURL     string
 	ChangesReportURL     string
+	VersioningReport     *versioning.MergedVersionReport
 }
 
 type Git interface {
@@ -130,8 +131,8 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 		return nil, outputs, err
 	}
 	if changereport != nil && !changereport.MustGenerate() && !environment.ForceGeneration() {
-
 		// no further steps
+		fmt.Printf("No required changes that require us to regenerate the PR\nMustGenerate = %s\n%s", changereport.MustGenerate(), changereport.GetMarkdownSection())
 		return nil, outputs, nil
 	}
 
@@ -142,7 +143,7 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 		}
 	}
 
-	// Check for changes
+	// Legacy logic: check for changes + dirty-check
 	for targetID, target := range wf.Targets {
 		if environment.SpecifiedTarget() != "" && environment.SpecifiedTarget() != targetID {
 			continue
@@ -227,6 +228,7 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 
 	return &RunResult{
 		GenInfo:              genInfo,
+		VersioningReport:     changereport,
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
 		LintingReportURL:     runRes.LintingReportURL,
 		ChangesReportURL:     runRes.ChangesReportURL,
