@@ -3,7 +3,6 @@ package run
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-version"
 	"github.com/speakeasy-api/versioning-reports/versioning"
 	"path"
 	"path/filepath"
@@ -119,16 +118,15 @@ func Run(g Git, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 	var runRes *cli.RunResults
 	var changereport *versioning.MergedVersionReport
 	// todo: change me
-	var ReduceSDKFluxReleaseVersion = version.Must(version.NewVersion("1.300.0"))
-	if cli.IsAtLeastVersion(ReduceSDKFluxReleaseVersion) {
-		changereport, runRes, err = versioning.WithVersionReportCapture[*cli.RunResults](context.Background(), func(ctx context.Context) (*cli.RunResults, error) {
-			return cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories)
-		});
-	} else {
-		runRes, err = cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories)
-	}
+	changereport, runRes, err = versioning.WithVersionReportCapture[*cli.RunResults](context.Background(), func(ctx context.Context) (*cli.RunResults, error) {
+		return cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories)
+	});
 	if err != nil {
 		return nil, outputs, err
+	}
+	if len(changereport.Reports) == 0 {
+		// Assume it's not yet enabled (e.g. CLI version too old)
+		changereport = nil
 	}
 	if changereport != nil && !changereport.MustGenerate() && !environment.ForceGeneration() {
 		// no further steps
