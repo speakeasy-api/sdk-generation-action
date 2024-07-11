@@ -433,7 +433,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) error {
 		previousGenVersions = strings.Split(info.PreviousGenVersion, ";")
 	}
 
-	// Deprecated -- kept around for old CLI versions
+	// Deprecated -- kept around for old CLI versions. VersioningReport is newer pathway
 	if info.ReleaseInfo != nil && info.VersioningReport == nil {
 		for language, genInfo := range info.ReleaseInfo.LanguagesGenerated {
 			genPath := path.Join(environment.GetWorkspace(), "repo", genInfo.Path)
