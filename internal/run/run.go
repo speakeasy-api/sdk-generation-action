@@ -131,7 +131,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 	}
 	if changereport != nil && !changereport.MustGenerate() && !environment.ForceGeneration() && pr != nil {
 		// no further steps
-		fmt.Printf("No required changes that require us to regenerate the PR\nMustGenerate = %s\n%s", changereport.MustGenerate(), changereport.GetMarkdownSection())
+		fmt.Printf("No changes that imply the need for us to regenerate the PR\n%s", changereport.GetMarkdownSection())
 		return nil, outputs, nil
 	}
 
