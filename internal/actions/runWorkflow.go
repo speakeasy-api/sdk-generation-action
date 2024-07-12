@@ -3,6 +3,8 @@ package actions
 import (
 	"context"
 	"fmt"
+	"github.com/google/go-github/v54/github"
+	"github.com/speakeasy-api/versioning-reports/versioning"
 	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
@@ -46,9 +48,10 @@ func RunWorkflow() error {
 	sourcesOnly := wf.Targets == nil || len(wf.Targets) == 0
 
 	branchName := ""
+	var pr *github.PullRequest
 	if mode == environment.ModePR {
 		var err error
-		branchName, _, err = g.FindExistingPR("", environment.ActionRunWorkflow, sourcesOnly)
+		branchName, pr, err = g.FindExistingPR("", environment.ActionRunWorkflow, sourcesOnly)
 		if err != nil {
 			return err
 		}
@@ -83,7 +86,7 @@ func RunWorkflow() error {
 		}
 	}
 
-	runRes, outputs, err := run.Run(g, wf)
+	runRes, outputs, err := run.Run(g, pr, wf)
 	if err != nil {
 		if err := setOutputs(outputs); err != nil {
 			logging.Debug("failed to set outputs: %v", err)
@@ -167,6 +170,7 @@ func RunWorkflow() error {
 		AnythingRegenerated:  anythingRegenerated,
 		SourcesOnly:          sourcesOnly,
 		Git:                  g,
+		VersioningReport:     runRes.VersioningReport,
 		LintingReportURL:     runRes.LintingReportURL,
 		ChangesReportURL:     runRes.ChangesReportURL,
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
@@ -188,6 +192,7 @@ type finalizeInputs struct {
 	LintingReportURL     string
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
+	VersioningReport     *versioning.MergedVersionReport
 }
 
 // Sets outputs and creates or adds releases info
@@ -233,6 +238,7 @@ func finalize(inputs finalizeInputs) error {
 			SourceGeneration:     inputs.SourcesOnly,
 			LintingReportURL:     inputs.LintingReportURL,
 			ChangesReportURL:     inputs.ChangesReportURL,
+			VersioningReport:     inputs.VersioningReport,
 			OpenAPIChangeSummary: inputs.OpenAPIChangeSummary,
 		}); err != nil {
 			return err

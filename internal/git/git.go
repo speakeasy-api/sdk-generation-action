@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
+	"github.com/speakeasy-api/versioning-reports/versioning"
 	"net/url"
 	"os"
 	"os/exec"
@@ -420,6 +420,7 @@ type PRInfo struct {
 	LintingReportURL     string
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
+	VersioningReport     *versioning.MergedVersionReport
 }
 
 func (g *Git) CreateOrUpdatePR(info PRInfo) error {
@@ -432,7 +433,8 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) error {
 		previousGenVersions = strings.Split(info.PreviousGenVersion, ";")
 	}
 
-	if info.ReleaseInfo != nil {
+	// Deprecated -- kept around for old CLI versions. VersioningReport is newer pathway
+	if info.ReleaseInfo != nil && info.VersioningReport == nil {
 		for language, genInfo := range info.ReleaseInfo.LanguagesGenerated {
 			genPath := path.Join(environment.GetWorkspace(), "repo", genInfo.Path)
 
@@ -517,21 +519,17 @@ Based on:
 `, info.ReleaseInfo.DocVersion, info.ReleaseInfo.DocLocation, info.ReleaseInfo.SpeakeasyVersion, info.ReleaseInfo.GenerationVersion)
 	}
 
-	if len(info.OpenAPIChangeSummary) > 0 {
-		body += fmt.Sprintf(`## OpenAPI Change Summary
+	if info.VersioningReport != nil {
+		body += stripCodes(info.VersioningReport.GetMarkdownSection())
+	} else {
+		if len(info.OpenAPIChangeSummary) > 0 {
+			body += fmt.Sprintf(`## OpenAPI Change Summary
 
 %s
 `, stripCodes(info.OpenAPIChangeSummary))
-	}
+		}
 
-	body += changelog
-
-	// TODO: To be removed after we start blocking on usage limits.
-	if accessAllowed, err := cli.CheckFreeUsageAccess(); err == nil && !accessAllowed {
-		warningDate := time.Date(2024, time.March, 18, 0, 0, 0, 0, time.UTC)
-		daysToLimit := int(math.Round(warningDate.Sub(time.Now().Truncate(24*time.Hour)).Hours() / 24))
-		body += "\n\n\n" + fmt.Sprintf(`## 🚀 Time to Upgrade 🚀
-You have exceeded the limit of one free generated SDK. Please reach out to the Speakeasy team in the next %d days to ensure continued access`, daysToLimit) + "\n\n"
+		body += changelog
 	}
 
 	const maxBodyLength = 65536
