@@ -1,5 +1,5 @@
 ## Build
-FROM golang:1.21-alpine3.18 as builder
+FROM golang:1.22-alpine3.20 as builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY pkg/ ./pkg/
 RUN go build -o /action
 
 ## Deploy
-FROM golang:1.21-alpine3.18
+FROM golang:1.22-alpine3.20
 
 RUN apk update
 RUN apk add git
