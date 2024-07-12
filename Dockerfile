@@ -41,7 +41,9 @@ ENV DOTNET_ROOT=/usr/lib/dotnet
 RUN apk add --update --no-cache dotnet6-sdk
 
 ### Install .NET5.0
-RUN apk add --update --no-cache curl bash openssl1.1-compat
+RUN apk add --update --no-cache curl bash
+# openssl1.1-compat is gradually getting removed from package managers..
+RUN apk add --update --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing openssl1.1-compat
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin -Channel 5.0 -InstallDir ${DOTNET_ROOT}
 
 ### Install .NET8.0
@@ -60,7 +62,6 @@ RUN apk --update --no-cache add wget \
 		     php-iconv \
 		    --repository http://nl.alpinelinux.org/alpine/edge/testing/
 
-RUN ln -s /usr/bin/php82 /usr/bin/php
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 RUN mkdir -p /var/www
 WORKDIR /var/www
