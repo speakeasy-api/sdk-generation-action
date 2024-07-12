@@ -131,7 +131,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 	}
 	if changereport != nil && !changereport.MustGenerate() && !environment.ForceGeneration() && pr == nil {
 		// no further steps
-		fmt.Printf("No changes that imply the need for us to regenerate the PR\n%s", changereport.GetMarkdownSection())
+		fmt.Printf("No changes that imply the need for us to automatically regenerate the SDK.\n  Use \"Force Generation\" if you want to force a new generation.\n  Changes would include:\n-----\n%s", changereport.GetMarkdownSection())
 		return &RunResult{
 			GenInfo:              nil,
 			VersioningReport:     changereport,
