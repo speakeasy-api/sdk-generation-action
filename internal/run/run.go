@@ -3,11 +3,12 @@ package run
 import (
 	"context"
 	"fmt"
-	"github.com/google/go-github/v54/github"
-	"github.com/speakeasy-api/versioning-reports/versioning"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/google/go-github/v54/github"
+	"github.com/speakeasy-api/versioning-reports/versioning"
 
 	"github.com/speakeasy-api/sdk-gen-config/workflow"
 
@@ -77,6 +78,10 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 
 	// Load initial configs
 	for targetID, target := range wf.Targets {
+		if environment.SpecifiedTarget() != "" && environment.SpecifiedTarget() != targetID {
+			continue
+		}
+
 		lang := target.Target
 		dir, outputDir := getDirAndOutputDir(target)
 
@@ -121,7 +126,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 
 	changereport, runRes, err = versioning.WithVersionReportCapture[*cli.RunResults](context.Background(), func(ctx context.Context) (*cli.RunResults, error) {
 		return cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories)
-	});
+	})
 	if err != nil {
 		return nil, outputs, err
 	}
@@ -153,7 +158,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		if environment.SpecifiedTarget() != "" && environment.SpecifiedTarget() != targetID {
 			continue
 		}
-		
+
 		lang := target.Target
 		dir, outputDir := getDirAndOutputDir(target)
 
