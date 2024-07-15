@@ -3,9 +3,10 @@ package actions
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/google/go-github/v54/github"
 	"github.com/speakeasy-api/versioning-reports/versioning"
-	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
@@ -123,6 +124,7 @@ func RunWorkflow() error {
 				anythingRegenerated = true
 
 				path := outputs[fmt.Sprintf("%s_directory", lang)]
+				path = strings.TrimPrefix(path, "./")
 
 				releaseInfo.LanguagesGenerated[lang] = releases.GenerationInfo{
 					Version: langGenInfo.Version,
