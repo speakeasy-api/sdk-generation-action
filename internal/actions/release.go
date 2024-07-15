@@ -83,8 +83,15 @@ func addPublishOutputs(dir string, outputs map[string]string) error {
 
 	for _, target := range wf.Targets {
 		// Only add outputs for the target that was regenerated, based on output directory
-		if dir != "." && target.Output != nil && *target.Output != dir {
-			continue
+		if dir != "." && target.Output != nil {
+			output, err := filepath.Rel(".", *target.Output)
+			if err != nil {
+				return err
+			}
+
+			if output != dir {
+				continue
+			}
 		}
 
 		lang := target.Target
