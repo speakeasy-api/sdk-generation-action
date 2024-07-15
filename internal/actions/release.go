@@ -83,8 +83,15 @@ func addPublishOutputs(dir string, outputs map[string]string) error {
 
 	for _, target := range wf.Targets {
 		// Only add outputs for the target that was regenerated, based on output directory
-		if dir != "." && target.Output != nil && !filepathsEqual(*target.Output, dir) {
-			continue
+		if dir != "." && target.Output != nil {
+			output, err := filepath.Rel(".", *target.Output)
+			if err != nil {
+				return err
+			}
+
+			if output != dir {
+				continue
+			}
 		}
 
 		lang := target.Target
@@ -97,20 +104,4 @@ func addPublishOutputs(dir string, outputs map[string]string) error {
 	}
 
 	return nil
-}
-
-func filepathsEqual(a, b string) bool {
-	absA, err := filepath.Abs(a)
-	if err != nil {
-		logging.Debug("Failed to get absolute path for %s: %s", a, err.Error())
-		return false
-	}
-
-	absB, err := filepath.Abs(b)
-	if err != nil {
-		logging.Debug("Failed to get absolute path for %s: %s", b, err.Error())
-		return false
-	}
-
-	return absA == absB
 }
