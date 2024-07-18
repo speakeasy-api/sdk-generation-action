@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/speakeasy-api/versioning-reports/versioning"
 	"net/url"
 	"os"
 	"os/exec"
@@ -16,6 +15,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/speakeasy-api/versioning-reports/versioning"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
@@ -916,7 +917,7 @@ const (
 
 func getGenPRTitle() string {
 	title := speakeasyGenPRTitle + environment.GetWorkflowName()
-	if environment.SpecifiedTarget() != "" && !strings.Contains(title, strings.ToUpper(environment.SpecifiedTarget())) {
+	if environment.SpecifiedTarget() != "" && environment.SpecifiedTarget() != "all" && !strings.Contains(title, strings.ToUpper(environment.SpecifiedTarget())) {
 		title += " " + strings.ToUpper(environment.SpecifiedTarget())
 	}
 	return title

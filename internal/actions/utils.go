@@ -14,7 +14,7 @@ func getReleasesDir() (string, error) {
 	}
 
 	// Checking for multiple targets ensures backward compatibility with the code below
-	if len(wf.Targets) > 1 && environment.SpecifiedTarget() != "" {
+	if len(wf.Targets) > 1 && environment.SpecifiedTarget() != "" && environment.SpecifiedTarget() != "all" {
 		if target, ok := wf.Targets[environment.SpecifiedTarget()]; ok && target.Output != nil {
 			return *target.Output, nil
 		}
