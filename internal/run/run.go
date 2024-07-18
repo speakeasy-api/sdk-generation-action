@@ -78,7 +78,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 
 	// Load initial configs
 	for targetID, target := range wf.Targets {
-		if environment.SpecifiedTarget() != "" && environment.SpecifiedTarget() != targetID {
+		if environment.SpecifiedTarget() != "" && environment.SpecifiedTarget() != "all" && environment.SpecifiedTarget() != targetID {
 			continue
 		}
 
@@ -155,7 +155,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 
 	// Legacy logic: check for changes + dirty-check
 	for targetID, target := range wf.Targets {
-		if environment.SpecifiedTarget() != "" && environment.SpecifiedTarget() != targetID {
+		if environment.SpecifiedTarget() != "" && environment.SpecifiedTarget() != "all" && environment.SpecifiedTarget() != targetID {
 			continue
 		}
 
