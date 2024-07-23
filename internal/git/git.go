@@ -177,20 +177,20 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action, sourc
 
 	var prTitle string
 	if action == environment.ActionRunWorkflow || action == environment.ActionFinalize {
-		prTitle = getGenPRTitle()
+		prTitle = getGenPRTitlePrefix()
 		if sourceGeneration {
-			prTitle = getGenSourcesTitle()
+			prTitle = getGenSourcesTitlePrefix()
 		}
 	} else if action == environment.ActionFinalize || action == environment.ActionFinalizeSuggestion {
-		prTitle = getSuggestPRTitle()
+		prTitle = getSuggestPRTitlePrefix()
 	}
 
 	if environment.IsDocsGeneration() {
-		prTitle = getDocsPRTitle()
+		prTitle = getDocsPRTitlePrefix()
 	}
 
 	for _, p := range prs {
-		if strings.Compare(p.GetTitle(), prTitle) == 0 {
+		if strings.HasPrefix(p.GetTitle(), prTitle) {
 			logging.Info("Found existing PR %s", *p.Title)
 
 			if branchName != "" && p.GetHead().GetRef() != branchName {
@@ -542,6 +542,7 @@ Based on:
 		logging.Info("Updating PR")
 
 		info.PR.Body = github.String(body)
+		info.PR.Title = reapplySuffix(info.PR.Title, PRSuffix(info.VersioningReport))
 		info.PR, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), info.PR)
 		if err != nil {
 			return fmt.Errorf("failed to update PR: %w", err)
@@ -549,12 +550,14 @@ Based on:
 	} else {
 		logging.Info("Creating PR")
 
-		title := getGenPRTitle()
+		title := getGenPRTitlePrefix()
 		if environment.IsDocsGeneration() {
-			title = getDocsPRTitle()
+			title = getDocsPRTitlePrefix()
 		} else if info.SourceGeneration {
-			title = getGenSourcesTitle()
+			title = getGenSourcesTitlePrefix()
 		}
+
+		title += PRSuffix(info.VersioningReport)
 
 		info.PR, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
 			Title:               github.String(title),
@@ -580,6 +583,19 @@ Based on:
 	logging.Info("PR: %s", url)
 
 	return nil
+}
+
+func reapplySuffix(title *string, suffix string) *string {
+	if title == nil {
+		return nil
+	}
+	split := strings.Split(*title, "🐝")
+	if len(split) < 2 {
+		return title
+	}
+	// take first two sections
+	*title = strings.Join(split[:2], "🐝") + suffix
+	return title
 }
 
 func stripCodes(str string) string {
@@ -614,7 +630,7 @@ Based on:
 		logging.Info("Creating PR")
 
 		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
-			Title:               github.String(getDocsPRTitle()),
+			Title:               github.String(getDocsPRTitlePrefix()),
 			Body:                github.String(body),
 			Head:                github.String(branchName),
 			Base:                github.String(environment.GetRef()),
@@ -635,13 +651,50 @@ Based on:
 	return nil
 }
 
+func PRSuffix(m *versioning.MergedVersionReport) string {
+	if m == nil {
+		return ""
+	}
+	skipBumpType := false
+	skipVersionNumber := false
+	singleBumpType := ""
+	singleNewVersion := ""
+	for _, report := range m.Reports {
+		if len(report.BumpType) > 0 && report.BumpType != versioning.BumpNone && report.BumpType != versioning.BumpCustom {
+			if len(singleBumpType) > 0 {
+				skipBumpType = true
+			}
+			singleBumpType = string(report.BumpType)
+		}
+		if len(report.NewVersion) > 0 {
+			if len(singleNewVersion) > 0 {
+				skipVersionNumber = true
+			}
+			singleNewVersion = report.NewVersion
+		}
+	}
+	var builder []string
+	if !skipVersionNumber {
+		builder = append(builder, singleNewVersion)
+	}
+	if !skipBumpType {
+		builder = append(builder, fmt.Sprintf("(%s)", singleBumpType))
+	}
+	// break out an extra 🐝 so we can easily reset this section whenever we regen the PR
+	if len(builder) > 0 {
+		builder = append([]string{"🐝"}, builder...)
+	}
+	return strings.Join(builder, " ")
+}
+
+
 func (g *Git) CreateSuggestionPR(branchName, output string) (*int, string, error) {
 	body := fmt.Sprintf(`Generated OpenAPI Suggestions by Speakeasy CLI. 
     Outputs changes to *%s*.`, output)
 
 	logging.Info("Creating PR")
 
-	fmt.Println(body, branchName, getSuggestPRTitle(), environment.GetRef())
+	fmt.Println(body, branchName, getSuggestPRTitlePrefix(), environment.GetRef())
 
 	pr, _, err := g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
 		Title:               github.String("Speakeasy OpenAPI Suggestions -" + environment.GetWorkflowName()),
@@ -914,7 +967,7 @@ const (
 	speakeasyDocsPRTitle    = "chore: 🐝 Update SDK Docs - "
 )
 
-func getGenPRTitle() string {
+func getGenPRTitlePrefix() string {
 	title := speakeasyGenPRTitle + environment.GetWorkflowName()
 	if environment.SpecifiedTarget() != "" && !strings.Contains(title, strings.ToUpper(environment.SpecifiedTarget())) {
 		title += " " + strings.ToUpper(environment.SpecifiedTarget())
@@ -922,15 +975,15 @@ func getGenPRTitle() string {
 	return title
 }
 
-func getGenSourcesTitle() string {
+func getGenSourcesTitlePrefix() string {
 	return speakeasyGenSpecsTitle + environment.GetWorkflowName()
 }
 
-func getDocsPRTitle() string {
+func getDocsPRTitlePrefix() string {
 	return speakeasyDocsPRTitle + environment.GetWorkflowName()
 }
 
-func getSuggestPRTitle() string {
+func getSuggestPRTitlePrefix() string {
 	return speakeasySuggestPRTitle + environment.GetWorkflowName()
 }
 
