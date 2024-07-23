@@ -6,13 +6,14 @@ require (
 	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/google/go-github/v54 v54.0.0
+	github.com/google/go-github/v63 v63.0.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/pb33f/libopenapi v0.14.0
 	github.com/speakeasy-api/git-diff-parser v0.0.3
 	github.com/speakeasy-api/sdk-gen-config v1.7.4
 	github.com/speakeasy-api/speakeasy-client-sdk-go/v3 v3.7.1
-	github.com/speakeasy-api/versioning-reports v0.4.0
+	github.com/speakeasy-api/versioning-reports v0.6.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e
 	golang.org/x/oauth2 v0.11.0

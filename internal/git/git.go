@@ -29,7 +29,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 
-	"github.com/google/go-github/v54/github"
+	"github.com/google/go-github/v63/github"
 	"golang.org/x/oauth2"
 )
 
@@ -177,20 +177,20 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action, sourc
 
 	var prTitle string
 	if action == environment.ActionRunWorkflow || action == environment.ActionFinalize {
-		prTitle = getGenPRTitle()
+		prTitle = getGenPRTitlePrefix()
 		if sourceGeneration {
-			prTitle = getGenSourcesTitle()
+			prTitle = getGenSourcesTitlePrefix()
 		}
 	} else if action == environment.ActionFinalize || action == environment.ActionFinalizeSuggestion {
-		prTitle = getSuggestPRTitle()
+		prTitle = getSuggestPRTitlePrefix()
 	}
 
 	if environment.IsDocsGeneration() {
-		prTitle = getDocsPRTitle()
+		prTitle = getDocsPRTitlePrefix()
 	}
 
 	for _, p := range prs {
-		if strings.Compare(p.GetTitle(), prTitle) == 0 {
+		if strings.HasPrefix(p.GetTitle(), prTitle) {
 			logging.Info("Found existing PR %s", *p.Title)
 
 			if branchName != "" && p.GetHead().GetRef() != branchName {
@@ -427,6 +427,8 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) error {
 	var changelog string
 	var err error
 
+	labelTypes := g.UpsertLabelTypes(context.Background())
+
 	var previousGenVersions []string
 
 	if info.PreviousGenVersion != "" {
@@ -537,24 +539,27 @@ Based on:
 	if len(body) > maxBodyLength {
 		body = body[:maxBodyLength-3] + "..."
 	}
+	title := getGenPRTitlePrefix()
+	if environment.IsDocsGeneration() {
+		title = getDocsPRTitlePrefix()
+	} else if info.SourceGeneration {
+		title = getGenSourcesTitlePrefix()
+	}
+	suffix, labels := PRMetadata(info.VersioningReport, labelTypes)
+	title += suffix
 
 	if info.PR != nil {
 		logging.Info("Updating PR")
 
 		info.PR.Body = github.String(body)
+		info.PR.Title = &title
 		info.PR, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), info.PR)
+		g.setPRLabels(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), labelTypes, info.PR.Labels, labels)
 		if err != nil {
 			return fmt.Errorf("failed to update PR: %w", err)
 		}
 	} else {
 		logging.Info("Creating PR")
-
-		title := getGenPRTitle()
-		if environment.IsDocsGeneration() {
-			title = getDocsPRTitle()
-		} else if info.SourceGeneration {
-			title = getGenSourcesTitle()
-		}
 
 		info.PR, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
 			Title:               github.String(title),
@@ -569,6 +574,8 @@ Based on:
 				messageSuffix += "\nNavigate to Settings > Actions > Workflow permissions and ensure that allow GitHub Actions to create and approve pull requests is checked. For more information see https://www.speakeasyapi.dev/docs/advanced-setup/github-setup"
 			}
 			return fmt.Errorf("failed to create PR: %w%s", err, messageSuffix)
+		} else if info.PR != nil && len(labels) > 0 {
+			g.setPRLabels(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), labelTypes, info.PR.Labels, labels)
 		}
 	}
 
@@ -580,6 +587,84 @@ Based on:
 	logging.Info("PR: %s", url)
 
 	return nil
+}
+
+func (g *Git) setPRLabels(background context.Context, owner string, repo string, issueNumber int, labelTypes map[string]github.Label, actualLabels, desiredLabels []*github.Label) {
+	shouldRemove := []string{}
+	shouldAdd := []string{}
+	for _, label := range actualLabels {
+		foundInDesired := false
+		for _, desired := range desiredLabels {
+			if label.GetName() == desired.GetName() {
+				foundInDesired = true
+				break
+			}
+			if _, ok := labelTypes[label.GetName()]; !ok {
+				foundInDesired = true
+				continue
+			}
+			break
+		}
+		if !foundInDesired {
+			shouldRemove = append(shouldRemove, label.GetName())
+		}
+	}
+	for _, desired := range desiredLabels {
+		foundInActual := false
+		for _, label := range actualLabels {
+			if label.GetName() == desired.GetName() {
+				foundInActual = true
+				break
+			}
+		}
+		if !foundInActual {
+			shouldAdd = append(shouldAdd, desired.GetName())
+		}
+	}
+	if len(shouldAdd) > 0 {
+		_, _, err := g.client.Issues.AddLabelsToIssue(background, owner, repo, issueNumber, shouldAdd)
+		if err != nil {
+			logging.Info("failed to add labels %v: %s", shouldAdd, err.Error())
+		}
+	}
+	if len(shouldRemove) > 0 {
+		for _, label := range shouldRemove {
+			_, err := g.client.Issues.RemoveLabelForIssue(background, owner, repo, issueNumber, label)
+			if err != nil {
+				logging.Info("failed to remove labels %s: %s", label, err.Error())
+			}
+		}
+	}
+}
+
+func notEquivalent(desired []*github.Label, actual []*github.Label) bool {
+	desiredByName := make(map[string]bool)
+	for _, label := range desired {
+		desiredByName[label.GetName()] = true
+	}
+	if len(desiredByName) != len(actual) {
+		return true
+	}
+	for _, label := range actual {
+		_, ok := desiredByName[label.GetName()]
+		if !ok {
+			return true
+		}
+	}
+	return false
+}
+
+func reapplySuffix(title *string, suffix string) *string {
+	if title == nil {
+		return nil
+	}
+	split := strings.Split(*title, "🐝")
+	if len(split) < 2 {
+		return title
+	}
+	// take first two sections
+	*title = strings.Join(split[:2], "🐝") + suffix
+	return title
 }
 
 func stripCodes(str string) string {
@@ -614,7 +699,7 @@ Based on:
 		logging.Info("Creating PR")
 
 		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
-			Title:               github.String(getDocsPRTitle()),
+			Title:               github.String(getDocsPRTitlePrefix()),
 			Body:                github.String(body),
 			Head:                github.String(branchName),
 			Base:                github.String(environment.GetRef()),
@@ -635,13 +720,53 @@ Based on:
 	return nil
 }
 
+func PRMetadata(m *versioning.MergedVersionReport, labelTypes map[string]github.Label) (string, []*github.Label) {
+	if m == nil {
+		return "", []*github.Label{}
+	}
+	labels := []*github.Label{}
+	skipBumpType := false
+	skipVersionNumber := false
+	singleBumpType := ""
+	singleNewVersion := ""
+	for _, report := range m.Reports {
+		if len(report.BumpType) > 0 && report.BumpType != versioning.BumpNone && report.BumpType != versioning.BumpCustom {
+			if len(singleBumpType) > 0 {
+				skipBumpType = true
+			}
+			singleBumpType = string(report.BumpType)
+		}
+		if len(report.NewVersion) > 0 {
+			if len(singleNewVersion) > 0 {
+				skipVersionNumber = true
+			}
+			singleNewVersion = report.NewVersion
+		}
+	}
+	var builder []string
+	if !skipVersionNumber {
+		builder = append(builder, singleNewVersion)
+	}
+	if !skipBumpType {
+		if matched, ok := labelTypes[singleBumpType]; ok {
+			labels = append(labels, &matched)
+		}
+	}
+	// Add an extra " " at front
+	if len(builder) > 0 {
+		builder = append([]string{""}, builder...)
+	}
+	return strings.Join(builder, " "), labels
+}
+
+
 func (g *Git) CreateSuggestionPR(branchName, output string) (*int, string, error) {
 	body := fmt.Sprintf(`Generated OpenAPI Suggestions by Speakeasy CLI. 
     Outputs changes to *%s*.`, output)
 
 	logging.Info("Creating PR")
 
-	fmt.Println(body, branchName, getSuggestPRTitle(), environment.GetRef())
+	fmt.Println(body, branchName, getSuggestPRTitlePrefix(), environment.GetRef())
 
 	pr, _, err := g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
 		Title:               github.String("Speakeasy OpenAPI Suggestions -" + environment.GetWorkflowName()),
@@ -894,6 +1019,52 @@ func (g *Git) CreateTag(tag string, hash string) error {
 	return nil
 }
 
+func (g *Git) UpsertLabelTypes(ctx context.Context) map[string]github.Label {
+	desiredLabels := map[string]github.Label{}
+	addGitHubLabel := func(name, description string) {
+		desiredLabels[name] = github.Label{
+			Name: &name,
+			Description: &description,
+		}
+	}
+	addGitHubLabel(string(versioning.BumpMajor), "Major version bump")
+	addGitHubLabel(string(versioning.BumpMinor), "Minor version bump")
+	addGitHubLabel(string(versioning.BumpPatch), "Patch version bump")
+	addGitHubLabel(string(versioning.BumpGraduate), "Graduate prerelease to stable")
+	addGitHubLabel(string(versioning.BumpPrerelease), "Bump by a prerelease version")
+	actualLabels := make(map[string]github.Label)
+	allLabels, _, err := g.client.Issues.ListLabels(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), nil)
+	if err != nil {
+		return actualLabels
+	}
+	for _, label := range allLabels {
+		actualLabels[*label.Name] = *label
+	}
+
+
+	for _, label := range desiredLabels {
+		foundLabel, ok := actualLabels[*label.Name]
+		if ok {
+			if *foundLabel.Description != *label.Description {
+				_, _, err = g.client.Issues.EditLabel(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *label.Name, &github.Label{
+					Name:        label.Name,
+					Description: label.Description,
+				})
+				if err != nil {
+					return actualLabels
+				}
+			}
+		} else {
+			_, _, err = g.client.Issues.CreateLabel(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &label)
+			if err != nil {
+				return actualLabels
+			}
+		}
+		actualLabels[*label.Name] = label
+	}
+	return actualLabels
+}
+
 func getGithubAuth(accessToken string) *gitHttp.BasicAuth {
 	return &gitHttp.BasicAuth{
 		Username: "gen",
@@ -914,7 +1085,7 @@ const (
 	speakeasyDocsPRTitle    = "chore: 🐝 Update SDK Docs - "
 )
 
-func getGenPRTitle() string {
+func getGenPRTitlePrefix() string {
 	title := speakeasyGenPRTitle + environment.GetWorkflowName()
 	if environment.SpecifiedTarget() != "" && !strings.Contains(title, strings.ToUpper(environment.SpecifiedTarget())) {
 		title += " " + strings.ToUpper(environment.SpecifiedTarget())
@@ -922,15 +1093,15 @@ func getGenPRTitle() string {
 	return title
 }
 
-func getGenSourcesTitle() string {
+func getGenSourcesTitlePrefix() string {
 	return speakeasyGenSpecsTitle + environment.GetWorkflowName()
 }
 
-func getDocsPRTitle() string {
+func getDocsPRTitlePrefix() string {
 	return speakeasyDocsPRTitle + environment.GetWorkflowName()
 }
 
-func getSuggestPRTitle() string {
+func getSuggestPRTitlePrefix() string {
 	return speakeasySuggestPRTitle + environment.GetWorkflowName()
 }
 

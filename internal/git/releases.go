@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/google/go-github/v54/github"
+	"github.com/google/go-github/v63/github"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/telemetry"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
