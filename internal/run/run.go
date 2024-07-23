@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/google/go-github/v54/github"
+	"github.com/google/go-github/v63/github"
 	"github.com/speakeasy-api/versioning-reports/versioning"
 
 	"github.com/speakeasy-api/sdk-gen-config/workflow"

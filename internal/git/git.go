@@ -29,7 +29,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 
-	"github.com/google/go-github/v54/github"
+	"github.com/google/go-github/v63/github"
 	"golang.org/x/oauth2"
 )
 
@@ -427,6 +427,8 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) error {
 	var changelog string
 	var err error
 
+	labelTypes := g.UpsertLabelTypes(context.Background())
+
 	var previousGenVersions []string
 
 	if info.PreviousGenVersion != "" {
@@ -537,27 +539,27 @@ Based on:
 	if len(body) > maxBodyLength {
 		body = body[:maxBodyLength-3] + "..."
 	}
+	title := getGenPRTitlePrefix()
+	if environment.IsDocsGeneration() {
+		title = getDocsPRTitlePrefix()
+	} else if info.SourceGeneration {
+		title = getGenSourcesTitlePrefix()
+	}
+	suffix, labels := PRMetadata(info.VersioningReport, labelTypes)
+	title += suffix
 
 	if info.PR != nil {
 		logging.Info("Updating PR")
 
 		info.PR.Body = github.String(body)
-		info.PR.Title = reapplySuffix(info.PR.Title, PRSuffix(info.VersioningReport))
+		info.PR.Title = &title
 		info.PR, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), info.PR)
+		g.setPRLabels(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), labelTypes, info.PR.Labels, labels)
 		if err != nil {
 			return fmt.Errorf("failed to update PR: %w", err)
 		}
 	} else {
 		logging.Info("Creating PR")
-
-		title := getGenPRTitlePrefix()
-		if environment.IsDocsGeneration() {
-			title = getDocsPRTitlePrefix()
-		} else if info.SourceGeneration {
-			title = getGenSourcesTitlePrefix()
-		}
-
-		title += PRSuffix(info.VersioningReport)
 
 		info.PR, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
 			Title:               github.String(title),
@@ -572,6 +574,8 @@ Based on:
 				messageSuffix += "\nNavigate to Settings > Actions > Workflow permissions and ensure that allow GitHub Actions to create and approve pull requests is checked. For more information see https://www.speakeasyapi.dev/docs/advanced-setup/github-setup"
 			}
 			return fmt.Errorf("failed to create PR: %w%s", err, messageSuffix)
+		} else if info.PR != nil && len(labels) > 0 {
+			g.setPRLabels(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), labelTypes, info.PR.Labels, labels)
 		}
 	}
 
@@ -583,6 +587,71 @@ Based on:
 	logging.Info("PR: %s", url)
 
 	return nil
+}
+
+func (g *Git) setPRLabels(background context.Context, owner string, repo string, issueNumber int, labelTypes map[string]github.Label, actualLabels, desiredLabels []*github.Label) {
+	shouldRemove := []string{}
+	shouldAdd := []string{}
+	for _, label := range actualLabels {
+		foundInDesired := false
+		for _, desired := range desiredLabels {
+			if label.GetName() == desired.GetName() {
+				foundInDesired = true
+				break
+			}
+			if _, ok := labelTypes[label.GetName()]; !ok {
+				foundInDesired = true
+				continue
+			}
+			break
+		}
+		if !foundInDesired {
+			shouldRemove = append(shouldRemove, label.GetName())
+		}
+	}
+	for _, desired := range desiredLabels {
+		foundInActual := false
+		for _, label := range actualLabels {
+			if label.GetName() == desired.GetName() {
+				foundInActual = true
+				break
+			}
+		}
+		if !foundInActual {
+			shouldAdd = append(shouldAdd, desired.GetName())
+		}
+	}
+	if len(shouldAdd) > 0 {
+		_, _, err := g.client.Issues.AddLabelsToIssue(background, owner, repo, issueNumber, shouldAdd)
+		if err != nil {
+			logging.Info("failed to add labels %v: %s", shouldAdd, err.Error())
+		}
+	}
+	if len(shouldRemove) > 0 {
+		for _, label := range shouldRemove {
+			_, err := g.client.Issues.RemoveLabelForIssue(background, owner, repo, issueNumber, label)
+			if err != nil {
+				logging.Info("failed to remove labels %s: %s", label, err.Error())
+			}
+		}
+	}
+}
+
+func notEquivalent(desired []*github.Label, actual []*github.Label) bool {
+	desiredByName := make(map[string]bool)
+	for _, label := range desired {
+		desiredByName[label.GetName()] = true
+	}
+	if len(desiredByName) != len(actual) {
+		return true
+	}
+	for _, label := range actual {
+		_, ok := desiredByName[label.GetName()]
+		if !ok {
+			return true
+		}
+	}
+	return false
 }
 
 func reapplySuffix(title *string, suffix string) *string {
@@ -651,10 +720,11 @@ Based on:
 	return nil
 }
 
-func PRSuffix(m *versioning.MergedVersionReport) string {
+func PRMetadata(m *versioning.MergedVersionReport, labelTypes map[string]github.Label) (string, []*github.Label) {
 	if m == nil {
-		return ""
+		return "", []*github.Label{}
 	}
+	labels := []*github.Label{}
 	skipBumpType := false
 	skipVersionNumber := false
 	singleBumpType := ""
@@ -678,13 +748,15 @@ func PRSuffix(m *versioning.MergedVersionReport) string {
 		builder = append(builder, singleNewVersion)
 	}
 	if !skipBumpType {
-		builder = append(builder, fmt.Sprintf("(%s)", singleBumpType))
+		if matched, ok := labelTypes[singleBumpType]; ok {
+			labels = append(labels, &matched)
+		}
 	}
-	// break out an extra 🐝 so we can easily reset this section whenever we regen the PR
+	// Add an extra " " at front
 	if len(builder) > 0 {
-		builder = append([]string{"🐝"}, builder...)
+		builder = append([]string{""}, builder...)
 	}
-	return strings.Join(builder, " ")
+	return strings.Join(builder, " "), labels
 }
 
 
@@ -945,6 +1017,52 @@ func (g *Git) CreateTag(tag string, hash string) error {
 
 	logging.Info("Tag %s created for commit %s", tag, hash)
 	return nil
+}
+
+func (g *Git) UpsertLabelTypes(ctx context.Context) map[string]github.Label {
+	desiredLabels := map[string]github.Label{}
+	addGitHubLabel := func(name, description string) {
+		desiredLabels[name] = github.Label{
+			Name: &name,
+			Description: &description,
+		}
+	}
+	addGitHubLabel(string(versioning.BumpMajor), "Major version bump")
+	addGitHubLabel(string(versioning.BumpMinor), "Minor version bump")
+	addGitHubLabel(string(versioning.BumpPatch), "Patch version bump")
+	addGitHubLabel(string(versioning.BumpGraduate), "Graduate prerelease to stable")
+	addGitHubLabel(string(versioning.BumpPrerelease), "Bump by a prerelease version")
+	actualLabels := make(map[string]github.Label)
+	allLabels, _, err := g.client.Issues.ListLabels(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), nil)
+	if err != nil {
+		return actualLabels
+	}
+	for _, label := range allLabels {
+		actualLabels[*label.Name] = *label
+	}
+
+
+	for _, label := range desiredLabels {
+		foundLabel, ok := actualLabels[*label.Name]
+		if ok {
+			if *foundLabel.Description != *label.Description {
+				_, _, err = g.client.Issues.EditLabel(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *label.Name, &github.Label{
+					Name:        label.Name,
+					Description: label.Description,
+				})
+				if err != nil {
+					return actualLabels
+				}
+			}
+		} else {
+			_, _, err = g.client.Issues.CreateLabel(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &label)
+			if err != nil {
+				return actualLabels
+			}
+		}
+		actualLabels[*label.Name] = label
+	}
+	return actualLabels
 }
 
 func getGithubAuth(accessToken string) *gitHttp.BasicAuth {

@@ -6,6 +6,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/google/go-github/v54 v54.0.0
+	github.com/google/go-github/v63 v63.0.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/pb33f/libopenapi v0.14.0
