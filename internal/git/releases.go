@@ -62,7 +62,7 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 
 	for lang, info := range releaseInfo.Languages {
 		tag := "v" + info.Version
-		if info.Path != "." {
+		if info.Path != "" && info.Path != "." && info.Path != "./" {
 			tag = fmt.Sprintf("%s/%s", info.Path, tag)
 		}
 
