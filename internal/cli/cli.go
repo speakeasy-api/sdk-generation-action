@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"golang.org/x/exp/slices"
 
 	"github.com/hashicorp/go-version"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
@@ -26,17 +27,34 @@ func IsAtLeastVersion(version *version.Version) bool {
 	return sv.GreaterThanOrEqual(version)
 }
 
-func GetSupportedLanguages() ([]string, error) {
-	out, err := runSpeakeasyCommand("generate", "sdk", "--help")
-	if err != nil {
-		return nil, err
+var defaultSupportedTargets = []string{
+	"csharp",
+	"go",
+	"java",
+	"php",
+	"postman",
+	"python",
+	"ruby",
+	"swift",
+	"terraform",
+	"typescript",
+	"unity",
+	"docs",
+}
+
+func GetSupportedLanguages() []string {
+	out, err := runSpeakeasyCommand("generate", "supported-targets")
+	if err == nil && out != "" {
+		out = strings.Trim(out, "\n")
+		out = strings.Trim(out, " ")
+		supportedTargets := strings.Split(out, ",")
+		// quick sanity check
+		if len(supportedTargets) > 0 && slices.Contains(supportedTargets, "go") {
+			return supportedTargets
+		}
 	}
-
-	r := regexp.MustCompile(`available options: \[(.*?)\]`)
-
-	langs := r.FindStringSubmatch(strings.TrimSpace(out))[1]
-
-	return strings.Split(langs, ", "), nil
+	
+	return defaultSupportedTargets
 }
 
 func TriggerGoGenerate() error {
