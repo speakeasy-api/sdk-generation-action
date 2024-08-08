@@ -45,19 +45,15 @@ var defaultSupportedTargets = []string{
 func GetSupportedLanguages() []string {
 	out, err := runSpeakeasyCommand("generate", "supported-targets")
 	if err == nil && out != "" {
-		fmt.Println("HERE")
-		fmt.Println(out)
 		out = strings.Trim(out, "\n")
 		out = strings.Trim(out, " ")
 		supportedTargets := strings.Split(out, ",")
 		// quick sanity check
 		if len(supportedTargets) > 0 && slices.Contains(supportedTargets, "go") {
-			fmt.Println(supportedTargets)
 			return supportedTargets
 		}
 	}
-
-	fmt.Println("THERE")
+	
 	return defaultSupportedTargets
 }
 
