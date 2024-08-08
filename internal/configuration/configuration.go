@@ -2,11 +2,12 @@ package configuration
 
 import (
 	"fmt"
+	"path/filepath"
+
 	"github.com/speakeasy-api/sdk-gen-config/workflow"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"golang.org/x/exp/slices"
-	"path/filepath"
 )
 
 func GetWorkflowAndValidateLanguages(checkLangSupported bool) (*workflow.Workflow, error) {
@@ -43,11 +44,7 @@ func getWorkflow() (*workflow.Workflow, error) {
 }
 
 func AssertLangsSupported(langs []string) error {
-	supportedLangs, err := cli.GetSupportedLanguages()
-	if err != nil {
-		return fmt.Errorf("failed to get supported languages: %w", err)
-	}
-
+	supportedLangs := cli.GetSupportedLanguages()
 	for _, l := range langs {
 		if l == "docs" {
 			return nil

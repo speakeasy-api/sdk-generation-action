@@ -112,11 +112,7 @@ func RunWorkflow() error {
 			LanguagesGenerated: map[string]releases.GenerationInfo{},
 		}
 
-		supportedLanguages, err := cli.GetSupportedLanguages()
-		if err != nil {
-			return err
-		}
-
+		supportedLanguages := cli.GetSupportedLanguages()
 		for _, lang := range supportedLanguages {
 			langGenInfo, ok := runRes.GenInfo.Languages[lang]
 
