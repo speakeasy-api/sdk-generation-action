@@ -59,10 +59,7 @@ func GetAndValidateLanguages(checkLangSupported bool) (map[string]string, error)
 		return langCfgs, nil
 	}
 
-	supportedLangs, err := cli.GetSupportedLanguages()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get supported languages: %w", err)
-	}
+	supportedLangs := cli.GetSupportedLanguages()
 
 	for l := range langCfgs {
 		if l == "docs" {
