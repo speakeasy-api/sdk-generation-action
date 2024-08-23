@@ -11,6 +11,10 @@ on:
         description: "The targets to tag code samples for (comma or newline separated)"
         required: false
         type: string
+      working_directory:
+        description: "The working directory for running Speakeasy CLI commands in the action"
+        required: false
+        type: string
       registry_tags:
         description: "Multi-line or single-line string input of tags to apply to speakeasy registry builds"
         required: false
@@ -36,6 +40,7 @@ jobs:
           action: "tag"
           sources: ${{ inputs.sources }}
           code_samples: ${{ inputs.code_samples }}
+          working_directory: ${{ inputs.working_directory }}
           registry_tags: ${{ inputs.registry_tags }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           github_access_token: ${{ secrets.github_access_token }}

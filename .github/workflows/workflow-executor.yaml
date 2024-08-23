@@ -172,6 +172,7 @@ jobs:
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           github_access_token: ${{ secrets.github_access_token }}
+          working_directory: ${{ inputs.working_directory }}
           action: log-result
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
@@ -236,6 +237,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: publish-event
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.run-workflow.outputs.python_directory }}
           registry_name: "pypi"
@@ -261,6 +263,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: log-result
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
@@ -304,6 +307,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: publish-event
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.run-workflow.outputs.typescript_directory }}
           registry_name: "npm"
@@ -329,6 +333,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: log-result
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
@@ -388,6 +393,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: publish-event
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.run-workflow.outputs.java_directory }}
           registry_name: "sonatype"
@@ -413,6 +419,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: log-result
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
@@ -461,6 +468,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: publish-event
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.run-workflow.outputs.ruby_directory }}
           registry_name: "gems"
@@ -486,6 +494,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: log-result
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
@@ -524,6 +533,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: publish-event
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.run-workflow.outputs.csharp_directory }}
           registry_name: "nuget"
@@ -549,6 +559,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: log-result
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
@@ -585,6 +596,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: publish-event
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.run-workflow.outputs.php_directory }}
           registry_name: "packagist"
@@ -610,6 +622,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: log-result
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
