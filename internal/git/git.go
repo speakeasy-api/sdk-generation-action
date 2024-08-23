@@ -250,7 +250,7 @@ func (g *Git) Reset(args ...string) error {
 	logging.Info("Running git  %s", strings.Join(args, " "))
 
 	cmd := exec.Command("git", args...)
-	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo")
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -402,7 +402,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 func (g *Git) Add(arg string) error {
 	// We execute this manually because go-git doesn't properly support gitignore
 	cmd := exec.Command("git", "add", arg)
-	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo")
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
 	if err != nil {
