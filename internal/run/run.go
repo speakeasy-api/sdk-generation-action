@@ -42,10 +42,7 @@ type Git interface {
 }
 
 func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
-	workspace := environment.GetWorkspace()
-	if environment.GetWorkingDirectory() != "" {
-		workspace = filepath.Join(workspace, environment.GetWorkingDirectory())
-	}
+	workspace := filepath.Join(environment.GetWorkspace(), environment.GetWorkingDirectory())
 	outputs := map[string]string{}
 
 	speakeasyVersion, err := cli.GetSpeakeasyVersion()
