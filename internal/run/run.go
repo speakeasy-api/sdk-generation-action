@@ -42,7 +42,7 @@ type Git interface {
 }
 
 func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
-	workspace := filepath.Join(environment.GetWorkspace(), environment.GetWorkingDirectory())
+	workspace := environment.GetWorkspace()
 	outputs := map[string]string{}
 
 	speakeasyVersion, err := cli.GetSpeakeasyVersion()
@@ -71,6 +71,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 			dir = *target.Output
 		}
 
+		dir = filepath.Join(environment.GetWorkspace(), dir)
 		return dir, path.Join(workspace, "repo", dir)
 	}
 
