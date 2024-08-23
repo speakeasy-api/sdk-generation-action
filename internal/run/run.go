@@ -71,7 +71,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 			dir = *target.Output
 		}
 
-		dir = filepath.Join(environment.GetWorkspace(), dir)
+		dir = filepath.Join(environment.GetWorkingDirectory(), dir)
 		return dir, path.Join(workspace, "repo", dir)
 	}
 
