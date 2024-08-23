@@ -32,6 +32,9 @@ func GetWorkflowAndValidateLanguages(checkLangSupported bool) (*workflow.Workflo
 
 func getWorkflow() (*workflow.Workflow, error) {
 	workspace := environment.GetWorkspace()
+	if environment.GetWorkingDirectory() != "" {
+		workspace = filepath.Join(workspace, environment.GetWorkingDirectory())
+	}
 
 	localPath := filepath.Join(workspace, "repo")
 
