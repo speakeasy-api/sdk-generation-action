@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/speakeasy-api/versioning-reports/versioning"
 	"net/url"
 	"os"
 	"os/exec"
@@ -16,6 +15,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/speakeasy-api/versioning-reports/versioning"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
@@ -759,7 +760,6 @@ func PRMetadata(m *versioning.MergedVersionReport, labelTypes map[string]github.
 	return strings.Join(builder, " "), labels
 }
 
-
 func (g *Git) CreateSuggestionPR(branchName, output string) (*int, string, error) {
 	body := fmt.Sprintf(`Generated OpenAPI Suggestions by Speakeasy CLI. 
     Outputs changes to *%s*.`, output)
@@ -1023,7 +1023,7 @@ func (g *Git) UpsertLabelTypes(ctx context.Context) map[string]github.Label {
 	desiredLabels := map[string]github.Label{}
 	addGitHubLabel := func(name, description string) {
 		desiredLabels[name] = github.Label{
-			Name: &name,
+			Name:        &name,
 			Description: &description,
 		}
 	}
@@ -1040,7 +1040,6 @@ func (g *Git) UpsertLabelTypes(ctx context.Context) map[string]github.Label {
 	for _, label := range allLabels {
 		actualLabels[*label.Name] = *label
 	}
-
 
 	for _, label := range desiredLabels {
 		foundLabel, ok := actualLabels[*label.Name]

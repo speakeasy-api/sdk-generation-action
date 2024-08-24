@@ -7,6 +7,10 @@ on:
         required: false
         description: "Internal use only"
         type: string
+      working_directory:
+        description: "The working directory for running Speakeasy CLI commands in the action"
+        required: false
+        type: string
       dotnet_version:
         description: "The version of dotnet to use when compiling the C# SDK"
         required: false
@@ -98,6 +102,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: "release"
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
@@ -159,6 +164,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: publish-event
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.release.outputs.python_directory }}
           registry_name: "pypi"
@@ -206,6 +212,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: publish-event
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.release.outputs.typescript_directory }}
           registry_name: "npm"
@@ -268,6 +275,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: publish-event
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.release.outputs.java_directory }}
           registry_name: "sonatype"
@@ -310,6 +318,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: publish-event
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.release.outputs.php_directory }}
           registry_name: "packagist"
@@ -352,6 +361,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: publish-event
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.release.outputs.csharp_directory }}
           registry_name: "nuget"
@@ -392,6 +402,7 @@ jobs:
         with:
           github_access_token: ${{ secrets.github_access_token }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           gpg_fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}
           action: "release"
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
@@ -404,6 +415,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: publish-event
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.release.outputs.publish_terraform }}
           registry_name: "terraform"
@@ -456,6 +468,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           action: publish-event
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           target_directory: ${{ needs.release.outputs.ruby_directory }}
           registry_name: "gems"
