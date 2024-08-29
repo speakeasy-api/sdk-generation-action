@@ -89,6 +89,10 @@ func addPublishOutputs(dir string, outputs map[string]string) error {
 				return err
 			}
 
+			if environment.GetWorkingDirectory() != "" {
+				output = filepath.Join(environment.GetWorkingDirectory(), output)
+			}
+
 			if output != dir {
 				continue
 			}
