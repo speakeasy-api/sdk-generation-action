@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"github.com/speakeasy-api/sdk-generation-action/internal/actions"
 	"path"
 	"path/filepath"
 	"strings"
@@ -98,15 +99,11 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 			return nil, outputs, err
 		}
 
-		published := target.IsPublished() || target.Target == "go"
 		fmt.Printf("Generating %s SDK in %s", lang, outputDir)
 
 		installationURL := getInstallationURL(lang, dir)
-		// TODO: Temporary check to fix Java. We may remove this entirely, pending conversation
-		if installationURL == "" && target.Target != "java" {
-			published = true // Treat as published if we don't have an installation URL
-		}
-		outputs[fmt.Sprintf("publish_%s", lang)] = fmt.Sprintf("%t", published)
+
+		actions.AddTargetPublishOutputs(target, outputs, &installationURL)
 
 		if installationURL != "" {
 			installationURLs[targetID] = installationURL

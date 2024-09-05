@@ -3,6 +3,7 @@ package actions
 import (
 	"errors"
 	"fmt"
+	"github.com/speakeasy-api/sdk-gen-config/workflow"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -98,14 +99,24 @@ func addPublishOutputs(dir string, outputs map[string]string) error {
 			}
 		}
 
-		lang := target.Target
-		published := target.IsPublished() || target.Target == "go"
-		outputs[fmt.Sprintf("publish_%s", lang)] = fmt.Sprintf("%t", published)
-
-		if published && lang == "java" && target.Publishing.Java != nil {
-			outputs["use_sonatype_legacy"] = strconv.FormatBool(target.Publishing.Java.UseSonatypeLegacy)
-		}
+		AddTargetPublishOutputs(target, outputs, nil)
 	}
 
 	return nil
+}
+
+func AddTargetPublishOutputs(target workflow.Target, outputs map[string]string, installationURL *string) {
+	lang := target.Target
+	published := target.IsPublished() || target.Target == "go"
+
+	// TODO: Temporary check to fix Java. We may remove this entirely, pending conversation
+	if installationURL != nil && *installationURL == "" && target.Target != "java" {
+		published = true // Treat as published if we don't have an installation URL
+	}
+
+	outputs[fmt.Sprintf("publish_%s", lang)] = fmt.Sprintf("%t", published)
+
+	if published && lang == "java" && target.Publishing.Java != nil {
+		outputs["use_sonatype_legacy"] = strconv.FormatBool(target.Publishing.Java.UseSonatypeLegacy)
+	}
 }
