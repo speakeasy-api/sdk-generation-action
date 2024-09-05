@@ -107,10 +107,10 @@ func addPublishOutputs(dir string, outputs map[string]string) error {
 
 func AddTargetPublishOutputs(target workflow.Target, outputs map[string]string, installationURL *string) {
 	lang := target.Target
-	published := target.IsPublished() || target.Target == "go"
+	published := target.IsPublished() || lang == "go"
 
 	// TODO: Temporary check to fix Java. We may remove this entirely, pending conversation
-	if installationURL != nil && *installationURL == "" && target.Target != "java" {
+	if installationURL != nil && *installationURL == "" && lang != "java" {
 		published = true // Treat as published if we don't have an installation URL
 	}
 
