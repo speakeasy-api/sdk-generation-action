@@ -572,7 +572,7 @@ Based on:
 		if err != nil {
 			messageSuffix := ""
 			if strings.Contains(err.Error(), "GitHub Actions is not permitted to create or approve pull requests") {
-				messageSuffix += "\nNavigate to Settings > Actions > Workflow permissions and ensure that allow GitHub Actions to create and approve pull requests is checked. For more information see https://www.speakeasyapi.dev/docs/advanced-setup/github-setup"
+				messageSuffix += "\nNavigate to Settings > Actions > Workflow permissions and ensure that allow GitHub Actions to create and approve pull requests is checked. For more information see https://www.speakeasy.com/docs/advanced-setup/github-setup"
 			}
 			return fmt.Errorf("failed to create PR: %w%s", err, messageSuffix)
 		} else if info.PR != nil && len(labels) > 0 {

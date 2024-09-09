@@ -10,7 +10,7 @@ For more information please see our docsite linked below.
 
 ## Workflow usage
 
-### [Generation Workflow Documentation](https://www.speakeasyapi.dev/docs/workflow-reference/generation-reference)
+### [Generation Workflow Documentation](https://www.speakeasy.com/docs/workflow-reference/generation-reference)
 
-### [Publishing Workflow](https://www.speakeasyapi.dev/docs/workflow-reference/publishing-reference)
+### [Publishing Workflow](https://www.speakeasy.com/docs/workflow-reference/publishing-reference)
 

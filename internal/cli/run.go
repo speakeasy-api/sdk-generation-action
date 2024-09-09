@@ -98,8 +98,8 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 }
 
 var (
-	lintingReportRegex = regexp.MustCompile(`(?m).*?(https:\/\/app.speakeasyapi.dev\/org\/.*?\/.*?\/linting-report\/.*?)\s`)
-	changesReportRegex = regexp.MustCompile(`(?m).*?(https:\/\/app.speakeasyapi.dev\/org\/.*?\/.*?\/changes-report\/.*?)\s`)
+	lintingReportRegex = regexp.MustCompile(`(?m).*?(https:\/\/app.speakeasy.com\/org\/.*?\/.*?\/linting-report\/.*?)\s`)
+	changesReportRegex = regexp.MustCompile(`(?m).*?(https:\/\/app.speakeasy.com\/org\/.*?\/.*?\/changes-report\/.*?)\s`)
 )
 
 func getLintingReportURL(out string) string {
