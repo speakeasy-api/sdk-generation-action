@@ -76,6 +76,7 @@ func Download(pinnedVersion string, g Git) (string, error) {
 
 func runSpeakeasyCommand(args ...string) (string, error) {
 	baseDir := environment.GetBaseDir()
+	extraRunEnvVars := environment.SpeakeasyEnvVars()
 
 	cmdPath := filepath.Join(baseDir, "bin", "speakeasy")
 
@@ -84,6 +85,7 @@ func runSpeakeasyCommand(args ...string) (string, error) {
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "SPEAKEASY_RUN_LOCATION=action")
 	cmd.Env = append(cmd.Env, "SPEAKEASY_ENVIRONMENT=github")
+	cmd.Env = append(cmd.Env, extraRunEnvVars...)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {

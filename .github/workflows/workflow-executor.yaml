@@ -48,6 +48,22 @@ on:
         description: "Version to manually set for SDK generation"
         required: false
         type: string
+      env_vars:
+        description: |
+          Any required environment variables to set for the speakeasy run execution. Set as a string with each entry of the form "key=value".
+  
+          Example: 
+            env_vars: |
+              SPECIFICATION_URL=https://api.example.com/swagger.json
+          Where .speakeasy/workflow.yaml contains:
+            sources:
+              my-source:
+                inputs:
+                  - location: $SPECIFICATION_URL
+
+          Note: This should not be used for secrets as inputs will *not* be masked. Something akin to $npm_token should be explicitly passed as a secret.
+        required: false
+        type: string
       dotnet_version:
         description: "The version of dotnet to use when compiling the C# SDK"
         required: false
@@ -160,6 +176,7 @@ jobs:
           registry_tags: ${{ inputs.registry_tags }}
           push_code_samples_only: ${{ inputs.push_code_samples }}
           set_version: ${{ inputs.set_version }}
+          env_vars: ${{ inputs.env_vars }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:

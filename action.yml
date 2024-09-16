@@ -1,6 +1,6 @@
 # action.yml
-name: Speakeasy SDK Workflow Runner Action (alpha)
-description: The Speakeasy Generation Action isto be run via the workflows provided in this repo and is not intended to be run directly.
+name: Speakeasy SDK Workflow Runner Action
+description: The Speakeasy Generation Action is to be run via the workflows provided in this repo and is not intended to be run directly.
 inputs:
   speakeasy_version:
     description: The version of the Speakeasy CLI to use or "latest"
@@ -86,6 +86,10 @@ inputs:
     required: false
   set_version:
     description: "Version to manually set for SDK generation"
+    required: false
+  env_vars:
+    description: |
+      Extra environment variables to set for the speakeasy run execution.
     required: false
 outputs:
   publish_python:
@@ -190,3 +194,4 @@ runs:
     - ${{ inputs.sources }}
     - ${{ inputs.code_samples }}
     - ${{ inputs.set_version }}
+    - ${{ inputs.env_vars }}

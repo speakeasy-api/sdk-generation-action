@@ -2,7 +2,9 @@ package environment
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -52,6 +54,25 @@ func GetBaseDir() string {
 
 func IsDebugMode() bool {
 	return os.Getenv("INPUT_DEBUG") == "true" || os.Getenv("RUNNER_DEBUG") == "1"
+}
+
+func SpeakeasyEnvVars() []string {
+	rawEnv := os.Getenv("INPUT_ENV_VARS")
+	if len(rawEnv) == 0 {
+		return []string{}
+	}
+	src, err := godotenv.Unmarshal(rawEnv)
+	if err != nil {
+		fmt.Printf("Error: Failed to parse env vars from %s: %s\n", rawEnv, err)
+		return []string{}
+	}
+
+	var result []string
+	for k, v := range src {
+		result = append(result, fmt.Sprintf("%s=%s", k, v))
+	}
+	sort.Strings(result)
+	return result
 }
 
 func ForceGeneration() bool {
