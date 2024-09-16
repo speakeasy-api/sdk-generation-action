@@ -48,6 +48,11 @@ on:
         description: "Version to manually set for SDK generation"
         required: false
         type: string
+      dotnet_version:
+        description: "The version of dotnet to use when compiling the C# SDK"
+        required: false
+        type: string
+        default: "5.x"
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
