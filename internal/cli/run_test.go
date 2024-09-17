@@ -86,7 +86,7 @@ func Test_environmentVariables(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set the environment variable
-			os.Setenv("INPUT_ENV_VARS", tt.input)
+			os.Setenv("INPUT_CLI_ENVIRONMENT_VARIABLES", tt.input)
 
 			// Call the function
 			result := environment.SpeakeasyEnvVars()
@@ -95,7 +95,7 @@ func Test_environmentVariables(t *testing.T) {
 			assert.Equal(t, tt.expected, result, "The result should match the expected output")
 
 			// Clean up
-			os.Unsetenv("INPUT_ENV_VARS")
+			os.Unsetenv("INPUT_CLI_ENVIRONMENT_VARIABLES")
 		})
 	}
 }
