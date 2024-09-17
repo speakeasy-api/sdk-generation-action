@@ -48,12 +48,12 @@ on:
         description: "Version to manually set for SDK generation"
         required: false
         type: string
-      env_vars:
+      environment:
         description: |
           Any required environment variables to set for the speakeasy run execution. Set as a string with each entry of the form "key=value".
   
           Example: 
-            env_vars: |
+            environment: |
               SPECIFICATION_URL=https://api.example.com/swagger.json
           Where .speakeasy/workflow.yaml contains:
             sources:
@@ -176,7 +176,7 @@ jobs:
           registry_tags: ${{ inputs.registry_tags }}
           push_code_samples_only: ${{ inputs.push_code_samples }}
           set_version: ${{ inputs.set_version }}
-          env_vars: ${{ inputs.env_vars }}
+          cli_environment_variables: ${{ inputs.environment }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:

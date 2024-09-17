@@ -57,7 +57,7 @@ func IsDebugMode() bool {
 }
 
 func SpeakeasyEnvVars() []string {
-	rawEnv := os.Getenv("INPUT_ENV_VARS")
+	rawEnv := os.Getenv("INPUT_CLI_ENVIRONMENT_VARIABLES")
 	if len(rawEnv) == 0 {
 		return []string{}
 	}

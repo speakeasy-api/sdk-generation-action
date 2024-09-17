@@ -87,7 +87,7 @@ inputs:
   set_version:
     description: "Version to manually set for SDK generation"
     required: false
-  env_vars:
+  cli_environment_variables:
     description: |
       Extra environment variables to set for the speakeasy run execution.
     required: false
@@ -194,4 +194,4 @@ runs:
     - ${{ inputs.sources }}
     - ${{ inputs.code_samples }}
     - ${{ inputs.set_version }}
-    - ${{ inputs.env_vars }}
+    - ${{ inputs.cli_environment_variables }}
