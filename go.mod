@@ -5,10 +5,10 @@ go 1.22.4
 require (
 	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.11.0
-	github.com/google/go-github/v54 v54.0.0
 	github.com/google/go-github/v63 v63.0.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.6.0
+	github.com/joho/godotenv v1.5.1
 	github.com/pb33f/libopenapi v0.14.0
 	github.com/speakeasy-api/git-diff-parser v0.0.3
 	github.com/speakeasy-api/sdk-gen-config v1.7.4
