@@ -305,7 +305,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - name: Publish
-        uses: speakeasy-api/packagist-update@support-github-creation
+        uses: speakeasy-api/packagist-update@debug-packagist-fourothree
         with:
           username: ${{ secrets.packagist_username }}
           api_token: ${{ secrets.packagist_token }}
