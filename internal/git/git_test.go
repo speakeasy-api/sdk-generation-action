@@ -105,3 +105,156 @@ func TestGit_CheckDirDirty_IgnoredFiles(t *testing.T) {
 	require.Equal(t, "", str, "expected no dirty files reported")
 	require.False(t, dirty, "expected the directory to be clean")
 }
+
+func TestArtifactMatchesRelease(t *testing.T) {
+	tests := []struct {
+		name      string
+		assetName string
+		goos      string
+		goarch    string
+		want      bool
+	}{
+		{
+			name:      "Linux amd64",
+			assetName: "speakeasy_linux_amd64.zip",
+			goos:      "linux",
+			goarch:    "amd64",
+			want:      true,
+		},
+		{
+			name:      "Linux 386",
+			assetName: "speakeasy_linux_386.zip",
+			goos:      "linux",
+			goarch:    "386",
+			want:      true,
+		},
+		{
+			name:      "Linux arm64",
+			assetName: "speakeasy_linux_arm64.zip",
+			goos:      "linux",
+			goarch:    "arm64",
+			want:      true,
+		},
+		{
+			name:      "macOS amd64",
+			assetName: "speakeasy_darwin_amd64.zip",
+			goos:      "darwin",
+			goarch:    "amd64",
+			want:      true,
+		},
+		{
+			name:      "Linux arm64/v8",
+			assetName: "speakeasy_linux_arm64.zip",
+			goos:      "linux",
+			goarch:    "arm64/v8",
+			want:      true,
+		},
+		{
+			name:      "macOS arm64",
+			assetName: "speakeasy_darwin_arm64.zip",
+			goos:      "darwin",
+			goarch:    "arm64",
+			want:      true,
+		},
+		{
+			name:      "Windows amd64",
+			assetName: "speakeasy_windows_amd64.zip",
+			goos:      "windows",
+			goarch:    "amd64",
+			want:      true,
+		},
+		{
+			name:      "Windows 386",
+			assetName: "speakeasy_windows_386.zip",
+			goos:      "windows",
+			goarch:    "386",
+			want:      true,
+		},
+		{
+			name:      "Windows arm64",
+			assetName: "speakeasy_windows_arm64.zip",
+			goos:      "windows",
+			goarch:    "arm64",
+			want:      true,
+		},
+		{
+			name:      "Mismatched OS",
+			assetName: "speakeasy_linux_amd64.zip",
+			goos:      "darwin",
+			goarch:    "amd64",
+			want:      false,
+		},
+		{
+			name:      "Mismatched arch",
+			assetName: "speakeasy_linux_amd64.zip",
+			goos:      "linux",
+			goarch:    "arm64",
+			want:      false,
+		},
+		{
+			name:      "Checksums file",
+			assetName: "checksums.txt",
+			goos:      "linux",
+			goarch:    "amd64",
+			want:      false,
+		},
+		{
+			name:      "Source code zip",
+			assetName: "Source code (zip)",
+			goos:      "linux",
+			goarch:    "amd64",
+			want:      false,
+		},
+		{
+			name:      "Source code tar.gz",
+			assetName: "Source code (tar.gz)",
+			goos:      "linux",
+			goarch:    "amd64",
+			want:      false,
+		},
+		{
+			name:      "Incorrect file extension",
+			assetName: "speakeasy_linux_amd64.tar.gz",
+			goos:      "linux",
+			goarch:    "amd64",
+			want:      false,
+		},
+		{
+			name:      "Missing architecture",
+			assetName: "speakeasy_linux.zip",
+			goos:      "linux",
+			goarch:    "amd64",
+			want:      false,
+		},
+		{
+			name:      "Wrong order of segments",
+			assetName: "speakeasy_amd64_linux.zip",
+			goos:      "linux",
+			goarch:    "amd64",
+			want:      false,
+		},
+		{
+			name:      "Partial match in OS",
+			assetName: "speakeasy_darwin_amd64.zip",
+			goos:      "dar",
+			goarch:    "amd64",
+			want:      false,
+		},
+		{
+			name:      "Partial match in arch",
+			assetName: "speakeasy_linux_amd64.zip",
+			goos:      "linux",
+			goarch:    "amd",
+			want:      false,
+		},
+
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ArtifactMatchesRelease(tt.assetName, tt.goos, tt.goarch); got != tt.want {
+				t.Errorf("ArtifactMatchesRelease() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
