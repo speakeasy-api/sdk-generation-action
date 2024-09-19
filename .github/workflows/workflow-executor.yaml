@@ -3,6 +3,11 @@ name: Speakeasy SDK Generation Workflow
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: The GitHub Action Runner
+        default: ubuntu-latest
+        required: false
+        type: string
       speakeasy_version:
         description: The version of the Speakeasy CLI to use or "latest"
         default: latest
@@ -121,7 +126,7 @@ on:
 jobs:
   run-workflow:
     name: Generate Target
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     outputs:
       commit_hash: ${{ steps.run-workflow.outputs.commit_hash }}
       publish_python: ${{ steps.run-workflow.outputs.publish_python }}
@@ -212,7 +217,7 @@ jobs:
       needs.run-workflow.outputs.publish_python == 'true'
       && inputs.mode != 'pr' }}
     name: Publish Python SDK
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -301,7 +306,7 @@ jobs:
       needs.run-workflow.outputs.publish_typescript == 'true'
       && inputs.mode != 'pr' }}
     name: Publish Typescript SDK
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -371,7 +376,7 @@ jobs:
       needs.run-workflow.outputs.publish_java == 'true'
       && inputs.mode != 'pr' }}
     name: Publish Java SDK
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -457,7 +462,7 @@ jobs:
       needs.run-workflow.outputs.publish_ruby == 'true'
       && inputs.mode != 'pr' }}
     name: Publish Ruby SDK
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -532,7 +537,7 @@ jobs:
       needs.run-workflow.outputs.publish_csharp == 'true'
       && inputs.mode != 'pr' }}
     name: Publish C# SDK
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -597,7 +602,7 @@ jobs:
       needs.run-workflow.outputs.publish_php == 'true'
       && inputs.mode != 'pr' }}
     name: Publish PHP SDK
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
