@@ -24,7 +24,7 @@ RUN apk add git
 RUN apk add --update --no-cache nodejs npm
 
 ### Install Python
-RUN apk add --update --no-cache python3 py3-pip python3-dev
+RUN apk add --update --no-cache python3 py3-pip python3-dev build-base
 
 ### Install Poetry and validate
 RUN apk add --update --no-cache poetry
