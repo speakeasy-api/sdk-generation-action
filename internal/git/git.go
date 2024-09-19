@@ -923,7 +923,7 @@ func ArtifactMatchesRelease(assetName, goos, goarch string) bool {
 	}
 
 	// Remove the .zip suffix and split into segments
-	assetNameLower = strings.TrimSuffix(assetNameLower, ".zip")
+	assetNameLower = strings.ToLower(strings.TrimSuffix(assetNameLower, ".zip"))
 	segments := strings.Split(assetNameLower, "_")
 
 	// Ensure we have at least 3 segments (name_os_arch)
@@ -958,7 +958,7 @@ func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version s
 					defaultTagName = release.TagName
 				}
 
-				if ArtifactMatchesRelease(asset.GetName(), runtime.GOOS, runtime.GOARCH) {
+				if ArtifactMatchesRelease(asset.GetName(), strings.ToLower(runtime.GOOS), strings.ToLower(runtime.GOARCH)) {
 					return &downloadUrl, release.TagName
 				}
 			}
