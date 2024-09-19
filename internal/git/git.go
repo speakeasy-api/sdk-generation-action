@@ -914,26 +914,58 @@ func (g *Git) GetDownloadLink(version string) (string, string, error) {
 	}
 }
 
+func ArtifactMatchesRelease(assetName, goos, goarch string) bool {
+	assetNameLower := strings.ToLower(assetName)
+
+	// Ignore non-zip files
+	if !strings.HasSuffix(assetNameLower, ".zip") {
+		return false
+	}
+
+	// Remove the .zip suffix and split into segments
+	assetNameLower = strings.ToLower(strings.TrimSuffix(assetNameLower, ".zip"))
+	segments := strings.Split(assetNameLower, "_")
+
+	// Ensure we have at least 3 segments (name_os_arch)
+	if len(segments) < 3 {
+		return false
+	}
+
+	// Check if the second segment (OS) matches
+	if segments[1] != goos {
+		return false
+	}
+
+
+	// Check if the third segment (arch) is a prefix of goarch
+	// This handles cases like "arm64" matching "arm64/v8"
+	return strings.HasPrefix(goarch, segments[2])
+}
+
+
 func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version string) (*string, *string) {
+	defaultAsset := "speakeasy_linux_amd64.zip"
+	var defaultDownloadUrl *string
+	var defaultTagName *string
+
 	for _, release := range releases {
 		for _, asset := range release.Assets {
 			if version == "latest" || version == release.GetTagName() {
-				curOS := runtime.GOOS
-				curArch := runtime.GOARCH
 				downloadUrl := asset.GetBrowserDownloadURL()
+				// default one is linux/amd64 which represents ubuntu-latest github actions
+				if asset.GetName() == defaultAsset {
+					defaultDownloadUrl = &downloadUrl
+					defaultTagName = release.TagName
+				}
 
-				// https://github.com/speakeasy-api/sdk-generation-action/pull/28#discussion_r1213129634
-				if curOS == "linux" && (strings.Contains(strings.ToLower(asset.GetName()), "_linux_x86_64") || strings.Contains(strings.ToLower(asset.GetName()), "_linux_amd64")) {
-					return &downloadUrl, release.TagName
-				} else if strings.Contains(strings.ToLower(asset.GetName()), curOS) &&
-					strings.Contains(strings.ToLower(asset.GetName()), curArch) {
+				if ArtifactMatchesRelease(asset.GetName(), strings.ToLower(runtime.GOOS), strings.ToLower(runtime.GOARCH)) {
 					return &downloadUrl, release.TagName
 				}
 			}
 		}
 	}
 
-	return nil, nil
+	return defaultDownloadUrl, defaultTagName
 }
 
 func (g *Git) GetCommitedFiles() ([]string, error) {
