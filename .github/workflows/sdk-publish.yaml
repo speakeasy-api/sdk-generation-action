@@ -97,7 +97,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v15.26.0
+        uses: speakeasy-api/sdk-generation-action@v15.26.2
         with:
           github_access_token: ${{ secrets.github_access_token }}
           action: "release"
@@ -158,7 +158,7 @@ jobs:
           python setup.py sdist bdist_wheel
           twine upload dist/*
       - id: publish-event
-        uses: speakeasy-api/sdk-generation-action@v15.26.0
+        uses: speakeasy-api/sdk-generation-action@v15
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -206,7 +206,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: npm publish --access public
       - id: publish-event
-        uses: speakeasy-api/sdk-generation-action@v15.26.0
+        uses: speakeasy-api/sdk-generation-action@v15
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -312,7 +312,7 @@ jobs:
           package_name: ${{ github.repository }}
           package_base_url: ${{ github.server_url }}
       - id: publish-event
-        uses: speakeasy-api/sdk-generation-action@v15.26.0
+        uses: speakeasy-api/sdk-generation-action@v15.26.2
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
