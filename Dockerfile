@@ -20,11 +20,12 @@ FROM golang:1.22-alpine3.20
 RUN apk update
 RUN apk add git
 
-### Install Node
+### Install Node / NPM
 RUN apk add --update --no-cache nodejs npm
+RUN npm install -g pnpm # install pnpm
 
 ### Install Python
-RUN apk add --update --no-cache python3 py3-pip python3-dev build-base
+RUN apk add --update --no-cache python3 py3-pip python3-dev
 
 ### Install Poetry and validate
 RUN apk add --update --no-cache poetry
