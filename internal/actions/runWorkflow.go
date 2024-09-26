@@ -63,7 +63,7 @@ func RunWorkflow() error {
 	}
 
 	// We want to stay on main if we're pushing code samples because we want to tag the code samples with `main`
-	if !environment.PushCodeSamplesOnly() {
+	if !environment.PushCodeSamplesOnly() && mode != environment.ModeTest {
 		branchName, err = g.FindOrCreateBranch(branchName, environment.ActionRunWorkflow)
 		if err != nil {
 			return err
@@ -72,7 +72,7 @@ func RunWorkflow() error {
 
 	success := false
 	defer func() {
-		if (!success || environment.GetMode() == environment.ModeDirect) && !environment.IsDebugMode() {
+		if (!success || environment.GetMode() == environment.ModeDirect) && !environment.IsDebugMode() && mode != environment.ModeTest {
 			if err := g.DeleteBranch(branchName); err != nil {
 				logging.Debug("failed to delete branch %s: %v", branchName, err)
 			}
@@ -166,6 +166,13 @@ func RunWorkflow() error {
 		}
 	}
 
+	// If test mode is successful to this point, exit here
+	if mode == environment.ModeTest {
+		success = true
+
+		return nil
+	}
+
 	if err := finalize(finalizeInputs{
 		Outputs:              outputs,
 		BranchName:           branchName,
@@ -246,6 +253,27 @@ func finalize(inputs finalizeInputs) error {
 			return err
 		}
 	case environment.ModeDirect:
+		var releaseInfo *releases.ReleasesInfo
+		if !inputs.SourcesOnly {
+			releaseInfo, err = getReleasesInfo()
+			if err != nil {
+				return err
+			}
+		}
+
+		commitHash, err := inputs.Git.MergeBranch(branchName)
+		if err != nil {
+			return err
+		}
+
+		if !inputs.SourcesOnly && environment.CreateGitRelease() {
+			if err := inputs.Git.CreateRelease(*releaseInfo, inputs.Outputs); err != nil {
+				return err
+			}
+		}
+
+		inputs.Outputs["commit_hash"] = commitHash
+	case environment.ModeTest:
 		var releaseInfo *releases.ReleasesInfo
 		if !inputs.SourcesOnly {
 			releaseInfo, err = getReleasesInfo()

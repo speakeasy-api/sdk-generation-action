@@ -3,8 +3,10 @@ package actions
 import (
 	"encoding/base64"
 	"fmt"
-	"golang.org/x/exp/rand"
 	"os"
+
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"golang.org/x/exp/rand"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 )
@@ -44,8 +46,11 @@ func setOutputs(outputs map[string]string) error {
 
 func printAndWriteString(f *os.File, out string) error {
 	fmt.Print(out)
-	if _, err := f.WriteString(out); err != nil {
-		return fmt.Errorf("error writing output: %w", err)
+	// We only want to print outputs if we are in test mode
+	if environment.GetMode() != environment.ModeTest {
+		if _, err := f.WriteString(out); err != nil {
+			return fmt.Errorf("error writing output: %w", err)
+		}
 	}
 	return nil
 }

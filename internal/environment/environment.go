@@ -16,6 +16,7 @@ type Mode string
 const (
 	ModeDirect Mode = "direct"
 	ModePR     Mode = "pr"
+	ModeTest   Mode = "test"
 )
 
 type Action string
