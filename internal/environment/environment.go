@@ -2,12 +2,13 @@ package environment
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 type Mode string
@@ -217,6 +218,10 @@ func GetOpenAPIDocAuthHeader() string {
 
 func GetOpenAPIDocAuthToken() string {
 	return os.Getenv("INPUT_OPENAPI_DOC_AUTH_TOKEN")
+}
+
+func GetPnpmVersion() string {
+	return os.Getenv("INPUT_PNPM_VERSION")
 }
 
 func GetWorkflowName() string {

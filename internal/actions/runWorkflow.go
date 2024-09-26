@@ -24,6 +24,10 @@ func RunWorkflow() error {
 		return err
 	}
 
+	if err := SetupEnvironment(); err != nil {
+		return fmt.Errorf("failed to setup environment: %w", err)
+	}
+
 	// The top-level CLI can always use latest. The CLI itself manages pinned versions.
 	resolvedVersion, err := cli.Download("latest", g)
 	if err != nil {
