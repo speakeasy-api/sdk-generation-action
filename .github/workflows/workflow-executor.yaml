@@ -56,7 +56,7 @@ on:
       environment:
         description: |
           Any required environment variables to set for the speakeasy run execution. Set as a string with each entry of the form "key=value".
-  
+
           Example: 
             environment: |
               SPECIFICATION_URL=https://api.example.com/swagger.json
@@ -74,6 +74,10 @@ on:
         required: false
         type: string
         default: "5.x"
+      pnpm_version:
+        description: "Version of pnpm to install. Not recommended for use without consulting Speakeasy support."
+        required: false
+        type: string
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -182,6 +186,7 @@ jobs:
           push_code_samples_only: ${{ inputs.push_code_samples }}
           set_version: ${{ inputs.set_version }}
           cli_environment_variables: ${{ inputs.environment }}
+          pnpm_version: ${{ inputs.pnpm_version }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
