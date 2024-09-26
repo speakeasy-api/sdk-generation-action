@@ -198,3 +198,4 @@ runs:
     - ${{ inputs.code_samples }}
     - ${{ inputs.set_version }}
     - ${{ inputs.cli_environment_variables }}
+    - ${{ inputs.pnpm_version }}
