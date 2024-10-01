@@ -58,6 +58,10 @@ func IsDebugMode() bool {
 	return os.Getenv("INPUT_DEBUG") == "true" || os.Getenv("RUNNER_DEBUG") == "1"
 }
 
+func IsTestMode() bool {
+	return GetMode() == ModeTest
+}
+
 func SpeakeasyEnvVars() []string {
 	rawEnv := os.Getenv("INPUT_CLI_ENVIRONMENT_VARIABLES")
 	if len(rawEnv) == 0 {

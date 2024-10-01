@@ -46,8 +46,8 @@ func setOutputs(outputs map[string]string) error {
 
 func printAndWriteString(f *os.File, out string) error {
 	fmt.Print(out)
-	// We only want to print outputs if we are in test mode
-	if environment.GetMode() != environment.ModeTest {
+	// We always print outputs. We don't actually write outputs in test mode
+	if !environment.IsTestMode() {
 		if _, err := f.WriteString(out); err != nil {
 			return fmt.Errorf("error writing output: %w", err)
 		}

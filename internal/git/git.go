@@ -358,7 +358,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	}
 
 	// In test mode do not commit and push, just move forward
-	if environment.GetMode() == environment.ModeTest {
+	if environment.IsTestMode() {
 		return "", nil
 	}
 
