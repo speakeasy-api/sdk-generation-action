@@ -63,7 +63,7 @@ func RunWorkflow() error {
 	}
 
 	// We want to stay on main if we're pushing code samples because we want to tag the code samples with `main`
-	if !environment.PushCodeSamplesOnly() {
+	if !environment.PushCodeSamplesOnly() && !environment.IsTestMode() {
 		branchName, err = g.FindOrCreateBranch(branchName, environment.ActionRunWorkflow)
 		if err != nil {
 			return err
@@ -72,7 +72,7 @@ func RunWorkflow() error {
 
 	success := false
 	defer func() {
-		if (!success || environment.GetMode() == environment.ModeDirect) && !environment.IsDebugMode() {
+		if shouldDeleteBranch(success) {
 			if err := g.DeleteBranch(branchName); err != nil {
 				logging.Debug("failed to delete branch %s: %v", branchName, err)
 			}
@@ -166,6 +166,12 @@ func RunWorkflow() error {
 		}
 	}
 
+	// If test mode is successful to this point, exit here
+	if environment.IsTestMode() {
+		success = true
+		return nil
+	}
+
 	if err := finalize(finalizeInputs{
 		Outputs:              outputs,
 		BranchName:           branchName,
@@ -183,6 +189,11 @@ func RunWorkflow() error {
 	success = true
 
 	return nil
+}
+
+func shouldDeleteBranch(isSuccess bool) bool {
+	isDirectMode := environment.GetMode() == environment.ModeDirect
+	return !environment.IsDebugMode() && !environment.IsTestMode() && (isDirectMode || !isSuccess)
 }
 
 type finalizeInputs struct {

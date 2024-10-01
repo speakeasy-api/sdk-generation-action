@@ -16,6 +16,7 @@ type Mode string
 const (
 	ModeDirect Mode = "direct"
 	ModePR     Mode = "pr"
+	ModeTest   Mode = "test"
 )
 
 type Action string
@@ -55,6 +56,10 @@ func GetBaseDir() string {
 
 func IsDebugMode() bool {
 	return os.Getenv("INPUT_DEBUG") == "true" || os.Getenv("RUNNER_DEBUG") == "1"
+}
+
+func IsTestMode() bool {
+	return GetMode() == ModeTest
 }
 
 func SpeakeasyEnvVars() []string {

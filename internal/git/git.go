@@ -357,6 +357,11 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("repo not cloned")
 	}
 
+	// In test mode do not commit and push, just move forward
+	if environment.IsTestMode() {
+		return "", nil
+	}
+
 	w, err := g.repo.Worktree()
 	if err != nil {
 		return "", fmt.Errorf("error getting worktree: %w", err)
@@ -936,12 +941,10 @@ func ArtifactMatchesRelease(assetName, goos, goarch string) bool {
 		return false
 	}
 
-
 	// Check if the third segment (arch) is a prefix of goarch
 	// This handles cases like "arm64" matching "arm64/v8"
 	return strings.HasPrefix(goarch, segments[2])
 }
-
 
 func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version string) (*string, *string) {
 	defaultAsset := "speakeasy_linux_amd64.zip"
