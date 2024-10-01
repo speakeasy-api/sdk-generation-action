@@ -46,7 +46,7 @@ func setOutputs(outputs map[string]string) error {
 
 func printAndWriteString(f *os.File, out string) error {
 	fmt.Print(out)
-	// We always print outputs. We don't actually write outputs in test mode
+	// Don't persist outputs to GH actions if we are in test mode
 	if !environment.IsTestMode() {
 		if _, err := f.WriteString(out); err != nil {
 			return fmt.Errorf("error writing output: %w", err)
