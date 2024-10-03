@@ -36,7 +36,7 @@ func Release() error {
 			return err
 		}
 		if target, ok := workflow.Targets[environment.SpecifiedTarget()]; ok && target.Output != nil {
-			dir = *target.Output
+			dir = strings.TrimPrefix(*target.Output, "./")
 		}
 		dir = filepath.Join(environment.GetWorkingDirectory(), dir)
 	}

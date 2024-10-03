@@ -164,7 +164,6 @@ func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
 }
 
 func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, error) {
-	path = strings.TrimPrefix(path, "./")
 	cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", path))
 	if err != nil {
 		return nil, err
