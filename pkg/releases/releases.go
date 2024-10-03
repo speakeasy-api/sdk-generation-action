@@ -182,17 +182,19 @@ func GetReleaseInfoFromGenerationFiles(dir string) (*ReleasesInfo, error) {
 		LanguagesGenerated: map[string]GenerationInfo{},
 	}
 
-	if lockFile.Management.Published {
-		for lang, info := range cfgFile.Languages {
+	for lang, info := range cfgFile.Languages {
+		// See other pieces of action code, go is always published
+		if lockFile.Management.Published || lang == "go" {
 			releaseInfo.Languages[lang] = LanguageReleaseInfo{
 				PackageName: utils.GetPackageName(lang, &info),
 				Version:     lockFile.Management.ReleaseVersion,
 				Path:        dir,
 			}
-			releaseInfo.LanguagesGenerated[lang] = GenerationInfo{
-				Version: lockFile.Management.ReleaseVersion,
-				Path:    dir,
-			}
+		}
+
+		releaseInfo.LanguagesGenerated[lang] = GenerationInfo{
+			Version: lockFile.Management.ReleaseVersion,
+			Path:    dir,
 		}
 	}
 
