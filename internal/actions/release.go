@@ -28,6 +28,7 @@ func Release() error {
 
 	dir := "."
 	usingReleasesMd := false
+	// TODO: Maybe instead check for workflow dispatch event
 	providesExplicitTarget := environment.SpecifiedTarget() != ""
 	if providesExplicitTarget {
 		workflow, err := configuration.GetWorkflowAndValidateLanguages(true)
