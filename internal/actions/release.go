@@ -37,6 +37,7 @@ func Release() error {
 		if target, ok := workflow.Targets[environment.SpecifiedTarget()]; ok && target.Output != nil {
 			dir = *target.Output
 		}
+		dir = filepath.Join(environment.GetWorkingDirectory(), dir)
 	}
 
 	if !providesExplicitTarget {
@@ -63,6 +64,7 @@ func Release() error {
 
 			if strings.Contains(file, "gen.lock") {
 				dir = filepath.Dir(file)
+				dir = filepath.Dir(strings.ReplaceAll(dir, "/.speakeasy", ""))
 				dir = filepath.Dir(strings.ReplaceAll(dir, ".speakeasy", ""))
 				logging.Info("Found gen.lock in %s\n", dir)
 				break

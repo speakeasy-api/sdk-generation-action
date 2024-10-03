@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
@@ -162,8 +163,9 @@ func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
 	return ParseReleases(string(data))
 }
 
-func GetReleaseInfoFromGenerationFiles(dir string) (*ReleasesInfo, error) {
-	cfg, err := config.Load(dir)
+func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, error) {
+	path = strings.TrimPrefix(path, "./")
+	cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", path))
 	if err != nil {
 		return nil, err
 	}
@@ -188,20 +190,20 @@ func GetReleaseInfoFromGenerationFiles(dir string) (*ReleasesInfo, error) {
 		if lockFile.Management.Published || lang == "go" {
 			packageName := utils.GetPackageName(lang, &info)
 			// swift and go expects specific package formatting when writing a github release
-			if dir != "" && dir != "." && slices.Contains([]string{"go", "swift"}, lang) {
-				packageName = fmt.Sprintf("%s/%s", packageName, strings.TrimPrefix(dir, "./"))
+			if path != "" && path != "." && slices.Contains([]string{"go", "swift"}, lang) {
+				packageName = fmt.Sprintf("%s/%s", packageName, strings.TrimPrefix(path, "./"))
 			}
 
 			releaseInfo.Languages[lang] = LanguageReleaseInfo{
 				PackageName: utils.GetPackageName(lang, &info),
 				Version:     lockFile.Management.ReleaseVersion,
-				Path:        dir,
+				Path:        path,
 			}
 		}
 
 		releaseInfo.LanguagesGenerated[lang] = GenerationInfo{
 			Version: lockFile.Management.ReleaseVersion,
-			Path:    dir,
+			Path:    path,
 		}
 	}
 
