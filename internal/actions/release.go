@@ -3,9 +3,10 @@ package actions
 import (
 	"errors"
 	"fmt"
-	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 	"path/filepath"
 	"strings"
+
+	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 
@@ -25,30 +26,61 @@ func Release() error {
 		return err
 	}
 
-	files, err := g.GetCommitedFiles()
-	if err != nil {
-		fmt.Printf("Failed to get commited files: %s\n", err.Error())
-	}
-
-	if environment.IsDebugMode() {
-		for _, file := range files {
-			logging.Debug("Found commited file: %s", file)
-		}
-	}
-
 	dir := "."
-
-	for _, file := range files {
-		if strings.Contains(file, "RELEASES.md") {
-			dir = filepath.Dir(file)
-			logging.Info("Found RELEASES.md in %s\n", dir)
-			break
+	usingReleasesMd := false
+	providesExplicitTarget := environment.SpecifiedTarget() != ""
+	if providesExplicitTarget {
+		workflow, err := configuration.GetWorkflowAndValidateLanguages(true)
+		if err != nil {
+			return err
+		}
+		if target, ok := workflow.Targets[environment.SpecifiedTarget()]; ok && target.Output != nil {
+			dir = *target.Output
 		}
 	}
 
-	latestRelease, err := releases.GetLastReleaseInfo(dir)
-	if err != nil {
-		return err
+	if !providesExplicitTarget {
+		// This searches for files that would be referenced in the GH Action trigger
+		files, err := g.GetCommitedFiles()
+		if err != nil {
+			fmt.Printf("Failed to get commited files: %s\n", err.Error())
+		}
+
+		if environment.IsDebugMode() {
+			for _, file := range files {
+				logging.Debug("Found commited file: %s", file)
+			}
+		}
+
+		for _, file := range files {
+			// Maintain Support for RELEASES.MD for backward compatibility with existing publishing actions
+			if strings.Contains(file, "RELEASES.md") {
+				dir = filepath.Dir(file)
+				logging.Info("Found RELEASES.md in %s\n", dir)
+				usingReleasesMd = true
+				break
+			}
+
+			if strings.Contains(file, "gen.lock") {
+				dir = filepath.Dir(file)
+				dir = filepath.Dir(strings.ReplaceAll(dir, ".speakeasy", ""))
+				logging.Info("Found gen.lock in %s\n", dir)
+				break
+			}
+		}
+	}
+
+	var latestRelease *releases.ReleasesInfo
+	if usingReleasesMd {
+		latestRelease, err = releases.GetLastReleaseInfo(dir)
+		if err != nil {
+			return err
+		}
+	} else {
+		latestRelease, err = releases.GetReleaseInfoFromGenerationFiles(dir)
+		if err != nil {
+			return err
+		}
 	}
 
 	outputs := map[string]string{}

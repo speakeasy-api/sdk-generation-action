@@ -7,8 +7,10 @@ import (
 	"regexp"
 	"strings"
 
+	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
+	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
 )
 
 type LanguageReleaseInfo struct {
@@ -157,6 +159,44 @@ func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
 	}
 
 	return ParseReleases(string(data))
+}
+
+func GetReleaseInfoFromGenerationFiles(dir string) (*ReleasesInfo, error) {
+	cfg, err := config.Load(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	cfgFile := cfg.Config
+	lockFile := cfg.LockFile
+	if cfgFile == nil || lockFile == nil {
+		return nil, fmt.Errorf("config or lock file not found")
+	}
+
+	releaseInfo := ReleasesInfo{
+		ReleaseTitle:       environment.GetInvokeTime().Format("2006-01-02 15:04:05"), // TODO: Add this to gen.lock to get generation time
+		DocVersion:         lockFile.Management.DocVersion,
+		SpeakeasyVersion:   lockFile.Management.SpeakeasyVersion,
+		GenerationVersion:  lockFile.Management.GenerationVersion,
+		Languages:          map[string]LanguageReleaseInfo{},
+		LanguagesGenerated: map[string]GenerationInfo{},
+	}
+
+	if lockFile.Management.Published {
+		for lang, info := range cfgFile.Languages {
+			releaseInfo.Languages[lang] = LanguageReleaseInfo{
+				PackageName: utils.GetPackageName(lang, &info),
+				Version:     lockFile.Management.ReleaseVersion,
+				Path:        dir,
+			}
+			releaseInfo.LanguagesGenerated[lang] = GenerationInfo{
+				Version: lockFile.Management.ReleaseVersion,
+				Path:    dir,
+			}
+		}
+	}
+
+	return &releaseInfo, nil
 }
 
 func ParseReleases(data string) (*ReleasesInfo, error) {
