@@ -190,19 +190,16 @@ func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, error) {
 	}
 
 	for lang, info := range cfgFile.Languages {
-		// See other pieces of action code, go is always published
-		if lockFile.Management.Published || lang == "go" {
-			packageName := utils.GetPackageName(lang, &info)
-			// swift and go expects specific package formatting when writing a github release
-			if path != "" && path != "." && slices.Contains([]string{"go", "swift"}, lang) {
-				packageName = fmt.Sprintf("%s/%s", packageName, strings.TrimPrefix(path, "./"))
-			}
+		packageName := utils.GetPackageName(lang, &info)
+		// swift and go expects specific package formatting when writing a github release
+		if path != "" && path != "." && slices.Contains([]string{"go", "swift"}, lang) {
+			packageName = fmt.Sprintf("%s/%s", packageName, strings.TrimPrefix(path, "./"))
+		}
 
-			releaseInfo.Languages[lang] = LanguageReleaseInfo{
-				PackageName: utils.GetPackageName(lang, &info),
-				Version:     lockFile.Management.ReleaseVersion,
-				Path:        path,
-			}
+		releaseInfo.Languages[lang] = LanguageReleaseInfo{
+			PackageName: utils.GetPackageName(lang, &info),
+			Version:     lockFile.Management.ReleaseVersion,
+			Path:        path,
 		}
 
 		releaseInfo.LanguagesGenerated[lang] = GenerationInfo{
