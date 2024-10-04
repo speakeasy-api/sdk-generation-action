@@ -164,6 +164,8 @@ func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
 }
 
 func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, error) {
+	fmt.Println("WE ARE HERE")
+	fmt.Println(filepath.Join(environment.GetWorkspace(), "repo", path))
 	cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", path))
 	if err != nil {
 		return nil, err
@@ -174,6 +176,9 @@ func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, error) {
 	if cfgFile == nil || lockFile == nil {
 		return nil, fmt.Errorf("config or lock file not found")
 	}
+
+	fmt.Println(lockFile)
+	fmt.Println(cfgFile)
 
 	releaseInfo := ReleasesInfo{
 		ReleaseTitle:       environment.GetInvokeTime().Format("2006-01-02 15:04:05"), // TODO: Add this to gen.lock to get generation time

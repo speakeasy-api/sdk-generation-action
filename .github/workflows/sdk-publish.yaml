@@ -16,6 +16,10 @@ on:
         required: false
         type: string
         default: "5.x"
+      target:
+        description: "Generate a specific target by name"
+        required: false
+        type: string
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -103,6 +107,7 @@ jobs:
           action: "release"
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           working_directory: ${{ inputs.working_directory }}
+          target: ${{ inputs.target }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''

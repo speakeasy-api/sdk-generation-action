@@ -39,6 +39,8 @@ func Release() error {
 			dir = strings.TrimPrefix(*target.Output, "./")
 		}
 		dir = filepath.Join(environment.GetWorkingDirectory(), dir)
+		fmt.Println("THIS PATH")
+		fmt.Println(dir)
 	}
 
 	if !providesExplicitTarget {
@@ -54,6 +56,8 @@ func Release() error {
 			}
 		}
 
+		fmt.Println("THESE FILES")
+		fmt.Println(files)
 		for _, file := range files {
 			// Maintain Support for RELEASES.MD for backward compatibility with existing publishing actions
 			if strings.Contains(file, "RELEASES.md") {
@@ -75,6 +79,7 @@ func Release() error {
 
 	var latestRelease *releases.ReleasesInfo
 	if usingReleasesMd {
+		fmt.Println("USING RELEASES.MD")
 		latestRelease, err = releases.GetLastReleaseInfo(dir)
 		if err != nil {
 			return err
