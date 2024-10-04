@@ -97,7 +97,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.31.0
         with:
           github_access_token: ${{ secrets.github_access_token }}
           action: "release"
@@ -206,7 +206,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: npm publish --access public
       - id: publish-event
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.31.0
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
