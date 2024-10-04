@@ -68,9 +68,13 @@ func Release() error {
 			}
 
 			if strings.Contains(file, "gen.lock") {
+				fmt.Println("Starting transform")
 				dir = filepath.Dir(file)
-				dir = filepath.Dir(strings.ReplaceAll(dir, "/.speakeasy", ""))
-				dir = filepath.Dir(strings.ReplaceAll(dir, ".speakeasy", ""))
+				fmt.Println(dir)
+				dir = strings.ReplaceAll(dir, "/.speakeasy", "")
+				fmt.Println(dir)
+				dir = strings.ReplaceAll(dir, ".speakeasy", "")
+				fmt.Println(dir)
 				logging.Info("Found gen.lock in %s\n", dir)
 				break
 			}
