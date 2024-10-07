@@ -17,7 +17,7 @@ on:
         type: string
         default: "5.x"
       target:
-        description: "Generate a specific target by name"
+        description: "The specific target to publish"
         required: false
         type: string
     secrets:
