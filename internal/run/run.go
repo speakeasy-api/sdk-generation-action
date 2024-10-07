@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v63/github"
+	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
 	"github.com/speakeasy-api/versioning-reports/versioning"
 
 	"github.com/speakeasy-api/sdk-gen-config/workflow"
@@ -202,22 +203,9 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 
 		langCfg := langConfigs[lang]
 
-		switch lang {
-		case "java":
-			langGenInfo[lang] = LanguageGenInfo{
-				PackageName: fmt.Sprintf("%s.%s", langCfg.Cfg["groupID"], langCfg.Cfg["artifactID"]),
-				Version:     langCfg.Version,
-			}
-		case "terraform":
-			langGenInfo[lang] = LanguageGenInfo{
-				PackageName: fmt.Sprintf("%s/%s", langCfg.Cfg["author"], langCfg.Cfg["packageName"]),
-				Version:     langCfg.Version,
-			}
-		default:
-			langGenInfo[lang] = LanguageGenInfo{
-				PackageName: fmt.Sprintf("%s", langCfg.Cfg["packageName"]),
-				Version:     langCfg.Version,
-			}
+		langGenInfo[lang] = LanguageGenInfo{
+			PackageName: utils.GetPackageName(lang, langCfg),
+			Version:     langCfg.Version,
 		}
 
 		regenerated = true

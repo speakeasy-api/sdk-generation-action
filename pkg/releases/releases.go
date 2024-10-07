@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
+	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
+	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
 )
 
 type LanguageReleaseInfo struct {
@@ -157,6 +161,55 @@ func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
 	}
 
 	return ParseReleases(string(data))
+}
+
+func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, error) {
+	cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", path))
+	if err != nil {
+		return nil, err
+	}
+
+	cfgFile := cfg.Config
+	lockFile := cfg.LockFile
+	if cfgFile == nil || lockFile == nil {
+		return nil, fmt.Errorf("config or lock file not found")
+	}
+
+	generationTime := lockFile.Management.GenerationTimestamp
+	// This could not be set on earlier versions of gen.lock
+	if generationTime == "" {
+		generationTime = environment.GetInvokeTime().Format("2006-01-02 15:04:05")
+	}
+
+	releaseInfo := ReleasesInfo{
+		ReleaseTitle:       generationTime,
+		DocVersion:         lockFile.Management.DocVersion,
+		SpeakeasyVersion:   lockFile.Management.SpeakeasyVersion,
+		GenerationVersion:  lockFile.Management.GenerationVersion,
+		Languages:          map[string]LanguageReleaseInfo{},
+		LanguagesGenerated: map[string]GenerationInfo{},
+	}
+
+	for lang, info := range cfgFile.Languages {
+		packageName := utils.GetPackageName(lang, &info)
+		// swift and go expects specific package formatting when writing a github release
+		if path != "" && path != "." && slices.Contains([]string{"go", "swift"}, lang) {
+			packageName = fmt.Sprintf("%s/%s", packageName, strings.TrimPrefix(path, "./"))
+		}
+
+		releaseInfo.Languages[lang] = LanguageReleaseInfo{
+			PackageName: utils.GetPackageName(lang, &info),
+			Version:     lockFile.Management.ReleaseVersion,
+			Path:        path,
+		}
+
+		releaseInfo.LanguagesGenerated[lang] = GenerationInfo{
+			Version: lockFile.Management.ReleaseVersion,
+			Path:    path,
+		}
+	}
+
+	return &releaseInfo, nil
 }
 
 func ParseReleases(data string) (*ReleasesInfo, error) {

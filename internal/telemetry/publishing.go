@@ -9,6 +9,7 @@ import (
 
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
 	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
 )
 
@@ -78,16 +79,8 @@ func processPyPI(cfg *config.Config, event *shared.CliEvent, path string, versio
 
 	event.GenerateTarget = &lang
 
-	var packageName string
-	if name, ok := langCfg.Cfg["packageName"]; ok {
-		if strName, ok := name.(string); ok {
-			packageName = strName
-		}
-	}
-
-	if packageName != "" {
-		event.PublishPackageName = &packageName
-	}
+	packageName := utils.GetPackageName(lang, &langCfg)
+	event.PublishPackageName = &packageName
 
 	if packageName != "" && version != "" {
 		publishURL := fmt.Sprintf("https://pypi.org/project/%s/%s", packageName, version)
@@ -110,16 +103,8 @@ func processNPM(cfg *config.Config, event *shared.CliEvent, path string, version
 
 	event.GenerateTarget = &lang
 
-	var packageName string
-	if name, ok := langCfg.Cfg["packageName"]; ok {
-		if strName, ok := name.(string); ok {
-			packageName = strName
-		}
-	}
-
-	if packageName != "" {
-		event.PublishPackageName = &packageName
-	}
+	packageName := utils.GetPackageName(lang, &langCfg)
+	event.PublishPackageName = &packageName
 
 	if packageName != "" && version != "" {
 		publishURL := fmt.Sprintf("https://www.npmjs.com/package/%s/v/%s", packageName, version)
@@ -142,16 +127,8 @@ func processGo(cfg *config.Config, event *shared.CliEvent, path string, version 
 
 	event.GenerateTarget = &lang
 
-	var packageName string
-	if name, ok := langCfg.Cfg["packageName"]; ok {
-		if strName, ok := name.(string); ok {
-			packageName = strName
-		}
-	}
-
-	if packageName != "" {
-		event.PublishPackageName = &packageName
-	}
+	packageName := utils.GetPackageName(lang, &langCfg)
+	event.PublishPackageName = &packageName
 
 	if packageName != "" && version != "" {
 		relPath, err := filepath.Rel(filepath.Join(environment.GetWorkspace(), "repo"), path)
@@ -184,16 +161,8 @@ func processPackagist(cfg *config.Config, event *shared.CliEvent, path string) e
 
 	event.GenerateTarget = &lang
 
-	var packageName string
-	if name, ok := langCfg.Cfg["packageName"]; ok {
-		if strName, ok := name.(string); ok {
-			packageName = strName
-		}
-	}
-
-	if packageName != "" {
-		event.PublishPackageName = &packageName
-	}
+	packageName := utils.GetPackageName(lang, &langCfg)
+	event.PublishPackageName = &packageName
 
 	if packageName != "" {
 		publishURL := fmt.Sprintf("https://packagist.org/packages/%s", packageName)
@@ -216,16 +185,8 @@ func processNuget(cfg *config.Config, event *shared.CliEvent, path string, versi
 
 	event.GenerateTarget = &lang
 
-	var packageName string
-	if name, ok := langCfg.Cfg["packageName"]; ok {
-		if strName, ok := name.(string); ok {
-			packageName = strName
-		}
-	}
-
-	if packageName != "" {
-		event.PublishPackageName = &packageName
-	}
+	packageName := utils.GetPackageName(lang, &langCfg)
+	event.PublishPackageName = &packageName
 
 	if packageName != "" && version != "" {
 		publishURL := fmt.Sprintf("https://www.nuget.org/packages/%s/%s", packageName, version)
@@ -248,16 +209,8 @@ func processGems(cfg *config.Config, event *shared.CliEvent, path string, versio
 
 	event.GenerateTarget = &lang
 
-	var packageName string
-	if name, ok := langCfg.Cfg["packageName"]; ok {
-		if strName, ok := name.(string); ok {
-			packageName = strName
-		}
-	}
-
-	if packageName != "" {
-		event.PublishPackageName = &packageName
-	}
+	packageName := utils.GetPackageName(lang, &langCfg)
+	event.PublishPackageName = &packageName
 
 	if packageName != "" && version != "" {
 		publishURL := fmt.Sprintf("https://rubygems.org/gems/%s/%s", packageName, version)
@@ -294,11 +247,8 @@ func processSonatype(cfg *config.Config, event *shared.CliEvent, path string, ve
 		}
 	}
 
-	// TODO: Figure out how to represent java legacy publish URL
-	if groupID != "" && artifactID != "" {
-		combinedPackage := fmt.Sprintf("%s/%s", groupID, artifactID)
-		event.PublishPackageName = &combinedPackage
-	}
+	packageName := utils.GetPackageName(lang, &langCfg)
+	event.PublishPackageName = &packageName
 
 	if groupID != "" && artifactID != "" && version != "" {
 		publishURL := fmt.Sprintf("https://central.sonatype.com/artifact/%s/%s/%s", groupID, artifactID, version)
@@ -321,13 +271,6 @@ func processTerraform(cfg *config.Config, event *shared.CliEvent, path string, v
 
 	event.GenerateTarget = &lang
 
-	var packageName string
-	if name, ok := langCfg.Cfg["packageName"]; ok {
-		if strName, ok := name.(string); ok {
-			packageName = strName
-		}
-	}
-
 	var author string
 	if name, ok := langCfg.Cfg["author"]; ok {
 		if strName, ok := name.(string); ok {
@@ -335,9 +278,8 @@ func processTerraform(cfg *config.Config, event *shared.CliEvent, path string, v
 		}
 	}
 
-	if packageName != "" {
-		event.PublishPackageName = &packageName
-	}
+	packageName := utils.GetPackageName(lang, &langCfg)
+	event.PublishPackageName = &packageName
 
 	if packageName != "" && author != "" && version != "" {
 		publishURL := fmt.Sprintf("https://registry.terraform.io/providers/%s/%s/%s", author, packageName, version)
