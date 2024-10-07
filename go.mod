@@ -2,8 +2,6 @@ module github.com/speakeasy-api/sdk-generation-action
 
 go 1.23
 
-toolchain go1.23.2
-
 require (
 	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.11.0
