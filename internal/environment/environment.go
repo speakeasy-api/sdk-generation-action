@@ -205,14 +205,6 @@ func GetInvokeTime() time.Time {
 	return invokeTime
 }
 
-func IsLanguagePublished(lang string) bool {
-	if lang == "go" || lang == "swift" {
-		return true
-	}
-
-	return os.Getenv(fmt.Sprintf("INPUT_PUBLISH_%s", strings.ToUpper(lang))) == "true"
-}
-
 func GetOpenAPIDocAuthHeader() string {
 	return os.Getenv("INPUT_OPENAPI_DOC_AUTH_HEADER")
 }
