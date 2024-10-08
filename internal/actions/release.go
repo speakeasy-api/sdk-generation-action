@@ -28,7 +28,7 @@ func Release() error {
 
 	dir := "."
 	usingReleasesMd := false
-	// TODO: Maybe instead check for workflow dispatch event
+	// We do not currently support specific target workflow dispatch for terraform. This is because terraform relies on release history.
 	providesExplicitTarget := environment.SpecifiedTarget() != ""
 	if providesExplicitTarget {
 		workflow, err := configuration.GetWorkflowAndValidateLanguages(true)
