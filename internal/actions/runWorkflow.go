@@ -102,11 +102,12 @@ func RunWorkflow() error {
 
 	anythingRegenerated := false
 
+	var releaseInfo releases.ReleasesInfo
 	if runRes.GenInfo != nil {
 		docVersion := runRes.GenInfo.OpenAPIDocVersion
 		speakeasyVersion := runRes.GenInfo.SpeakeasyVersion
 
-		releaseInfo := releases.ReleasesInfo{
+		releaseInfo = releases.ReleasesInfo{
 			ReleaseTitle:       environment.GetInvokeTime().Format("2006-01-02 15:04:05"),
 			DocVersion:         docVersion,
 			SpeakeasyVersion:   speakeasyVersion,
@@ -182,6 +183,7 @@ func RunWorkflow() error {
 		LintingReportURL:     runRes.LintingReportURL,
 		ChangesReportURL:     runRes.ChangesReportURL,
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
+		currentRelease:       &releaseInfo,
 	}); err != nil {
 		return err
 	}
@@ -206,6 +208,7 @@ type finalizeInputs struct {
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
 	VersioningReport     *versioning.MergedVersionReport
+	currentRelease       *releases.ReleasesInfo
 }
 
 // Sets outputs and creates or adds releases info
@@ -235,17 +238,9 @@ func finalize(inputs finalizeInputs) error {
 			return err
 		}
 
-		var releaseInfo *releases.ReleasesInfo
-		if !inputs.SourcesOnly {
-			releaseInfo, err = getReleasesInfo()
-			if err != nil {
-				return err
-			}
-		}
-
 		if err := inputs.Git.CreateOrUpdatePR(git.PRInfo{
 			BranchName:           branchName,
-			ReleaseInfo:          releaseInfo,
+			ReleaseInfo:          inputs.currentRelease,
 			PreviousGenVersion:   inputs.Outputs["previous_gen_version"],
 			PR:                   pr,
 			SourceGeneration:     inputs.SourcesOnly,
@@ -259,9 +254,13 @@ func finalize(inputs finalizeInputs) error {
 	case environment.ModeDirect:
 		var releaseInfo *releases.ReleasesInfo
 		if !inputs.SourcesOnly {
-			releaseInfo, err = getReleasesInfo()
-			if err != nil {
-				return err
+			releaseInfo = inputs.currentRelease
+			// TODO: Temporary until we figure out how to handle parsed terraform previous release version
+			if inputs.Outputs["terraform_regenerated"] == "true" {
+				releaseInfo, err = getReleasesInfo()
+				if err != nil {
+					return err
+				}
 			}
 		}
 
