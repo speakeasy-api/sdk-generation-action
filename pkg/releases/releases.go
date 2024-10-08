@@ -175,14 +175,8 @@ func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, error) {
 		return nil, fmt.Errorf("config or lock file not found")
 	}
 
-	generationTime := lockFile.Management.GenerationTimestamp
-	// This could not be set on earlier versions of gen.lock
-	if generationTime == "" {
-		generationTime = environment.GetInvokeTime().Format("2006-01-02 15:04:05")
-	}
-
 	releaseInfo := ReleasesInfo{
-		ReleaseTitle:       generationTime,
+		ReleaseTitle:       environment.GetInvokeTime().Format("2006-01-02 15:04:05"),
 		DocVersion:         lockFile.Management.DocVersion,
 		SpeakeasyVersion:   lockFile.Management.SpeakeasyVersion,
 		GenerationVersion:  lockFile.Management.GenerationVersion,
