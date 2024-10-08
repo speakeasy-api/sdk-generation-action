@@ -34,6 +34,7 @@ func RunWorkflow() error {
 		return err
 	}
 
+	// This flag is generally deprecated, it will not be provided on new action instances
 	pinnedVersion := cli.GetVersion(environment.GetPinnedSpeakeasyVersion())
 	if pinnedVersion != "latest" {
 		resolvedVersion = pinnedVersion
