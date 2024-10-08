@@ -98,18 +98,17 @@ func RunWorkflow() error {
 		}
 		return err
 	}
-	outputs["resolved_speakeasy_version"] = resolvedVersion
 
 	anythingRegenerated := false
 
 	if runRes.GenInfo != nil {
 		docVersion := runRes.GenInfo.OpenAPIDocVersion
-		speakeasyVersion := runRes.GenInfo.SpeakeasyVersion
+		resolvedVersion = runRes.GenInfo.SpeakeasyVersion
 
 		releaseInfo := releases.ReleasesInfo{
 			ReleaseTitle:       environment.GetInvokeTime().Format("2006-01-02 15:04:05"),
 			DocVersion:         docVersion,
-			SpeakeasyVersion:   speakeasyVersion,
+			SpeakeasyVersion:   resolvedVersion,
 			GenerationVersion:  runRes.GenInfo.GenerationVersion,
 			DocLocation:        environment.GetOpenAPIDocLocation(),
 			Languages:          map[string]releases.LanguageReleaseInfo{},
@@ -155,10 +154,12 @@ func RunWorkflow() error {
 			return err
 		}
 
-		if _, err := g.CommitAndPush(docVersion, speakeasyVersion, "", environment.ActionRunWorkflow, false); err != nil {
+		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false); err != nil {
 			return err
 		}
 	}
+
+	outputs["resolved_speakeasy_version"] = resolvedVersion
 
 	if sourcesOnly {
 		if _, err := g.CommitAndPush("", resolvedVersion, "", environment.ActionRunWorkflow, sourcesOnly); err != nil {
