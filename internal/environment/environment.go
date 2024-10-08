@@ -193,10 +193,6 @@ func IsDocsGeneration() bool {
 	return strings.Contains(languages, "docs")
 }
 
-func CreateGitRelease() bool {
-	return IsLanguagePublished("php") || IsLanguagePublished("terraform") || IsLanguagePublished("swift")
-}
-
 func GetAccessToken() string {
 	return os.Getenv("INPUT_GITHUB_ACCESS_TOKEN")
 }

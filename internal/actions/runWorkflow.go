@@ -269,7 +269,7 @@ func finalize(inputs finalizeInputs) error {
 			return err
 		}
 
-		if !inputs.SourcesOnly && environment.CreateGitRelease() {
+		if !inputs.SourcesOnly {
 			if err := inputs.Git.CreateRelease(*releaseInfo, inputs.Outputs); err != nil {
 				return err
 			}

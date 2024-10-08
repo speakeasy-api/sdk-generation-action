@@ -97,10 +97,8 @@ func Release() error {
 		return err
 	}
 
-	if environment.CreateGitRelease() {
-		if err := g.CreateRelease(*latestRelease, outputs); err != nil {
-			return err
-		}
+	if err := g.CreateRelease(*latestRelease, outputs); err != nil {
+		return err
 	}
 
 	if err = setOutputs(outputs); err != nil {
