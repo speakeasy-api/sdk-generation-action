@@ -47,14 +47,16 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 	workspace := environment.GetWorkspace()
 	outputs := map[string]string{}
 
-	speakeasyVersion, err := cli.GetSpeakeasyVersion()
+	executeSpeakeasyVersion, err := cli.GetSpeakeasyVersion()
 	if err != nil {
 		return nil, outputs, fmt.Errorf("failed to get speakeasy version: %w", err)
 	}
-	generationVersion, err := cli.GetGenerationVersion()
+	executeGenerationVersion, err := cli.GetGenerationVersion()
 	if err != nil {
 		return nil, outputs, fmt.Errorf("failed to get generation version: %w", err)
 	}
+	speakeasyVersion := executeSpeakeasyVersion.String()
+	generationVersion := executeGenerationVersion.String()
 
 	langGenerated := map[string]bool{}
 
@@ -186,6 +188,14 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 
 		if dirty {
 			langGenerated[lang] = true
+			// Set speakeasy version and generation version to what was used by the CLI
+			if currentManagementInfo.SpeakeasyVersion != "" {
+				speakeasyVersion = currentManagementInfo.SpeakeasyVersion
+			}
+			if currentManagementInfo.GenerationVersion != "" {
+				generationVersion = currentManagementInfo.GenerationVersion
+			}
+
 			fmt.Printf("Regenerating %s SDK resulted in significant changes %s\n", lang, dirtyMsg)
 		} else {
 			fmt.Printf("Regenerating %s SDK did not result in any changes\n", lang)
@@ -215,8 +225,8 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 
 	if regenerated {
 		genInfo = &GenerationInfo{
-			SpeakeasyVersion:  speakeasyVersion.String(),
-			GenerationVersion: generationVersion.String(),
+			SpeakeasyVersion:  speakeasyVersion,
+			GenerationVersion: generationVersion,
 			// OpenAPIDocVersion: docVersion, //TODO
 			Languages: langGenInfo,
 		}

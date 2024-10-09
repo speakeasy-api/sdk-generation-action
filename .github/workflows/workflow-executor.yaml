@@ -9,7 +9,7 @@ on:
         required: false
         type: string
       speakeasy_version:
-        description: The version of the Speakeasy CLI to use or "latest"
+        description: The version of the Speakeasy CLI to use or "latest" [DEPRECATED]
         default: latest
         required: false
         type: string
