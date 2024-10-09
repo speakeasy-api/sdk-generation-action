@@ -28,17 +28,20 @@ func Release() error {
 
 	dir := "."
 	usingReleasesMd := false
-	// TODO: Maybe instead check for workflow dispatch event
-	providesExplicitTarget := environment.SpecifiedTarget() != ""
-	if providesExplicitTarget {
+	var providesExplicitTarget bool
+	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
 		workflow, err := configuration.GetWorkflowAndValidateLanguages(true)
 		if err != nil {
 			return err
 		}
-		if target, ok := workflow.Targets[environment.SpecifiedTarget()]; ok && target.Output != nil {
-			dir = strings.TrimPrefix(*target.Output, "./")
+		if target, ok := workflow.Targets[specificTarget]; ok {
+			if target.Output != nil {
+				dir = strings.TrimPrefix(*target.Output, "./")
+			}
+
+			providesExplicitTarget = true
+			dir = filepath.Join(environment.GetWorkingDirectory(), dir)
 		}
-		dir = filepath.Join(environment.GetWorkingDirectory(), dir)
 	}
 
 	if !providesExplicitTarget {
@@ -97,10 +100,8 @@ func Release() error {
 		return err
 	}
 
-	if environment.CreateGitRelease() {
-		if err := g.CreateRelease(*latestRelease, outputs); err != nil {
-			return err
-		}
+	if err := g.CreateRelease(*latestRelease, outputs); err != nil {
+		return err
 	}
 
 	if err = setOutputs(outputs); err != nil {

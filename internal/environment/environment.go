@@ -193,10 +193,6 @@ func IsDocsGeneration() bool {
 	return strings.Contains(languages, "docs")
 }
 
-func CreateGitRelease() bool {
-	return IsLanguagePublished("php") || IsLanguagePublished("terraform") || IsLanguagePublished("swift")
-}
-
 func GetAccessToken() string {
 	return os.Getenv("INPUT_GITHUB_ACCESS_TOKEN")
 }
@@ -207,14 +203,6 @@ func GetGPGFingerprint() string {
 
 func GetInvokeTime() time.Time {
 	return invokeTime
-}
-
-func IsLanguagePublished(lang string) bool {
-	if lang == "go" || lang == "swift" {
-		return true
-	}
-
-	return os.Getenv(fmt.Sprintf("INPUT_PUBLISH_%s", strings.ToUpper(lang))) == "true"
 }
 
 func GetOpenAPIDocAuthHeader() string {

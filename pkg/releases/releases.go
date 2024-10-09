@@ -6,7 +6,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"slices"
 	"strings"
 
 	config "github.com/speakeasy-api/sdk-gen-config"
@@ -185,12 +184,6 @@ func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, error) {
 	}
 
 	for lang, info := range cfgFile.Languages {
-		packageName := utils.GetPackageName(lang, &info)
-		// swift and go expects specific package formatting when writing a github release
-		if path != "" && path != "." && slices.Contains([]string{"go", "swift"}, lang) {
-			packageName = fmt.Sprintf("%s/%s", packageName, strings.TrimPrefix(path, "./"))
-		}
-
 		releaseInfo.Languages[lang] = LanguageReleaseInfo{
 			PackageName: utils.GetPackageName(lang, &info),
 			Version:     lockFile.Management.ReleaseVersion,

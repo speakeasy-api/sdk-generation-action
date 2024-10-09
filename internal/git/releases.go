@@ -18,6 +18,8 @@ import (
 //go:embed goreleaser.yml
 var tfGoReleaserConfig string
 
+const PublishingCompletedString = "Publishing Completed"
+
 func (g *Git) SetReleaseToPublished(version, directory string) error {
 	if g.repo == nil {
 		return fmt.Errorf("repo not cloned")
@@ -33,8 +35,8 @@ func (g *Git) SetReleaseToPublished(version, directory string) error {
 	}
 
 	if release != nil && release.ID != nil {
-		if release.Body != nil && !strings.Contains(*release.Body, "Publishing Completed") {
-			body := *release.Body + "\n\nPublishing Completed"
+		if release.Body != nil && !strings.Contains(*release.Body, PublishingCompletedString) {
+			body := *release.Body + "\n\n" + PublishingCompletedString
 			release.Body = &body
 		}
 
@@ -101,9 +103,9 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 
 			if err != nil {
 				if release, _, err := g.client.Repositories.GetReleaseByTag(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *tagName); err == nil && release != nil {
-					if release.Body != nil && strings.Contains(*release.Body, "Publishing Completed") {
-						fmt.Println(fmt.Sprintf("a github release with tag %s already existing ... skipping publishing", *tagName))
-						fmt.Println(fmt.Sprintf("to publish this version again delete the github tag and release"))
+					if release.Body != nil && strings.Contains(*release.Body, PublishingCompletedString) {
+						fmt.Println(fmt.Sprintf("a github release with tag %s has already been published ... skipping publishing", *tagName))
+						fmt.Println(fmt.Sprintf("to publish this version again please check with your package managed delete the github tag and release"))
 						if _, ok := outputs[fmt.Sprintf("publish_%s", lang)]; ok {
 							outputs[fmt.Sprintf("publish_%s", lang)] = "false"
 						}
