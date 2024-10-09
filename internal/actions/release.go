@@ -28,17 +28,22 @@ func Release() error {
 
 	dir := "."
 	usingReleasesMd := false
-	// We do not currently support specific target workflow dispatch for terraform. This is because terraform relies on release history.
-	providesExplicitTarget := environment.SpecifiedTarget() != ""
-	if providesExplicitTarget {
+	var providesExplicitTarget bool
+	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
 		workflow, err := configuration.GetWorkflowAndValidateLanguages(true)
 		if err != nil {
 			return err
 		}
-		if target, ok := workflow.Targets[environment.SpecifiedTarget()]; ok && target.Output != nil {
-			dir = strings.TrimPrefix(*target.Output, "./")
+		target, ok := workflow.Targets[specificTarget]
+		// We do not currently support specific target workflow dispatch for terraform. This is because terraform relies on release history.
+		if ok && target.Target != "terraform" {
+			if target.Output != nil {
+				dir = strings.TrimPrefix(*target.Output, "./")
+			}
+
+			providesExplicitTarget = true
+			dir = filepath.Join(environment.GetWorkingDirectory(), dir)
 		}
-		dir = filepath.Join(environment.GetWorkingDirectory(), dir)
 	}
 
 	if !providesExplicitTarget {
