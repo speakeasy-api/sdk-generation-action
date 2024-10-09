@@ -39,7 +39,7 @@ func NewContextWithSDK(ctx context.Context, apiKey string) (context.Context, *sp
 	sdkWithWorkspace := speakeasy.New(speakeasy.WithSecurity(security), speakeasy.WithWorkspaceID(validated.APIKeyDetails.WorkspaceID))
 	ctx = context.WithValue(ctx, SpeakeasySDKKey, sdkWithWorkspace)
 	ctx = context.WithValue(ctx, WorkspaceIDKey, validated.APIKeyDetails.WorkspaceID)
-	ctx = context.WithValue(ctx, AccountTypeKey, validated.APIKeyDetails.AccountType)
+	ctx = context.WithValue(ctx, AccountTypeKey, validated.APIKeyDetails.AccountTypeV2)
 	return ctx, sdkWithWorkspace, validated.APIKeyDetails.WorkspaceID, err
 }
 
@@ -138,9 +138,9 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 	runEvent.ContinuousIntegrationEnvironment = &currentIntegrationEnvironment
 
 	// Attempt to flush any stored events (swallow errors)
-	sdk.Events.PostWorkspaceEvents(ctx, operations.PostWorkspaceEventsRequest{
+	sdk.Events.Post(ctx, operations.PostWorkspaceEventsRequest{
 		RequestBody: []shared.CliEvent{*runEvent},
-		WorkspaceID: &workspaceID,
+		WorkspaceID: workspaceID,
 	})
 
 	return err
