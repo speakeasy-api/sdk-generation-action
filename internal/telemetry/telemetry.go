@@ -63,6 +63,12 @@ func EnrichEventWithEnvironmentVariables(event *shared.CliEvent) {
 	if ghActionVersion != "" {
 		event.GhActionVersion = &ghActionVersion
 	}
+
+	ghPullRequest := os.Getenv("GH_PULL_REQUEST")
+
+	if ghPullRequest != "" {
+		event.GhPullRequest = &ghPullRequest
+	}
 }
 
 func enrichHostName(event *shared.CliEvent) {
