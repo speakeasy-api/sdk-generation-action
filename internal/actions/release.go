@@ -34,9 +34,7 @@ func Release() error {
 		if err != nil {
 			return err
 		}
-		target, ok := workflow.Targets[specificTarget]
-		// We do not currently support specific target workflow dispatch for terraform. This is because terraform relies on release history.
-		if ok && target.Target != "terraform" {
+		if target, ok := workflow.Targets[specificTarget]; ok {
 			if target.Output != nil {
 				dir = strings.TrimPrefix(*target.Output, "./")
 			}

@@ -255,7 +255,7 @@ func finalize(inputs finalizeInputs) error {
 		var releaseInfo *releases.ReleasesInfo
 		if !inputs.SourcesOnly {
 			releaseInfo = inputs.currentRelease
-			// TODO: Temporary until we figure out how to handle parsed terraform previous release version
+			// We still read from releases info for terraform generations since they use the goreleaser
 			if inputs.Outputs["terraform_regenerated"] == "true" {
 				releaseInfo, err = getReleasesInfo()
 				if err != nil {
