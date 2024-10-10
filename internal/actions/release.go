@@ -57,23 +57,7 @@ func Release() error {
 			}
 		}
 
-		for _, file := range files {
-			// Maintain Support for RELEASES.MD for backward compatibility with existing publishing actions
-			if strings.Contains(file, "RELEASES.md") {
-				dir = filepath.Dir(file)
-				logging.Info("Found RELEASES.md in %s\n", dir)
-				usingReleasesMd = true
-				break
-			}
-
-			if strings.Contains(file, "gen.lock") {
-				dir = filepath.Dir(file)
-				dir = strings.ReplaceAll(dir, "/.speakeasy", "")
-				dir = strings.ReplaceAll(dir, ".speakeasy", "")
-				logging.Info("Found gen.lock in %s\n", dir)
-				break
-			}
-		}
+		dir, usingReleasesMd = GetDirAndShouldUseReleasesMD(files, dir, usingReleasesMd)
 	}
 
 	var latestRelease *releases.ReleasesInfo
@@ -109,6 +93,31 @@ func Release() error {
 	}
 
 	return nil
+}
+
+func GetDirAndShouldUseReleasesMD(files []string, dir string, usingReleasesMd bool) (string, bool) {
+	for _, file := range files {
+		// Maintain Support for RELEASES.MD for backward compatibility with existing publishing actions
+		if strings.Contains(file, "RELEASES.md") {
+			// file = ./RELEASES.md
+			// dir = .
+			dir = filepath.Dir(file)
+			logging.Info("Found RELEASES.md in %s\n", dir)
+			usingReleasesMd = true
+			break
+		}
+
+		if strings.Contains(file, "gen.lock") {
+			// file = .speakeasy/gen.lock
+			dir = filepath.Dir(file)
+			if strings.Contains(dir, ".speakeasy") {
+				dir = filepath.Dir(dir)
+			}
+
+			logging.Info("Found gen.lock in %s\n", dir)
+		}
+	}
+	return dir, usingReleasesMd
 }
 
 func addPublishOutputs(dir string, outputs map[string]string) error {
