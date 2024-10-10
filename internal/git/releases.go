@@ -114,7 +114,7 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 					// TODO: Consider deleting and recreating the release if we are moving forward with publishing
 					return nil
 				}
-				// If release fails trigger a failed publishing event
+				// If the release fails, trigger a failed publishing CLI event
 				if _, publishEventErr := telemetry.TriggerPublishingEvent(info.Path, "failed", utils.GetRegistryName(lang)); publishEventErr != nil {
 					fmt.Printf("failed to write publishing event: %v\n", publishEventErr)
 				}
