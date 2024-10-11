@@ -7,11 +7,9 @@ import (
 	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
-	"github.com/speakeasy-api/sdk-generation-action/internal/run"
-	"golang.org/x/exp/slices"
-
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
+	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 )
 
@@ -28,7 +26,6 @@ func Release() error {
 
 	dir := "."
 	usingReleasesMd := false
-	outputs := map[string]string{}
 	var providesExplicitTarget bool
 	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
 		workflow, err := configuration.GetWorkflowAndValidateLanguages(true)
@@ -41,16 +38,6 @@ func Release() error {
 			}
 
 			dir = filepath.Join(environment.GetWorkingDirectory(), dir)
-
-			// don't release if publishing is not configured
-			if target.Publishing == nil && !slices.Contains([]string{"go", "terraform"}, target.Target) {
-				outputs[fmt.Sprintf("%s_directory", target.Target)] = dir
-				if err = setOutputs(outputs); err != nil {
-					return err
-				}
-				fmt.Println(fmt.Sprintf("Publishing configuration does not exist in workflow.yaml for target %s ... skipping release", specificTarget))
-				return nil
-			}
 
 			providesExplicitTarget = true
 		}
@@ -85,6 +72,7 @@ func Release() error {
 		}
 	}
 
+	outputs := map[string]string{}
 	for lang, info := range latestRelease.Languages {
 		outputs[fmt.Sprintf("%s_regenerated", lang)] = "true"
 		outputs[fmt.Sprintf("%s_directory", lang)] = info.Path
