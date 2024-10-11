@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/run"
+	"golang.org/x/exp/slices"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 
@@ -35,6 +36,11 @@ func Release() error {
 			return err
 		}
 		if target, ok := workflow.Targets[specificTarget]; ok {
+			if target.Publishing == nil && !slices.Contains([]string{"go", "terraform"}, target.Target) {
+				// don't release if publishing is not configured
+				return nil
+			}
+			
 			if target.Output != nil {
 				dir = strings.TrimPrefix(*target.Output, "./")
 			}
