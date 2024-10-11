@@ -48,6 +48,7 @@ func Release() error {
 				if err = setOutputs(outputs); err != nil {
 					return err
 				}
+				fmt.Println(fmt.Sprintf("Publishing configuration does not exist in workflow.yaml for target %s ... skipping release", specificTarget))
 				return nil
 			}
 
