@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-github/v63/github"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/telemetry"
+	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 )
 
@@ -113,18 +114,16 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 					// TODO: Consider deleting and recreating the release if we are moving forward with publishing
 					return nil
 				}
-				// Go has no publishing job, so we publish a CLI event on github release here
-				if lang == "go" {
-					if _, publishEventErr := telemetry.TriggerPublishingEvent(info.Path, "failed", "go"); publishEventErr != nil {
-						fmt.Printf("failed to write publishing event: %v\n", publishEventErr)
-					}
+				// If the release fails, trigger a failed publishing CLI event
+				if _, publishEventErr := telemetry.TriggerPublishingEvent(info.Path, "failed", utils.GetRegistryName(lang)); publishEventErr != nil {
+					fmt.Printf("failed to write publishing event: %v\n", publishEventErr)
 				}
 
 				return fmt.Errorf("failed to create release for tag %s: %w", *tagName, err)
 			} else {
 				// Go has no publishing job, so we publish a CLI event on github release here
 				if lang == "go" {
-					if _, publishEventErr := telemetry.TriggerPublishingEvent(info.Path, "success", "go"); publishEventErr != nil {
+					if _, publishEventErr := telemetry.TriggerPublishingEvent(info.Path, "success", utils.GetRegistryName(lang)); publishEventErr != nil {
 						fmt.Printf("failed to write publishing event: %v\n", publishEventErr)
 					}
 				}

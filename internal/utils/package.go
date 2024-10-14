@@ -19,3 +19,24 @@ func GetPackageName(lang string, cfg *config.LanguageConfig) string {
 
 	return packageName
 }
+
+func GetRegistryName(lang string) string {
+	var registryName string
+	switch lang {
+	case "python":
+		registryName = "pypi"
+	case "typescript":
+		registryName = "npm"
+	case "php":
+		registryName = "packagist"
+	case "csharp":
+		registryName = "nuget"
+	case "ruby":
+		registryName = "gems"
+	case "java":
+		registryName = "sonatype"
+	default:
+		registryName = lang
+	}
+	return registryName
+}
