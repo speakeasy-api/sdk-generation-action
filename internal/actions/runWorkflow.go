@@ -62,8 +62,11 @@ func RunWorkflow() error {
 		if err != nil {
 			return err
 		}
+
 		if pr != nil {
 			os.Setenv("GH_PULL_REQUEST", *pr.URL)
+			logging.Info("Grabbing PR URL: %s", *pr.URL)
+			logging.Info("PR HTML URL: %s", *pr.HTMLURL)
 		}
 	}
 
@@ -260,6 +263,8 @@ func finalize(inputs finalizeInputs) error {
 
 		if pr != nil {
 			os.Setenv("GH_PULL_REQUEST", *pr.URL)
+			logging.Info("Grabbing PR URL: %s", *pr.URL)
+			logging.Info("PR HTML URL: %s", *pr.HTMLURL)
 		}
 
 	case environment.ModeDirect:
