@@ -3,6 +3,7 @@ package actions
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/google/go-github/v63/github"
@@ -60,6 +61,10 @@ func RunWorkflow() error {
 		branchName, pr, err = g.FindExistingPR("", environment.ActionRunWorkflow, sourcesOnly)
 		if err != nil {
 			return err
+		}
+		
+		if pr != nil {
+			os.Setenv("GH_PULL_REQUEST", *pr.URL)
 		}
 	}
 
@@ -253,6 +258,11 @@ func finalize(inputs finalizeInputs) error {
 		}); err != nil {
 			return err
 		}
+
+		if pr != nil {
+			os.Setenv("GH_PULL_REQUEST", *pr.URL)
+		}
+
 	case environment.ModeDirect:
 		var releaseInfo *releases.ReleasesInfo
 		if !inputs.SourcesOnly {
