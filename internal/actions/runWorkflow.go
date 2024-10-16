@@ -20,6 +20,7 @@ import (
 )
 
 func RunWorkflow() error {
+	fmt.Println("foo")
 	g, err := initAction()
 	if err != nil {
 		return err
@@ -65,6 +66,8 @@ func RunWorkflow() error {
 
 		if pr != nil {
 			os.Setenv("GH_PULL_REQUEST", *pr.URL)
+			fmt.Println(fmt.Sprintf("Grabbing PR URL: %s", *pr.URL))
+
 			logging.Info("Grabbing PR URL: %s", *pr.URL)
 			logging.Info("PR HTML URL: %s", *pr.HTMLURL)
 		}
@@ -199,6 +202,8 @@ func RunWorkflow() error {
 
 	success = true
 
+	fmt.Println(fmt.Sprintf("GH_PULL_REQUEST: %s", os.Getenv("GH_PULL_REQUEST")))
+
 	return nil
 }
 
@@ -261,7 +266,7 @@ func finalize(inputs finalizeInputs) error {
 			return err
 		}
 
-		if pr.URL != nil {
+		if pr != nil {
 			os.Setenv("GH_PULL_REQUEST", *pr.URL)
 			logging.Info("Grabbing PR URL: %s", *pr.URL)
 			logging.Info("PR HTML URL: %s", *pr.HTMLURL)
