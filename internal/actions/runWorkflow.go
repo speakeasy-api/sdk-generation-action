@@ -261,7 +261,7 @@ func finalize(inputs finalizeInputs) error {
 			return err
 		}
 
-		if pr != nil {
+		if pr.URL != nil {
 			os.Setenv("GH_PULL_REQUEST", *pr.URL)
 			logging.Info("Grabbing PR URL: %s", *pr.URL)
 			logging.Info("PR HTML URL: %s", *pr.HTMLURL)
