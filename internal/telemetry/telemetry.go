@@ -3,6 +3,7 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"os"
 	"strings"
 	"time"
@@ -130,6 +131,9 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 	if ghPullRequest != "" {
 		runEvent.GhPullRequest = &ghPullRequest
 	}
+
+	logging.Info("GH_PULL_REQUEST: %s", ghPullRequest)
+	logging.Info("event.ghPullRequest: %s", *runEvent.GhPullRequest)
 
 	// Update the event with completion details
 	curTime := time.Now()
