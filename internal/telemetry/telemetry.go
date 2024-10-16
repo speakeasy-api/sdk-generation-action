@@ -63,12 +63,6 @@ func EnrichEventWithEnvironmentVariables(event *shared.CliEvent) {
 	if ghActionVersion != "" {
 		event.GhActionVersion = &ghActionVersion
 	}
-
-	ghPullRequest := os.Getenv("GH_PULL_REQUEST")
-
-	if ghPullRequest != "" {
-		event.GhPullRequest = &ghPullRequest
-	}
 }
 
 func enrichHostName(event *shared.CliEvent) {
@@ -129,6 +123,13 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 
 	// Execute the provided function, capturing any error
 	err = fn(ctx, runEvent)
+
+	// Populate event with pull request env var (available only after run)
+	ghPullRequest := os.Getenv("GH_PULL_REQUEST")
+
+	if ghPullRequest != "" {
+		runEvent.GhPullRequest = &ghPullRequest
+	}
 
 	// Update the event with completion details
 	curTime := time.Now()

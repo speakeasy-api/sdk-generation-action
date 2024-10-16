@@ -62,6 +62,7 @@ func RunWorkflow() error {
 		if err != nil {
 			return err
 		}
+		
 		if pr != nil {
 			os.Setenv("GH_PULL_REQUEST", *pr.URL)
 		}
