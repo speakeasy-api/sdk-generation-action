@@ -25,6 +25,10 @@ func RunWorkflow() error {
 		return err
 	}
 
+	if environment.GithubIDRequestToken() != "" {
+		fmt.Println("ID TOKEN PERMISSION IS SET")
+	}
+
 	if err := SetupEnvironment(); err != nil {
 		return fmt.Errorf("failed to setup environment: %w", err)
 	}
@@ -62,7 +66,7 @@ func RunWorkflow() error {
 		if err != nil {
 			return err
 		}
-		
+
 		if pr != nil {
 			os.Setenv("GH_PULL_REQUEST", *pr.URL)
 		}

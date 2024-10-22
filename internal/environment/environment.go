@@ -89,6 +89,10 @@ func PushCodeSamplesOnly() bool {
 	return os.Getenv("INPUT_PUSH_CODE_SAMPLES_ONLY") == "true"
 }
 
+func GithubIDRequestToken() string {
+	return os.Getenv("INPUT_GITHUB_ID_REQUEST_TOKEN")
+}
+
 func SetVersion() string {
 	return os.Getenv("INPUT_SET_VERSION")
 }
