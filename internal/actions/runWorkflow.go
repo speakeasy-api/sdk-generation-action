@@ -25,7 +25,7 @@ func RunWorkflow() error {
 		return err
 	}
 
-	if environment.GithubIDRequestToken() != "" {
+	if os.Getenv("ACTIONS_ID_TOKEN_REQUEST_TOKEN") != "" {
 		fmt.Println("ID TOKEN PERMISSION IS SET")
 	}
 
