@@ -94,6 +94,9 @@ inputs:
   pnpm_version:
     description: "Version of pnpm to install. Not recommended for use without consulting Speakeasy support."
     required: false
+  github_id_request_token:
+    description: "Github provided ID request token if id-token: write permissions are available."
+    required: false
 outputs:
   publish_python:
     description: "Whether the Python SDK will be published to PyPi"
@@ -199,3 +202,4 @@ runs:
     - ${{ inputs.set_version }}
     - ${{ inputs.cli_environment_variables }}
     - ${{ inputs.pnpm_version }}
+    - ${{ inputs.github_id_request_token }}

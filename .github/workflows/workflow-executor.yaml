@@ -187,6 +187,7 @@ jobs:
           set_version: ${{ inputs.set_version }}
           cli_environment_variables: ${{ inputs.environment }}
           pnpm_version: ${{ inputs.pnpm_version }}
+          github_id_request_token: ${{ secrets.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
