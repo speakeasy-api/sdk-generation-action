@@ -12,7 +12,7 @@ require (
 	github.com/pb33f/libopenapi v0.15.14
 	github.com/speakeasy-api/git-diff-parser v0.0.3
 	github.com/speakeasy-api/sdk-gen-config v1.7.4
-	github.com/speakeasy-api/speakeasy-client-sdk-go/v3 v3.14.1
+	github.com/speakeasy-api/speakeasy-client-sdk-go/v3 v3.14.10
 	github.com/speakeasy-api/versioning-reports v0.6.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a

@@ -147,7 +147,7 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 	// Attempt to flush any stored events (swallow errors)
 	sdk.Events.Post(ctx, operations.PostWorkspaceEventsRequest{
 		RequestBody: []shared.CliEvent{*runEvent},
-		WorkspaceID: workspaceID,
+		WorkspaceID: &workspaceID,
 	})
 
 	return err
