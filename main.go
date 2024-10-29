@@ -36,27 +36,29 @@ func main() {
 	}
 
 	var err error
-
-	err = telemetry.Track(context.Background(), shared.InteractionTypeCiExec, func(ctx context.Context, event *shared.CliEvent) error {
-		switch environment.GetAction() {
-		case environment.ActionSuggest:
-			return actions.Suggest()
-		case environment.ActionRunWorkflow:
-			return actions.RunWorkflow()
-		case environment.ActionFinalizeSuggestion:
-			return actions.FinalizeSuggestion()
-		case environment.ActionRelease:
-			return actions.Release()
-		case environment.ActionLog:
-			return actions.LogActionResult()
-		case environment.ActionPublishEvent:
-			return actions.PublishEventAction()
-		case environment.ActionTag:
-			return actions.Tag()
-		default:
-			return fmt.Errorf("unknown action: %s", environment.GetAction())
-		}
-	})
+	// Don't fire CI_Exec telemetry on actions where we are only sending specific telemetry back.
+	if environment.GetAction() == environment.ActionLog {
+		err = actions.LogActionResult()
+	} else if environment.GetAction() == environment.ActionPublishEvent {
+		err = actions.PublishEventAction()
+	} else {
+		err = telemetry.Track(context.Background(), shared.InteractionTypeCiExec, func(ctx context.Context, event *shared.CliEvent) error {
+			switch environment.GetAction() {
+			case environment.ActionSuggest:
+				return actions.Suggest()
+			case environment.ActionRunWorkflow:
+				return actions.RunWorkflow()
+			case environment.ActionFinalizeSuggestion:
+				return actions.FinalizeSuggestion()
+			case environment.ActionRelease:
+				return actions.Release()
+			case environment.ActionTag:
+				return actions.Tag()
+			default:
+				return fmt.Errorf("unknown action: %s", environment.GetAction())
+			}
+		})
+	}
 
 	if err != nil {
 		fmt.Printf("::error title=failed::%v\n", err)

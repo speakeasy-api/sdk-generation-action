@@ -429,7 +429,7 @@ type PRInfo struct {
 	VersioningReport     *versioning.MergedVersionReport
 }
 
-func (g *Git) CreateOrUpdatePR(info PRInfo) error {
+func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 	var changelog string
 	var err error
 
@@ -480,7 +480,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) error {
 
 			versionChangelog, err := cli.GetChangelog(language, info.ReleaseInfo.GenerationVersion, "", targetVersions, previousVersions)
 			if err != nil {
-				return fmt.Errorf("failed to get changelog for language %s: %w", language, err)
+				return nil, fmt.Errorf("failed to get changelog for language %s: %w", language, err)
 			}
 
 			changelog += fmt.Sprintf("\n\n## %s CHANGELOG\n\n%s", strings.ToUpper(language), versionChangelog)
@@ -490,7 +490,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) error {
 			// Not using granular version, grab old changelog
 			changelog, err = cli.GetChangelog("", info.ReleaseInfo.GenerationVersion, info.PreviousGenVersion, nil, nil)
 			if err != nil {
-				return fmt.Errorf("failed to get changelog: %w", err)
+				return nil, fmt.Errorf("failed to get changelog: %w", err)
 			}
 			if strings.TrimSpace(changelog) != "" {
 				changelog = "\n\n\n## CHANGELOG\n\n" + changelog
@@ -562,7 +562,7 @@ Based on:
 		info.PR, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), info.PR)
 		g.setPRLabels(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), labelTypes, info.PR.Labels, labels)
 		if err != nil {
-			return fmt.Errorf("failed to update PR: %w", err)
+			return nil, fmt.Errorf("failed to update PR: %w", err)
 		}
 	} else {
 		logging.Info("Creating PR")
@@ -579,7 +579,7 @@ Based on:
 			if strings.Contains(err.Error(), "GitHub Actions is not permitted to create or approve pull requests") {
 				messageSuffix += "\nNavigate to Settings > Actions > Workflow permissions and ensure that allow GitHub Actions to create and approve pull requests is checked. For more information see https://www.speakeasy.com/docs/advanced-setup/github-setup"
 			}
-			return fmt.Errorf("failed to create PR: %w%s", err, messageSuffix)
+			return nil, fmt.Errorf("failed to create PR: %w%s", err, messageSuffix)
 		} else if info.PR != nil && len(labels) > 0 {
 			g.setPRLabels(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), labelTypes, info.PR.Labels, labels)
 		}
@@ -592,7 +592,7 @@ Based on:
 
 	logging.Info("PR: %s", url)
 
-	return nil
+	return info.PR, nil
 }
 
 func (g *Git) setPRLabels(background context.Context, owner string, repo string, issueNumber int, labelTypes map[string]github.Label, actualLabels, desiredLabels []*github.Label) {

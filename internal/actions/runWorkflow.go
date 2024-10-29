@@ -62,7 +62,7 @@ func RunWorkflow() error {
 		if err != nil {
 			return err
 		}
-		
+
 		if pr != nil {
 			os.Setenv("GH_PULL_REQUEST", *pr.URL)
 		}
@@ -245,7 +245,7 @@ func finalize(inputs finalizeInputs) error {
 			return err
 		}
 
-		if err := inputs.Git.CreateOrUpdatePR(git.PRInfo{
+		pr, err = inputs.Git.CreateOrUpdatePR(git.PRInfo{
 			BranchName:           branchName,
 			ReleaseInfo:          inputs.currentRelease,
 			PreviousGenVersion:   inputs.Outputs["previous_gen_version"],
@@ -255,7 +255,9 @@ func finalize(inputs finalizeInputs) error {
 			ChangesReportURL:     inputs.ChangesReportURL,
 			VersioningReport:     inputs.VersioningReport,
 			OpenAPIChangeSummary: inputs.OpenAPIChangeSummary,
-		}); err != nil {
+		})
+
+		if err != nil {
 			return err
 		}
 
