@@ -154,7 +154,7 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 
 }
 
-// Reformat from  https://api.github.com/repos/.../.../pulls/... format
+// Reformat from  https://api.github.com/repos/.../.../pulls/... to https://github.com/.../.../pull/...
 func reformatPullRequestURL(url string) string {
 	url = strings.Replace(url, "https://api.github.com/repos/", "https://github.com/", 1)
 	return strings.Replace(url, "/pulls/", "/pull/", 1)
