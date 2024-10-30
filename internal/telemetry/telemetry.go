@@ -125,7 +125,7 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 	err = fn(ctx, runEvent)
 
 	// Populate event with pull request env var (available only after run)
-	ghPullRequest := os.Getenv("GH_PULL_REQUEST")
+	ghPullRequest := reformatPullRequestURL(os.Getenv("GH_PULL_REQUEST"))
 
 	if ghPullRequest != "" {
 		runEvent.GhPullRequest = &ghPullRequest
@@ -152,4 +152,10 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 
 	return err
 
+}
+
+// Reformat from  https://api.github.com/repos/.../.../pulls/... to https://github.com/.../.../pull/...
+func reformatPullRequestURL(url string) string {
+	url = strings.Replace(url, "https://api.github.com/repos/", "https://github.com/", 1)
+	return strings.Replace(url, "/pulls/", "/pull/", 1)
 }
