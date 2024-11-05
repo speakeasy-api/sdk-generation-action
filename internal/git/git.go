@@ -598,6 +598,9 @@ Based on:
 func (g *Git) setPRLabels(background context.Context, owner string, repo string, issueNumber int, labelTypes map[string]github.Label, actualLabels, desiredLabels []*github.Label) {
 	shouldRemove := []string{}
 	shouldAdd := []string{}
+	fmt.Println("LABELS")
+	fmt.Println(actualLabels)
+	fmt.Println(desiredLabels)
 	for _, label := range actualLabels {
 		foundInDesired := false
 		for _, desired := range desiredLabels {

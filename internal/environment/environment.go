@@ -225,6 +225,10 @@ func GetWorkflowEventPayloadPath() string {
 	return os.Getenv("GITHUB_EVENT_PATH")
 }
 
+func GetWorkflowEventLabelName() string {
+	return os.Getenv("GITHUB_EVENT_LABEL_NAME")
+}
+
 func GetBranchName() string {
 	return os.Getenv("INPUT_BRANCH_NAME")
 }

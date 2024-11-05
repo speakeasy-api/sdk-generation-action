@@ -8,9 +8,14 @@ import (
 	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/registry"
+	"golang.org/x/exp/slices"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 )
+
+const BumpOverrideEnvVar = "SPEAKEASY_BUMP_OVERRIDE"
+
+var validLabelOverrides = []string{"graduate", "major", "minor", "patch"}
 
 type RunResults struct {
 	LintingReportURL     string
@@ -62,6 +67,12 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	if environment.ForceGeneration() {
 		fmt.Println("\nforce input enabled - setting SPEAKEASY_FORCE_GENERATION=true")
 		os.Setenv("SPEAKEASY_FORCE_GENERATION", "true")
+	}
+
+	fmt.Println("EVENT WORKFLOW LABEL")
+	fmt.Println(environment.GetWorkflowEventLabelName())
+	if label := environment.GetWorkflowEventLabelName(); slices.Contains(validLabelOverrides, label) {
+		os.Setenv(BumpOverrideEnvVar, label)
 	}
 
 	//if environment.ShouldOutputTests() {
