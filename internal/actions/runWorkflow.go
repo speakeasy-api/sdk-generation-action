@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/go-github/v63/github"
 	"github.com/speakeasy-api/versioning-reports/versioning"
+	"gopkg.in/yaml.v3"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
@@ -161,6 +163,13 @@ func RunWorkflow() error {
 			return err
 		}
 
+		// we need to backfill id-token permission in this github action
+		if os.Getenv("ACTIONS_ID_TOKEN_REQUEST_TOKEN") == "" {
+			if err := backfillGenerationActionIDTokenPermission(); err != nil {
+				fmt.Printf("failed to backfill id-token permission: %v\n", err)
+			}
+		}
+
 		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false); err != nil {
 			return err
 		}
@@ -307,4 +316,64 @@ func getReleasesInfo() (*releases.ReleasesInfo, error) {
 	}
 
 	return releasesInfo, nil
+}
+
+func backfillGenerationActionIDTokenPermission() error {
+	actionPath := os.Getenv("GITHUB_ACTION_PATH")
+	searchString := "speakeasy-api/sdk-generation-action/.github/workflows/workflow-executor.yaml@v15"
+	files, err := os.ReadDir(actionPath)
+	if err != nil {
+		return fmt.Errorf("error reading directory: %w", err)
+	}
+
+	for _, file := range files {
+		if !file.IsDir() && (filepath.Ext(file.Name()) == ".yml" || filepath.Ext(file.Name()) == ".yaml") {
+			filePath := filepath.Join(actionPath, file.Name())
+
+			generationFile, err := os.ReadFile(filePath)
+			if err != nil {
+				fmt.Printf("Error reading speakeasy generation action file %s: %s\n", filePath, err)
+				continue
+			}
+
+			// this is a speakeasy github action file
+			if !strings.Contains(string(generationFile), searchString) {
+				var data map[string]interface{}
+				err = yaml.Unmarshal(generationFile, &data)
+				if err != nil {
+					fmt.Printf("Error parsing speakeasy generation action file %s: %s\n", filePath, err)
+					continue
+				}
+
+				if permissions, ok := data["permissions"].(map[string]interface{}); ok && len(permissions) > 0 {
+					if _, exists := permissions["id-token"]; !exists {
+						permissions["id-token"] = "write"
+
+						updatedFile, err := yaml.Marshal(&data)
+						if err != nil {
+							fmt.Printf("Error marshaling updated generation action file %s: %s\n", filePath, err)
+							continue
+						}
+
+						writeFile, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
+						if err != nil {
+							fmt.Printf("Error parsing speakeasy generation action file %s: %s\n", filePath, err)
+							continue
+						}
+						defer writeFile.Close()
+
+						_, err = writeFile.Write(updatedFile)
+						if err != nil {
+							fmt.Printf("Error writing updated YAML file %s: %s\n", filePath, err)
+							continue
+						}
+
+						fmt.Printf("Updated permissions successfully in %s\n", filePath)
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }

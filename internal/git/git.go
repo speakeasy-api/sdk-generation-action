@@ -540,6 +540,10 @@ Based on:
 		body += changelog
 	}
 
+	if os.Getenv("ACTIONS_ID_TOKEN_REQUEST_TOKEN") == "" {
+		body += "\n\n- id-token github action permissions have been added in this pull request to ensure authenticity in github action runs"
+	}
+
 	const maxBodyLength = 65536
 
 	if len(body) > maxBodyLength {
