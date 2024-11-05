@@ -338,7 +338,7 @@ func backfillGenerationActionIDTokenPermission() error {
 			}
 
 			// this is a speakeasy github action file
-			if !strings.Contains(string(generationFile), searchString) {
+			if strings.Contains(string(generationFile), searchString) {
 				var data map[string]interface{}
 				err = yaml.Unmarshal(generationFile, &data)
 				if err != nil {
