@@ -132,6 +132,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		return nil, outputs, err
 	}
 	if len(changereport.Reports) == 0 {
+		fmt.Println("NO REPORTS")
 		// Assume it's not yet enabled (e.g. CLI version too old)
 		changereport = nil
 	}

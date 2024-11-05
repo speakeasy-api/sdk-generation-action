@@ -109,6 +109,10 @@ func RunWorkflow() error {
 
 	var releaseInfo releases.ReleasesInfo
 	if runRes.GenInfo != nil {
+		if runRes.VersioningReport != nil {
+			fmt.Println("VERSIONING REPORTS")
+			fmt.Println(runRes.VersioningReport.Reports)
+		}
 		docVersion := runRes.GenInfo.OpenAPIDocVersion
 		resolvedVersion = runRes.GenInfo.SpeakeasyVersion
 

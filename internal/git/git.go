@@ -551,7 +551,11 @@ Based on:
 	} else if info.SourceGeneration {
 		title = getGenSourcesTitlePrefix()
 	}
+	fmt.Println("VERSION LABEL STUFF")
+	fmt.Println(info.VersioningReport)
 	suffix, labels := PRMetadata(info.VersioningReport, labelTypes)
+	fmt.Println(suffix)
+	fmt.Println(labels)
 	title += suffix
 
 	if info.PR != nil {
