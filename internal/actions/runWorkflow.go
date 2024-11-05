@@ -111,7 +111,7 @@ func RunWorkflow() error {
 	if runRes.GenInfo != nil {
 		if runRes.VersioningReport != nil {
 			fmt.Println("VERSIONING REPORTS")
-			fmt.Println(runRes.VersioningReport.Reports)
+			fmt.Println(runRes.VersioningReport.Reports[0].BumpType)
 		}
 		docVersion := runRes.GenInfo.OpenAPIDocVersion
 		resolvedVersion = runRes.GenInfo.SpeakeasyVersion

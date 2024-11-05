@@ -731,6 +731,10 @@ Based on:
 }
 
 func PRMetadata(m *versioning.MergedVersionReport, labelTypes map[string]github.Label) (string, []*github.Label) {
+	fmt.Println("BUMP TYPES")
+	fmt.Println(labelTypes)
+	fmt.Println(m)
+	fmt.Println(m.Reports[0])
 	if m == nil {
 		return "", []*github.Label{}
 	}
@@ -740,6 +744,7 @@ func PRMetadata(m *versioning.MergedVersionReport, labelTypes map[string]github.
 	singleBumpType := ""
 	singleNewVersion := ""
 	for _, report := range m.Reports {
+		fmt.Println(report.BumpType)
 		if len(report.BumpType) > 0 && report.BumpType != versioning.BumpNone && report.BumpType != versioning.BumpCustom {
 			if len(singleBumpType) > 0 {
 				skipBumpType = true
