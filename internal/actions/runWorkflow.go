@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -319,7 +320,7 @@ func getReleasesInfo() (*releases.ReleasesInfo, error) {
 }
 
 func backfillGenerationActionIDTokenPermission() error {
-	actionPath := os.Getenv("GITHUB_ACTION_PATH")
+	actionPath := path.Join(environment.GetWorkspace(), "repo", ".github", "workflows")
 	searchString := "speakeasy-api/sdk-generation-action/.github/workflows/workflow-executor.yaml@v15"
 	files, err := os.ReadDir(actionPath)
 	if err != nil {
