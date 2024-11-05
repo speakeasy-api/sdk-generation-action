@@ -155,6 +155,9 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		}
 	}
 
+	fmt.Println("REPORTS")
+	fmt.Println(changereport.Reports)
+
 	// Legacy logic: check for changes + dirty-check
 	for targetID, target := range wf.Targets {
 		if environment.SpecifiedTarget() != "" && environment.SpecifiedTarget() != "all" && environment.SpecifiedTarget() != targetID {
