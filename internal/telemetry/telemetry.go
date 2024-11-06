@@ -127,15 +127,14 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 	EnrichEventWithEnvironmentVariables(runEvent)
 	enrichHostName(runEvent)
 
-	// Execute the provided function, capturing any error
-	err = fn(ctx, runEvent)
-
 	// This means we have `id-token: write` permissions. Authenticate the workflow run with speakeasy
 	if environment.GetGithubOIDCRequestURL() != "" && environment.GetGithubOIDCRequestToken() != "" {
 		go func() {
 			if oidcToken, err := getIDToken(environment.GetGithubOIDCRequestURL(), environment.GetGithubOIDCRequestToken()); err != nil {
 				fmt.Println("Failed to get OIDC token", err)
 			} else {
+				fmt.Println("WE HAVE TOKEN")
+				fmt.Println(oidcToken)
 				res, err := sdk.Github.LinkGithub(context.WithoutCancel(ctx), operations.LinkGithubAccessRequest{
 					GithubOidcToken: &oidcToken,
 				})
@@ -149,6 +148,9 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 			}
 		}()
 	}
+
+	// Execute the provided function, capturing any error
+	err = fn(ctx, runEvent)
 
 	// Populate event with pull request env var (available only after run)
 	ghPullRequest := reformatPullRequestURL(os.Getenv("GH_PULL_REQUEST"))
