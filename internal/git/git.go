@@ -571,6 +571,7 @@ Based on:
 		info.PR.Body = github.String(body)
 		info.PR.Title = &title
 		info.PR, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), info.PR)
+		// Set labels MUST always follow updating the PR
 		g.setPRLabels(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), labelTypes, info.PR.Labels, labels)
 		if err != nil {
 			return nil, fmt.Errorf("failed to update PR: %w", err)
