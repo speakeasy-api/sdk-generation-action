@@ -133,8 +133,6 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 			if oidcToken, err := getIDToken(environment.GetGithubOIDCRequestURL(), environment.GetGithubOIDCRequestToken()); err != nil {
 				fmt.Println("Failed to get OIDC token", err)
 			} else {
-				fmt.Println("WE HAVE TOKEN")
-				fmt.Println(oidcToken)
 				res, err := sdk.Github.LinkGithub(context.WithoutCancel(ctx), operations.LinkGithubAccessRequest{
 					GithubOidcToken: &oidcToken,
 				})
