@@ -78,6 +78,7 @@ func ManualBumpWasUsed(bumpType *versioning.BumpType, versionReport *versioning.
 	return false
 }
 
+// We get the recorded BumpType and BumpMethod out of the PR body
 func parseBumpFromPRBody(prBody string) (versioning.BumpType, BumpMethod, error) {
 	re := regexp.MustCompile(`Version Bump Type:\s*(\w+)\s*\[(Manual|Automated)\]`)
 	matches := re.FindStringSubmatch(prBody)
@@ -97,6 +98,7 @@ func parseBumpFromPRBody(prBody string) (versioning.BumpType, BumpMethod, error)
 	return versioning.BumpType(bumpType), BumpMethod(mode), nil
 }
 
+// If someone happens to have multiple version labels applied we have a specific priority rankings for determining bump type
 func stackRankBumpLabels(bumpLabels []versioning.BumpType) versioning.BumpType {
 	// Priority order from highest to lowest
 	priorityOrder := []versioning.BumpType{
