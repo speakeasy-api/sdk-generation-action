@@ -72,6 +72,7 @@ func (g *Git) setPRLabels(background context.Context, owner string, repo string,
 			break
 		}
 
+		// We shouldn't delete labels that aren't managed by us
 		if _, ok := versionbumps.GetBumpTypeLabels()[versioning.BumpType(label.GetName())]; ok && !foundInDesired {
 			shouldRemove = append(shouldRemove, label.GetName())
 		}
