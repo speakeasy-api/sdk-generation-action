@@ -545,7 +545,7 @@ Based on:
 			if info.VersioningInfo.ManualBump {
 				bumpMethod = versionbumps.BumpMethodManual
 			}
-			body += "\n\nVersion Bump Type: " + string(*labelBumpType) + " " + string(bumpMethod)
+			body += "\n\nVersion Bump Type: " + string(*labelBumpType) + " " + fmt.Sprintf("[%s]", string(bumpMethod))
 		}
 
 	} else {
