@@ -13,8 +13,8 @@ type BumpMethod string
 
 // Enum values for BumpMethod
 const (
-	BumpMethodManual    BumpMethod = "Manual"
-	BumpMethodAutomated BumpMethod = "Automated"
+	BumpMethodManual    BumpMethod = "👤"
+	BumpMethodAutomated BumpMethod = "🤖"
 )
 
 var bumpTypeLabels = map[versioning.BumpType]string{
@@ -87,7 +87,7 @@ func ManualBumpWasUsed(bumpType *versioning.BumpType, versionReport *versioning.
 
 // We get the recorded BumpType and BumpMethod out of the PR body
 func parseBumpFromPRBody(prBody string) (versioning.BumpType, BumpMethod, error) {
-	re := regexp.MustCompile(`Version Bump Type:\s*(\w+)\s*\[(Manual|Automated)\]`)
+	re := regexp.MustCompile(`Version Bump Type:\s*\[(\w+)]\s*-\s*(👤|🤖)`)
 	matches := re.FindStringSubmatch(prBody)
 
 	// Check if the expected parts were found
