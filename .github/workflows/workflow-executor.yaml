@@ -166,7 +166,6 @@ jobs:
       resolved_speakeasy_version: ${{ steps.run-workflow.outputs.resolved_speakeasy_version }}
       use_sonatype_legacy: ${{ steps.run-workflow.outputs.use_sonatype_legacy }}
     steps:
-      -
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: run-workflow
