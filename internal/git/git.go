@@ -16,8 +16,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/speakeasy-api/versioning-reports/versioning"
-
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -28,6 +26,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
+	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 
 	"github.com/google/go-github/v63/github"
@@ -426,7 +425,7 @@ type PRInfo struct {
 	LintingReportURL     string
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
-	VersioningReport     *versioning.MergedVersionReport
+	VersioningInfo       versionbumps.VersioningInfo
 }
 
 func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
@@ -442,7 +441,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 	}
 
 	// Deprecated -- kept around for old CLI versions. VersioningReport is newer pathway
-	if info.ReleaseInfo != nil && info.VersioningReport == nil {
+	if info.ReleaseInfo != nil && info.VersioningInfo.VersionReport == nil {
 		for language, genInfo := range info.ReleaseInfo.LanguagesGenerated {
 			genPath := path.Join(environment.GetWorkspace(), "repo", genInfo.Path)
 
@@ -500,6 +499,16 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 		}
 	}
 
+	title := getGenPRTitlePrefix()
+	if environment.IsDocsGeneration() {
+		title = getDocsPRTitlePrefix()
+	} else if info.SourceGeneration {
+		title = getGenSourcesTitlePrefix()
+	}
+
+	suffix, labelBumpType, labels := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
+	title += suffix
+
 	body := ""
 
 	if info.LintingReportURL != "" || info.ChangesReportURL != "" {
@@ -527,8 +536,18 @@ Based on:
 `, info.ReleaseInfo.DocVersion, info.ReleaseInfo.DocLocation, info.ReleaseInfo.SpeakeasyVersion, info.ReleaseInfo.GenerationVersion)
 	}
 
-	if info.VersioningReport != nil {
-		body += stripCodes(info.VersioningReport.GetMarkdownSection())
+	if info.VersioningInfo.VersionReport != nil {
+		body += stripCodes(info.VersioningInfo.VersionReport.GetMarkdownSection())
+
+		// We keep track of explicit bump types and whether that bump type is manual or automated in the PR body
+		if labelBumpType != nil {
+			bumpMethod := versionbumps.BumpMethodAutomated
+			if info.VersioningInfo.ManualBump {
+				bumpMethod = versionbumps.BumpMethodManual
+			}
+			body += "\n\nVersion Bump Type: " + string(*labelBumpType) + " " + string(bumpMethod)
+		}
+
 	} else {
 		if len(info.OpenAPIChangeSummary) > 0 {
 			body += fmt.Sprintf(`## OpenAPI Change Summary
@@ -545,14 +564,6 @@ Based on:
 	if len(body) > maxBodyLength {
 		body = body[:maxBodyLength-3] + "..."
 	}
-	title := getGenPRTitlePrefix()
-	if environment.IsDocsGeneration() {
-		title = getDocsPRTitlePrefix()
-	} else if info.SourceGeneration {
-		title = getGenSourcesTitlePrefix()
-	}
-	suffix, labels := PRMetadata(info.VersioningReport, labelTypes)
-	title += suffix
 
 	if info.PR != nil {
 		logging.Info("Updating PR")
@@ -593,57 +604,6 @@ Based on:
 	logging.Info("PR: %s", url)
 
 	return info.PR, nil
-}
-
-func (g *Git) setPRLabels(background context.Context, owner string, repo string, issueNumber int, labelTypes map[string]github.Label, actualLabels, desiredLabels []*github.Label) {
-	shouldRemove := []string{}
-	shouldAdd := []string{}
-	fmt.Println("LABELS")
-	fmt.Println(actualLabels)
-	fmt.Println(desiredLabels)
-	for _, label := range actualLabels {
-		foundInDesired := false
-		for _, desired := range desiredLabels {
-			if label.GetName() == desired.GetName() {
-				foundInDesired = true
-				break
-			}
-			if _, ok := labelTypes[label.GetName()]; !ok {
-				foundInDesired = true
-				continue
-			}
-			break
-		}
-		if !foundInDesired {
-			shouldRemove = append(shouldRemove, label.GetName())
-		}
-	}
-	for _, desired := range desiredLabels {
-		foundInActual := false
-		for _, label := range actualLabels {
-			if label.GetName() == desired.GetName() {
-				foundInActual = true
-				break
-			}
-		}
-		if !foundInActual {
-			shouldAdd = append(shouldAdd, desired.GetName())
-		}
-	}
-	if len(shouldAdd) > 0 {
-		_, _, err := g.client.Issues.AddLabelsToIssue(background, owner, repo, issueNumber, shouldAdd)
-		if err != nil {
-			logging.Info("failed to add labels %v: %s", shouldAdd, err.Error())
-		}
-	}
-	if len(shouldRemove) > 0 {
-		for _, label := range shouldRemove {
-			_, err := g.client.Issues.RemoveLabelForIssue(background, owner, repo, issueNumber, label)
-			if err != nil {
-				logging.Info("failed to remove labels %s: %s", label, err.Error())
-			}
-		}
-	}
 }
 
 func notEquivalent(desired []*github.Label, actual []*github.Label) bool {
@@ -727,45 +687,6 @@ Based on:
 	logging.Info("PR: %s", url)
 
 	return nil
-}
-
-func PRMetadata(m *versioning.MergedVersionReport, labelTypes map[string]github.Label) (string, []*github.Label) {
-	if m == nil {
-		return "", []*github.Label{}
-	}
-	labels := []*github.Label{}
-	skipBumpType := false
-	skipVersionNumber := false
-	singleBumpType := ""
-	singleNewVersion := ""
-	for _, report := range m.Reports {
-		if len(report.BumpType) > 0 && report.BumpType != versioning.BumpNone && report.BumpType != versioning.BumpCustom {
-			if len(singleBumpType) > 0 {
-				skipBumpType = true
-			}
-			singleBumpType = string(report.BumpType)
-		}
-		if len(report.NewVersion) > 0 {
-			if len(singleNewVersion) > 0 {
-				skipVersionNumber = true
-			}
-			singleNewVersion = report.NewVersion
-		}
-	}
-	var builder []string
-	if !skipVersionNumber {
-		builder = append(builder, singleNewVersion)
-	}
-	if !skipBumpType {
-		if matched, ok := labelTypes[singleBumpType]; ok {
-			labels = append(labels, &matched)
-		}
-	}
-	// Add an extra " " at front
-	if len(builder) > 0 {
-		builder = append([]string{""}, builder...)
-	}
-	return strings.Join(builder, " "), labels
 }
 
 func (g *Git) CreateSuggestionPR(branchName, output string) (*int, string, error) {
@@ -1055,51 +976,6 @@ func (g *Git) CreateTag(tag string, hash string) error {
 
 	logging.Info("Tag %s created for commit %s", tag, hash)
 	return nil
-}
-
-func (g *Git) UpsertLabelTypes(ctx context.Context) map[string]github.Label {
-	desiredLabels := map[string]github.Label{}
-	addGitHubLabel := func(name, description string) {
-		desiredLabels[name] = github.Label{
-			Name:        &name,
-			Description: &description,
-		}
-	}
-	addGitHubLabel(string(versioning.BumpMajor), "Major version bump")
-	addGitHubLabel(string(versioning.BumpMinor), "Minor version bump")
-	addGitHubLabel(string(versioning.BumpPatch), "Patch version bump")
-	addGitHubLabel(string(versioning.BumpGraduate), "Graduate prerelease to stable")
-	addGitHubLabel(string(versioning.BumpPrerelease), "Bump by a prerelease version")
-	actualLabels := make(map[string]github.Label)
-	allLabels, _, err := g.client.Issues.ListLabels(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), nil)
-	if err != nil {
-		return actualLabels
-	}
-	for _, label := range allLabels {
-		actualLabels[*label.Name] = *label
-	}
-
-	for _, label := range desiredLabels {
-		foundLabel, ok := actualLabels[*label.Name]
-		if ok {
-			if *foundLabel.Description != *label.Description {
-				_, _, err = g.client.Issues.EditLabel(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *label.Name, &github.Label{
-					Name:        label.Name,
-					Description: label.Description,
-				})
-				if err != nil {
-					return actualLabels
-				}
-			}
-		} else {
-			_, _, err = g.client.Issues.CreateLabel(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &label)
-			if err != nil {
-				return actualLabels
-			}
-		}
-		actualLabels[*label.Name] = label
-	}
-	return actualLabels
 }
 
 func getGithubAuth(accessToken string) *gitHttp.BasicAuth {

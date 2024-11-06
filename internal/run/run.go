@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-github/v63/github"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
+	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
 	"github.com/speakeasy-api/versioning-reports/versioning"
 
 	"github.com/speakeasy-api/sdk-gen-config/workflow"
@@ -37,6 +38,7 @@ type RunResult struct {
 	LintingReportURL     string
 	ChangesReportURL     string
 	VersioningReport     *versioning.MergedVersionReport
+	VersioningInfo       versionbumps.VersioningInfo
 }
 
 type Git interface {
@@ -68,6 +70,11 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 	repoURL := getRepoURL()
 	repoSubdirectories := map[string]string{}
 	previousManagementInfos := map[string]config.Management{}
+
+	var manualVersioningBump *versioning.BumpType
+	if versionBump := versionbumps.GetLabelBasedVersionBump(pr); versionBump != "" && versionBump != versioning.BumpNone {
+		manualVersioningBump = &versionBump
+	}
 
 	getDirAndOutputDir := func(target workflow.Target) (string, string) {
 		dir := "."
@@ -126,7 +133,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 	var changereport *versioning.MergedVersionReport
 
 	changereport, runRes, err = versioning.WithVersionReportCapture[*cli.RunResults](context.Background(), func(ctx context.Context) (*cli.RunResults, error) {
-		return cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories)
+		return cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories, manualVersioningBump)
 	})
 	if err != nil {
 		return nil, outputs, err
@@ -139,8 +146,11 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		// no further steps
 		fmt.Printf("No changes that imply the need for us to automatically regenerate the SDK.\n  Use \"Force Generation\" if you want to force a new generation.\n  Changes would include:\n-----\n%s", changereport.GetMarkdownSection())
 		return &RunResult{
-			GenInfo:              nil,
-			VersioningReport:     changereport,
+			GenInfo: nil,
+			VersioningInfo: versionbumps.VersioningInfo{
+				VersionReport: changereport,
+				ManualBump:    versionbumps.ManualBumpWasUsed(manualVersioningBump, changereport),
+			},
 			OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
 			LintingReportURL:     runRes.LintingReportURL,
 			ChangesReportURL:     runRes.ChangesReportURL,
@@ -233,8 +243,11 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 	}
 
 	return &RunResult{
-		GenInfo:              genInfo,
-		VersioningReport:     changereport,
+		GenInfo: genInfo,
+		VersioningInfo: versionbumps.VersioningInfo{
+			VersionReport: changereport,
+			ManualBump:    versionbumps.ManualBumpWasUsed(manualVersioningBump, changereport),
+		},
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
 		LintingReportURL:     runRes.LintingReportURL,
 		ChangesReportURL:     runRes.ChangesReportURL,

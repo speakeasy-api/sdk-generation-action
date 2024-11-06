@@ -238,6 +238,10 @@ func GetCliOutput() string {
 }
 
 func GetRef() string {
+	// handle pr based action triggers
+	if strings.Contains(os.Getenv("GITHUB_REF"), "pulls/") {
+		return os.Getenv("GITHUB_HEAD_REF")
+	}
 	return os.Getenv("GITHUB_REF")
 }
 
