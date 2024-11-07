@@ -2,12 +2,17 @@ package telemetry
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	speakeasy "github.com/speakeasy-api/speakeasy-client-sdk-go/v3"
 	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/operations"
 	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
@@ -22,6 +27,7 @@ const AccountTypeKey ContextKey = "speakeasy.accountType"
 
 // a random UUID. Change this to fan-out executions with the same gh run id.
 const speakeasyGithubActionNamespace = "360D564A-5583-4EF6-BC2B-99530BF036CC"
+const speakeasyAudience = "speakeasy-generation"
 
 func NewContextWithSDK(ctx context.Context, apiKey string) (context.Context, *speakeasy.Speakeasy, string, error) {
 	security := shared.Security{APIKey: &apiKey}
@@ -121,6 +127,28 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 	EnrichEventWithEnvironmentVariables(runEvent)
 	enrichHostName(runEvent)
 
+	// This means we have `id-token: write` permissions. Authenticate the workflow run with speakeasy
+	if environment.GetGithubOIDCRequestURL() != "" && environment.GetGithubOIDCRequestToken() != "" {
+		go func() {
+			if oidcToken, err := getIDToken(environment.GetGithubOIDCRequestURL(), environment.GetGithubOIDCRequestToken()); err != nil {
+				fmt.Println("Failed to get OIDC token", err)
+			} else {
+				owner := os.Getenv("GITHUB_REPOSITORY_OWNER")
+				res, err := sdk.Github.LinkGithub(context.WithoutCancel(ctx), operations.LinkGithubAccessRequest{
+					GithubOidcToken: &oidcToken,
+					GithubOrg:       &owner,
+				})
+				if err != nil {
+					fmt.Println("Failed to link github account", err)
+				}
+
+				if res != nil && res.StatusCode != 200 {
+					fmt.Println("Failed to link github account", err)
+				}
+			}
+		}()
+	}
+
 	// Execute the provided function, capturing any error
 	err = fn(ctx, runEvent)
 
@@ -158,4 +186,49 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 func reformatPullRequestURL(url string) string {
 	url = strings.Replace(url, "https://api.github.com/repos/", "https://github.com/", 1)
 	return strings.Replace(url, "/pulls/", "/pull/", 1)
+}
+
+type OIDCTokenResponse struct {
+	Value string `json:"value"`
+}
+
+func getIDToken(requestURL string, requestToken string) (string, error) {
+	tokenURL, err := url.Parse(requestURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse token request URL: %w", err)
+	}
+
+	q := tokenURL.Query()
+	q.Set("audience", speakeasyAudience)
+	tokenURL.RawQuery = q.Encode()
+
+	req, err := http.NewRequest("GET", tokenURL.String(), nil)
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+requestToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to retrieve token, status code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var tokenResponse OIDCTokenResponse
+	if err := json.Unmarshal(body, &tokenResponse); err != nil {
+		return "", fmt.Errorf("failed to parse JSON response: %w", err)
+	}
+
+	return tokenResponse.Value, nil
 }

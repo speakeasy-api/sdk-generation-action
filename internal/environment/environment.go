@@ -257,6 +257,14 @@ func GetGithubServerURL() string {
 	return os.Getenv("GITHUB_SERVER_URL")
 }
 
+func GetGithubOIDCRequestURL() string {
+	return os.Getenv("ACTIONS_ID_TOKEN_REQUEST_URL")
+}
+
+func GetGithubOIDCRequestToken() string {
+	return os.Getenv("ACTIONS_ID_TOKEN_REQUEST_TOKEN")
+}
+
 func GetWorkspace() string {
 	return os.Getenv("GITHUB_WORKSPACE")
 }
