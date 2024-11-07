@@ -133,8 +133,10 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 			if oidcToken, err := getIDToken(environment.GetGithubOIDCRequestURL(), environment.GetGithubOIDCRequestToken()); err != nil {
 				fmt.Println("Failed to get OIDC token", err)
 			} else {
+				owner := os.Getenv("GITHUB_REPOSITORY_OWNER")
 				res, err := sdk.Github.LinkGithub(context.WithoutCancel(ctx), operations.LinkGithubAccessRequest{
 					GithubOidcToken: &oidcToken,
+					GithubOrg:       &owner,
 				})
 				if err != nil {
 					fmt.Println("Failed to link github account", err)
