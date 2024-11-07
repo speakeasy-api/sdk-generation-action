@@ -171,7 +171,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' }}
         id: check-label
         run: |
-          label="${{ github.event.label.name | toLower }}"
+          label="${{ github.event.label.name }}"
           pr_body="${{ github.event.pull_request.body }}"
           if [[ "$label" != "patch" && "$label" != "minor" && "$label" != "major" && "$label" != "graduate" ]] || [[ "$pr_body" == *"Version Bump Type: [$label]"* ]]; then
             echo "Invalid label or label found in PR body. Short-circuiting."
