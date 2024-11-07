@@ -179,7 +179,7 @@ jobs:
           # Check if the label is a valid version bump and ensure the current PR isn't already on that version bump
           # If either are true we short circuit the rest of the action
           if [[ "$label" != "patch" && "$label" != "minor" && "$label" != "major" && "$label" != "graduate" ]] || grep -Fq "Version Bump Type: [$label]" "$tmpfile"; then
-            echo "Invalid label or conflicting label found in PR body. Short-circuiting."
+            echo "No version bump label found in PR body. Short-circuiting."
             echo "short_circuit_label_trigger=true" >> "$GITHUB_OUTPUT"
             exit 0
           else
