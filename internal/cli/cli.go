@@ -53,7 +53,7 @@ func GetSupportedLanguages() []string {
 			return supportedTargets
 		}
 	}
-	
+
 	return defaultSupportedTargets
 }
 
