@@ -170,22 +170,20 @@ jobs:
       - name: Check Pull Request Label
         if: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' }}
         id: check-label
+        continue-on-error: true
         run: |
-          # Capture the label and PR body in variables
           label="${{ github.event.label.name }}"
-
-          # Create a temporary file for the PR body to safely handle special characters
           tmpfile=$(mktemp)
           echo "${{ github.event.pull_request.body }}" > "$tmpfile"
 
-          # Check if the label is valid or if the PR body contains the specific version bump pattern
+          # Check if the label is a valid version bump and ensure the current PR isn't already on that version bump
+          # If either are true we short circuit the rest of the action
           if [[ "$label" != "patch" && "$label" != "minor" && "$label" != "major" && "$label" != "graduate" ]] || grep -Fq "Version Bump Type: [$label]" "$tmpfile"; then
             echo "Invalid label or conflicting label found in PR body. Short-circuiting."
-            echo "::set-output name=short_circuit_label_trigger::true"
+            echo "short_circuit_label_trigger=true" >> "$GITHUB_OUTPUT"
             exit 0
           else
-            echo "Valid label and no conflict in PR body."
-            echo "::set-output name=short_circuit_label_trigger::false"
+            echo "short_circuit_label_trigger=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Tune GitHub-hosted runner network
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
