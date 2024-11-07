@@ -35,8 +35,6 @@ func GetBumpTypeLabels() map[versioning.BumpType]string {
 }
 
 func GetLabelBasedVersionBump(pr *github.PullRequest) versioning.BumpType {
-	fmt.Println("CHECKING FOR VERSION BUMPS")
-	fmt.Println(pr.Labels)
 	if pr == nil {
 		return versioning.BumpNone
 	}
@@ -48,12 +46,8 @@ func GetLabelBasedVersionBump(pr *github.PullRequest) versioning.BumpType {
 		}
 	}
 
-	fmt.Println(bumpTypeLabels)
-
 	if bumpType := stackRankBumpLabels(bumpLabels); bumpType != versioning.BumpNone {
 		currentPRBumpType, currentPRBumpMethod, err := parseBumpFromPRBody(pr.GetBody())
-		fmt.Println(currentPRBumpType)
-		fmt.Println(currentPRBumpMethod)
 		if err != nil {
 			fmt.Errorf("failed to parse bump type and mode from PR body: %w", err)
 			return versioning.BumpNone
@@ -63,7 +57,6 @@ func GetLabelBasedVersionBump(pr *github.PullRequest) versioning.BumpType {
 		// if the current Bump Type != label based versioning Bump we will use the label based versioning Bump
 		// if the current Bump Type == label based versioning Bump  and that was manually set we will stick to it
 		if currentPRBumpType != bumpType || currentPRBumpMethod == BumpMethodManual {
-			fmt.Println("WE HIT A CHANGE")
 			return bumpType
 		}
 	}

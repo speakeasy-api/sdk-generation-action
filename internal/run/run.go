@@ -73,7 +73,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 
 	var manualVersioningBump *versioning.BumpType
 	if versionBump := versionbumps.GetLabelBasedVersionBump(pr); versionBump != "" && versionBump != versioning.BumpNone {
-		fmt.Println("ATTACHING MANUAL VERSION")
+		fmt.Println("Using label based version bump: ", versionBump)
 		manualVersioningBump = &versionBump
 	}
 
