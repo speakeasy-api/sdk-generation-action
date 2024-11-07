@@ -165,27 +165,34 @@ jobs:
       branch_name: ${{ steps.run-workflow.outputs.branch_name }}
       resolved_speakeasy_version: ${{ steps.run-workflow.outputs.resolved_speakeasy_version }}
       use_sonatype_legacy: ${{ steps.run-workflow.outputs.use_sonatype_legacy }}
-      short_circuit_label_trigger: ${{ steps.check-label.outputs.short_circuit_label_trigger || 'false' }}
+      short_circuit_label_trigger: ${{ steps.check-label.outputs.short_circuit_label_trigger }}
     steps:
       - name: Check Pull Request Label
         if: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' }}
         id: check-label
         run: |
+          # Capture the label and PR body in variables
           label="${{ github.event.label.name }}"
-          pr_body="${{ github.event.pull_request.body }}"
-          if [[ "$label" != "patch" && "$label" != "minor" && "$label" != "major" && "$label" != "graduate" ]] || [[ "$pr_body" == *"Version Bump Type: [$label]"* ]]; then
-            echo "Invalid label or label found in PR body. Short-circuiting."
+
+          # Create a temporary file for the PR body to safely handle special characters
+          tmpfile=$(mktemp)
+          echo "${{ github.event.pull_request.body }}" > "$tmpfile"
+
+          # Check if the label is valid or if the PR body contains the specific version bump pattern
+          if [[ "$label" != "patch" && "$label" != "minor" && "$label" != "major" && "$label" != "graduate" ]] || grep -Fq "Version Bump Type: [$label]" "$tmpfile"; then
+            echo "Invalid label or conflicting label found in PR body. Short-circuiting."
             echo "::set-output name=short_circuit_label_trigger::true"
             exit 0
           else
-          echo "Valid label and no PR body conflict."
-          echo "::set-output name=short_circuit_label_trigger::false"
+            echo "Valid label and no conflict in PR body."
+            echo "::set-output name=short_circuit_label_trigger::false"
           fi
       - name: Tune GitHub-hosted runner network
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: run-workflow
         name: Run Generation Workflow
-        if: ${{ steps.check-label.outputs.short_circuit_label_trigger == 'false' }}
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
         uses: speakeasy-api/sdk-generation-action@v15.32.6
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -204,7 +211,7 @@ jobs:
           cli_environment_variables: ${{ inputs.environment }}
           pnpm_version: ${{ inputs.pnpm_version }}
       - uses: ravsamhq/notify-slack-action@v2
-        if: ${{ steps.check-label.outputs.short_circuit_label_trigger == 'false' && env.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' && env.SLACK_WEBHOOK_URL != '' }}
         with:
           status: ${{ job.status }}
           token: ${{ secrets.github_access_token }}
@@ -217,7 +224,7 @@ jobs:
       - id: log-result
         name: Log Generation Output
         uses: speakeasy-api/sdk-generation-action@v15
-        if: ${{ steps.check-label.outputs.short_circuit_label_trigger == 'false'}}
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true'}}
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           github_access_token: ${{ secrets.github_access_token }}
