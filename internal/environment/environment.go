@@ -3,7 +3,6 @@ package environment
 import (
 	"fmt"
 	"os"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -240,7 +239,7 @@ func GetCliOutput() string {
 
 func GetRef() string {
 	// handle pr based action triggers
-	if slices.Contains([]string{"refs/pull", "refs/pulls"}, os.Getenv("GITHUB_REF")) {
+	if strings.Contains(os.Getenv("GITHUB_REF"), "refs/pull") || strings.Contains(os.Getenv("GITHUB_REF"), "refs/pulls") {
 		return os.Getenv("GITHUB_HEAD_REF")
 	}
 	return os.Getenv("GITHUB_REF")

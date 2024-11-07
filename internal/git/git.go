@@ -61,7 +61,7 @@ func (g *Git) CloneRepo() error {
 		return fmt.Errorf("failed to construct repo url: %w", err)
 	}
 
-	ref := os.Getenv("GITHUB_REF")
+	ref := environment.GetRef()
 
 	logging.Info("Cloning repo: %s from ref: %s", repoPath, ref)
 
