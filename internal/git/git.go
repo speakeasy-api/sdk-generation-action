@@ -541,13 +541,14 @@ Based on:
 
 		// We keep track of explicit bump types and whether that bump type is manual or automated in the PR body
 		if labelBumpType != nil {
+			// be very careful if changing this it critically aligns with a regex in parseBumpFromPRBody
 			versionBumpMsg := "Version Bump Type: " + fmt.Sprintf("[%s]", string(*labelBumpType)) + " - "
 			if info.VersioningInfo.ManualBump {
-				versionBumpMsg += string(versionbumps.BumpMethodManual)
+				versionBumpMsg += string(versionbumps.BumpMethodManual) + " (manual)"
 				// if manual we bold the message
 				versionBumpMsg = "**" + versionBumpMsg + "**"
 			} else {
-				versionBumpMsg += string(versionbumps.BumpMethodAutomated)
+				versionBumpMsg += string(versionbumps.BumpMethodAutomated) + " (automated)"
 			}
 			body += "\n\n" + versionBumpMsg
 		}

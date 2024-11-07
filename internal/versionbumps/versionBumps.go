@@ -80,6 +80,7 @@ func ManualBumpWasUsed(bumpType *versioning.BumpType, versionReport *versioning.
 
 // We get the recorded BumpType and BumpMethod out of the PR body
 func parseBumpFromPRBody(prBody string) (versioning.BumpType, BumpMethod, error) {
+	// be very careful if changing this regex, it is critical
 	re := regexp.MustCompile(`Version Bump Type:\s*\[(\w+)]\s*-\s*(👤|🤖)`)
 	matches := re.FindStringSubmatch(prBody)
 
