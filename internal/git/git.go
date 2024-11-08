@@ -547,6 +547,7 @@ Based on:
 				versionBumpMsg += string(versionbumps.BumpMethodManual) + " (manual)"
 				// if manual we bold the message
 				versionBumpMsg = "**" + versionBumpMsg + "**"
+				versionBumpMsg += fmt.Sprintf("\nThis PR will stay on the current version until the %s label is removed and/or modified", string(*labelBumpType))
 			} else {
 				versionBumpMsg += string(versionbumps.BumpMethodAutomated) + " (automated)"
 			}
