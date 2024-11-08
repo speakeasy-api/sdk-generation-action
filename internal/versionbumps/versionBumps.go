@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/google/go-github/v63/github"
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/versioning-reports/versioning"
 	"golang.org/x/exp/slices"
 )
@@ -65,6 +66,11 @@ func GetLabelBasedVersionBump(pr *github.PullRequest) versioning.BumpType {
 }
 
 func ManualBumpWasUsed(bumpType *versioning.BumpType, versionReport *versioning.MergedVersionReport) bool {
+	// the combination of setting a manual version and a force is considered a manual bump
+	if environment.SetVersion() != "" && environment.ForceGeneration() {
+		return true
+	}
+
 	if bumpType == nil || versionReport == nil {
 		return false
 	}
