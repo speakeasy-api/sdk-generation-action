@@ -7,10 +7,12 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/speakeasy-api/sdk-generation-action/internal/registry"
-
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/sdk-generation-action/internal/registry"
+	"github.com/speakeasy-api/versioning-reports/versioning"
 )
+
+const BumpOverrideEnvVar = "SPEAKEASY_BUMP_OVERRIDE"
 
 type RunResults struct {
 	LintingReportURL     string
@@ -18,7 +20,7 @@ type RunResults struct {
 	OpenAPIChangeSummary string
 }
 
-func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, repoSubdirectories map[string]string) (*RunResults, error) {
+func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, repoSubdirectories map[string]string, manualVersionBump *versioning.BumpType) (*RunResults, error) {
 	args := []string{
 		"run",
 	}
@@ -62,6 +64,10 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	if environment.ForceGeneration() {
 		fmt.Println("\nforce input enabled - setting SPEAKEASY_FORCE_GENERATION=true")
 		os.Setenv("SPEAKEASY_FORCE_GENERATION", "true")
+	}
+
+	if manualVersionBump != nil {
+		os.Setenv(BumpOverrideEnvVar, string(*manualVersionBump))
 	}
 
 	//if environment.ShouldOutputTests() {

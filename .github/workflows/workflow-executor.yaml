@@ -165,11 +165,32 @@ jobs:
       branch_name: ${{ steps.run-workflow.outputs.branch_name }}
       resolved_speakeasy_version: ${{ steps.run-workflow.outputs.resolved_speakeasy_version }}
       use_sonatype_legacy: ${{ steps.run-workflow.outputs.use_sonatype_legacy }}
+      short_circuit_label_trigger: ${{ steps.check-label.outputs.short_circuit_label_trigger }}
     steps:
+      - name: Check Pull Request Label
+        if: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' }}
+        id: check-label
+        continue-on-error: true
+        run: |
+          label="${{ github.event.label.name }}"
+          tmpfile=$(mktemp)
+          echo "${{ github.event.pull_request.body }}" > "$tmpfile"
+
+          # Check if the label is a valid version bump and ensure the current PR isn't already on that version bump
+          # If either are true we short circuit the rest of the action
+          if [[ "$label" != "patch" && "$label" != "minor" && "$label" != "major" && "$label" != "graduate" ]] || grep -Fq "Version Bump Type: [$label]" "$tmpfile"; then
+            echo "No version bump label found in PR body. Short-circuiting."
+            echo "short_circuit_label_trigger=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          else
+            echo "short_circuit_label_trigger=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Tune GitHub-hosted runner network
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: run-workflow
         name: Run Generation Workflow
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
         uses: speakeasy-api/sdk-generation-action@v15
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -188,7 +209,7 @@ jobs:
           cli_environment_variables: ${{ inputs.environment }}
           pnpm_version: ${{ inputs.pnpm_version }}
       - uses: ravsamhq/notify-slack-action@v2
-        if: always() && env.SLACK_WEBHOOK_URL != ''
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' && env.SLACK_WEBHOOK_URL != '' }}
         with:
           status: ${{ job.status }}
           token: ${{ secrets.github_access_token }}
@@ -201,7 +222,7 @@ jobs:
       - id: log-result
         name: Log Generation Output
         uses: speakeasy-api/sdk-generation-action@v15
-        if: always()
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true'}}
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           github_access_token: ${{ secrets.github_access_token }}

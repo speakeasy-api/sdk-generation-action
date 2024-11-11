@@ -225,6 +225,10 @@ func GetWorkflowEventPayloadPath() string {
 	return os.Getenv("GITHUB_EVENT_PATH")
 }
 
+func GetWorkflowEventLabelName() string {
+	return os.Getenv("GITHUB_EVENT_LABEL_NAME")
+}
+
 func GetBranchName() string {
 	return os.Getenv("INPUT_BRANCH_NAME")
 }
@@ -234,6 +238,10 @@ func GetCliOutput() string {
 }
 
 func GetRef() string {
+	// handle pr based action triggers
+	if strings.Contains(os.Getenv("GITHUB_REF"), "refs/pull") || strings.Contains(os.Getenv("GITHUB_REF"), "refs/pulls") {
+		return os.Getenv("GITHUB_BASE_REF")
+	}
 	return os.Getenv("GITHUB_REF")
 }
 

@@ -247,7 +247,6 @@ func TestArtifactMatchesRelease(t *testing.T) {
 			goarch:    "amd",
 			want:      false,
 		},
-
 	}
 
 	for _, tt := range tests {

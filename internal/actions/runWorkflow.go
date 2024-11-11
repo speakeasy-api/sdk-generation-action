@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v63/github"
+	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
 	"github.com/speakeasy-api/versioning-reports/versioning"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
@@ -173,7 +174,7 @@ func RunWorkflow() error {
 		AnythingRegenerated:  anythingRegenerated,
 		SourcesOnly:          sourcesOnly,
 		Git:                  g,
-		VersioningReport:     runRes.VersioningReport,
+		VersioningInfo:       runRes.VersioningInfo,
 		LintingReportURL:     runRes.LintingReportURL,
 		ChangesReportURL:     runRes.ChangesReportURL,
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
@@ -202,6 +203,7 @@ type finalizeInputs struct {
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
 	VersioningReport     *versioning.MergedVersionReport
+	VersioningInfo       versionbumps.VersioningInfo
 	currentRelease       *releases.ReleasesInfo
 }
 
@@ -240,7 +242,7 @@ func finalize(inputs finalizeInputs) error {
 			SourceGeneration:     inputs.SourcesOnly,
 			LintingReportURL:     inputs.LintingReportURL,
 			ChangesReportURL:     inputs.ChangesReportURL,
-			VersioningReport:     inputs.VersioningReport,
+			VersioningInfo:       inputs.VersioningInfo,
 			OpenAPIChangeSummary: inputs.OpenAPIChangeSummary,
 		})
 
