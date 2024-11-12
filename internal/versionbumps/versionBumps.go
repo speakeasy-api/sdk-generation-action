@@ -23,6 +23,7 @@ var bumpTypeLabels = map[versioning.BumpType]string{
 	versioning.BumpPatch:      "Patch version bump",
 	versioning.BumpGraduate:   "Graduate prerelease to stable",
 	versioning.BumpPrerelease: "Bump by a prerelease version",
+	versioning.BumpCustom:     "A custom version was applied",
 }
 
 type VersioningInfo struct {

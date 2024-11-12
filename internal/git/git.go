@@ -28,6 +28,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
+	"github.com/speakeasy-api/versioning-reports/versioning"
 
 	"github.com/google/go-github/v63/github"
 	"golang.org/x/oauth2"
@@ -540,7 +541,7 @@ Based on:
 		body += stripCodes(info.VersioningInfo.VersionReport.GetMarkdownSection())
 
 		// We keep track of explicit bump types and whether that bump type is manual or automated in the PR body
-		if labelBumpType != nil {
+		if labelBumpType != nil && *labelBumpType != versioning.BumpCustom && *labelBumpType != versioning.BumpNone {
 			// be very careful if changing this it critically aligns with a regex in parseBumpFromPRBody
 			versionBumpMsg := "Version Bump Type: " + fmt.Sprintf("[%s]", string(*labelBumpType)) + " - "
 			if info.VersioningInfo.ManualBump {
