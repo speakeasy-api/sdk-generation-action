@@ -116,7 +116,7 @@ func PRVersionMetadata(m *versioning.MergedVersionReport, labelTypes map[string]
 	singleBumpType := ""
 	singleNewVersion := ""
 	for _, report := range m.Reports {
-		if len(report.BumpType) > 0 && report.BumpType != versioning.BumpNone && report.BumpType != versioning.BumpCustom {
+		if len(report.BumpType) > 0 && report.BumpType != versioning.BumpNone {
 			if len(singleBumpType) > 0 {
 				skipBumpType = true
 			}
