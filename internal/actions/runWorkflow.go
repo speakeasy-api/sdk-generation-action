@@ -85,6 +85,10 @@ func RunWorkflow() error {
 		}
 	}()
 
+	if branchName != "" {
+		os.Setenv("SPEAKEASY_ACTIVE_BRANCH", branchName)
+	}
+
 	runRes, outputs, err := run.Run(g, pr, wf)
 	if err != nil {
 		if err := setOutputs(outputs); err != nil {
@@ -278,7 +282,39 @@ func finalize(inputs finalizeInputs) error {
 			}
 		}
 
+		// add merging branch registry tag
+		if err = addDirectModeBranchTagging(); err != nil {
+			logging.Debug("failed to tag registry images: %v", err)
+		}
+
 		inputs.Outputs["commit_hash"] = commitHash
+	}
+
+	return nil
+}
+
+func addDirectModeBranchTagging() error {
+	wf, err := configuration.GetWorkflowAndValidateLanguages(true)
+	if err != nil {
+		return err
+	}
+
+	branch := strings.TrimPrefix(os.Getenv("GITHUB_REF"), "refs/heads/")
+
+	var sources, targets []string
+	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
+		if target, ok := wf.Targets[environment.SpecifiedTarget()]; ok {
+			sources = append(sources, target.Source)
+			targets = append(targets, specificTarget)
+		}
+	} else {
+		for name, target := range wf.Targets {
+			sources = append(sources, target.Source)
+			targets = append(targets, name)
+		}
+	}
+	if len(sources) > 0 && len(targets) > 0 && branch != "" {
+		return cli.Tag([]string{branch}, sources, targets)
 	}
 
 	return nil
