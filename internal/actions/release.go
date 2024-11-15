@@ -3,11 +3,14 @@ package actions
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/sdk-generation-action/internal/git"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
@@ -90,6 +93,12 @@ func Release() error {
 		return err
 	}
 
+	if os.Getenv("SPEAKEASY_API_KEY") != "" {
+		if err = addCurrentBranchTagging(g, latestRelease.Languages); err != nil {
+			logging.Debug("failed to tag registry images: %v", err)
+		}
+	}
+
 	return nil
 }
 
@@ -142,6 +151,54 @@ func addPublishOutputs(dir string, outputs map[string]string) error {
 		}
 
 		run.AddTargetPublishOutputs(target, outputs, nil)
+	}
+
+	return nil
+}
+
+func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.LanguageReleaseInfo) error {
+	_, err := cli.Download("latest", g)
+	if err != nil {
+		return err
+	}
+
+	var sources, targets []string
+	branch := strings.TrimPrefix(os.Getenv("GITHUB_REF"), "refs/heads/")
+	workflow, err := configuration.GetWorkflowAndValidateLanguages(true)
+	if err != nil {
+		return err
+	}
+
+	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
+		if target, ok := workflow.Targets[specificTarget]; ok {
+			sources = append(sources, target.Source)
+			targets = append(targets, specificTarget)
+		}
+	} else {
+		for name, target := range workflow.Targets {
+			if releaseInfo, ok := latestRelease[target.Target]; ok {
+				releasePath, err := filepath.Rel(".", releaseInfo.Path)
+				if err != nil {
+					return err
+				}
+
+				if releasePath == "" && target.Output == nil {
+					sources = append(sources, target.Source)
+					targets = append(targets, name)
+				}
+
+				if target.Output != nil {
+					if outputPath, err := filepath.Rel(".", *target.Output); err != nil && outputPath == releasePath {
+						sources = append(sources, target.Source)
+						targets = append(targets, name)
+					}
+				}
+			}
+		}
+	}
+
+	if len(sources) > 0 && len(targets) > 0 && branch != "" {
+		return cli.Tag([]string{branch}, sources, targets)
 	}
 
 	return nil
