@@ -93,7 +93,9 @@ func Release() error {
 		return err
 	}
 
+	fmt.Println("WE HAVE API KEY")
 	if os.Getenv("SPEAKEASY_API_KEY") != "" {
+		fmt.Println("WE HAVE DON'T API KEY")
 		if err = addCurrentBranchTagging(g, latestRelease.Languages); err != nil {
 			logging.Debug("failed to tag registry images: %v", err)
 		}
@@ -196,6 +198,10 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 			}
 		}
 	}
+
+	fmt.Println("BRANCH: ", branch)
+	fmt.Println("SOURCES: ", sources)
+	fmt.Println("TARGETS: ", targets)
 
 	if len(sources) > 0 && len(targets) > 0 && branch != "" {
 		return cli.Tag([]string{branch}, sources, targets)
