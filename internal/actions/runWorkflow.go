@@ -303,6 +303,7 @@ func addDirectModeBranchTagging() error {
 	branch := strings.TrimPrefix(os.Getenv("GITHUB_REF"), "refs/heads/")
 
 	var sources, targets []string
+	// the tagging library treats targets synonymously with code samples
 	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
 		if target, ok := wf.Targets[specificTarget]; ok {
 			if source, ok := wf.Sources[target.Source]; ok && source.Registry != nil {
