@@ -93,9 +93,7 @@ func Release() error {
 		return err
 	}
 
-	fmt.Println("WE ENTERED")
 	if os.Getenv("SPEAKEASY_API_KEY") != "" {
-		fmt.Println("WE HAVE API KEY")
 		if err = addCurrentBranchTagging(g, latestRelease.Languages); err != nil {
 			logging.Debug("failed to tag registry images: %v", err)
 		}
@@ -172,7 +170,6 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 	}
 
 	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
-		fmt.Println("WE HAVE SPECIFIC TARGET")
 		if target, ok := workflow.Targets[specificTarget]; ok {
 			sources = append(sources, target.Source)
 			targets = append(targets, specificTarget)
@@ -185,6 +182,7 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 					return err
 				}
 
+				// check for no SDK output path
 				if (releasePath == "" || releasePath == ".") && target.Output == nil {
 					sources = append(sources, target.Source)
 					targets = append(targets, name)
@@ -196,9 +194,6 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 						return err
 					}
 					outputPath = filepath.Join(environment.GetWorkingDirectory(), outputPath)
-					fmt.Println("WE HAVE RELEASE INFO")
-					fmt.Println(outputPath)
-					fmt.Println(releasePath)
 					if outputPath == releasePath {
 						sources = append(sources, target.Source)
 						targets = append(targets, name)
@@ -207,10 +202,6 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 			}
 		}
 	}
-
-	fmt.Println("BRANCH: ", branch)
-	fmt.Println("SOURCES: ", sources)
-	fmt.Println("TARGETS: ", targets)
 
 	if len(sources) > 0 && len(targets) > 0 && branch != "" {
 		return cli.Tag([]string{branch}, sources, targets)
