@@ -191,10 +191,15 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 				}
 
 				if target.Output != nil {
+					outputPath, err := filepath.Rel(".", *target.Output)
+					if err != nil {
+						return err
+					}
+					outputPath = filepath.Join(environment.GetWorkingDirectory(), outputPath)
 					fmt.Println("WE HAVE RELEASE INFO")
-					fmt.Println(filepath.Rel(".", *target.Output))
+					fmt.Println(outputPath)
 					fmt.Println(releasePath)
-					if outputPath, err := filepath.Rel(".", *target.Output); err != nil && outputPath == releasePath {
+					if outputPath == releasePath {
 						sources = append(sources, target.Source)
 						targets = append(targets, name)
 					}
