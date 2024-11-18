@@ -93,9 +93,9 @@ func Release() error {
 		return err
 	}
 
-	fmt.Println("WE HAVE API KEY")
+	fmt.Println("WE ENTERED")
 	if os.Getenv("SPEAKEASY_API_KEY") != "" {
-		fmt.Println("WE HAVE DON'T API KEY")
+		fmt.Println("WE HAVE API KEY")
 		if err = addCurrentBranchTagging(g, latestRelease.Languages); err != nil {
 			logging.Debug("failed to tag registry images: %v", err)
 		}
@@ -172,6 +172,7 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 	}
 
 	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
+		fmt.Println("WE HAVE SPECIFIC TARGET")
 		if target, ok := workflow.Targets[specificTarget]; ok {
 			sources = append(sources, target.Source)
 			targets = append(targets, specificTarget)
@@ -183,6 +184,10 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 				if err != nil {
 					return err
 				}
+
+				fmt.Println("WE HAVE RELEASE INFO")
+				fmt.Println(target.Output)
+				fmt.Println(releasePath)
 
 				if releasePath == "" && target.Output == nil {
 					sources = append(sources, target.Source)
