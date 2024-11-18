@@ -1,12 +1,12 @@
 package actions
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
@@ -95,7 +95,7 @@ func Release() error {
 
 	if os.Getenv("SPEAKEASY_API_KEY") != "" {
 		if err = addCurrentBranchTagging(g, latestRelease.Languages); err != nil {
-			logging.Debug("failed to tag registry images: %v", err)
+			return errors.Wrap(err, "failed to tag registry images")
 		}
 	}
 
@@ -169,14 +169,21 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 		return err
 	}
 
+	// the tagging library treats targets synonymously with code samples
 	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
 		if target, ok := workflow.Targets[specificTarget]; ok {
-			sources = append(sources, target.Source)
-			targets = append(targets, specificTarget)
+			if source, ok := workflow.Sources[target.Source]; ok && source.Registry != nil {
+				sources = append(sources, target.Source)
+			}
+
+			if target.CodeSamples != nil && target.CodeSamples.Registry != nil {
+				targets = append(targets, specificTarget)
+			}
 		}
 	} else {
 		for name, target := range workflow.Targets {
 			if releaseInfo, ok := latestRelease[target.Target]; ok {
+				var targetIsMatched bool
 				releasePath, err := filepath.Rel(".", releaseInfo.Path)
 				if err != nil {
 					return err
@@ -184,8 +191,7 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 
 				// check for no SDK output path
 				if (releasePath == "" || releasePath == ".") && target.Output == nil {
-					sources = append(sources, target.Source)
-					targets = append(targets, name)
+					targetIsMatched = true
 				}
 
 				if target.Output != nil {
@@ -195,7 +201,16 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 					}
 					outputPath = filepath.Join(environment.GetWorkingDirectory(), outputPath)
 					if outputPath == releasePath {
+						targetIsMatched = true
+					}
+				}
+
+				if targetIsMatched {
+					if source, ok := workflow.Sources[target.Source]; ok && source.Registry != nil {
 						sources = append(sources, target.Source)
+					}
+
+					if target.CodeSamples != nil && target.CodeSamples.Registry != nil {
 						targets = append(targets, name)
 					}
 				}
