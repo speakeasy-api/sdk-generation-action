@@ -307,11 +307,11 @@ func addDirectModeBranchTagging() error {
 	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
 		if target, ok := wf.Targets[specificTarget]; ok {
 			if source, ok := wf.Sources[target.Source]; ok && source.Registry != nil {
-				sources = append(sources, target.Source)
+				sources = append(sources, "test")
 			}
 
 			if target.CodeSamples != nil && target.CodeSamples.Registry != nil {
-				targets = append(targets, specificTarget)
+				targets = append(targets, "test")
 			}
 		}
 	} else {
