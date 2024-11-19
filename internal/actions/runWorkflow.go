@@ -283,12 +283,13 @@ func finalize(inputs finalizeInputs) error {
 			}
 		}
 
+		inputs.Outputs["commit_hash"] = commitHash
+
 		// add merging branch registry tag
 		if err = addDirectModeBranchTagging(); err != nil {
 			return errors.Wrap(err, "failed to tag registry images")
 		}
 
-		inputs.Outputs["commit_hash"] = commitHash
 	}
 
 	return nil
