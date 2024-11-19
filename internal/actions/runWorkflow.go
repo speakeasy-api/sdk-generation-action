@@ -335,7 +335,7 @@ func addDirectModeBranchTagging() error {
 		if isPublished {
 			tags = append(tags, "published")
 		}
-		return cli.Tag([]string{branch}, sources, targets)
+		return cli.Tag(tags, sources, targets)
 	}
 
 	return nil
