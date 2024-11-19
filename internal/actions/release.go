@@ -1,13 +1,16 @@
 package actions
 
 import (
-	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
+	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/sdk-generation-action/internal/git"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
@@ -90,6 +93,12 @@ func Release() error {
 		return err
 	}
 
+	if os.Getenv("SPEAKEASY_API_KEY") != "" {
+		if err = addCurrentBranchTagging(g, latestRelease.Languages); err != nil {
+			return errors.Wrap(err, "failed to tag registry images")
+		}
+	}
+
 	return nil
 }
 
@@ -142,6 +151,75 @@ func addPublishOutputs(dir string, outputs map[string]string) error {
 		}
 
 		run.AddTargetPublishOutputs(target, outputs, nil)
+	}
+
+	return nil
+}
+
+func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.LanguageReleaseInfo) error {
+	_, err := cli.Download("latest", g)
+	if err != nil {
+		return err
+	}
+
+	var sources, targets []string
+	branch := strings.TrimPrefix(os.Getenv("GITHUB_REF"), "refs/heads/")
+	workflow, err := configuration.GetWorkflowAndValidateLanguages(true)
+	if err != nil {
+		return err
+	}
+
+	// the tagging library treats targets synonymously with code samples
+	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
+		if target, ok := workflow.Targets[specificTarget]; ok {
+			if source, ok := workflow.Sources[target.Source]; ok && source.Registry != nil {
+				sources = append(sources, target.Source)
+			}
+
+			if target.CodeSamples != nil && target.CodeSamples.Registry != nil {
+				targets = append(targets, specificTarget)
+			}
+		}
+	} else {
+		for name, target := range workflow.Targets {
+			if releaseInfo, ok := latestRelease[target.Target]; ok {
+				var targetIsMatched bool
+				releasePath, err := filepath.Rel(".", releaseInfo.Path)
+				if err != nil {
+					return err
+				}
+
+				// check for no SDK output path
+				if (releasePath == "" || releasePath == ".") && target.Output == nil {
+					targetIsMatched = true
+				}
+
+				if target.Output != nil {
+					outputPath, err := filepath.Rel(".", *target.Output)
+					if err != nil {
+						return err
+					}
+					outputPath = filepath.Join(environment.GetWorkingDirectory(), outputPath)
+					if outputPath == releasePath {
+						targetIsMatched = true
+					}
+				}
+
+				if targetIsMatched {
+					if source, ok := workflow.Sources[target.Source]; ok && source.Registry != nil {
+						sources = append(sources, target.Source)
+					}
+
+					if target.CodeSamples != nil && target.CodeSamples.Registry != nil {
+						targets = append(targets, name)
+					}
+				}
+			}
+		}
+	}
+
+	if (len(sources) > 0 || len(targets) > 0) && branch != "" {
+		return cli.Tag([]string{branch}, sources, targets)
 	}
 
 	return nil

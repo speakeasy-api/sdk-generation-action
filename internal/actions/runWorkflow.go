@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v63/github"
+	"github.com/pkg/errors"
 	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
 	"github.com/speakeasy-api/versioning-reports/versioning"
 
@@ -282,12 +283,13 @@ func finalize(inputs finalizeInputs) error {
 			}
 		}
 
+		inputs.Outputs["commit_hash"] = commitHash
+
 		// add merging branch registry tag
 		if err = addDirectModeBranchTagging(); err != nil {
-			logging.Debug("failed to tag registry images: %v", err)
+			return errors.Wrap(err, "failed to tag registry images")
 		}
 
-		inputs.Outputs["commit_hash"] = commitHash
 	}
 
 	return nil
@@ -302,18 +304,29 @@ func addDirectModeBranchTagging() error {
 	branch := strings.TrimPrefix(os.Getenv("GITHUB_REF"), "refs/heads/")
 
 	var sources, targets []string
+	// the tagging library treats targets synonymously with code samples
 	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
-		if target, ok := wf.Targets[environment.SpecifiedTarget()]; ok {
-			sources = append(sources, target.Source)
-			targets = append(targets, specificTarget)
+		if target, ok := wf.Targets[specificTarget]; ok {
+			if source, ok := wf.Sources[target.Source]; ok && source.Registry != nil {
+				sources = append(sources, target.Source)
+			}
+
+			if target.CodeSamples != nil && target.CodeSamples.Registry != nil {
+				targets = append(targets, specificTarget)
+			}
 		}
 	} else {
 		for name, target := range wf.Targets {
-			sources = append(sources, target.Source)
-			targets = append(targets, name)
+			if source, ok := wf.Sources[target.Source]; ok && source.Registry != nil {
+				sources = append(sources, target.Source)
+			}
+
+			if target.CodeSamples != nil && target.CodeSamples.Registry != nil {
+				targets = append(targets, name)
+			}
 		}
 	}
-	if len(sources) > 0 && len(targets) > 0 && branch != "" {
+	if (len(sources) > 0 || len(targets) > 0) && branch != "" {
 		return cli.Tag([]string{branch}, sources, targets)
 	}
 

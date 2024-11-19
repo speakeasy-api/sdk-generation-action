@@ -10,8 +10,9 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/pb33f/libopenapi v0.15.14
+	github.com/pkg/errors v0.9.1
 	github.com/speakeasy-api/git-diff-parser v0.0.3
-	github.com/speakeasy-api/sdk-gen-config v1.7.4
+	github.com/speakeasy-api/sdk-gen-config v1.28.0
 	github.com/speakeasy-api/speakeasy-client-sdk-go/v3 v3.15.4
 	github.com/speakeasy-api/versioning-reports v0.6.0
 	github.com/stretchr/testify v1.9.0
