@@ -325,7 +325,7 @@ func addDirectModeBranchTagging() error {
 			}
 		}
 	}
-	if len(sources) > 0 && len(targets) > 0 && branch != "" {
+	if (len(sources) > 0 || len(targets) > 0) && branch != "" {
 		return cli.Tag([]string{branch}, sources, targets)
 	}
 

@@ -218,7 +218,7 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 		}
 	}
 
-	if len(sources) > 0 && len(targets) > 0 && branch != "" {
+	if (len(sources) > 0 || len(targets) > 0) && branch != "" {
 		return cli.Tag([]string{branch}, sources, targets)
 	}
 
