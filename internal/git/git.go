@@ -538,7 +538,6 @@ Based on:
 	}
 
 	if info.VersioningInfo.VersionReport != nil {
-		body += stripCodes(info.VersioningInfo.VersionReport.GetMarkdownSection())
 
 		// We keep track of explicit bump types and whether that bump type is manual or automated in the PR body
 		if labelBumpType != nil && *labelBumpType != versioning.BumpCustom && *labelBumpType != versioning.BumpNone {
@@ -552,8 +551,13 @@ Based on:
 			} else {
 				versionBumpMsg += string(versionbumps.BumpMethodAutomated) + " (automated)"
 			}
-			body += "\n\n" + versionBumpMsg
+			body += fmt.Sprintf(`## Versioning
+
+%s
+`, versionBumpMsg)
 		}
+
+		body += stripCodes(info.VersioningInfo.VersionReport.GetMarkdownSection())
 
 	} else {
 		if len(info.OpenAPIChangeSummary) > 0 {
