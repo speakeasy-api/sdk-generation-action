@@ -304,9 +304,12 @@ func addDirectModeBranchTagging() error {
 	branch := strings.TrimPrefix(os.Getenv("GITHUB_REF"), "refs/heads/")
 
 	var sources, targets []string
+	// a tag that is applied if the target contributing is published
+	var isPublished bool
 	// the tagging library treats targets synonymously with code samples
 	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
 		if target, ok := wf.Targets[specificTarget]; ok {
+			isPublished = target.IsPublished()
 			if source, ok := wf.Sources[target.Source]; ok && source.Registry != nil {
 				sources = append(sources, target.Source)
 			}
@@ -317,6 +320,7 @@ func addDirectModeBranchTagging() error {
 		}
 	} else {
 		for name, target := range wf.Targets {
+			isPublished = isPublished || target.IsPublished()
 			if source, ok := wf.Sources[target.Source]; ok && source.Registry != nil {
 				sources = append(sources, target.Source)
 			}
@@ -327,6 +331,10 @@ func addDirectModeBranchTagging() error {
 		}
 	}
 	if (len(sources) > 0 || len(targets) > 0) && branch != "" {
+		tags := []string{branch}
+		if isPublished {
+			tags = append(tags, "published")
+		}
 		return cli.Tag([]string{branch}, sources, targets)
 	}
 

@@ -163,6 +163,8 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 	}
 
 	var sources, targets []string
+	// a tag that is applied if the target contributing is published
+	var isPublished bool
 	branch := strings.TrimPrefix(os.Getenv("GITHUB_REF"), "refs/heads/")
 	workflow, err := configuration.GetWorkflowAndValidateLanguages(true)
 	if err != nil {
@@ -172,6 +174,7 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 	// the tagging library treats targets synonymously with code samples
 	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
 		if target, ok := workflow.Targets[specificTarget]; ok {
+			isPublished = target.IsPublished()
 			if source, ok := workflow.Sources[target.Source]; ok && source.Registry != nil {
 				sources = append(sources, target.Source)
 			}
@@ -206,6 +209,7 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 				}
 
 				if targetIsMatched {
+					isPublished = isPublished || target.IsPublished()
 					if source, ok := workflow.Sources[target.Source]; ok && source.Registry != nil {
 						sources = append(sources, target.Source)
 					}
@@ -219,7 +223,11 @@ func addCurrentBranchTagging(g *git.Git, latestRelease map[string]releases.Langu
 	}
 
 	if (len(sources) > 0 || len(targets) > 0) && branch != "" {
-		return cli.Tag([]string{branch}, sources, targets)
+		tags := []string{branch}
+		if isPublished {
+			tags = append(tags, "published")
+		}
+		return cli.Tag(tags, sources, targets)
 	}
 
 	return nil
