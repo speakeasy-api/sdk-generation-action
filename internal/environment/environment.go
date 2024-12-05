@@ -97,6 +97,11 @@ func RegistryTags() string {
 	return os.Getenv("INPUT_REGISTRY_TAGS")
 }
 
+// Enabled if the INPUT_SKIP_TESTING environment variable is set to "true".
+func SkipTesting() bool {
+	return os.Getenv("INPUT_SKIP_TESTING") == "true"
+}
+
 func SpecifiedTarget() string {
 	return os.Getenv("INPUT_TARGET")
 }
