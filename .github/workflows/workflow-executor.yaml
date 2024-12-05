@@ -78,6 +78,11 @@ on:
         description: "Version of pnpm to install. Not recommended for use without consulting Speakeasy support."
         required: false
         type: string
+      skip_testing:
+        description: "Set to true to explicitly skip Speakeasy workflow target testing after generation, even when enabled in the Speakeasy workflow configuration. This is useful for running workflow testing as a separate GitHub Actions workflow without affecting/blocking generation."
+        default: false
+        required: false
+        type: boolean
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
