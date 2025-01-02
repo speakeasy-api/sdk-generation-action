@@ -5,7 +5,7 @@ on:
     inputs:
       runs-on:
         description: The GitHub Action Runner
-        default: ubuntu-latest
+        default: ubuntu-22.04
         required: false
         type: string
       speakeasy_server_url:
