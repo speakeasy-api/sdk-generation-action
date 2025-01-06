@@ -214,6 +214,7 @@ jobs:
         with:
           name: tests-junit-report
           path: ./.speakeasy/reports/tests.xml
+          include-hidden-files: true
       - name: Test Report
         if: always() && ${{ hashFiles('./.speakeasy/reports/tests.xml') != '' }}
         uses: mikepenz/action-junit-report@v5
