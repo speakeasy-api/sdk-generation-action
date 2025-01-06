@@ -213,6 +213,7 @@ jobs:
         uses: mikepenz/action-junit-report@v5
         with:
           report_paths: .speakeasy/reports/tests.xml
+          include_passed: true
       - uses: ravsamhq/notify-slack-action@v2
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' && env.SLACK_WEBHOOK_URL != '' }}
         with:
