@@ -211,6 +211,8 @@ jobs:
       - name: Show files
         if: always()
         run: |
+          ls -la ${{ inputs.working_directory }} || true
+          ls -la || true
           ls -la ${{ inputs.working_directory }}/.speakeasy/reports || true
           ls -la .speakeasy || true
           ls -la .speakeasy/reports || true
