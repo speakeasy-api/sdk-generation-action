@@ -214,6 +214,7 @@ jobs:
           ls -ls ${{ env.GITHUB_WORKSPACE }} || true
           ls -la ${{ env.GITHUB_WORKSPACE }}/repo || true
           ls -la repo || true
+          ls -la /github/workspace/repo/.speakeasy/reports || true
           ls -la ${{ env.GITHUB_WORKSPACE }}/repo/.speakeasy/reports || true
           ls -la repo/.speakeasy || true
           ls -la repo/.speakeasy/reports || true
