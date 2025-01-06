@@ -211,13 +211,14 @@ jobs:
       - name: Show files
         if: always()
         run: |
-          ls -la ${{ inputs.working_directory }}/repo || true
+          ls -ls ${{ env.GITHUB_WORKSPACE }} || true
+          ls -la ${{ env.GITHUB_WORKSPACE }}/repo || true
           ls -la repo || true
-          ls -la ${{ inputs.working_directory }}/repo/.speakeasy/reports || true
+          ls -la ${{ env.GITHUB_WORKSPACE }}/repo/.speakeasy/reports || true
           ls -la repo/.speakeasy || true
           ls -la repo/.speakeasy/reports || true
-          ls -la ./repo/.speakeasy || true
-          ls -la ./repo/.speakeasy/reports || true
+          ls -la ${{ env.GITHUB_WORKSPACE }}/repo/.speakeasy || true
+          ls -la ${{ env.GITHUB_WORKSPACE }}/repo/.speakeasy/reports || true
       - name: Archive test artifacts
         if: always() && hashFiles(format('{0}/.speakeasy/reports/tests.xml', inputs.working_directory)) != ''
         uses: actions/upload-artifact@v4
