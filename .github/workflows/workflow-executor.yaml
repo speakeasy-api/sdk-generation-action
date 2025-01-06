@@ -208,6 +208,12 @@ jobs:
           set_version: ${{ inputs.set_version }}
           cli_environment_variables: ${{ inputs.environment }}
           pnpm_version: ${{ inputs.pnpm_version }}
+      - name: Archive test artifacts
+        if: always() && ${{ hashFiles('.speakeasy/reports/tests.xml') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-junit-report
+          path: .speakeasy/reports/tests.xml
       - id: test-report
         if: always() && ${{ hashFiles('.speakeasy/reports/tests.xml') != '' }}
         uses: mikepenz/action-junit-report@v5
