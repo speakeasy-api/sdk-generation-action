@@ -211,11 +211,11 @@ jobs:
       - name: Show files
         if: always()
         run: |
-          ls -la ${{ inputs.working_directory }}/.speakeasy/reports
-          ls -la .speakeasy
-          ls -la .speakeasy/reports
-          ls -la ./.speakeasy
-          ls -la ./.speakeasy/reports
+          ls -la ${{ inputs.working_directory }}/.speakeasy/reports || true
+          ls -la .speakeasy || true
+          ls -la .speakeasy/reports || true
+          ls -la ./.speakeasy || true
+          ls -la ./.speakeasy/reports || true
       - name: Archive test artifacts
         if: always() && hashFiles(format('{0}/.speakeasy/reports/tests.xml', inputs.working_directory)) != ''
         uses: actions/upload-artifact@v4
