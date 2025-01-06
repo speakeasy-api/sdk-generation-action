@@ -208,6 +208,14 @@ jobs:
           set_version: ${{ inputs.set_version }}
           cli_environment_variables: ${{ inputs.environment }}
           pnpm_version: ${{ inputs.pnpm_version }}
+      - name: Show files
+        if: always()
+        run:
+          ls -la ${{ inputs.working_directory }}/.speakeasy/reports
+          ls -la .speakeasy
+          ls -la .speakeasy/reports
+          ls -la ./.speakeasy
+          ls -la ./.speakeasy/reports
       - name: Archive test artifacts
         if: always() && hashFiles(format('{0}/.speakeasy/reports/tests.xml', inputs.working_directory)) != ''
         uses: actions/upload-artifact@v4
@@ -216,7 +224,7 @@ jobs:
           path: ${{ inputs.working_directory }}/.speakeasy/reports/tests.xml
           include-hidden-files: true
       - name: Test Report
-        if: always() && ${{ hashFiles(format('{0}/.speakeasy/reports/tests.xml', inputs.working_directory)) != '' }}
+        if: always() && hashFiles(format('{0}/.speakeasy/reports/tests.xml', inputs.working_directory)) != ''
         uses: mikepenz/action-junit-report@v5
         with:
           report_paths: ${{ inputs.working_directory }}/.speakeasy/reports/tests.xml
