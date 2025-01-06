@@ -210,7 +210,7 @@ jobs:
           pnpm_version: ${{ inputs.pnpm_version }}
       - name: Show files
         if: always()
-        run:
+        run: |
           ls -la ${{ inputs.working_directory }}/.speakeasy/reports
           ls -la .speakeasy
           ls -la .speakeasy/reports
