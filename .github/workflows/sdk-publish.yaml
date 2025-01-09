@@ -21,6 +21,10 @@ on:
         required: false
         type: string
         default: "5.x"
+      poetry_version:
+        description: "The version of poetry to use"
+        required: false
+        type: string
       target:
         description: "The specific target to publish"
         required: false
@@ -154,11 +158,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: "3.9"
       - name: Install poetry
         run: |
-          curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.8.3 python3 -
+          curl -sSL https://install.python-poetry.org | python3 -
           poetry --version
+        env:
+          POETRY_VERSION: ${{ inputs.poetry_version }}
       - name: Check for publish.sh
         id: check-publish
         run: |
