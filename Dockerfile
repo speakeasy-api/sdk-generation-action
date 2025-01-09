@@ -18,7 +18,9 @@ RUN go build -o /action
 FROM golang:1.23-alpine3.20
 
 RUN apk update
-RUN apk add git
+
+### Install common tools
+RUN apk add --update --no-cache bash curl git
 
 ### Install Node / NPM
 RUN apk add --update --no-cache nodejs npm
@@ -35,12 +37,6 @@ RUN apk add --update --no-cache build-base ruby ruby-bundler ruby-dev
 ### Install .NET6.0
 ENV DOTNET_ROOT=/usr/lib/dotnet
 RUN apk add --update --no-cache dotnet6-sdk
-
-### Install .NET5.0
-RUN apk add --update --no-cache curl bash
-# openssl1.1-compat is gradually getting removed from package managers..
-RUN apk add --update --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing openssl1.1-compat
-RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin -Channel 5.0 -InstallDir ${DOTNET_ROOT}
 
 ### Install .NET8.0
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin -Channel 8.0 -InstallDir ${DOTNET_ROOT}
