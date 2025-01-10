@@ -38,7 +38,7 @@ func installPoetry() error {
 		poetrySpec = "poetry==" + poetryVersion
 	}
 
-	cmd := exec.Command("pipx", "install", poetrySpec)
+	cmd := exec.Command("pipx", "install", "--global", poetrySpec)
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("error installing poetry: %w", err)
