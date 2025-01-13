@@ -11,6 +11,9 @@ function run_action() {
 # Default environment variables not subject to change by different tests
 export INPUT_DEBUG=true
 export INPUT_GITHUB_ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}
+if [ -z "$INPUT_GITHUB_ACCESS_TOKEN" ]; then
+  INPUT_GITHUB_ACCESS_TOKEN=${GITHUB_TOKEN}
+fi
 #export INPUT_SPEAKEASY_VERSION="v1.240.0" # Uncomment to test specific versions otherwise uses latest
 export GITHUB_SERVER_URL="https://github.com"
 export GITHUB_REPOSITORY_OWNER="speakeasy-api"
