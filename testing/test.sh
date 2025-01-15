@@ -9,7 +9,7 @@ function run_action() {
 }
 
 # Default environment variables not subject to change by different tests
-#INPUT_SPEAKEASY_VERSION="v1.240.0" # Uncomment to test specific versions otherwise uses latest
+#export INPUT_SPEAKEASY_VERSION="v1.240.0" # Uncomment to test specific versions otherwise uses latest
 
 if [ "$RUN_FINALIZE" = "true" ]; then
     BRANCH_NAME=$(go run testing/getoutput.go -output branch_name)
