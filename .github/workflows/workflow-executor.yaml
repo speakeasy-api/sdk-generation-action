@@ -5,7 +5,7 @@ on:
     inputs:
       runs-on:
         description: The GitHub Action Runner
-        default: ubuntu-latest
+        default: ubuntu-22.04
         required: false
         type: string
       speakeasy_version:
@@ -83,6 +83,10 @@ on:
         default: false
         required: false
         type: boolean
+      poetry_version:
+        description: "Version of poetry to install. Not recommended for use without consulting Speakeasy support."
+        required: false
+        type: string
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -213,6 +217,7 @@ jobs:
           set_version: ${{ inputs.set_version }}
           cli_environment_variables: ${{ inputs.environment }}
           pnpm_version: ${{ inputs.pnpm_version }}
+          poetry_version: ${{ inputs.poetry_version }}
       - uses: ravsamhq/notify-slack-action@v2
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' && env.SLACK_WEBHOOK_URL != '' }}
         with:
@@ -262,11 +267,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: "3.9"
       - name: Install poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           poetry --version
+        env:
+          POETRY_VERSION: ${{ inputs.poetry_version }}
       - name: Check for publish.sh
         id: check-publish
         run: |

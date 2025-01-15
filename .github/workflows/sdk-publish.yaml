@@ -3,6 +3,11 @@ name: Speakeasy SDK Publish Workflow
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: The GitHub Action Runner
+        default: ubuntu-22.04
+        required: false
+        type: string
       speakeasy_server_url:
         required: false
         description: "Internal use only"
@@ -16,6 +21,10 @@ on:
         required: false
         type: string
         default: "5.x"
+      poetry_version:
+        description: "The version of poetry to use"
+        required: false
+        type: string
       target:
         description: "The specific target to publish"
         required: false
@@ -69,7 +78,7 @@ on:
 jobs:
   release:
     name: Create Github Release
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     outputs:
       publish_python: ${{ steps.release.outputs.publish_python }}
       publish_typescript: ${{ steps.release.outputs.publish_typescript }}
@@ -137,7 +146,7 @@ jobs:
   publish-pypi:
     if: ${{ needs.release.outputs.python_regenerated == 'true' && needs.release.outputs.publish_python == 'true' }}
     name: Publish Python SDK
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     needs: release
     defaults:
       run:
@@ -149,11 +158,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: "3.9"
       - name: Install poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           poetry --version
+        env:
+          POETRY_VERSION: ${{ inputs.poetry_version }}
       - name: Check for publish.sh
         id: check-publish
         run: |
@@ -218,7 +229,7 @@ jobs:
   publish-npm:
     if: ${{ needs.release.outputs.typescript_regenerated == 'true' && needs.release.outputs.publish_typescript == 'true' }}
     name: Publish Typescript SDK
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     needs: release
     defaults:
       run:
@@ -280,7 +291,7 @@ jobs:
   publish-java:
     if: ${{ needs.release.outputs.java_regenerated == 'true' && needs.release.outputs.publish_java == 'true' }}
     name: Publish Java SDK
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     needs: release
     defaults:
       run:
@@ -357,7 +368,7 @@ jobs:
   publish-packagist:
     if: ${{ needs.release.outputs.php_regenerated == 'true' && needs.release.outputs.publish_php == 'true' }}
     name: Publish PHP SDK
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     needs: release
     defaults:
       run:
@@ -414,7 +425,7 @@ jobs:
   publish-nuget:
     if: ${{ needs.release.outputs.csharp_regenerated == 'true' && needs.release.outputs.publish_csharp == 'true' }}
     name: Publish C# SDK
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     needs: release
     defaults:
       run:
@@ -471,7 +482,7 @@ jobs:
   publish-terraform:
     if: ${{ needs.release.outputs.terraform_regenerated == 'true' && needs.release.outputs.publish_terraform == 'true' }}
     name: Publish Terraform Provider
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     needs: release
     steps:
       - name: Tune GitHub-hosted runner network
@@ -539,7 +550,7 @@ jobs:
   publish-gems:
     if: ${{ needs.release.outputs.ruby_regenerated == 'true' && needs.release.outputs.publish_ruby == 'true' }}
     name: Publish Ruby SDK
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     needs: release
     defaults:
       run:

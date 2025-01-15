@@ -98,6 +98,9 @@ inputs:
     description: "Set to true to explicitly skip Speakeasy workflow target testing after generation, even when enabled in the Speakeasy workflow configuration. This is useful for running workflow testing as a separate GitHub Actions workflow without affecting/blocking generation."
     default: "false"
     required: false
+  poetry_version:
+    description: "Version of poetry to install. Not recommended for use without consulting Speakeasy support."
+    required: false
 outputs:
   publish_python:
     description: "Whether the Python SDK will be published to PyPi"
@@ -203,3 +206,4 @@ runs:
     - ${{ inputs.set_version }}
     - ${{ inputs.cli_environment_variables }}
     - ${{ inputs.pnpm_version }}
+    - ${{ inputs.poetry_version }}
