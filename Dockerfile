@@ -61,6 +61,7 @@ RUN apk --update --no-cache add \
 	php83-openssl \
 	php83-iconv \
 	php83-session \
+	php83-fileinfo \
 	--repository http://nl.alpinelinux.org/alpine/edge/testing/
 
 
