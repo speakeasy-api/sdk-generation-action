@@ -200,7 +200,7 @@ jobs:
       - id: run-workflow
         name: Run Generation Workflow
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
-        uses: speakeasy-api/sdk-generation-action@v15.37.0
+        uses: speakeasy-api/sdk-generation-action@v15
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           github_access_token: ${{ secrets.github_access_token }}
@@ -231,7 +231,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
         name: Log Generation Output
-        uses: speakeasy-api/sdk-generation-action@v15.37.0
+        uses: speakeasy-api/sdk-generation-action@v15
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true'}}
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
