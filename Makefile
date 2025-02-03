@@ -7,7 +7,7 @@ test-direct-mode-multi-sdk:
 	./testing/test.sh ./testing/direct-mode-multi-sdk.env
 
 test-pr-mode:
-	docker compose run --build --rm main ./testing/test.sh -- ./testing/pr-mode.env
+	docker compose run --build --rm main ./testing/test.sh ./testing/pr-mode.env
 
 test-push-code-samples-only:
 	docker compose run --build --rm main ./testing/test.sh ./testing/push-code-samples-only.env
