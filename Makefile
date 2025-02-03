@@ -1,5 +1,8 @@
 .PHONY: *
 
+test: test-pr-mode
+	echo "PR mode ran succesfully, check https://github.com/speakeasy-api/sdk-generation-action-test-repo/ to ensure there's a PR created"
+
 test-direct-mode:
 	./testing/test.sh ./testing/direct-mode.env
 

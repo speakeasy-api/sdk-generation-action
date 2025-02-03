@@ -18,7 +18,7 @@ For more information please see our docsite linked below.
 # Developing in this Repo
 To test
 ```
-make test-pr-mode
+make test
 ```
 
 This should open a PR at https://github.com/speakeasy-api/sdk-generation-action-test-repo
