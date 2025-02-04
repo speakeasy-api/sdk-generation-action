@@ -392,7 +392,7 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
-          target_directory: ${{ needs.release.outputs.php_directory }}
+          target_directory: ${{ release.outputs.php_directory }}
           registry_name: "packagist"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
