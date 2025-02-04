@@ -1,0 +1,30 @@
+# Dev Stage - Includes build tools, compilers, and source code
+FROM golang:1.23-alpine3.20 AS dev
+
+# Install development tools
+RUN apk update && apk add --no-cache \
+    bash curl git nodejs npm \
+    python3 py3-pip python3-dev pipx \
+    openjdk11 gradle \
+    build-base ruby ruby-bundler ruby-dev \
+    dotnet6-sdk \
+    php82 php-ctype php-dom php-json php-mbstring php-phar php-tokenizer php-xml php-xmlwriter php-curl php-openssl php-iconv \
+    --repository http://nl.alpinelinux.org/alpine/edge/testing/
+
+WORKDIR /app
+
+# Copy go modules for caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy entire source code for development
+COPY . .
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
+
+# Set working directory for development
+WORKDIR /app
+
+# Default command for development (can be overridden)
+CMD ["go", "run", "main.go"]
