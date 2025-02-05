@@ -26,7 +26,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: test
-        name: Apply Tags
+        name: Run Tests
         uses: speakeasy-api/sdk-generation-action@v15.39.0
         with:
           action: "test"
