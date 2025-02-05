@@ -34,7 +34,7 @@ on:
         required: false
         type: string
       signed_commits:
-        required:false
+        required: false
         description: "Sign commits with GPG key"
         type: boolean
       speakeasy_server_url:
