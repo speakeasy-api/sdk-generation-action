@@ -140,6 +140,8 @@ outputs:
     description: "true if the PHP SDK was regenerated"
   php_directory:
     description: "The directory the PHP SDK was generated to"
+  php_package_name:
+    description: "The name of the PHP package"
   ruby_regenerated:
     description: "true if the Ruby SDK was regenerated"
   ruby_directory:
