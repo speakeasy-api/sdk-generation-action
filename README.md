@@ -14,3 +14,19 @@ For more information please see our docsite linked below.
 
 ### [Publishing Workflow](https://www.speakeasy.com/docs/workflow-reference/publishing-reference)
 
+
+# Developing in this Repo
+To test
+```
+make test
+```
+
+This should open a PR at https://github.com/speakeasy-api/sdk-generation-action-test-repo
+
+# When you're ready to run it
+Push your changes up to a branch
+
+Navigate to https://github.com/speakeasy-api/sdk-generation-action-test-repo/actions/workflows/action-test.yaml
+in the test repo.
+
+Click "run workflow" and put in your branch!
