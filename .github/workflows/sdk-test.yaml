@@ -27,7 +27,7 @@ jobs:
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: test
         name: Apply Tags
-        uses: speakeasy-api/sdk-generation-action@@v15.39.0
+        uses: speakeasy-api/sdk-generation-action@v15.39.0
         with:
           action: "test"
           working_directory: ${{ inputs.working_directory }}
