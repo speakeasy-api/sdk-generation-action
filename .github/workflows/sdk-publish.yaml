@@ -106,6 +106,7 @@ jobs:
       swift_regenerated: ${{ steps.release.outputs.swift_regenerated }}
       swift_directory: ${{ steps.release.outputs.swift_directory }}
       use_sonatype_legacy: ${{ steps.release.outputs.use_sonatype_legacy }}
+      php_package_name: ${{ steps.release.outputs.php_package_name }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
@@ -381,7 +382,7 @@ jobs:
         with:
           username: ${{ secrets.packagist_username }}
           api_token: ${{ secrets.packagist_token }}
-          package_name: ${{ github.repository }}
+          package_name: ${{ needs.release.outputs.php_package_name }}
           package_base_url: ${{ github.server_url }}
       - id: publish-event
         uses: speakeasy-api/sdk-generation-action@v15

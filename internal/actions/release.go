@@ -79,6 +79,7 @@ func Release() error {
 	for lang, info := range latestRelease.Languages {
 		outputs[fmt.Sprintf("%s_regenerated", lang)] = "true"
 		outputs[fmt.Sprintf("%s_directory", lang)] = info.Path
+		outputs[fmt.Sprintf("%s_package_name", lang)] = info.PackageName
 	}
 
 	if err = addPublishOutputs(dir, outputs); err != nil {

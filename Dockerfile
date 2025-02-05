@@ -44,15 +44,26 @@ RUN dotnet --list-sdks
 
 ### Install PHP and Composer
 #### Source: https://github.com/geshan/docker-php-composer-alpine/blob/master/Dockerfile
-RUN apk --update --no-cache add wget \
-		     curl \
-		     git \
-		     php82 \
-         php-ctype php-dom php-json php-mbstring php-phar php-tokenizer php-xml php-xmlwriter \
-		     php-curl \
-		     php-openssl \
-		     php-iconv \
-		    --repository http://nl.alpinelinux.org/alpine/edge/testing/
+RUN apk --update --no-cache add \
+	wget \
+	curl \
+	git \
+	php83 \
+	php83-ctype \
+	php83-dom \
+	php83-json \
+	php83-mbstring \
+	php83-phar \
+	php83-tokenizer \
+	php83-xml \
+	php83-xmlwriter \
+	php83-curl \
+	php83-openssl \
+	php83-iconv \
+	php83-session \
+	php83-fileinfo \
+	--repository http://nl.alpinelinux.org/alpine/edge/testing/
+
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 RUN mkdir -p /var/www
