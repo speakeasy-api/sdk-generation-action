@@ -1,4 +1,4 @@
-name: Speakeasy Registry Tagger
+name: Speakeasy Test SDK
 
 on:
   workflow_call:
