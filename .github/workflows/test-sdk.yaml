@@ -1,0 +1,36 @@
+name: Speakeasy Registry Tagger
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: "The specific target to test"
+        required: false
+        type: string
+      working_directory:
+        description: "The working directory for running Speakeasy CLI commands in the action"
+        required: false
+        type: string
+    secrets:
+      github_access_token:
+        description: A GitHub access token with read access to the repo
+        required: true
+      speakeasy_api_key:
+        description: The API key to use to authenticate the Speakeasy CLI
+        required: true
+jobs:
+  run-workflow:
+    name: Test SDK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - id: test
+        name: Apply Tags
+        uses: speakeasy-api/sdk-generation-action@v15
+        with:
+          action: "test"
+          working_directory: ${{ inputs.working_directory }}
+          target: ${{ inputs.target }}
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          github_access_token: ${{ secrets.github_access_token }}

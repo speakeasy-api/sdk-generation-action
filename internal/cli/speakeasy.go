@@ -262,3 +262,20 @@ func Tag(tags, sources, codeSamples []string) error {
 	fmt.Println(out)
 	return nil
 }
+
+func Test(target string) error {
+	args := []string{"test"}
+
+	if target != "all" {
+		args = append(args, "-t", target)
+	}
+
+	out, err := runSpeakeasyCommand(args...)
+	fmt.Println(out)
+	if err != nil {
+		fmt.Println(out)
+		return fmt.Errorf("error running speakeasy test for target %s: %w", target, err)
+	}
+
+	return nil
+}
