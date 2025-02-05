@@ -19,7 +19,7 @@ on:
         description: The API key to use to authenticate the Speakeasy CLI
         required: true
 jobs:
-  run-workflow:
+  test:
     name: Test SDK
     runs-on: ubuntu-latest
     steps:
