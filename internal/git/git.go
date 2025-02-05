@@ -442,7 +442,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 			Email: github.String("bot@speakeasyapi.dev"),
 			Date:  &github.Timestamp{Time: time.Now()},
 		}}, &github.CreateCommitOptions{})
-	fmt.Println("response", response)
+	fmt.Println("response", response, commitResult)
 	return *commitResult.SHA, nil
 }
 
