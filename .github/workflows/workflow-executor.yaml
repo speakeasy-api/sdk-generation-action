@@ -33,6 +33,10 @@ on:
         default: "false"
         required: false
         type: string
+      signed_commits:
+        required:false
+        description: "Sign commits with GPG key"
+        type: boolean
       speakeasy_server_url:
         required: false
         description: "Internal use only"

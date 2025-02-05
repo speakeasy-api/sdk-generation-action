@@ -19,6 +19,10 @@ inputs:
     description: "Force the SDK to be regenerated"
     default: "false"
     required: false
+  signed_commits:
+    description: "Sign commits with GPG"
+    default: "false"
+    required: false
   sources:
     description: "The sources to tag (comma or newline separated)"
     required: false
@@ -191,6 +195,7 @@ runs:
     - ${{ inputs.action }}
     - ${{ inputs.branch_name }}
     - ${{ inputs.cli_output }}
+    - ${{ inputs.signed_commits }}
     - ${{ inputs.previous_gen_version }}
     - ${{ inputs.openapi_doc_output }}
     - ${{ inputs.output_tests }}

@@ -376,15 +376,16 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	// 	return "", fmt.Errorf("error getting worktree: %w", err)
 	// }
 
-	if err := g.repo.Push(&git.PushOptions{
-		Auth: getGithubAuth(g.accessToken),
-	}); err != nil {
-		return "", pushErr(err)
-	}
-
 	// Add local files and changes
 	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
+	}
+
+	if err := g.repo.Push(&git.PushOptions{
+		Auth: getGithubAuth(g.accessToken),
+	}); err != nil {
+		fmt.Errorf("error in CommitAndPush code: %w", err, branch)
+		return "", pushErr(err)
 	}
 
 	//	_, err := g.repo.Worktree()
@@ -432,7 +433,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	fmt.Println("commit", commit)
 
 	// Commit actual changes
-	_, response, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
+	commitResult, response, err := g.client.Git.CreateCommit(Resultcontext.Background(), owner, repo, &github.Commit{
 		Message: github.String(commitMessage),
 		Tree:    &github.Tree{SHA: parentCommit.Tree.SHA},
 		Parents: []*github.Commit{parentCommit},
@@ -442,7 +443,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 			Date:  &github.Timestamp{Time: time.Now()},
 		}}, &github.CreateCommitOptions{})
 	fmt.Println("response", response)
-	panic("STOP")
+	return *commitResult.SHA, nil
 }
 
 func (g *Git) Add(arg string) error {
