@@ -23,7 +23,7 @@ make test
 
 This should open a PR at https://github.com/speakeasy-api/sdk-generation-action-test-repo
 
-# When you're ready to run it
+# When you're ready to test it as a live action
 Push your changes up to a branch
 
 Navigate to https://github.com/speakeasy-api/sdk-generation-action-test-repo/actions/workflows/action-test.yaml
