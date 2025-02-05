@@ -19,7 +19,6 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/utils/merkletrie"
 	genConfig "github.com/speakeasy-api/sdk-gen-config"
@@ -362,17 +361,40 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", nil
 	}
 
-	w, err := g.repo.Worktree()
+	_, githubRepoLocation := g.getRepoMetadata()
+
+	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
+
+	branch, err := g.GetCurrentBranch()
 	if err != nil {
-		return "", fmt.Errorf("error getting worktree: %w", err)
+		return "", fmt.Errorf("error getting current branch: %w", err)
 	}
 
-	logging.Info("Commit and pushing changes to git")
+	// Get working tree locally
+	// localWorkingTree, err := g.repo.Worktree()
+	// if err != nil {
+	// 	return "", fmt.Errorf("error getting worktree: %w", err)
+	// }
 
+	if err := g.repo.Push(&git.PushOptions{
+		Auth: getGithubAuth(g.accessToken),
+	}); err != nil {
+		return "", pushErr(err)
+	}
+
+	// Add local files and changes
 	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
+	//	_, err := g.repo.Worktree()
+
+	ref, _, err := g.client.Git.GetRef(context.Background(), owner, repo, "heads/"+branch)
+	if err != nil {
+		return "", fmt.Errorf("error getting reference: %w", err)
+	}
+
+	// Create commit message
 	var commitMessage string
 	if action == environment.ActionRunWorkflow {
 		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
@@ -382,26 +404,45 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	} else if action == environment.ActionSuggest {
 		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
 	}
-	commitHash, err := w.Commit(commitMessage, &git.CommitOptions{
-		Author: &object.Signature{
-			Name:  "speakeasybot",
-			Email: "bot@speakeasyapi.dev",
-			When:  time.Now(),
-		},
-		All: true,
-	})
+
+	parentCommit, _, err := g.client.Git.GetCommit(context.Background(), owner, repo, *ref.Object.SHA)
 	if err != nil {
-		return "", fmt.Errorf("error committing changes: %w", err)
+		return "", fmt.Errorf("error getting parent commit: %w", err)
 	}
 
-	if err := g.repo.Push(&git.PushOptions{
-		Auth:  getGithubAuth(g.accessToken),
-		Force: true, // This is necessary because at the beginning of the workflow we reset the branch
-	}); err != nil {
-		return "", pushErr(err)
+	headRef, err := g.repo.Head()
+	if err != nil {
+		return "", fmt.Errorf("error getting HEAD: %w", err)
 	}
 
-	return commitHash.String(), nil
+	commit, err := g.repo.CommitObject(headRef.Hash())
+	if err != nil {
+		return "", fmt.Errorf("error getting commit object: %w", err)
+	}
+
+	// tree, err := commit.Tree()
+	// if err != nil {
+	// 	return "", fmt.Errorf("error getting tree object: %w", err)
+	// }
+
+	// push changes to origin using go-github and client
+
+	// Get tree SHA from localWorkingTree and go git
+
+	fmt.Println("commit", commit)
+
+	// Commit actual changes
+	_, response, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
+		Message: github.String(commitMessage),
+		Tree:    &github.Tree{SHA: parentCommit.Tree.SHA},
+		Parents: []*github.Commit{parentCommit},
+		Author: &github.CommitAuthor{
+			Name:  github.String("speakeasybot"),
+			Email: github.String("bot@speakeasyapi.dev"),
+			Date:  &github.Timestamp{Time: time.Now()},
+		}}, &github.CreateCommitOptions{})
+	fmt.Println("response", response)
+	panic("STOP")
 }
 
 func (g *Git) Add(arg string) error {
@@ -427,6 +468,19 @@ type PRInfo struct {
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
 	VersioningInfo       versionbumps.VersioningInfo
+}
+
+func (g *Git) getRepoMetadata() (string, string) {
+	githubURL := os.Getenv("GITHUB_SERVER_URL")
+	githubRepoLocation := os.Getenv("GITHUB_REPOSITORY")
+
+	return githubURL, githubRepoLocation
+}
+
+func (g *Git) getOwnerAndRepo(githubRepoLocation string) (string, string) {
+	ownerAndRepo := strings.Split(githubRepoLocation, "/")
+
+	return ownerAndRepo[0], ownerAndRepo[1]
 }
 
 func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
