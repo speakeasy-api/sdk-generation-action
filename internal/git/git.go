@@ -355,14 +355,13 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
-
+	fmt.Println("Using Signed Commits")
 	// In test mode do not commit and push, just move forward
 	if environment.IsTestMode() {
 		return "", nil
 	}
 
 	_, githubRepoLocation := g.getRepoMetadata()
-
 	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
 
 	branch, err := g.GetCurrentBranch()
