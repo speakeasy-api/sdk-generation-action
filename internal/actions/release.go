@@ -77,7 +77,6 @@ func Release() error {
 
 	outputs := map[string]string{}
 	for lang, info := range latestRelease.Languages {
-		fmt.Printf("Package Name(%s): %s\n", lang, info.PackageName)
 		outputs[fmt.Sprintf("%s_regenerated", lang)] = "true"
 		outputs[fmt.Sprintf("%s_directory", lang)] = info.Path
 		outputs[fmt.Sprintf("%s_package_name", lang)] = info.PackageName
