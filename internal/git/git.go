@@ -433,7 +433,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	fmt.Println("commit", commit)
 
 	// Commit actual changes
-	commitResult, response, err := g.client.Git.CreateCommit(Resultcontext.Background(), owner, repo, &github.Commit{
+	commitResult, response, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
 		Message: github.String(commitMessage),
 		Tree:    &github.Tree{SHA: parentCommit.Tree.SHA},
 		Parents: []*github.Commit{parentCommit},
