@@ -420,12 +420,13 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	}
 
 	// Commit actual changes
-	commitResult, response, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
+	commitResult, _, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
 		Message: github.String(commitMessage),
 		Tree:    &github.Tree{SHA: tree.SHA},
 		Parents: []*github.Commit{parentCommit}}, &github.CreateCommitOptions{})
-	fmt.Println("response", response, commitResult)
-
+	if err != nil {
+		return "", fmt.Errorf("error committing changes: %w", err)
+	}
 	// Update reference
 	newRef := &github.Reference{
 		Ref:    github.String("refs/heads/" + branch),
