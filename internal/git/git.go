@@ -20,6 +20,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/utils/merkletrie"
 	genConfig "github.com/speakeasy-api/sdk-gen-config"
@@ -362,22 +363,56 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", nil
 	}
 
-	fmt.Println("Using Signed Commits")
-	_, githubRepoLocation := g.getRepoMetadata()
-	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
 	w, err := g.repo.Worktree()
 	if err != nil {
 		return "", fmt.Errorf("error getting working tree: %w", err)
 	}
 
-	branch, err := g.GetCurrentBranch()
-	if err != nil {
-		return "", fmt.Errorf("error getting current branch: %w", err)
-	}
+	logging.Info("Commit and pushing changes to git")
 
 	// Add local files and changes
 	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
+	}
+
+	var commitMessage string
+	if action == environment.ActionRunWorkflow {
+		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
+		if sourcesOnly {
+			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
+		}
+	} else if action == environment.ActionSuggest {
+		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
+	}
+
+	// Create commit message
+	if !environment.GetSignedCommits() {
+		commitHash, err := w.Commit(commitMessage, &git.CommitOptions{
+			Author: &object.Signature{
+				Name:  "speakeasybot",
+				Email: "bot@speakeasyapi.dev",
+				When:  time.Now(),
+			},
+			All: true,
+		})
+		if err != nil {
+			return "", fmt.Errorf("error committing changes: %w", err)
+		}
+
+		if err := g.repo.Push(&git.PushOptions{
+			Auth:  getGithubAuth(g.accessToken),
+			Force: true, // This is necessary because at the beginning of the workflow we reset the branch
+		}); err != nil {
+			return "", pushErr(err)
+		}
+		return commitHash.String(), nil
+	}
+
+	fmt.Println("Using Signed Commits")
+
+	branch, err := g.GetCurrentBranch()
+	if err != nil {
+		return "", fmt.Errorf("error getting current branch: %w", err)
 	}
 
 	// Get status of changed files
@@ -392,6 +427,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error getting repo head commit: %w", err)
 	}
 
+	// Create reference on remote if it doesn't exist
 	ref, err := g.getOrCreateRef(string(head.Name()))
 	if err != nil {
 		return "", fmt.Errorf("error getting reference: %w", err)
@@ -403,16 +439,8 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error creating new tree: %w", err)
 	}
 
-	// Create commit message
-	var commitMessage string
-	if action == environment.ActionRunWorkflow {
-		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
-		if sourcesOnly {
-			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
-		}
-	} else if action == environment.ActionSuggest {
-		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
-	}
+	_, githubRepoLocation := g.getRepoMetadata()
+	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
 
 	// Get parent commit
 	parentCommit, _, err := g.client.Git.GetCommit(context.Background(), owner, repo, *ref.Object.SHA)
@@ -478,6 +506,7 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 	// Load each file into the tree.
 	for file, fileStatus := range sourceFiles {
 		if fileStatus.Staging != git.Unmodified && fileStatus.Staging != git.Untracked {
+			fmt.Println("Using new file path using working tree")
 			filePath := workingDirectory.Filesystem.Join(workingDirectory.Filesystem.Root(), file)
 			content, err := os.ReadFile(filePath)
 			if err != nil {
