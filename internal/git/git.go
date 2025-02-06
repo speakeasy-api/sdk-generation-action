@@ -390,16 +390,16 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error getting repo head commit: %w", err)
 	}
 
-	fmt.Println("branch name, head name", branch, head.Name())
+	fmt.Println("branch name, head name, environment ref", branch, head.Name())
 
 	// Get the last commit for the branch
-	//g.getRef(branch,)
-	ref, err := g.getRef(branch, "main")
+
+	ref, err := g.getRef(string(head.Name()))
 	if err != nil {
 		return "", fmt.Errorf("error getting reference: %w", err)
 	}
 
-	// First lets create the tree
+	// Create new tree
 	// This is the SHA of the branch you have made your commit. In this example, this SHA is the last commit sha for the main branch of test repository
 	tree, err := g.createAndPushTree(ref, status)
 	if err != nil {
@@ -442,29 +442,26 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 // getRef returns the commit branch reference object if it exists or creates it
 // from the base branch before returning it.
-func (g *Git) getRef(commitBranch string, baseBranch string) (ref *github.Reference, err error) {
+func (g *Git) getRef(commitRef string) (ref *github.Reference, err error) {
 	_, githubRepoLocation := g.getRepoMetadata()
 	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
+	environmentRef := environment.GetRef()
 
-	if ref, _, err = g.client.Git.GetRef(context.Background(), owner, repo, "refs/heads/"+commitBranch); err == nil {
+	if ref, _, err = g.client.Git.GetRef(context.Background(), owner, repo, commitRef); err == nil {
 		return ref, nil
 	}
 
 	// We consider that an error means the branch has not been found and needs to
 	// be created.
-	if commitBranch == baseBranch {
+	if commitRef == environmentRef {
 		return nil, errors.New("the commit branch does not exist but `-base-branch` is the same as `-commit-branch`")
 	}
 
-	if baseBranch == "" {
-		return nil, errors.New("the `-base-branch` should not be set to an empty string when the branch specified by `-commit-branch` does not exists")
-	}
-
 	var baseRef *github.Reference
-	if baseRef, _, err = g.client.Git.GetRef(context.Background(), owner, repo, "refs/heads/"+baseBranch); err != nil {
+	if baseRef, _, err = g.client.Git.GetRef(context.Background(), owner, repo, environmentRef); err != nil {
 		return nil, err
 	}
-	newRef := &github.Reference{Ref: github.String("refs/heads/" + commitBranch), Object: &github.GitObject{SHA: baseRef.Object.SHA}}
+	newRef := &github.Reference{Ref: github.String(commitRef), Object: &github.GitObject{SHA: baseRef.Object.SHA}}
 	ref, _, err = g.client.Git.CreateRef(context.Background(), owner, repo, newRef)
 	return ref, err
 }
