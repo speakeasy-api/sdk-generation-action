@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -384,6 +385,16 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error getting status for branch: %w", err)
 	}
 
+	head, err := g.repo.Head()
+	if err != nil {
+		return "", fmt.Errorf("error getting repo head commit: %w", err)
+	}
+
+	fmt.Println("head name", head.Name())
+
+	// Get the last commit for the branch
+	//g.getRef(branch,)
+	// Get the last commit for the branch
 	ref, _, err := g.client.Git.GetRef(context.Background(), owner, repo, "refs/heads/"+branch)
 	if err != nil {
 		return "", fmt.Errorf("error getting reference: %w", err)
@@ -428,6 +439,35 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	g.client.Git.UpdateRef(context.Background(), owner, repo, newRef, true)
 
 	return *commitResult.SHA, nil
+}
+
+// getRef returns the commit branch reference object if it exists or creates it
+// from the base branch before returning it.
+func (g *Git) getRef(commitBranch string, baseBranch string) (ref *github.Reference, err error) {
+	_, githubRepoLocation := g.getRepoMetadata()
+	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
+
+	if ref, _, err = g.client.Git.GetRef(context.Background(), owner, repo, "refs/heads/"+commitBranch); err == nil {
+		return ref, nil
+	}
+
+	// We consider that an error means the branch has not been found and needs to
+	// be created.
+	if commitBranch == baseBranch {
+		return nil, errors.New("the commit branch does not exist but `-base-branch` is the same as `-commit-branch`")
+	}
+
+	if baseBranch == "" {
+		return nil, errors.New("the `-base-branch` should not be set to an empty string when the branch specified by `-commit-branch` does not exists")
+	}
+
+	var baseRef *github.Reference
+	if baseRef, _, err = g.client.Git.GetRef(context.Background(), owner, repo, "refs/heads/"+baseBranch); err != nil {
+		return nil, err
+	}
+	newRef := &github.Reference{Ref: github.String("refs/heads/" + commitBranch), Object: &github.GitObject{SHA: baseRef.Object.SHA}}
+	ref, _, err = g.client.Git.CreateRef(context.Background(), owner, repo, newRef)
+	return ref, err
 }
 
 // getTree generates the tree to commit based on the given files and the commit
