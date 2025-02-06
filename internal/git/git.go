@@ -473,20 +473,22 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 	_, githubRepoLocation := g.getRepoMetadata()
 	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
 
+	workingDirectory, _ := g.repo.Worktree()
+
 	// Load each file into the tree.
 	for file, fileStatus := range sourceFiles {
 		if fileStatus.Staging != git.Unmodified && fileStatus.Staging != git.Untracked {
-			// Create absollute path to file
-			filePath := filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory(), file)
+			filePath := workingDirectory.Filesystem.Join(workingDirectory.Filesystem.Root(), file)
 			content, err := os.ReadFile(filePath)
 			if err != nil {
-				fmt.Println("Error getting file content", err)
+				fmt.Println("Error getting file content", err, filePath)
 				return nil, err
 			}
 			entries = append(entries, &github.TreeEntry{Path: github.String(file), Type: github.String("blob"), Content: github.String(string(content)), Mode: github.String("100644")})
 
 		}
 	}
+
 	tree, _, err = g.client.Git.CreateTree(context.Background(), owner, repo, *ref.Object.SHA, entries)
 	return tree, err
 }
