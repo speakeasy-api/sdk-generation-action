@@ -917,12 +917,13 @@ func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version s
 }
 
 func (g *Git) GetCommittedFilesFromBaseBranch() ([]string, error) {
-	baseBranch := "main" // main default for branch triggers
+	baseBranch := "main" // Default base branch
 	if os.Getenv("GITHUB_BASE_REF") != "" {
 		baseBranch = os.Getenv("GITHUB_BASE_REF")
 	}
-	path := environment.GetWorkflowEventPayloadPath()
 
+	// Read event payload
+	path := environment.GetWorkflowEventPayloadPath()
 	if path == "" {
 		return nil, fmt.Errorf("no workflow event payload path")
 	}
@@ -933,7 +934,7 @@ func (g *Git) GetCommittedFilesFromBaseBranch() ([]string, error) {
 	}
 
 	var payload struct {
-		After string `json:"after"`
+		After string `json:"after"` // PR Head commit
 	}
 
 	fmt.Println("Data: ", string(data))
@@ -943,10 +944,10 @@ func (g *Git) GetCommittedFilesFromBaseBranch() ([]string, error) {
 	}
 
 	if payload.After == "" {
-		return nil, fmt.Errorf("no commit hash found in workflow event payload")
+		return nil, fmt.Errorf("missing commit hash in workflow event payload")
 	}
 
-	// Get the HEAD commit of the base branch
+	// ✅ Get the latest commit from main (instead of using Before)
 	baseBranchRef, err := g.repo.Reference(plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", baseBranch)), true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get base branch reference: %w", err)
@@ -954,16 +955,16 @@ func (g *Git) GetCommittedFilesFromBaseBranch() ([]string, error) {
 
 	baseCommit, err := g.repo.CommitObject(baseBranchRef.Hash())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get base branch commit object: %w", err)
+		return nil, fmt.Errorf("failed to get base commit object: %w", err)
 	}
 
-	// Get the current branch HEAD commit
+	// ✅ Get the PR commit (After commit)
 	currentCommit, err := g.repo.CommitObject(plumbing.NewHash(payload.After))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current branch commit object: %w", err)
 	}
 
-	// Get the tree objects for both base and current branches
+	// Get tree objects
 	baseTree, err := baseCommit.Tree()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get base branch tree: %w", err)
@@ -974,15 +975,13 @@ func (g *Git) GetCommittedFilesFromBaseBranch() ([]string, error) {
 		return nil, fmt.Errorf("failed to get current branch tree: %w", err)
 	}
 
-	// Get the diff between the base branch and current branch
+	// Compute diff
 	changes, err := baseTree.Diff(currentTree)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get diff between base and current branch: %w", err)
 	}
 
 	files := []string{}
-
-	// Process the changes
 	for _, change := range changes {
 		action, err := change.Action()
 		if err != nil {
@@ -991,11 +990,10 @@ func (g *Git) GetCommittedFilesFromBaseBranch() ([]string, error) {
 		if action == merkletrie.Delete {
 			continue
 		}
-
 		files = append(files, change.To.Name)
 	}
 
-	logging.Info("Found %d files in the diff with base branch %s", len(files), baseBranch)
+	logging.Info("Found %d files changed from base branch %s", len(files), baseBranch)
 
 	return files, nil
 }
