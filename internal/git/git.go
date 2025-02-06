@@ -419,37 +419,11 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error getting parent commit: %w", err)
 	}
 
-	// headRef, err := g.repo.Head()
-	// if err != nil {
-	// 	return "", fmt.Errorf("error getting HEAD: %w", err)
-	// }
-
-	// commit, err := g.repo.CommitObject(headRef.Hash())
-	// if err != nil {
-	// 	return "", fmt.Errorf("error getting commit object: %w", err)
-	// }
-
-	// tree, err := commit.Tree()
-	// if err != nil {
-	// 	return "", fmt.Errorf("error getting tree object: %w", err)
-	// }
-
-	// push changes to origin using go-github and client
-
-	// Get tree SHA from localWorkingTree and go git
-
-	// fmt.Println("commit", commit)
-
 	// Commit actual changes
 	commitResult, response, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
 		Message: github.String(commitMessage),
 		Tree:    &github.Tree{SHA: tree.SHA},
-		Parents: []*github.Commit{parentCommit},
-		Author: &github.CommitAuthor{
-			Name:  github.String("speakeasybot"),
-			Email: github.String("bot@speakeasyapi.dev"),
-			Date:  &github.Timestamp{Time: time.Now()},
-		}}, &github.CreateCommitOptions{})
+		Parents: []*github.Commit{parentCommit}}, &github.CreateCommitOptions{})
 	fmt.Println("response", response, commitResult)
 
 	// Update reference
