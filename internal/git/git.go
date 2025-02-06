@@ -379,19 +379,28 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
+	w, _ := g.repo.Worktree()
+	status, err := w.Status()
 
-	if err := g.repo.Push(&git.PushOptions{
-		Auth: getGithubAuth(g.accessToken),
-	}); err != nil {
-		fmt.Errorf("error in CommitAndPush code: %w", err, branch)
-		return "", pushErr(err)
-	}
+	fmt.Println("status", status)
+	fmt.Println("Attempting to push changes")
+	// if err := g.repo.Push(&git.PushOptions{
+	// 	Auth: getGithubAuth(g.accessToken),
+	// }); err != nil {
+	// 	fmt.Errorf("error in CommitAndPush code: %w", err, branch)
+	// 	return "", pushErr(err)
+	// }
 
-	//	_, err := g.repo.Worktree()
-
-	ref, _, err := g.client.Git.GetRef(context.Background(), owner, repo, "heads/"+branch)
+	ref, _, err := g.client.Git.GetRef(context.Background(), owner, repo, "refs/heads/"+branch)
 	if err != nil {
 		return "", fmt.Errorf("error getting reference: %w", err)
+	}
+
+	// First lets create the tree
+	// This is the SHA of the branch you have made your commit. In this example, this SHA is the last commit sha for the main branch of test repository
+	tree, err := g.createAndPushTree(ref, status)
+	if err != nil {
+		return "", fmt.Errorf("error creating new tree: %w", err)
 	}
 
 	// Create commit message
@@ -410,15 +419,15 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error getting parent commit: %w", err)
 	}
 
-	headRef, err := g.repo.Head()
-	if err != nil {
-		return "", fmt.Errorf("error getting HEAD: %w", err)
-	}
+	// headRef, err := g.repo.Head()
+	// if err != nil {
+	// 	return "", fmt.Errorf("error getting HEAD: %w", err)
+	// }
 
-	commit, err := g.repo.CommitObject(headRef.Hash())
-	if err != nil {
-		return "", fmt.Errorf("error getting commit object: %w", err)
-	}
+	// commit, err := g.repo.CommitObject(headRef.Hash())
+	// if err != nil {
+	// 	return "", fmt.Errorf("error getting commit object: %w", err)
+	// }
 
 	// tree, err := commit.Tree()
 	// if err != nil {
@@ -429,12 +438,12 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	// Get tree SHA from localWorkingTree and go git
 
-	fmt.Println("commit", commit)
+	// fmt.Println("commit", commit)
 
 	// Commit actual changes
 	commitResult, response, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
 		Message: github.String(commitMessage),
-		Tree:    &github.Tree{SHA: parentCommit.Tree.SHA},
+		Tree:    &github.Tree{SHA: tree.SHA},
 		Parents: []*github.Commit{parentCommit},
 		Author: &github.CommitAuthor{
 			Name:  github.String("speakeasybot"),
@@ -442,9 +451,42 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 			Date:  &github.Timestamp{Time: time.Now()},
 		}}, &github.CreateCommitOptions{})
 	fmt.Println("response", response, commitResult)
+
+	// Update reference
+	newRef := &github.Reference{
+		Ref:    github.String("refs/heads/" + branch),
+		Object: &github.GitObject{SHA: commitResult.SHA},
+	}
+	g.client.Git.UpdateRef(context.Background(), owner, repo, newRef, true)
+
 	return *commitResult.SHA, nil
 }
 
+// getTree generates the tree to commit based on the given files and the commit
+// of the ref you got in getRef.
+func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (tree *github.Tree, err error) {
+	// Create a tree with what to commit.
+	entries := []*github.TreeEntry{}
+	_, githubRepoLocation := g.getRepoMetadata()
+	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
+
+	// Load each file into the tree.
+	for file, fileStatus := range sourceFiles {
+		if fileStatus.Staging != git.Unmodified && fileStatus.Staging != git.Untracked {
+			// Create absollute path to file
+			filePath := filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory(), file)
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				fmt.Println("Error getting file content", err)
+				return nil, err
+			}
+			entries = append(entries, &github.TreeEntry{Path: github.String(file), Type: github.String("blob"), Content: github.String(string(content)), Mode: github.String("100644")})
+
+		}
+	}
+	tree, _, err = g.client.Git.CreateTree(context.Background(), owner, repo, *ref.Object.SHA, entries)
+	return tree, err
+}
 func (g *Git) Add(arg string) error {
 	// We execute this manually because go-git doesn't properly support gitignore
 	cmd := exec.Command("git", "add", arg)
