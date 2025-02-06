@@ -35,7 +35,7 @@ func Test() error {
 	}
 
 	if len(testedTargets) == 0 {
-		files, err := g.GetCommittedFilesFromBaseBranch()
+		files, err := g.GetChangedFilesForPR()
 		if err != nil {
 			fmt.Printf("Failed to get commited files: %s\n", err.Error())
 		}

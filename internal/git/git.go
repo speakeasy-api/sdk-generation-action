@@ -916,94 +916,66 @@ func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version s
 	return defaultDownloadUrl, defaultTagName
 }
 
-func (g *Git) GetCommittedFilesFromBaseBranch() ([]string, error) {
-	path := environment.GetWorkflowEventPayloadPath()
-	if path == "" {
+func (g *Git) GetChangedFilesForPR() ([]string, error) {
+	ctx := context.Background()
+	eventPath := os.Getenv("GITHUB_EVENT_PATH")
+	if eventPath == "" {
 		return nil, fmt.Errorf("no workflow event payload path")
 	}
 
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(eventPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read workflow event payload: %w", err)
 	}
 
+	fmt.Println(string(data))
+	fmt.Println(environment.GetRef())
+
 	var payload struct {
-		After string `json:"after"`
-		Repo  struct {
-			DefaultBranch string `json:"default_branch"`
-		} `json:"repository"`
-		PullRequest *struct {
-			Base struct {
-				Ref string `json:"ref"`
-			} `json:"base"`
-			Head struct {
-				Sha string `json:"sha"`
-			} `json:"head"`
-		} `json:"pull_request,omitempty"`
+		Number int `json:"number"`
 	}
 
 	if err := json.Unmarshal(data, &payload); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal workflow event payload: %w", err)
 	}
 
-	var baseBranch, headCommitHash string
+	prNumber := payload.Number
+	// This occurs if we come from a non-PR event trigger
+	if prNumber == 0 {
+		opts := &github.PullRequestListOptions{
+			Head:  fmt.Sprintf("%s:%s", os.Getenv("GITHUB_REPOSITORY_OWNER"), environment.GetRef()),
+			State: "open",
+		}
 
-	// **PR Event**
-	if payload.PullRequest != nil {
-		baseBranch = payload.PullRequest.Base.Ref
-		headCommitHash = payload.PullRequest.Head.Sha
-	} else { // **Branch Push Event**
-		baseBranch = payload.Repo.DefaultBranch
-		headCommitHash = payload.After
+		if prs, _, _ := g.client.PullRequests.List(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), opts); len(prs) > 0 {
+			prNumber = prs[0].GetNumber()
+		} else {
+			return nil, fmt.Errorf("no open PR found for %s", environment.GetRef())
+		}
+
 	}
 
-	// **Get Base Commit**
-	baseBranchRef, err := g.repo.Reference(plumbing.ReferenceName(fmt.Sprintf("refs/remotes/origin/%s", baseBranch)), true)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get base branch reference: %w", err)
-	}
+	opts := &github.ListOptions{PerPage: 100}
+	var allFiles []string
 
-	baseCommit, err := g.repo.CommitObject(baseBranchRef.Hash())
-	if err != nil {
-		return nil, fmt.Errorf("failed to get base commit object: %w", err)
-	}
-
-	// **Get Head Commit**
-	headCommit, err := g.repo.CommitObject(plumbing.NewHash(headCommitHash))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get head commit object: %w", err)
-	}
-
-	// **Compute Diff**
-	baseTree, err := baseCommit.Tree()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get base commit tree: %w", err)
-	}
-
-	headTree, err := headCommit.Tree()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get head commit tree: %w", err)
-	}
-
-	changes, err := baseTree.Diff(headTree)
-	if err != nil {
-		return nil, fmt.Errorf("failed to compute diff: %w", err)
-	}
-
-	// **Extract Changed Files**
-	var files []string
-	for _, change := range changes {
-		action, err := change.Action()
+	// Fetch all changed files of the PR to determine testing coverage
+	for {
+		files, resp, err := g.client.PullRequests.ListFiles(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber, opts)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get change action: %w", err)
+			return nil, fmt.Errorf("failed to get changed files: %w", err)
 		}
-		if action != merkletrie.Delete {
-			files = append(files, change.To.Name)
+
+		for _, file := range files {
+			allFiles = append(allFiles, file.GetFilename())
 		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
 	}
 
-	logging.Info("Found %d changed files between %s and %s", len(files), baseBranch, headCommitHash)
-	return files, nil
+	return allFiles, nil
 }
 
 func (g *Git) GetCommitedFiles() ([]string, error) {
