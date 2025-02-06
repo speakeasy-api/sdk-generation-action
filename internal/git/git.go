@@ -918,7 +918,6 @@ func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version s
 
 func (g *Git) GetCommittedFilesFromBaseBranch() ([]string, error) {
 	path := environment.GetWorkflowEventPayloadPath()
-
 	if path == "" {
 		return nil, fmt.Errorf("no workflow event payload path")
 	}
@@ -929,77 +928,81 @@ func (g *Git) GetCommittedFilesFromBaseBranch() ([]string, error) {
 	}
 
 	var payload struct {
-		After  string `json:"after"`
-		Before string `json:"before"`
+		After string `json:"after"`
+		Repo  struct {
+			DefaultBranch string `json:"default_branch"`
+		} `json:"repository"`
+		PullRequest *struct {
+			Base struct {
+				Ref string `json:"ref"`
+			} `json:"base"`
+			Head struct {
+				Sha string `json:"sha"`
+			} `json:"head"`
+		} `json:"pull_request,omitempty"`
 	}
-
-	fmt.Println("Data: ", string(data))
 
 	if err := json.Unmarshal(data, &payload); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal workflow event payload: %w", err)
 	}
 
-	if payload.After == "" {
-		return nil, fmt.Errorf("no commit hash found in workflow event payload")
+	var baseBranch, headCommitHash string
+
+	// **PR Event**
+	if payload.PullRequest != nil {
+		baseBranch = payload.PullRequest.Base.Ref
+		headCommitHash = payload.PullRequest.Head.Sha
+	} else { // **Branch Push Event**
+		baseBranch = payload.Repo.DefaultBranch
+		headCommitHash = payload.After
 	}
 
-	afterCommit, err := g.repo.CommitObject(plumbing.NewHash(payload.After))
+	// **Get Base Commit**
+	baseBranchRef, err := g.repo.Reference(plumbing.ReferenceName(fmt.Sprintf("refs/remotes/origin/%s", baseBranch)), true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get after commit object: %w", err)
+		return nil, fmt.Errorf("failed to get base branch reference: %w", err)
 	}
 
-	// ✅ Instead of using payload.Before, get the latest commit from main
-	baseBranch := "main"
-	if os.Getenv("GITHUB_BASE_REF") != "" {
-		baseBranch = os.Getenv("GITHUB_BASE_REF")
-	}
-
-	// Try getting the latest commit from baseBranch
-	baseBranchRef, err := g.repo.Reference(plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", baseBranch)), true)
-	if err != nil {
-		fmt.Printf("⚠️ refs/heads/%s not found, trying refs/remotes/origin/%s\n", baseBranch, baseBranch)
-		baseBranchRef, err = g.repo.Reference(plumbing.ReferenceName(fmt.Sprintf("refs/remotes/origin/%s", baseBranch)), true)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get base branch reference: %w", err)
-		}
-	}
-
-	beforeCommit, err := g.repo.CommitObject(baseBranchRef.Hash())
+	baseCommit, err := g.repo.CommitObject(baseBranchRef.Hash())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get base commit object: %w", err)
 	}
 
-	beforeState, err := beforeCommit.Tree()
+	// **Get Head Commit**
+	headCommit, err := g.repo.CommitObject(plumbing.NewHash(headCommitHash))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get before commit tree: %w", err)
+		return nil, fmt.Errorf("failed to get head commit object: %w", err)
 	}
 
-	afterState, err := afterCommit.Tree()
+	// **Compute Diff**
+	baseTree, err := baseCommit.Tree()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get after commit tree: %w", err)
+		return nil, fmt.Errorf("failed to get base commit tree: %w", err)
 	}
 
-	changes, err := beforeState.Diff(afterState)
+	headTree, err := headCommit.Tree()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get diff between commits: %w", err)
+		return nil, fmt.Errorf("failed to get head commit tree: %w", err)
 	}
 
-	files := []string{}
+	changes, err := baseTree.Diff(headTree)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compute diff: %w", err)
+	}
 
+	// **Extract Changed Files**
+	var files []string
 	for _, change := range changes {
 		action, err := change.Action()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get change action: %w", err)
 		}
-		if action == merkletrie.Delete {
-			continue
+		if action != merkletrie.Delete {
+			files = append(files, change.To.Name)
 		}
-
-		files = append(files, change.To.Name)
 	}
 
-	logging.Info("Found %d files in commits", len(files))
-
+	logging.Info("Found %d changed files between %s and %s", len(files), baseBranch, headCommitHash)
 	return files, nil
 }
 
