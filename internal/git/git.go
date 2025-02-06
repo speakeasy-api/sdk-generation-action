@@ -390,12 +390,11 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error getting repo head commit: %w", err)
 	}
 
-	fmt.Println("head name", head.Name())
+	fmt.Println("branch name, head name", branch, head.Name())
 
 	// Get the last commit for the branch
 	//g.getRef(branch,)
-	// Get the last commit for the branch
-	ref, _, err := g.client.Git.GetRef(context.Background(), owner, repo, "refs/heads/"+branch)
+	ref, err := g.getRef(branch, "main")
 	if err != nil {
 		return "", fmt.Errorf("error getting reference: %w", err)
 	}
