@@ -917,13 +917,8 @@ func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version s
 }
 
 func (g *Git) GetCommittedFilesFromBaseBranch() ([]string, error) {
-	baseBranch := "main" // Default base branch
-	if os.Getenv("GITHUB_BASE_REF") != "" {
-		baseBranch = os.Getenv("GITHUB_BASE_REF")
-	}
-
-	// Read event payload
 	path := environment.GetWorkflowEventPayloadPath()
+
 	if path == "" {
 		return nil, fmt.Errorf("no workflow event payload path")
 	}
@@ -934,7 +929,8 @@ func (g *Git) GetCommittedFilesFromBaseBranch() ([]string, error) {
 	}
 
 	var payload struct {
-		After string `json:"after"` // PR Head commit
+		After  string `json:"after"`
+		Before string `json:"before"`
 	}
 
 	fmt.Println("Data: ", string(data))
@@ -944,44 +940,52 @@ func (g *Git) GetCommittedFilesFromBaseBranch() ([]string, error) {
 	}
 
 	if payload.After == "" {
-		return nil, fmt.Errorf("missing commit hash in workflow event payload")
+		return nil, fmt.Errorf("no commit hash found in workflow event payload")
 	}
 
-	// ✅ Get the latest commit from main (instead of using Before)
+	afterCommit, err := g.repo.CommitObject(plumbing.NewHash(payload.After))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get after commit object: %w", err)
+	}
+
+	// ✅ Instead of using payload.Before, get the latest commit from main
+	baseBranch := "main"
+	if os.Getenv("GITHUB_BASE_REF") != "" {
+		baseBranch = os.Getenv("GITHUB_BASE_REF")
+	}
+
+	// Try getting the latest commit from baseBranch
 	baseBranchRef, err := g.repo.Reference(plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", baseBranch)), true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get base branch reference: %w", err)
+		fmt.Printf("⚠️ refs/heads/%s not found, trying refs/remotes/origin/%s\n", baseBranch, baseBranch)
+		baseBranchRef, err = g.repo.Reference(plumbing.ReferenceName(fmt.Sprintf("refs/remotes/origin/%s", baseBranch)), true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get base branch reference: %w", err)
+		}
 	}
 
-	baseCommit, err := g.repo.CommitObject(baseBranchRef.Hash())
+	beforeCommit, err := g.repo.CommitObject(baseBranchRef.Hash())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get base commit object: %w", err)
 	}
 
-	// ✅ Get the PR commit (After commit)
-	currentCommit, err := g.repo.CommitObject(plumbing.NewHash(payload.After))
+	beforeState, err := beforeCommit.Tree()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get current branch commit object: %w", err)
+		return nil, fmt.Errorf("failed to get before commit tree: %w", err)
 	}
 
-	// Get tree objects
-	baseTree, err := baseCommit.Tree()
+	afterState, err := afterCommit.Tree()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get base branch tree: %w", err)
+		return nil, fmt.Errorf("failed to get after commit tree: %w", err)
 	}
 
-	currentTree, err := currentCommit.Tree()
+	changes, err := beforeState.Diff(afterState)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get current branch tree: %w", err)
-	}
-
-	// Compute diff
-	changes, err := baseTree.Diff(currentTree)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get diff between base and current branch: %w", err)
+		return nil, fmt.Errorf("failed to get diff between commits: %w", err)
 	}
 
 	files := []string{}
+
 	for _, change := range changes {
 		action, err := change.Action()
 		if err != nil {
@@ -990,10 +994,11 @@ func (g *Git) GetCommittedFilesFromBaseBranch() ([]string, error) {
 		if action == merkletrie.Delete {
 			continue
 		}
+
 		files = append(files, change.To.Name)
 	}
 
-	logging.Info("Found %d files changed from base branch %s", len(files), baseBranch)
+	logging.Info("Found %d files in commits", len(files))
 
 	return files, nil
 }
