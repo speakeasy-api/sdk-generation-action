@@ -356,12 +356,13 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
-	fmt.Println("Using Signed Commits")
+
 	// In test mode do not commit and push, just move forward
 	if environment.IsTestMode() {
 		return "", nil
 	}
 
+	fmt.Println("Using Signed Commits")
 	_, githubRepoLocation := g.getRepoMetadata()
 	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
 	w, err := g.repo.Worktree()
@@ -385,22 +386,18 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error getting status for branch: %w", err)
 	}
 
+	// Get repo head commit
 	head, err := g.repo.Head()
 	if err != nil {
 		return "", fmt.Errorf("error getting repo head commit: %w", err)
 	}
 
-	fmt.Println("branch name, head name, environment ref", branch, head.Name())
-
-	// Get the last commit for the branch
-
-	ref, err := g.getRef(string(head.Name()))
+	ref, err := g.getOrCreateRef(string(head.Name()))
 	if err != nil {
 		return "", fmt.Errorf("error getting reference: %w", err)
 	}
 
-	// Create new tree
-	// This is the SHA of the branch you have made your commit. In this example, this SHA is the last commit sha for the main branch of test repository
+	// Create new tree with SHA of last commit
 	tree, err := g.createAndPushTree(ref, status)
 	if err != nil {
 		return "", fmt.Errorf("error creating new tree: %w", err)
@@ -417,12 +414,13 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
 	}
 
+	// Get parent commit
 	parentCommit, _, err := g.client.Git.GetCommit(context.Background(), owner, repo, *ref.Object.SHA)
 	if err != nil {
 		return "", fmt.Errorf("error getting parent commit: %w", err)
 	}
 
-	// Commit actual changes
+	// Commit changes
 	commitResult, _, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
 		Message: github.String(commitMessage),
 		Tree:    &github.Tree{SHA: tree.SHA},
@@ -430,6 +428,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if err != nil {
 		return "", fmt.Errorf("error committing changes: %w", err)
 	}
+
 	// Update reference
 	newRef := &github.Reference{
 		Ref:    github.String("refs/heads/" + branch),
@@ -440,9 +439,9 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	return *commitResult.SHA, nil
 }
 
-// getRef returns the commit branch reference object if it exists or creates it
+// getOrCreateRef returns the commit branch reference object if it exists or creates it
 // from the base branch before returning it.
-func (g *Git) getRef(commitRef string) (ref *github.Reference, err error) {
+func (g *Git) getOrCreateRef(commitRef string) (ref *github.Reference, err error) {
 	_, githubRepoLocation := g.getRepoMetadata()
 	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
 	environmentRef := environment.GetRef()
