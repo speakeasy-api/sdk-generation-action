@@ -576,12 +576,21 @@ Based on:
 		body = body[:maxBodyLength-3] + "..."
 	}
 
+	prClient := g.client
+	if providedPat := os.Getenv("ACTION_GITHUB_PATH"); providedPat != "" {
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: providedPat},
+		)
+		tc := oauth2.NewClient(context.Background(), ts)
+		prClient = github.NewClient(tc)
+	}
+
 	if info.PR != nil {
 		logging.Info("Updating PR")
 
 		info.PR.Body = github.String(body)
 		info.PR.Title = &title
-		info.PR, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), info.PR)
+		info.PR, _, err = prClient.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), info.PR)
 		// Set labels MUST always follow updating the PR
 		g.setPRLabels(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), labelTypes, info.PR.Labels, labels)
 		if err != nil {
@@ -590,7 +599,7 @@ Based on:
 	} else {
 		logging.Info("Creating PR")
 
-		info.PR, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
+		info.PR, _, err = prClient.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
 			Title:               github.String(title),
 			Body:                github.String(body),
 			Head:                github.String(info.BranchName),
@@ -905,6 +914,90 @@ func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version s
 	}
 
 	return defaultDownloadUrl, defaultTagName
+}
+
+func (g *Git) GetCommittedFilesFromBaseBranch() ([]string, error) {
+	baseBranch := "main" // main default for branch triggers
+	if os.Getenv("GITHUB_BASE_REF") != "" {
+		baseBranch = os.Getenv("GITHUB_BASE_REF")
+	}
+	path := environment.GetWorkflowEventPayloadPath()
+
+	if path == "" {
+		return nil, fmt.Errorf("no workflow event payload path")
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read workflow event payload: %w", err)
+	}
+
+	var payload struct {
+		After string `json:"after"`
+	}
+
+	fmt.Println("Data: ", string(data))
+
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal workflow event payload: %w", err)
+	}
+
+	if payload.After == "" {
+		return nil, fmt.Errorf("no commit hash found in workflow event payload")
+	}
+
+	// Get the HEAD commit of the base branch
+	baseBranchRef, err := g.repo.Reference(plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", baseBranch)), true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get base branch reference: %w", err)
+	}
+
+	baseCommit, err := g.repo.CommitObject(baseBranchRef.Hash())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get base branch commit object: %w", err)
+	}
+
+	// Get the current branch HEAD commit
+	currentCommit, err := g.repo.CommitObject(plumbing.NewHash(payload.After))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current branch commit object: %w", err)
+	}
+
+	// Get the tree objects for both base and current branches
+	baseTree, err := baseCommit.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get base branch tree: %w", err)
+	}
+
+	currentTree, err := currentCommit.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current branch tree: %w", err)
+	}
+
+	// Get the diff between the base branch and current branch
+	changes, err := baseTree.Diff(currentTree)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get diff between base and current branch: %w", err)
+	}
+
+	files := []string{}
+
+	// Process the changes
+	for _, change := range changes {
+		action, err := change.Action()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get change action: %w", err)
+		}
+		if action == merkletrie.Delete {
+			continue
+		}
+
+		files = append(files, change.To.Name)
+	}
+
+	logging.Info("Found %d files in the diff with base branch %s", len(files), baseBranch)
+
+	return files, nil
 }
 
 func (g *Git) GetCommitedFiles() ([]string, error) {

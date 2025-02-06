@@ -12,6 +12,9 @@ inputs:
   speakeasy_api_key:
     description: "The Speakeasy API key to authenticate the Speakeasy CLI with"
     required: true
+  action_github_pat:
+    description: "A specific Github PAT used to create Pull Requests"
+    required: false
   openapi_doc_auth_token:
     description: "An auth token to authenticate with a private OpenAPI spec"
     required: false
@@ -202,6 +205,7 @@ runs:
     SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
     OPENAI_API_KEY: ${{ inputs.openai_api_key }}
     OPENAPI_DOC_AUTH_TOKEN: ${{ inputs.openapi_doc_auth_token }}
+    ACTION_GITHUB_PATH: ${{ inputs.action_github_pat }}
   args:
     - ${{ inputs.speakeasy_version }}
     - ${{ inputs.github_access_token }}

@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"golang.org/x/exp/slices"
 )
 
 func Test() error {
@@ -26,11 +28,14 @@ func Test() error {
 		return err
 	}
 
-	// We do accept 'all' as a validate special case
-	providedTargetName := environment.SpecifiedTarget()
+	// This will only come in via workflow dispatch, we do accept 'all' as a validate special case
+	var testedTargets []string
+	if providedTargetName := environment.SpecifiedTarget(); providedTargetName != "" {
+		testedTargets = append(testedTargets, providedTargetName)
+	}
 
-	if providedTargetName == "" {
-		files, err := g.GetCommitedFiles()
+	if len(testedTargets) == 0 {
+		files, err := g.GetCommittedFilesFromBaseBranch()
 		if err != nil {
 			fmt.Printf("Failed to get commited files: %s\n", err.Error())
 		}
@@ -59,17 +64,26 @@ func Test() error {
 						return err
 					}
 					// If there are multiple SDKs in a workflow we ensure output path is unique
-					if targetOutput == outDir {
-						providedTargetName = name
+					if targetOutput == outDir && !slices.Contains(testedTargets, name) {
+						testedTargets = append(testedTargets, name)
 					}
 				}
 			}
 		}
 	}
-	if providedTargetName == "" {
+	if len(testedTargets) == 0 {
 		return fmt.Errorf("no target was provided")
 	}
 
-	// TODO: Once we have stable test reports we will probably want to use GH API to leave a PR comment/clean up old comments
-	return cli.Test(providedTargetName)
+	// we will pretty much never have a test action for multiple targets
+	// but if a customer manually setup their triggers in this way, we will run test sequentially for clear output
+	var errs []error
+	for _, target := range testedTargets {
+		// TODO: Once we have stable test reports we will probably want to use GH API to leave a PR comment/clean up old comments
+		if err := cli.Test(target); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return fmt.Errorf("test failures occured: %w", errors.Join(errs...))
 }

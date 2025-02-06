@@ -109,6 +109,9 @@ on:
       speakeasy_api_key:
         description: The API key to use to authenticate the Speakeasy CLI
         required: true
+      action_github_pat:
+        description: A specific Github PAT used to create Pull Requests
+        required: false
       ossrh_username:
         description: A username for publishing the Java package to the OSSRH URL provided in gen.yml
         required: false
@@ -207,6 +210,7 @@ jobs:
           mode: ${{ inputs.mode }}
           force: ${{ inputs.force }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          action_github_pat: ${{ secrets.action_github_pat }}
           output_tests: ${{ inputs.output_tests }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           working_directory: ${{ inputs.working_directory }}
