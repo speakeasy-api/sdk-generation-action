@@ -924,6 +924,8 @@ func (g *Git) GetCommitedFiles() ([]string, error) {
 		Before string `json:"before"`
 	}
 
+	fmt.Println("Data: ", string(data))
+
 	if err := json.Unmarshal(data, &payload); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal workflow event payload: %w", err)
 	}
