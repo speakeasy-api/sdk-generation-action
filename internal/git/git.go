@@ -363,33 +363,26 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	_, githubRepoLocation := g.getRepoMetadata()
 	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
+	w, err := g.repo.Worktree()
+	if err != nil {
+		return "", fmt.Errorf("error getting working tree: %w", err)
+	}
 
 	branch, err := g.GetCurrentBranch()
 	if err != nil {
 		return "", fmt.Errorf("error getting current branch: %w", err)
 	}
 
-	// Get working tree locally
-	// localWorkingTree, err := g.repo.Worktree()
-	// if err != nil {
-	// 	return "", fmt.Errorf("error getting worktree: %w", err)
-	// }
-
 	// Add local files and changes
 	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
-	w, _ := g.repo.Worktree()
-	status, err := w.Status()
 
-	fmt.Println("status", status)
-	fmt.Println("Attempting to push changes")
-	// if err := g.repo.Push(&git.PushOptions{
-	// 	Auth: getGithubAuth(g.accessToken),
-	// }); err != nil {
-	// 	fmt.Errorf("error in CommitAndPush code: %w", err, branch)
-	// 	return "", pushErr(err)
-	// }
+	// Get status of changed files
+	status, err := w.Status()
+	if err != nil {
+		return "", fmt.Errorf("error getting status for branch: %w", err)
+	}
 
 	ref, _, err := g.client.Git.GetRef(context.Background(), owner, repo, "refs/heads/"+branch)
 	if err != nil {
