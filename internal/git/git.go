@@ -940,6 +940,7 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 	// This occurs if we come from a non-PR event trigger
 	if payload.Number == 0 {
 		ref := environment.GetRef()
+		fmt.Println("WE ARE HERE", ref)
 
 		branchRef, err := g.repo.Reference(plumbing.NewBranchReferenceName(ref), true)
 		if err != nil {
