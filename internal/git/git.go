@@ -941,7 +941,7 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 	if payload.Number == 0 {
 		ref := environment.GetRef()
 		fmt.Println("WE ARE HERE", ref)
-
+		ref = strings.TrimPrefix(ref, "refs/heads/")
 		branchRef, err := g.repo.Reference(plumbing.NewBranchReferenceName(ref), true)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get branch reference: %w", err)
