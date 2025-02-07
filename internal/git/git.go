@@ -986,18 +986,10 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 			return nil, fmt.Errorf("failed to get main branch commit: %w", err)
 		}
 
-		// Find the merge base
-		mergeBase, err := latestCommit.MergeBase(mainCommit)
-		if err != nil || len(mergeBase) == 0 {
-			return nil, fmt.Errorf("failed to find merge base: %w", err)
-		}
-		baseCommit := mergeBase[0]
-		logging.Info("Base commit SHA: %s", baseCommit.Hash)
-
-		// Calculate the diff
-		baseTree, err := baseCommit.Tree()
+		// Get the trees for both commits
+		mainTree, err := mainCommit.Tree()
 		if err != nil {
-			return nil, fmt.Errorf("failed to get base commit tree: %w", err)
+			return nil, fmt.Errorf("failed to get main branch tree: %w", err)
 		}
 
 		latestTree, err := latestCommit.Tree()
@@ -1005,7 +997,8 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 			return nil, fmt.Errorf("failed to get latest commit tree: %w", err)
 		}
 
-		changes, err := baseTree.Diff(latestTree)
+		// Compute the diff between the trees
+		changes, err := mainTree.Diff(latestTree)
 		if err != nil {
 			return nil, fmt.Errorf("failed to calculate diff: %w", err)
 		}
