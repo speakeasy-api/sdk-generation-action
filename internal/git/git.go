@@ -53,18 +53,16 @@ func New(accessToken string) *Git {
 	}
 }
 
-func (g *Git) SetRepo(r *git.Repository) {
-	g.repo = r
-}
-
-func (g *Git) CloneRepo(ref string) (*git.Repository, error) {
+func (g *Git) CloneRepo() error {
 	githubURL := os.Getenv("GITHUB_SERVER_URL")
 	githubRepoLocation := os.Getenv("GITHUB_REPOSITORY")
 
 	repoPath, err := url.JoinPath(githubURL, githubRepoLocation)
 	if err != nil {
-		return nil, fmt.Errorf("failed to construct repo url: %w", err)
+		return fmt.Errorf("failed to construct repo url: %w", err)
 	}
+
+	ref := environment.GetRef()
 
 	logging.Info("Cloning repo: %s from ref: %s", repoPath, ref)
 
@@ -74,7 +72,7 @@ func (g *Git) CloneRepo(ref string) (*git.Repository, error) {
 	// Flow is useful when testing locally, but we're usually in a fresh image so unnecessary most of the time
 	repoDir := path.Join(workspace, "repo")
 	if err := os.RemoveAll(repoDir); err != nil {
-		return nil, err
+		return err
 	}
 
 	r, err := git.PlainClone(path.Join(workspace, "repo"), false, &git.CloneOptions{
@@ -85,10 +83,11 @@ func (g *Git) CloneRepo(ref string) (*git.Repository, error) {
 		SingleBranch:  true,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to clone repo: %w", err)
+		return fmt.Errorf("failed to clone repo: %w", err)
 	}
+	g.repo = r
 
-	return r, nil
+	return nil
 }
 
 func (g *Git) CheckDirDirty(dir string, ignoreChangePatterns map[string]string) (bool, string, error) {
