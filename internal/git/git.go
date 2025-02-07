@@ -505,7 +505,7 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 
 	// Load each file into the tree.
 	for file, fileStatus := range sourceFiles {
-		if fileStatus.Staging != git.Unmodified && fileStatus.Staging != git.Untracked {
+		if fileStatus.Staging != git.Unmodified && fileStatus.Staging != git.Untracked && fileStatus.Staging != git.Deleted {
 			fmt.Println("Using new file path using working tree")
 			filePath := workingDirectory.Filesystem.Join(workingDirectory.Filesystem.Root(), file)
 			content, err := os.ReadFile(filePath)
