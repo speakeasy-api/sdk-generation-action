@@ -40,8 +40,6 @@ func Test() error {
 			fmt.Printf("Failed to get commited files: %s\n", err.Error())
 		}
 
-		fmt.Println("Files: ", files)
-
 		for _, file := range files {
 			if strings.Contains(file, "gen.yaml") || strings.Contains(file, "gen.lock") {
 				cfgDir := filepath.Dir(file)
@@ -85,5 +83,9 @@ func Test() error {
 		}
 	}
 
-	return fmt.Errorf("test failures occured: %w", errors.Join(errs...))
+	if len(errs) > 0 {
+		return fmt.Errorf("test failures occured: %w", errors.Join(errs...))
+	}
+
+	return nil
 }

@@ -577,7 +577,7 @@ Based on:
 	}
 
 	prClient := g.client
-	if providedPat := os.Getenv("ACTION_GITHUB_PATH"); providedPat != "" {
+	if providedPat := os.Getenv("ACTION_PAT"); providedPat != "" {
 		ts := oauth2.StaticTokenSource(
 			&oauth2.Token{AccessToken: providedPat},
 		)
@@ -928,9 +928,6 @@ func (g *Git) GetChangedFilesForPR() ([]string, error) {
 		return nil, fmt.Errorf("failed to read workflow event payload: %w", err)
 	}
 
-	fmt.Println(string(data))
-	fmt.Println(environment.GetRef())
-
 	var payload struct {
 		Number int `json:"number"`
 	}
@@ -994,8 +991,6 @@ func (g *Git) GetCommitedFiles() ([]string, error) {
 		After  string `json:"after"`
 		Before string `json:"before"`
 	}
-
-	fmt.Println("Data: ", string(data))
 
 	if err := json.Unmarshal(data, &payload); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal workflow event payload: %w", err)
