@@ -449,10 +449,6 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	commitResult, _, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
 		Message: github.String(commitMessage),
 		Tree:    &github.Tree{SHA: tree.SHA},
-		Author: &github.CommitAuthor{
-			Name:  github.String("speakeasybot"),
-			Email: github.String("bot@speakeasyapi.dev"),
-		},
 		Parents: []*github.Commit{parentCommit}}, &github.CreateCommitOptions{})
 	if err != nil {
 		return "", fmt.Errorf("error committing changes: %w", err)
