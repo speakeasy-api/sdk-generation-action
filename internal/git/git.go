@@ -946,7 +946,6 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 	// This occurs if we come from a non-PR event trigger
 	if payload.Number == 0 {
 		ref := strings.TrimPrefix(environment.GetRef(), "refs/heads/")
-
 		if ref == "main" || ref == "master" {
 			// We just need to get the commit diff since we are not in a separate branch of PR
 			return g.GetCommitedFiles()
@@ -958,15 +957,10 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 			defaultBranch = payload.Repository.DefaultBranch
 		}
 
-		// Clone the main branch
-		mainRepo, err := g.CloneRepo(defaultBranch)
-		if err != nil {
-			return nil, fmt.Errorf("failed to clone main repository: %w", err)
-		}
-
 		// Get the feature branch reference
-		branchRef, err := g.repo.Reference(plumbing.NewBranchReferenceName(ref), true)
+		branchRef, err := g.repo.Reference(plumbing.ReferenceName(environment.GetRef()), true)
 		if err != nil {
+			fmt.Println("REFERENCE", environment.GetRef())
 			return nil, fmt.Errorf("failed to get feature branch reference: %w", err)
 		}
 
@@ -976,11 +970,17 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 			return nil, fmt.Errorf("failed to get latest commit of feature branch: %w", err)
 		}
 
-		// Get the latest commit on the main branch
-		mainRef, err := mainRepo.Reference(plumbing.NewBranchReferenceName(defaultBranch), true)
+		// Clone the main branch
+		mainRepo, err := g.CloneRepo(defaultBranch)
+		if err != nil {
+			return nil, fmt.Errorf("failed to clone main repository: %w", err)
+		}
+
+		mainRef, err := mainRepo.Reference(plumbing.ReferenceName("refs/heads/"+defaultBranch), true)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get main branch reference: %w", err)
 		}
+
 		mainCommit, err := mainRepo.CommitObject(mainRef.Hash())
 		if err != nil {
 			return nil, fmt.Errorf("failed to get main branch commit: %w", err)
