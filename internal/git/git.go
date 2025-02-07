@@ -578,7 +578,7 @@ Based on:
 	}
 
 	prClient := g.client
-	if providedPat := os.Getenv("ACTION_PAT"); providedPat != "" {
+	if providedPat := os.Getenv("PR_CREATION_PAT"); providedPat != "" {
 		ts := oauth2.StaticTokenSource(
 			&oauth2.Token{AccessToken: providedPat},
 		)
@@ -932,7 +932,10 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 	fmt.Println(string(data))
 
 	var payload struct {
-		Number int `json:"number"`
+		Number     int `json:"number"`
+		Repository struct {
+			DefaultBranch string `json:"default_branch"`
+		} `json:"repository"`
 	}
 
 	if err := json.Unmarshal(data, &payload); err != nil {
@@ -944,8 +947,19 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 	if payload.Number == 0 {
 		ref := strings.TrimPrefix(environment.GetRef(), "refs/heads/")
 
+		if ref == "main" || ref == "master" {
+			// We just need to get the commit diff since we are not in a separate branch of PR
+			return g.GetCommitedFiles()
+		}
+
+		defaultBranch := "main"
+		if payload.Repository.DefaultBranch != "" {
+			fmt.Println("Default branch:", payload.Repository.DefaultBranch)
+			defaultBranch = payload.Repository.DefaultBranch
+		}
+
 		// Clone the main branch
-		mainRepo, err := g.CloneRepo("main")
+		mainRepo, err := g.CloneRepo(defaultBranch)
 		if err != nil {
 			return nil, fmt.Errorf("failed to clone main repository: %w", err)
 		}
@@ -963,7 +977,7 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 		}
 
 		// Get the latest commit on the main branch
-		mainRef, err := mainRepo.Reference(plumbing.NewBranchReferenceName("main"), true)
+		mainRef, err := mainRepo.Reference(plumbing.NewBranchReferenceName(defaultBranch), true)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get main branch reference: %w", err)
 		}
