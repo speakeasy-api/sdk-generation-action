@@ -17,5 +17,6 @@ func initAction() (*git.Git, error) {
 	if err := g.CloneRepo(); err != nil {
 		return nil, err
 	}
+
 	return g, nil
 }
