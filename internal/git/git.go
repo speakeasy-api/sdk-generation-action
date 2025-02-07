@@ -370,7 +370,6 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	logging.Info("Commit and pushing changes to git")
 
-	// Add local files and changes
 	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
@@ -407,15 +406,6 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		}
 		return commitHash.String(), nil
 	}
-
-	fmt.Println("Using Signed Commits")
-
-	// Set git user name and email to speakeasy bot
-	cmd := exec.Command("git", "config", "--global", "user.name", "speakeasybot")
-	cmd.CombinedOutput()
-
-	cmd = exec.Command("git", "config", "--global", "user.email", "bot@speakeasyapi.dev")
-	cmd.CombinedOutput()
 
 	branch, err := g.GetCurrentBranch()
 	if err != nil {
@@ -459,6 +449,10 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	commitResult, _, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
 		Message: github.String(commitMessage),
 		Tree:    &github.Tree{SHA: tree.SHA},
+		Author: &github.CommitAuthor{
+			Name:  github.String("speakeasybot"),
+			Email: github.String("bot@speakeasyapi.dev"),
+		},
 		Parents: []*github.Commit{parentCommit}}, &github.CreateCommitOptions{})
 	if err != nil {
 		return "", fmt.Errorf("error committing changes: %w", err)
