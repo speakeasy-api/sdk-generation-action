@@ -411,8 +411,11 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	fmt.Println("Using Signed Commits")
 
 	// Set git user name and email to speakeasy bot
-	exec.Command("git", "config", "--global", "user.name", "speakeasybot")
-	exec.Command("git", "config", "--global", "user.email", "bot@speakeasyapi.dev")
+	cmd := exec.Command("git", "config", "--global", "user.name", "speakeasybot")
+	cmd.CombinedOutput()
+
+	cmd = exec.Command("git", "config", "--global", "user.email", "bot@speakeasyapi.dev")
+	cmd.CombinedOutput()
 
 	branch, err := g.GetCurrentBranch()
 	if err != nil {
