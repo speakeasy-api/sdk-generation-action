@@ -28,14 +28,15 @@ func Test() error {
 		return err
 	}
 
-	// This will only come in via workflow dispatch, we do accept 'all' as a validate special case
+	// This will only come in via workflow dispatch, we do accept 'all' as a special case
 	var testedTargets []string
 	if providedTargetName := environment.SpecifiedTarget(); providedTargetName != "" {
 		testedTargets = append(testedTargets, providedTargetName)
 	}
 
 	if len(testedTargets) == 0 {
-		files, err := g.GetChangedFilesForPR()
+		// We look for all files modified in the PR or Branch to see what SDK targets have been modified
+		files, err := g.GetChangedFilesForPRorBranch()
 		if err != nil {
 			fmt.Printf("Failed to get commited files: %s\n", err.Error())
 		}

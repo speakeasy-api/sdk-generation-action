@@ -916,7 +916,7 @@ func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version s
 	return defaultDownloadUrl, defaultTagName
 }
 
-func (g *Git) GetChangedFilesForPR() ([]string, error) {
+func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 	ctx := context.Background()
 	eventPath := os.Getenv("GITHUB_EVENT_PATH")
 	if eventPath == "" {
@@ -938,41 +938,71 @@ func (g *Git) GetChangedFilesForPR() ([]string, error) {
 
 	prNumber := payload.Number
 	// This occurs if we come from a non-PR event trigger
-	if prNumber == 0 {
-		opts := &github.PullRequestListOptions{
-			Head:  fmt.Sprintf("%s:%s", os.Getenv("GITHUB_REPOSITORY_OWNER"), environment.GetRef()),
-			State: "open",
-		}
+	if payload.Number == 0 {
+		ref := environment.GetRef()
 
-		if prs, _, _ := g.client.PullRequests.List(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), opts); len(prs) > 0 {
-			prNumber = prs[0].GetNumber()
-		} else {
-			return nil, fmt.Errorf("no open PR found for %s", environment.GetRef())
-		}
-
-	}
-
-	opts := &github.ListOptions{PerPage: 100}
-	var allFiles []string
-
-	// Fetch all changed files of the PR to determine testing coverage
-	for {
-		files, resp, err := g.client.PullRequests.ListFiles(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber, opts)
+		branchRef, err := g.repo.Reference(plumbing.NewBranchReferenceName(ref), true)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get changed files: %w", err)
+			return nil, fmt.Errorf("failed to get branch reference: %w", err)
 		}
 
-		for _, file := range files {
-			allFiles = append(allFiles, file.GetFilename())
+		// Get the latest commit
+		latestCommit, err := g.repo.CommitObject(branchRef.Hash())
+		if err != nil {
+			return nil, fmt.Errorf("failed to get latest commit: %w", err)
 		}
 
-		if resp.NextPage == 0 {
-			break
+		// Get the earliest commit of the branch
+		commitIter, _ := g.repo.Log(&git.LogOptions{From: latestCommit.Hash})
+		var firstCommit *object.Commit
+		commitIter.ForEach(func(c *object.Commit) error {
+			firstCommit = c
+			return nil
+		})
+
+		// Get changed files between first and latest commit
+		firstTree, _ := firstCommit.Tree()
+		latestTree, _ := latestCommit.Tree()
+		changes, _ := firstTree.Diff(latestTree)
+
+		var files []string
+		for _, change := range changes {
+			action, err := change.Action()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get change action: %w", err)
+			}
+			if action == merkletrie.Delete {
+				continue
+			}
+
+			files = append(files, change.To.Name)
 		}
-		opts.Page = resp.NextPage
+
+		fmt.Println("Changed files:", files)
+		return files, nil
+	} else {
+		opts := &github.ListOptions{PerPage: 100}
+		var allFiles []string
+
+		// Fetch all changed files of the PR to determine testing coverage
+		for {
+			files, resp, err := g.client.PullRequests.ListFiles(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber, opts)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get changed files: %w", err)
+			}
+
+			for _, file := range files {
+				allFiles = append(allFiles, file.GetFilename())
+			}
+
+			if resp.NextPage == 0 {
+				break
+			}
+			opts.Page = resp.NextPage
+		}
+
+		return allFiles, nil
 	}
-
-	return allFiles, nil
 }
 
 func (g *Git) GetCommitedFiles() ([]string, error) {

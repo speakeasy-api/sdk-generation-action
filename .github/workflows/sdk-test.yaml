@@ -29,6 +29,10 @@ jobs:
       - name: Check commit message condition
         id: check_commit
         run: |
+          # The default trigger for this action will be a PR event.
+          # Sometimes we will also add a push event trigger to allow our Github app to run tests by making empty commits, a github token workaround.
+          # This check allows us to ensure we aren't double running tests when normal PR updates are made.
+          # The only time a push event should trigger tests is when it's a commit from our app with message "[run-tests]"
           if [[ "${{ github.event_name }}" != "push" ]]; then
             echo "Skipping commit message check since event is not push."
             echo "run_tests=true" >> $GITHUB_OUTPUT
@@ -38,8 +42,6 @@ jobs:
           COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
           echo "Commit message: $COMMIT_MESSAGE"
 
-          # The main trigger should be PR events. This allows us to execute tests from empty commits made by our app.
-          # This is a workaround for GitHub not allowing actions to trigger from a PR made by another action.
           if [[ "$COMMIT_MESSAGE" == *"[run-tests]"* ]]; then
             echo "run_tests=true" >> $GITHUB_OUTPUT
           else
@@ -49,7 +51,7 @@ jobs:
       - id: test
         name: Run Tests
         if: steps.check_commit.outputs.run_tests == 'true'
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.39.0
         with:
           action: "test"
           working_directory: ${{ inputs.working_directory }}
