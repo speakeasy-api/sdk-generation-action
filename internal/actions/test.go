@@ -70,7 +70,8 @@ func Test() error {
 		}
 	}
 	if len(testedTargets) == 0 {
-		return fmt.Errorf("no target was provided")
+		fmt.Println("No target was provided ... skipping tests")
+		return nil
 	}
 
 	// we will pretty much never have a test action for multiple targets
