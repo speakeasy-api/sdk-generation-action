@@ -365,7 +365,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	w, err := g.repo.Worktree()
 	if err != nil {
-		return "", fmt.Errorf("error getting working tree: %w", err)
+		return "", fmt.Errorf("error getting worktree: %w", err)
 	}
 
 	logging.Info("Commit and pushing changes to git")
@@ -409,6 +409,10 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	}
 
 	fmt.Println("Using Signed Commits")
+
+	// Set git user name and email to speakeasy bot
+	exec.Command("git", "config", "--global", "user.name", "speakeasybot")
+	exec.Command("git", "config", "--global", "user.email", "bot@speakeasyapi.dev")
 
 	branch, err := g.GetCurrentBranch()
 	if err != nil {
@@ -506,7 +510,6 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 	// Load each file into the tree.
 	for file, fileStatus := range sourceFiles {
 		if fileStatus.Staging != git.Unmodified && fileStatus.Staging != git.Untracked && fileStatus.Staging != git.Deleted {
-			fmt.Println("Using new file path using working tree")
 			filePath := workingDirectory.Filesystem.Join(workingDirectory.Filesystem.Root(), file)
 			content, err := os.ReadFile(filePath)
 			if err != nil {
