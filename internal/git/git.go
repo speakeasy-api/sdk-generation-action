@@ -53,16 +53,18 @@ func New(accessToken string) *Git {
 	}
 }
 
-func (g *Git) CloneRepo() error {
+func (g *Git) SetRepo(r *git.Repository) {
+	g.repo = r
+}
+
+func (g *Git) CloneRepo(ref string) (*git.Repository, error) {
 	githubURL := os.Getenv("GITHUB_SERVER_URL")
 	githubRepoLocation := os.Getenv("GITHUB_REPOSITORY")
 
 	repoPath, err := url.JoinPath(githubURL, githubRepoLocation)
 	if err != nil {
-		return fmt.Errorf("failed to construct repo url: %w", err)
+		return nil, fmt.Errorf("failed to construct repo url: %w", err)
 	}
-
-	ref := environment.GetRef()
 
 	logging.Info("Cloning repo: %s from ref: %s", repoPath, ref)
 
@@ -72,7 +74,7 @@ func (g *Git) CloneRepo() error {
 	// Flow is useful when testing locally, but we're usually in a fresh image so unnecessary most of the time
 	repoDir := path.Join(workspace, "repo")
 	if err := os.RemoveAll(repoDir); err != nil {
-		return err
+		return nil, err
 	}
 
 	r, err := git.PlainClone(path.Join(workspace, "repo"), false, &git.CloneOptions{
@@ -83,11 +85,10 @@ func (g *Git) CloneRepo() error {
 		SingleBranch:  true,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to clone repo: %w", err)
+		return nil, fmt.Errorf("failed to clone repo: %w", err)
 	}
-	g.repo = r
 
-	return nil
+	return r, nil
 }
 
 func (g *Git) CheckDirDirty(dir string, ignoreChangePatterns map[string]string) (bool, string, error) {
@@ -928,6 +929,8 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 		return nil, fmt.Errorf("failed to read workflow event payload: %w", err)
 	}
 
+	fmt.Println(string(data))
+
 	var payload struct {
 		Number int `json:"number"`
 	}
@@ -939,47 +942,73 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 	prNumber := payload.Number
 	// This occurs if we come from a non-PR event trigger
 	if payload.Number == 0 {
-		ref := environment.GetRef()
-		fmt.Println("WE ARE HERE", ref)
-		ref = strings.TrimPrefix(ref, "refs/heads/")
+		ref := strings.TrimPrefix(environment.GetRef(), "refs/heads/")
+
+		// Clone the main branch
+		mainRepo, err := g.CloneRepo("main")
+		if err != nil {
+			return nil, fmt.Errorf("failed to clone main repository: %w", err)
+		}
+
+		// Get the feature branch reference
 		branchRef, err := g.repo.Reference(plumbing.NewBranchReferenceName(ref), true)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get branch reference: %w", err)
+			return nil, fmt.Errorf("failed to get feature branch reference: %w", err)
 		}
 
-		// Get the latest commit
+		// Get the latest commit on the feature branch
 		latestCommit, err := g.repo.CommitObject(branchRef.Hash())
 		if err != nil {
-			return nil, fmt.Errorf("failed to get latest commit: %w", err)
+			return nil, fmt.Errorf("failed to get latest commit of feature branch: %w", err)
 		}
 
-		// Get the earliest commit of the branch
-		commitIter, _ := g.repo.Log(&git.LogOptions{From: latestCommit.Hash})
-		var firstCommit *object.Commit
-		commitIter.ForEach(func(c *object.Commit) error {
-			firstCommit = c
-			return nil
-		})
+		// Get the latest commit on the main branch
+		mainRef, err := mainRepo.Reference(plumbing.NewBranchReferenceName("main"), true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get main branch reference: %w", err)
+		}
+		mainCommit, err := mainRepo.CommitObject(mainRef.Hash())
+		if err != nil {
+			return nil, fmt.Errorf("failed to get main branch commit: %w", err)
+		}
 
-		// Get changed files between first and latest commit
-		firstTree, _ := firstCommit.Tree()
-		latestTree, _ := latestCommit.Tree()
-		changes, _ := firstTree.Diff(latestTree)
+		// Find the merge base
+		mergeBase, err := latestCommit.MergeBase(mainCommit)
+		if err != nil || len(mergeBase) == 0 {
+			return nil, fmt.Errorf("failed to find merge base: %w", err)
+		}
+		baseCommit := mergeBase[0]
+		logging.Info("Base commit SHA: %s", baseCommit.Hash)
 
+		// Calculate the diff
+		baseTree, err := baseCommit.Tree()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get base commit tree: %w", err)
+		}
+
+		latestTree, err := latestCommit.Tree()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get latest commit tree: %w", err)
+		}
+
+		changes, err := baseTree.Diff(latestTree)
+		if err != nil {
+			return nil, fmt.Errorf("failed to calculate diff: %w", err)
+		}
+
+		// Extract the changed files
 		var files []string
 		for _, change := range changes {
 			action, err := change.Action()
 			if err != nil {
 				return nil, fmt.Errorf("failed to get change action: %w", err)
 			}
-			if action == merkletrie.Delete {
-				continue
+			if action != merkletrie.Delete { // Ignore deleted files
+				files = append(files, change.To.Name)
 			}
-
-			files = append(files, change.To.Name)
 		}
 
-		fmt.Println("Changed files:", files)
+		logging.Info("Changed files: %v", files)
 		return files, nil
 	} else {
 		opts := &github.ListOptions{PerPage: 100}

@@ -14,9 +14,10 @@ func initAction() (*git.Git, error) {
 	}
 
 	g := git.New(accessToken)
-	if err := g.CloneRepo(); err != nil {
+	r, err := g.CloneRepo(environment.GetRepo())
+	if err != nil {
 		return nil, err
 	}
-
+	g.SetRepo(r)
 	return g, nil
 }
