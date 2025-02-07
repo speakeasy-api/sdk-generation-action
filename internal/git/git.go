@@ -928,8 +928,6 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 		return nil, fmt.Errorf("failed to read workflow event payload: %w", err)
 	}
 
-	fmt.Println(string(data))
-
 	var payload struct {
 		Number     int `json:"number"`
 		Repository struct {
@@ -958,7 +956,6 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 		// Get the feature branch reference
 		branchRef, err := g.repo.Reference(plumbing.ReferenceName(environment.GetRef()), true)
 		if err != nil {
-			fmt.Println("REFERENCE", environment.GetRef())
 			return nil, fmt.Errorf("failed to get feature branch reference: %w", err)
 		}
 
@@ -999,10 +996,7 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 			pageCount++
 		}
 
-		// Log total pages fetched (useful for debugging)
-		logging.Info("Total API pages fetched: %d", pageCount)
-		logging.Info("Changed files: %v", files)
-
+		logging.Info("Found %d files", len(files))
 		return files, nil
 
 	} else {
@@ -1025,6 +1019,8 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 			}
 			opts.Page = resp.NextPage
 		}
+
+		logging.Info("Found %d files", len(allFiles))
 
 		return allFiles, nil
 	}
