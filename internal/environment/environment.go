@@ -31,6 +31,7 @@ const (
 	ActionLog                Action = "log-result"
 	ActionPublishEvent       Action = "publish-event"
 	ActionTag                Action = "tag"
+	ActionTest               Action = "test"
 )
 
 const (

@@ -54,6 +54,8 @@ func main() {
 				return actions.Release()
 			case environment.ActionTag:
 				return actions.Tag()
+			case environment.ActionTest:
+				return actions.Test()
 			default:
 				return fmt.Errorf("unknown action: %s", environment.GetAction())
 			}

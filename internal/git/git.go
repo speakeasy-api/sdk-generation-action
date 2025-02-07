@@ -576,12 +576,21 @@ Based on:
 		body = body[:maxBodyLength-3] + "..."
 	}
 
+	prClient := g.client
+	if providedPat := os.Getenv("PR_CREATION_PAT"); providedPat != "" {
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: providedPat},
+		)
+		tc := oauth2.NewClient(context.Background(), ts)
+		prClient = github.NewClient(tc)
+	}
+
 	if info.PR != nil {
 		logging.Info("Updating PR")
 
 		info.PR.Body = github.String(body)
 		info.PR.Title = &title
-		info.PR, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), info.PR)
+		info.PR, _, err = prClient.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), info.PR)
 		// Set labels MUST always follow updating the PR
 		g.setPRLabels(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), labelTypes, info.PR.Labels, labels)
 		if err != nil {
@@ -590,7 +599,7 @@ Based on:
 	} else {
 		logging.Info("Creating PR")
 
-		info.PR, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
+		info.PR, _, err = prClient.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
 			Title:               github.String(title),
 			Body:                github.String(body),
 			Head:                github.String(info.BranchName),
@@ -905,6 +914,116 @@ func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version s
 	}
 
 	return defaultDownloadUrl, defaultTagName
+}
+
+func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
+	ctx := context.Background()
+	eventPath := os.Getenv("GITHUB_EVENT_PATH")
+	if eventPath == "" {
+		return nil, fmt.Errorf("no workflow event payload path")
+	}
+
+	data, err := os.ReadFile(eventPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read workflow event payload: %w", err)
+	}
+
+	var payload struct {
+		Number     int `json:"number"`
+		Repository struct {
+			DefaultBranch string `json:"default_branch"`
+		} `json:"repository"`
+	}
+
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal workflow event payload: %w", err)
+	}
+
+	prNumber := payload.Number
+	// This occurs if we come from a non-PR event trigger
+	if payload.Number == 0 {
+		ref := strings.TrimPrefix(environment.GetRef(), "refs/heads/")
+		if ref == "main" || ref == "master" {
+			// We just need to get the commit diff since we are not in a separate branch of PR
+			return g.GetCommitedFiles()
+		}
+		defaultBranch := "main"
+		if payload.Repository.DefaultBranch != "" {
+			fmt.Println("Default branch:", payload.Repository.DefaultBranch)
+			defaultBranch = payload.Repository.DefaultBranch
+		}
+
+		// Get the feature branch reference
+		branchRef, err := g.repo.Reference(plumbing.ReferenceName(environment.GetRef()), true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get feature branch reference: %w", err)
+		}
+
+		// Get the latest commit on the feature branch
+		latestCommit, err := g.repo.CommitObject(branchRef.Hash())
+		if err != nil {
+			return nil, fmt.Errorf("failed to get latest commit of feature branch: %w", err)
+		}
+
+		var files []string
+		opt := &github.ListOptions{PerPage: 100} // Fetch 100 files per page (max: 300)
+		pageCount := 1                           // Track the number of API pages fetched
+
+		for {
+			comparison, resp, err := g.client.Repositories.CompareCommits(
+				ctx,
+				os.Getenv("GITHUB_REPOSITORY_OWNER"),
+				getRepo(),
+				defaultBranch,
+				latestCommit.Hash.String(),
+				opt,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to compare commits via GitHub API: %w", err)
+			}
+
+			// Collect filenames from this page
+			for _, file := range comparison.Files {
+				files = append(files, file.GetFilename())
+			}
+
+			// Check if there are more pages to fetch
+			if resp.NextPage == 0 {
+				break // No more pages, exit loop
+			}
+
+			opt.Page = resp.NextPage
+			pageCount++
+		}
+
+		logging.Info("Found %d files", len(files))
+		return files, nil
+
+	} else {
+		opts := &github.ListOptions{PerPage: 100}
+		var allFiles []string
+
+		// Fetch all changed files of the PR to determine testing coverage
+		for {
+			files, resp, err := g.client.PullRequests.ListFiles(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber, opts)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get changed files: %w", err)
+			}
+
+			for _, file := range files {
+				allFiles = append(allFiles, file.GetFilename())
+			}
+
+			if resp.NextPage == 0 {
+				break
+			}
+			opts.Page = resp.NextPage
+		}
+
+		logging.Info("Found %d files", len(allFiles))
+
+		return allFiles, nil
+	}
 }
 
 func (g *Git) GetCommitedFiles() ([]string, error) {

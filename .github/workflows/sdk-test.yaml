@@ -1,0 +1,62 @@
+name: Speakeasy Test SDK
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: "The specific target to test"
+        required: false
+        type: string
+      working_directory:
+        description: "The working directory for running Speakeasy CLI commands in the action"
+        required: false
+        type: string
+    secrets:
+      github_access_token:
+        description: A GitHub access token with read access to the repo
+        required: true
+      speakeasy_api_key:
+        description: The API key to use to authenticate the Speakeasy CLI
+        required: true
+jobs:
+  test:
+    name: Test SDK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+
+      - name: Check commit message condition
+        id: check_commit
+        run: |
+          # The default trigger for this action will be a PR event.
+          # Sometimes we will also add a push event trigger to allow our Github app to run tests by making empty commits, a github token workaround.
+          # This check allows us to ensure we aren't double running tests when normal PR updates are made.
+          # The only time a push event should trigger tests is when it's a commit from our app with message "[run-tests]"
+          if [[ "${{ github.event_name }}" != "push" ]]; then
+            echo "Skipping commit message check since event is not push."
+            echo "run_tests=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+          echo "Commit message: $COMMIT_MESSAGE"
+
+          if [[ "$COMMIT_MESSAGE" == *"[run-tests]"* ]]; then
+            echo "run_tests=true" >> $GITHUB_OUTPUT
+          else
+            echo "run_tests=false" >> $GITHUB_OUTPUT
+          fi
+
+      - id: test
+        name: Run Tests
+        if: steps.check_commit.outputs.run_tests == 'true'
+        uses: speakeasy-api/sdk-generation-action@v15
+        with:
+          action: "test"
+          working_directory: ${{ inputs.working_directory }}
+          target: ${{ inputs.target }}
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          github_access_token: ${{ secrets.github_access_token }}
+
+
