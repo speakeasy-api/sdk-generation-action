@@ -950,7 +950,6 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 			// We just need to get the commit diff since we are not in a separate branch of PR
 			return g.GetCommitedFiles()
 		}
-
 		defaultBranch := "main"
 		if payload.Repository.DefaultBranch != "" {
 			fmt.Println("Default branch:", payload.Repository.DefaultBranch)
@@ -970,53 +969,43 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 			return nil, fmt.Errorf("failed to get latest commit of feature branch: %w", err)
 		}
 
-		// Clone the main branch
-		mainRepo, err := g.CloneRepo(defaultBranch)
-		if err != nil {
-			return nil, fmt.Errorf("failed to clone main repository: %w", err)
-		}
-
-		mainRef, err := mainRepo.Reference(plumbing.ReferenceName("refs/heads/"+defaultBranch), true)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get main branch reference: %w", err)
-		}
-
-		mainCommit, err := mainRepo.CommitObject(mainRef.Hash())
-		if err != nil {
-			return nil, fmt.Errorf("failed to get main branch commit: %w", err)
-		}
-
-		// Get the trees for both commits
-		mainTree, err := mainCommit.Tree()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get main branch tree: %w", err)
-		}
-
-		latestTree, err := latestCommit.Tree()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get latest commit tree: %w", err)
-		}
-
-		// Compute the diff between the trees
-		changes, err := mainTree.Diff(latestTree)
-		if err != nil {
-			return nil, fmt.Errorf("failed to calculate diff: %w", err)
-		}
-
-		// Extract the changed files
 		var files []string
-		for _, change := range changes {
-			action, err := change.Action()
+		opt := &github.ListOptions{PerPage: 100} // Fetch 100 files per page (max: 300)
+		pageCount := 1                           // Track the number of API pages fetched
+
+		for {
+			comparison, resp, err := g.client.Repositories.CompareCommits(
+				ctx,
+				os.Getenv("GITHUB_REPOSITORY_OWNER"),
+				getRepo(),
+				defaultBranch,
+				latestCommit.Hash.String(),
+				opt,
+			)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get change action: %w", err)
+				return nil, fmt.Errorf("failed to compare commits via GitHub API: %w", err)
 			}
-			if action != merkletrie.Delete { // Ignore deleted files
-				files = append(files, change.To.Name)
+
+			// Collect filenames from this page
+			for _, file := range comparison.Files {
+				files = append(files, file.GetFilename())
 			}
+
+			// Check if there are more pages to fetch
+			if resp.NextPage == 0 {
+				break // No more pages, exit loop
+			}
+
+			opt.Page = resp.NextPage
+			pageCount++
 		}
 
+		// Log total pages fetched (useful for debugging)
+		logging.Info("Total API pages fetched: %d", pageCount)
 		logging.Info("Changed files: %v", files)
+
 		return files, nil
+
 	} else {
 		opts := &github.ListOptions{PerPage: 100}
 		var allFiles []string
