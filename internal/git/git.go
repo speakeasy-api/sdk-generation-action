@@ -485,32 +485,35 @@ func (g *Git) getOrCreateRef(commitRef string) (ref *github.Reference, err error
 	if baseRef, _, err = g.client.Git.GetRef(context.Background(), owner, repo, environmentRef); err != nil {
 		return nil, err
 	}
+
 	newRef := &github.Reference{Ref: github.String(commitRef), Object: &github.GitObject{SHA: baseRef.Object.SHA}}
 	ref, _, err = g.client.Git.CreateRef(context.Background(), owner, repo, newRef)
 	return ref, err
 }
 
-// getTree generates the tree to commit based on the given files and the commit
-// of the ref you got in getRef.
+// Generates the tree to commit based on the commit reference and source files. If doesn't exist on the remote
+// host, it will create and push it.
 func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (tree *github.Tree, err error) {
-	// Create a tree with what to commit.
-	entries := []*github.TreeEntry{}
 	_, githubRepoLocation := g.getRepoMetadata()
 	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
+	w, _ := g.repo.Worktree()
 
-	workingDirectory, _ := g.repo.Worktree()
-
-	// Load each file into the tree.
+	entries := []*github.TreeEntry{}
 	for file, fileStatus := range sourceFiles {
 		if fileStatus.Staging != git.Unmodified && fileStatus.Staging != git.Untracked && fileStatus.Staging != git.Deleted {
-			filePath := workingDirectory.Filesystem.Join(workingDirectory.Filesystem.Root(), file)
+			filePath := w.Filesystem.Join(w.Filesystem.Root(), file)
 			content, err := os.ReadFile(filePath)
+
 			if err != nil {
 				fmt.Println("Error getting file content", err, filePath)
 				return nil, err
 			}
-			entries = append(entries, &github.TreeEntry{Path: github.String(file), Type: github.String("blob"), Content: github.String(string(content)), Mode: github.String("100644")})
 
+			entries = append(entries, &github.TreeEntry{
+				Path:    github.String(file),
+				Type:    github.String("blob"),
+				Content: github.String(string(content)),
+				Mode:    github.String("100644")})
 		}
 	}
 
