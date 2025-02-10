@@ -947,6 +947,16 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 			// We just need to get the commit diff since we are not in a separate branch of PR
 			return g.GetCommitedFiles()
 		}
+
+		opts := &github.PullRequestListOptions{
+			Head:  fmt.Sprintf("%s:%s", os.Getenv("GITHUB_REPOSITORY_OWNER"), environment.GetRef()),
+			State: "open",
+		}
+
+		if prs, _, _ := g.client.PullRequests.List(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), opts); len(prs) > 0 {
+			os.Setenv("GH_PULL_REQUEST", prs[0].GetURL())
+		}
+
 		defaultBranch := "main"
 		if payload.Repository.DefaultBranch != "" {
 			fmt.Println("Default branch:", payload.Repository.DefaultBranch)
@@ -1000,6 +1010,8 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 		return files, nil
 
 	} else {
+		prURL := fmt.Sprintf("https://github.com/%s/%s/pull/%s", os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber)
+		os.Setenv("GH_PULL_REQUEST", prURL)
 		opts := &github.ListOptions{PerPage: 100}
 		var allFiles []string
 
