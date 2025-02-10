@@ -1010,7 +1010,7 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 		return files, nil
 
 	} else {
-		prURL := fmt.Sprintf("https://github.com/%s/%s/pull/%s", os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber)
+		prURL := fmt.Sprintf("https://github.com/%s/%s/pull/%d", os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber)
 		os.Setenv("GH_PULL_REQUEST", prURL)
 		opts := &github.ListOptions{PerPage: 100}
 		var allFiles []string
