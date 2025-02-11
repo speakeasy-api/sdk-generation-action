@@ -24,7 +24,7 @@ func (g *Git) UpsertLabelTypes(ctx context.Context) map[string]github.Label {
 	}
 
 	actualLabels := make(map[string]github.Label)
-	allLabels, _, err := g.client.Issues.ListLabels(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), nil)
+	allLabels, _, err := g.client.Issues.ListLabels(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), nil)
 	if err != nil {
 		return actualLabels
 	}
@@ -36,7 +36,7 @@ func (g *Git) UpsertLabelTypes(ctx context.Context) map[string]github.Label {
 		foundLabel, ok := actualLabels[*label.Name]
 		if ok {
 			if *foundLabel.Description != *label.Description {
-				_, _, err = g.client.Issues.EditLabel(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *label.Name, &github.Label{
+				_, _, err = g.client.Issues.EditLabel(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), *label.Name, &github.Label{
 					Name:        label.Name,
 					Description: label.Description,
 				})
@@ -45,7 +45,7 @@ func (g *Git) UpsertLabelTypes(ctx context.Context) map[string]github.Label {
 				}
 			}
 		} else {
-			_, _, err = g.client.Issues.CreateLabel(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &label)
+			_, _, err = g.client.Issues.CreateLabel(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), &label)
 			if err != nil {
 				return actualLabels
 			}
