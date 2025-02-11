@@ -200,6 +200,10 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		}
 
 		if dirty {
+			target.IsPublished()
+			if target.Testing != nil && target.Testing.Enabled != nil && *target.Testing.Enabled {
+				hasTestingEnabled = true
+			}
 			hasTestingEnabled = true
 			langGenerated[lang] = true
 			// Set speakeasy version and generation version to what was used by the CLI
