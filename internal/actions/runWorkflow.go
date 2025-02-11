@@ -265,7 +265,8 @@ func finalize(inputs finalizeInputs) error {
 		// for more info on why this is necessary see https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#workarounds-to-trigger-further-workflow-runs
 		// If the customer has manually set up a PR_CREATION_PAT we will not do this
 		if inputs.GenInfo != nil && inputs.GenInfo.HasTestingEnabled && os.Getenv("PR_CREATION_PAT") == "" {
-			sanitizedBranchName := strings.Trim(branchName, "refs/heads/")
+			sanitizedBranchName := strings.TrimPrefix(branchName, "refs/heads/")
+			fmt.Println("sanitized branch name", sanitizedBranchName)
 			if err := cli.FireEmptyCommit(os.Getenv("GITHUB_REPOSITORY_OWNER"), git.GetRepo(), sanitizedBranchName); err != nil {
 				fmt.Println("Failed to create empty commit to trigger testing workflow", err)
 			}
