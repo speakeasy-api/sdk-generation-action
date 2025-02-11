@@ -33,6 +33,10 @@ on:
         default: "false"
         required: false
         type: string
+      signed_commits:
+        required: false
+        description: "This will set commits to be signed and and verified"
+        type: boolean
       speakeasy_server_url:
         required: false
         description: "Internal use only"
@@ -209,6 +213,7 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
           mode: ${{ inputs.mode }}
           force: ${{ inputs.force }}
+          signed_commits: ${{ inputs.signed_commits }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           pr_creation_pat: ${{ secrets.pr_creation_pat }}
           output_tests: ${{ inputs.output_tests }}

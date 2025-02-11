@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -382,28 +383,143 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	} else if action == environment.ActionSuggest {
 		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
 	}
-	commitHash, err := w.Commit(commitMessage, &git.CommitOptions{
-		Author: &object.Signature{
-			Name:  "speakeasybot",
-			Email: "bot@speakeasyapi.dev",
-			When:  time.Now(),
-		},
-		All: true,
-	})
+
+	// Create commit message
+	if !environment.GetSignedCommits() {
+		commitHash, err := w.Commit(commitMessage, &git.CommitOptions{
+			Author: &object.Signature{
+				Name:  "speakeasybot",
+				Email: "bot@speakeasyapi.dev",
+				When:  time.Now(),
+			},
+			All: true,
+		})
+		if err != nil {
+			return "", fmt.Errorf("error committing changes: %w", err)
+		}
+
+		if err := g.repo.Push(&git.PushOptions{
+			Auth:  getGithubAuth(g.accessToken),
+			Force: true, // This is necessary because at the beginning of the workflow we reset the branch
+		}); err != nil {
+			return "", pushErr(err)
+		}
+		return commitHash.String(), nil
+	}
+
+	branch, err := g.GetCurrentBranch()
+	if err != nil {
+		return "", fmt.Errorf("error getting current branch: %w", err)
+	}
+
+	// Get status of changed files
+	status, err := w.Status()
+	if err != nil {
+		return "", fmt.Errorf("error getting status for branch: %w", err)
+	}
+
+	// Get repo head commit
+	head, err := g.repo.Head()
+	if err != nil {
+		return "", fmt.Errorf("error getting repo head commit: %w", err)
+	}
+
+	// Create reference on remote if it doesn't exist
+	ref, err := g.getOrCreateRef(string(head.Name()))
+	if err != nil {
+		return "", fmt.Errorf("error getting reference: %w", err)
+	}
+
+	// Create new tree with SHA of last commit
+	tree, err := g.createAndPushTree(ref, status)
+	if err != nil {
+		return "", fmt.Errorf("error creating new tree: %w", err)
+	}
+
+	_, githubRepoLocation := g.getRepoMetadata()
+	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
+
+	// Get parent commit
+	parentCommit, _, err := g.client.Git.GetCommit(context.Background(), owner, repo, *ref.Object.SHA)
+	if err != nil {
+		return "", fmt.Errorf("error getting parent commit: %w", err)
+	}
+
+	// Commit changes
+	commitResult, _, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
+		Message: github.String(commitMessage),
+		Tree:    &github.Tree{SHA: tree.SHA},
+		Parents: []*github.Commit{parentCommit}}, &github.CreateCommitOptions{})
 	if err != nil {
 		return "", fmt.Errorf("error committing changes: %w", err)
 	}
 
-	if err := g.repo.Push(&git.PushOptions{
-		Auth:  getGithubAuth(g.accessToken),
-		Force: true, // This is necessary because at the beginning of the workflow we reset the branch
-	}); err != nil {
-		return "", pushErr(err)
+	// Update reference
+	newRef := &github.Reference{
+		Ref:    github.String("refs/heads/" + branch),
+		Object: &github.GitObject{SHA: commitResult.SHA},
 	}
+	g.client.Git.UpdateRef(context.Background(), owner, repo, newRef, true)
 
-	return commitHash.String(), nil
+	return *commitResult.SHA, nil
 }
 
+// getOrCreateRef returns the commit branch reference object if it exists or creates it
+// from the base branch before returning it.
+func (g *Git) getOrCreateRef(commitRef string) (ref *github.Reference, err error) {
+	_, githubRepoLocation := g.getRepoMetadata()
+	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
+	environmentRef := environment.GetRef()
+
+	if ref, _, err = g.client.Git.GetRef(context.Background(), owner, repo, commitRef); err == nil {
+		return ref, nil
+	}
+
+	// We consider that an error means the branch has not been found and needs to
+	// be created.
+	if commitRef == environmentRef {
+		return nil, errors.New("the commit branch does not exist but `-base-branch` is the same as `-commit-branch`")
+	}
+
+	var baseRef *github.Reference
+	if baseRef, _, err = g.client.Git.GetRef(context.Background(), owner, repo, environmentRef); err != nil {
+		return nil, err
+	}
+
+	newRef := &github.Reference{Ref: github.String(commitRef), Object: &github.GitObject{SHA: baseRef.Object.SHA}}
+	ref, _, err = g.client.Git.CreateRef(context.Background(), owner, repo, newRef)
+	return ref, err
+}
+
+// Generates the tree to commit based on the commit reference and source files. If doesn't exist on the remote
+// host, it will create and push it.
+func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (tree *github.Tree, err error) {
+	_, githubRepoLocation := g.getRepoMetadata()
+	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
+	w, _ := g.repo.Worktree()
+
+	entries := []*github.TreeEntry{}
+	for file, fileStatus := range sourceFiles {
+		if fileStatus.Staging != git.Unmodified && fileStatus.Staging != git.Untracked && fileStatus.Staging != git.Deleted {
+			filePath := w.Filesystem.Join(w.Filesystem.Root(), file)
+			content, err := os.ReadFile(filePath)
+
+			if err != nil {
+				fmt.Println("Error getting file content", err, filePath)
+				return nil, err
+			}
+
+			entries = append(entries, &github.TreeEntry{
+				Path:    github.String(file),
+				Type:    github.String("blob"),
+				Content: github.String(string(content)),
+				Mode:    github.String("100644")})
+		}
+	}
+
+	tree, _, err = g.client.Git.CreateTree(context.Background(), owner, repo, *ref.Object.SHA, entries)
+	return tree, err
+}
 func (g *Git) Add(arg string) error {
 	// We execute this manually because go-git doesn't properly support gitignore
 	cmd := exec.Command("git", "add", arg)
@@ -427,6 +543,19 @@ type PRInfo struct {
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
 	VersioningInfo       versionbumps.VersioningInfo
+}
+
+func (g *Git) getRepoMetadata() (string, string) {
+	githubURL := os.Getenv("GITHUB_SERVER_URL")
+	githubRepoLocation := os.Getenv("GITHUB_REPOSITORY")
+
+	return githubURL, githubRepoLocation
+}
+
+func (g *Git) getOwnerAndRepo(githubRepoLocation string) (string, string) {
+	ownerAndRepo := strings.Split(githubRepoLocation, "/")
+
+	return ownerAndRepo[0], ownerAndRepo[1]
 }
 
 func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
