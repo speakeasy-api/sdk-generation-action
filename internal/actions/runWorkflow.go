@@ -183,6 +183,7 @@ func RunWorkflow() error {
 		LintingReportURL:     runRes.LintingReportURL,
 		ChangesReportURL:     runRes.ChangesReportURL,
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
+		GenInfo:              runRes.GenInfo,
 		currentRelease:       &releaseInfo,
 	}); err != nil {
 		return err
@@ -209,6 +210,7 @@ type finalizeInputs struct {
 	OpenAPIChangeSummary string
 	VersioningReport     *versioning.MergedVersionReport
 	VersioningInfo       versionbumps.VersioningInfo
+	GenInfo              *run.GenerationInfo
 	currentRelease       *releases.ReleasesInfo
 }
 
@@ -257,6 +259,16 @@ func finalize(inputs finalizeInputs) error {
 
 		if pr != nil {
 			os.Setenv("GH_PULL_REQUEST", *pr.URL)
+		}
+
+		// If we are in PR mode and testing should be triggered by this PR we will attempt to fire an empty commit from our app so trigger github actions checks
+		// for more info on why this is necessary see https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#workarounds-to-trigger-further-workflow-runs
+		// If the customer has manually set up a PR_CREATION_PAT we will not do this
+		if inputs.GenInfo != nil && inputs.GenInfo.HasTestingEnabled && os.Getenv("PR_CREATION_PAT") == "" {
+			sanitizedBranchName := strings.Trim(branchName, "refs/heads/")
+			if err := cli.FireEmptyCommit(os.Getenv("GITHUB_REPOSITORY_OWNER"), git.GetRepo(), sanitizedBranchName); err != nil {
+				fmt.Println("Failed to create empty commit to trigger testing workflow", err)
+			}
 		}
 
 	case environment.ModeDirect:

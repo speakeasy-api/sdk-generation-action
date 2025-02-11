@@ -30,6 +30,7 @@ type GenerationInfo struct {
 	GenerationVersion string
 	OpenAPIDocVersion string
 	Languages         map[string]LanguageGenInfo
+	HasTestingEnabled bool
 }
 
 type RunResult struct {
@@ -165,6 +166,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		}
 	}
 
+	hasTestingEnabled := false
 	// Legacy logic: check for changes + dirty-check
 	for targetID, target := range wf.Targets {
 		if environment.SpecifiedTarget() != "" && environment.SpecifiedTarget() != "all" && environment.SpecifiedTarget() != targetID {
@@ -198,6 +200,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		}
 
 		if dirty {
+			hasTestingEnabled = true
 			langGenerated[lang] = true
 			// Set speakeasy version and generation version to what was used by the CLI
 			if currentManagementInfo.SpeakeasyVersion != "" {
@@ -239,7 +242,8 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 			SpeakeasyVersion:  speakeasyVersion,
 			GenerationVersion: generationVersion,
 			// OpenAPIDocVersion: docVersion, //TODO
-			Languages: langGenInfo,
+			Languages:         langGenInfo,
+			HasTestingEnabled: hasTestingEnabled,
 		}
 	}
 

@@ -30,7 +30,7 @@ func (g *Git) SetReleaseToPublished(version, directory string) error {
 		tag = fmt.Sprintf("%s/%s", directory, tag)
 	}
 
-	release, _, err := g.client.Repositories.GetReleaseByTag(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), tag)
+	release, _, err := g.client.Repositories.GetReleaseByTag(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), tag)
 	if err != nil {
 		return fmt.Errorf("failed to get release for tag %s: %w", tag, err)
 	}
@@ -41,7 +41,7 @@ func (g *Git) SetReleaseToPublished(version, directory string) error {
 			release.Body = &body
 		}
 
-		if _, _, err = g.client.Repositories.EditRelease(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *release.ID, release); err != nil {
+		if _, _, err = g.client.Repositories.EditRelease(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), *release.ID, release); err != nil {
 			return fmt.Errorf("failed to add to release body for tag %s: %w", tag, err)
 		}
 	}
@@ -95,7 +95,7 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 			}
 		} else {
 			tagName := github.String(tag)
-			_, _, err = g.client.Repositories.CreateRelease(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.RepositoryRelease{
+			_, _, err = g.client.Repositories.CreateRelease(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), &github.RepositoryRelease{
 				TagName:         tagName,
 				TargetCommitish: github.String(commitHash),
 				Name:            github.String(fmt.Sprintf("%s - %s - %s", lang, tag, environment.GetInvokeTime().Format("2006-01-02 15:04:05"))),
@@ -103,7 +103,7 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 			})
 
 			if err != nil {
-				if release, _, err := g.client.Repositories.GetReleaseByTag(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), *tagName); err == nil && release != nil {
+				if release, _, err := g.client.Repositories.GetReleaseByTag(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), *tagName); err == nil && release != nil {
 					if release.Body != nil && strings.Contains(*release.Body, PublishingCompletedString) {
 						fmt.Println(fmt.Sprintf("a github release with tag %s has already been published ... skipping publishing", *tagName))
 						fmt.Println(fmt.Sprintf("to publish this version again please check with your package managed delete the github tag and release"))

@@ -3,6 +3,7 @@ package cli
 import (
 	"archive/tar"
 	"archive/zip"
+	"bytes"
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
@@ -195,6 +196,50 @@ func extractTarGZ(archive, dest string) error {
 		default:
 			return fmt.Errorf("unknown type: %b in %s", header.Typeflag, header.Name)
 		}
+	}
+
+	return nil
+}
+
+type emptyCommitRequest struct {
+	Branch   string `json:"branch"`
+	Org      string `json:"org"`
+	RepoName string `json:"repo_name"`
+}
+
+func FireEmptyCommit(org, repo, branch string) error {
+	apiURL := "https://api.speakeasy.com/v1/github/empty_commit"
+
+	// Create the request body
+	payload := emptyCommitRequest{
+		Branch:   branch,
+		Org:      org,
+		RepoName: repo,
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("error marshalling request body: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(body))
+	if err != nil {
+		return fmt.Errorf("error creating the request: %w", err)
+	}
+
+	// Set headers
+	apiKey := os.Getenv("SPEAKEASY_API_KEY")
+	req.Header.Set("x-api-key", apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("error making the API request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("API request failed with status code: %d", resp.StatusCode)
 	}
 
 	return nil

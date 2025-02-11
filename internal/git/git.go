@@ -171,7 +171,7 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action, sourc
 		return "", nil, fmt.Errorf("repo not cloned")
 	}
 
-	prs, _, err := g.client.PullRequests.List(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), nil)
+	prs, _, err := g.client.PullRequests.List(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), nil)
 	if err != nil {
 		return "", nil, fmt.Errorf("error getting pull requests: %w", err)
 	}
@@ -590,16 +590,16 @@ Based on:
 
 		info.PR.Body = github.String(body)
 		info.PR.Title = &title
-		info.PR, _, err = prClient.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), info.PR)
+		info.PR, _, err = prClient.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), info.PR.GetNumber(), info.PR)
 		// Set labels MUST always follow updating the PR
-		g.setPRLabels(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), labelTypes, info.PR.Labels, labels)
+		g.setPRLabels(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), info.PR.GetNumber(), labelTypes, info.PR.Labels, labels)
 		if err != nil {
 			return nil, fmt.Errorf("failed to update PR: %w", err)
 		}
 	} else {
 		logging.Info("Creating PR")
 
-		info.PR, _, err = prClient.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
+		info.PR, _, err = prClient.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), &github.NewPullRequest{
 			Title:               github.String(title),
 			Body:                github.String(body),
 			Head:                github.String(info.BranchName),
@@ -613,7 +613,7 @@ Based on:
 			}
 			return nil, fmt.Errorf("failed to create PR: %w%s", err, messageSuffix)
 		} else if info.PR != nil && len(labels) > 0 {
-			g.setPRLabels(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), info.PR.GetNumber(), labelTypes, info.PR.Labels, labels)
+			g.setPRLabels(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), info.PR.GetNumber(), labelTypes, info.PR.Labels, labels)
 		}
 	}
 
@@ -681,14 +681,14 @@ Based on:
 		logging.Info("Updating PR")
 
 		pr.Body = github.String(body)
-		pr, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), pr.GetNumber(), pr)
+		pr, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), pr.GetNumber(), pr)
 		if err != nil {
 			return fmt.Errorf("failed to update PR: %w", err)
 		}
 	} else {
 		logging.Info("Creating PR")
 
-		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
+		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), &github.NewPullRequest{
 			Title:               github.String(getDocsPRTitlePrefix()),
 			Body:                github.String(body),
 			Head:                github.String(branchName),
@@ -718,7 +718,7 @@ func (g *Git) CreateSuggestionPR(branchName, output string) (*int, string, error
 
 	fmt.Println(body, branchName, getSuggestPRTitlePrefix(), environment.GetRef())
 
-	pr, _, err := g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), &github.NewPullRequest{
+	pr, _, err := g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), &github.NewPullRequest{
 		Title:               github.String("Speakeasy OpenAPI Suggestions -" + environment.GetWorkflowName()),
 		Body:                github.String(body),
 		Head:                github.String(branchName),
@@ -733,13 +733,13 @@ func (g *Git) CreateSuggestionPR(branchName, output string) (*int, string, error
 }
 
 func (g *Git) WritePRBody(prNumber int, body string) error {
-	pr, _, err := g.client.PullRequests.Get(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber)
+	pr, _, err := g.client.PullRequests.Get(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber)
 	if err != nil {
 		return fmt.Errorf("failed to get PR: %w", err)
 	}
 
 	pr.Body = github.String(strings.Join([]string{*pr.Body, sanitizeExplanations(body)}, "\n\n"))
-	if _, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber, pr); err != nil {
+	if _, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber, pr); err != nil {
 		return fmt.Errorf("failed to update PR: %w", err)
 	}
 
@@ -747,12 +747,12 @@ func (g *Git) WritePRBody(prNumber int, body string) error {
 }
 
 func (g *Git) WritePRComment(prNumber int, fileName, body string, line int) error {
-	pr, _, err := g.client.PullRequests.Get(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber)
+	pr, _, err := g.client.PullRequests.Get(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber)
 	if err != nil {
 		return fmt.Errorf("failed to get PR: %w", err)
 	}
 
-	_, _, err = g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber, &github.PullRequestComment{
+	_, _, err = g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber, &github.PullRequestComment{
 		Body:     github.String(sanitizeExplanations(body)),
 		Line:     github.Int(line),
 		Path:     github.String(fileName),
@@ -837,7 +837,7 @@ func (g *Git) GetLatestTag() (string, error) {
 }
 
 func (g *Git) GetReleaseByTag(ctx context.Context, tag string) (*github.RepositoryRelease, *github.Response, error) {
-	return g.client.Repositories.GetReleaseByTag(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), tag)
+	return g.client.Repositories.GetReleaseByTag(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), tag)
 }
 
 func (g *Git) GetDownloadLink(version string) (string, string, error) {
@@ -953,7 +953,7 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 			State: "open",
 		}
 
-		if prs, _, _ := g.client.PullRequests.List(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), opts); len(prs) > 0 {
+		if prs, _, _ := g.client.PullRequests.List(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), opts); len(prs) > 0 {
 			os.Setenv("GH_PULL_REQUEST", prs[0].GetURL())
 		}
 
@@ -983,7 +983,7 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 			comparison, resp, err := g.client.Repositories.CompareCommits(
 				ctx,
 				os.Getenv("GITHUB_REPOSITORY_OWNER"),
-				getRepo(),
+				GetRepo(),
 				defaultBranch,
 				latestCommit.Hash.String(),
 				opt,
@@ -1010,14 +1010,14 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 		return files, nil
 
 	} else {
-		prURL := fmt.Sprintf("https://github.com/%s/%s/pull/%d", os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber)
+		prURL := fmt.Sprintf("https://github.com/%s/%s/pull/%d", os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber)
 		os.Setenv("GH_PULL_REQUEST", prURL)
 		opts := &github.ListOptions{PerPage: 100}
 		var allFiles []string
 
 		// Fetch all changed files of the PR to determine testing coverage
 		for {
-			files, resp, err := g.client.PullRequests.ListFiles(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), getRepo(), prNumber, opts)
+			files, resp, err := g.client.PullRequests.ListFiles(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber, opts)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get changed files: %w", err)
 			}
@@ -1128,7 +1128,7 @@ func getGithubAuth(accessToken string) *gitHttp.BasicAuth {
 	}
 }
 
-func getRepo() string {
+func GetRepo() string {
 	repoPath := os.Getenv("GITHUB_REPOSITORY")
 	parts := strings.Split(repoPath, "/")
 	return parts[len(parts)-1]
