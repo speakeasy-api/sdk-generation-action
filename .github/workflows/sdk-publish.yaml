@@ -375,6 +375,9 @@ jobs:
       run:
         working-directory: ${{ needs.release.outputs.php_directory }}
     steps:
+      - name: Echo value
+        shell: bash
+        run: echo "php_package_name=${{ needs.release.outputs.php_package_name }}"
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - name: Publish
@@ -382,6 +385,7 @@ jobs:
         with:
           username: ${{ secrets.packagist_username }}
           api_token: ${{ secrets.packagist_token }}
+          package_name: base64 --decode ${{ needs.release.outputs.php_package_name }}
           package_base_url: ${{ github.server_url }}
       - id: publish-event
         uses: speakeasy-api/sdk-generation-action@v15.41.0
