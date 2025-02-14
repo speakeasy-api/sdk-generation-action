@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
@@ -251,10 +252,32 @@ func GetCliOutput() string {
 	return os.Getenv("INPUT_CLI_OUTPUT")
 }
 
+// check for labeled/unlabeled actions
+type gitHubEvent struct {
+	Action string `json:"action"`
+}
+
 func GetRef() string {
 	// handle pr based action triggers
 	if strings.Contains(os.Getenv("GITHUB_REF"), "refs/pull") || strings.Contains(os.Getenv("GITHUB_REF"), "refs/pulls") {
-		return os.Getenv("GITHUB_HEAD_REF")
+		ref := os.Getenv("GITHUB_HEAD_REF")
+		data, err := os.ReadFile(os.Getenv("GITHUB_EVENT_PATH"))
+		if err != nil {
+			return ref
+		}
+
+		var event gitHubEvent
+		if err := json.Unmarshal(data, &event); err != nil {
+			fmt.Println("Error parsing event JSON:", err)
+			return ref
+		}
+
+		// "labeled" or "unlabeled" PR triggers need to use the base ref for label based versioning
+		if event.Action == "labeled" || event.Action == "unlabeled" {
+			return os.Getenv("GITHUB_BASE_REF")
+		}
+
+		return ref
 	}
 	return os.Getenv("GITHUB_REF")
 }
