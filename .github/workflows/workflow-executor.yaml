@@ -660,7 +660,7 @@ jobs:
         with:
           username: ${{ secrets.packagist_username }}
           api_token: ${{ secrets.packagist_token }}
-          package_base_url: ${{ github.server_url }}
+          repository_base_url: ${{ github.server_url }}
       - id: publish-event
         uses: speakeasy-api/sdk-generation-action@v15.41.0
         if: always()
