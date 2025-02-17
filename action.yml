@@ -179,7 +179,7 @@ outputs:
     description: "The directory the SDK target was generated to"
 runs:
   using: "docker"
-  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v15.41.0"
+  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v15"
   env:
     SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
     SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
