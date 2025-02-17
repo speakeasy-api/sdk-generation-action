@@ -652,12 +652,14 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.run-workflow.outputs.commit_hash }}
       - name: Publish
         uses: speakeasy-api/packagist-update@support-github-creation
         with:
           username: ${{ secrets.packagist_username }}
           api_token: ${{ secrets.packagist_token }}
-          package_name: ${{ github.repository }}
           package_base_url: ${{ github.server_url }}
       - id: publish-event
         uses: speakeasy-api/sdk-generation-action@v15.41.0

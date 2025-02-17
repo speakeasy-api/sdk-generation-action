@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -80,7 +79,6 @@ func Release() error {
 	for lang, info := range latestRelease.Languages {
 		outputs[fmt.Sprintf("%s_regenerated", lang)] = "true"
 		outputs[fmt.Sprintf("%s_directory", lang)] = info.Path
-		outputs[fmt.Sprintf("%s_package_name", lang)] = base64.StdEncoding.EncodeToString([]byte(info.PackageName))
 	}
 
 	if err = addPublishOutputs(dir, outputs); err != nil {
