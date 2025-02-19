@@ -36,13 +36,13 @@ func Test(ctx context.Context) error {
 
 	// This will only come in via workflow dispatch, we do accept 'all' as a special case
 	var testedTargets []string
-	if providedTargetName := environment.SpecifiedTarget(); providedTargetName != "" {
+	if providedTargetName := environment.SpecifiedTarget(); providedTargetName != "" && os.Getenv("GITHUB_EVENT_NAME") == "workflow_dispatch" {
 		testedTargets = append(testedTargets, providedTargetName)
 	}
 
 	var prNumber *int
 	targetLockIDs := make(map[string]string)
-	if len(testedTargets) == 0 || os.Getenv("GITHUB_EVENT_NAME") != "workflow_dispatch" {
+	if len(testedTargets) == 0 {
 		// We look for all files modified in the PR or Branch to see what SDK targets have been modified
 		files, number, err := g.GetChangedFilesForPRorBranch()
 		if err != nil {
