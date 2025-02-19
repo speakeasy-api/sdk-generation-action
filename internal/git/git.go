@@ -875,8 +875,8 @@ func (g *Git) WritePRBody(prNumber int, body string) error {
 	return nil
 }
 
-func (g *Git) ListPRComments(prNumber int) ([]*github.PullRequestComment, error) {
-	comments, _, err := g.client.PullRequests.ListComments(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber, nil)
+func (g *Git) ListIssueComments(prNumber int) ([]*github.IssueComment, error) {
+	comments, _, err := g.client.Issues.ListComments(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get PR comments: %w", err)
 	}
@@ -884,10 +884,10 @@ func (g *Git) ListPRComments(prNumber int) ([]*github.PullRequestComment, error)
 	return comments, nil
 }
 
-func (g *Git) DeletePRComment(commentID int64) error {
-	_, err := g.client.PullRequests.DeleteComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), commentID)
+func (g *Git) DeleteIssueComment(commentID int64) error {
+	_, err := g.client.Issues.DeleteComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), commentID)
 	if err != nil {
-		return fmt.Errorf("failed to delete PR comment: %w", err)
+		return fmt.Errorf("failed to delete issue comment: %w", err)
 	}
 
 	return nil
@@ -907,6 +907,19 @@ func (g *Git) WritePRComment(prNumber int, fileName, body string, line int) erro
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create PR comment: %w", err)
+	}
+
+	return nil
+}
+
+func (g *Git) WriteIssueComment(prNumber int, body string) error {
+	comment := &github.IssueComment{
+		Body: github.String(sanitizeExplanations(body)),
+	}
+
+	_, _, err := g.client.Issues.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber, comment)
+	if err != nil {
+		return fmt.Errorf("failed to create issue comment: %w", err)
 	}
 
 	return nil

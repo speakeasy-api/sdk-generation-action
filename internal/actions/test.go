@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/google/go-github/v63/github"
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
@@ -156,11 +155,11 @@ func writeTestReportComment(g *git.Git, prNumber *int, testReportURL, targetName
 		return nil
 	}
 
-	currentPRComments, _ := g.ListPRComments(*prNumber)
+	currentPRComments, _ := g.ListIssueComments(*prNumber)
 	for _, comment := range currentPRComments {
 		commentBody := comment.GetBody()
 		if strings.Contains(commentBody, fmt.Sprintf(testReportCommentPrefix, targetName)) {
-			if err := g.DeletePRComment(comment.GetID()); err != nil {
+			if err := g.DeleteIssueComment(comment.GetID()); err != nil {
 				fmt.Println(fmt.Sprintf("Failed to delete existing test report comment: %s\n", err.Error()))
 			}
 		}
@@ -173,7 +172,7 @@ func writeTestReportComment(g *git.Git, prNumber *int, testReportURL, targetName
 
 	body := titleComment + "\n\n" + fmt.Sprintf(testReportCommentPrefix, targetName) + " " + fmt.Sprintf("[here](%s)", testReportURL)
 
-	err := g.WritePRComment(*prNumber, body, github.PullRequestComment{})
+	err := g.WriteIssueComment(*prNumber, body)
 
 	return err
 }
