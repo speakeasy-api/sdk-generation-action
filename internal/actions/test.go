@@ -61,7 +61,7 @@ func Test(ctx context.Context) error {
 				}
 
 				var genLockID string
-				if cfg.LockFile == nil {
+				if cfg.LockFile != nil {
 					genLockID = cfg.LockFile.ID
 				}
 
@@ -106,14 +106,14 @@ func Test(ctx context.Context) error {
 		if genLockID, ok := targetLockIDs[target]; ok && genLockID != "" {
 			testReportURL = formatTestReportURL(ctx, genLockID)
 		} else {
-			fmt.Printf("No gen.lock ID found for target %s", target)
+			fmt.Println(fmt.Sprintf("No gen.lock ID found for target %s", target))
 		}
 
-		if testReportURL != "" {
-			fmt.Printf("No test report URL could be formed for target %s", target)
+		if testReportURL == "" {
+			fmt.Println(fmt.Sprintf("No test report URL could be formed for target %s", target))
 		} else {
 			if err := writeTestReportComment(g, prNumber, testReportURL, target, err != nil); err != nil {
-				fmt.Printf("Failed to write test report comment: %s\n", err.Error())
+				fmt.Println(fmt.Sprintf("Failed to write test report comment: %s\n", err.Error()))
 			}
 		}
 	}
@@ -152,7 +152,7 @@ func formatTestReportURL(ctx context.Context, genLockID string) string {
 
 func writeTestReportComment(g *git.Git, prNumber *int, testReportURL, targetName string, isError bool) error {
 	if prNumber == nil {
-		fmt.Printf("No PR number found for target %s must skip test report comment", targetName)
+		fmt.Println(fmt.Sprintf("No PR number found for target %s must skip test report comment", targetName))
 		return nil
 	}
 
@@ -161,7 +161,7 @@ func writeTestReportComment(g *git.Git, prNumber *int, testReportURL, targetName
 		commentBody := comment.GetBody()
 		if strings.Contains(commentBody, fmt.Sprintf(testReportCommentPrefix, targetName)) {
 			if err := g.DeletePRComment(comment.GetID()); err != nil {
-				fmt.Printf("Failed to delete existing test report comment: %s\n", err.Error())
+				fmt.Println(fmt.Sprintf("Failed to delete existing test report comment: %s\n", err.Error()))
 			}
 		}
 	}

@@ -893,17 +893,18 @@ func (g *Git) DeletePRComment(commentID int64) error {
 	return nil
 }
 
-func (g *Git) WritePRComment(prNumber int, body string, options github.PullRequestComment) error {
+func (g *Git) WritePRComment(prNumber int, fileName, body string, line int) error {
 	pr, _, err := g.client.PullRequests.Get(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber)
 	if err != nil {
 		return fmt.Errorf("failed to get PR: %w", err)
 	}
 
-	options.Body = github.String(sanitizeExplanations(body))
-	options.CommitID = github.String(pr.GetHead().GetSHA())
-
-	_, _, err = g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber, &options)
-
+	_, _, err = g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber, &github.PullRequestComment{
+		Body:     github.String(sanitizeExplanations(body)),
+		Line:     github.Int(line),
+		Path:     github.String(fileName),
+		CommitID: github.String(pr.GetHead().GetSHA()),
+	})
 	if err != nil {
 		return fmt.Errorf("failed to create PR comment: %w", err)
 	}
