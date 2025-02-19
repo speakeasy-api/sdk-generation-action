@@ -60,8 +60,10 @@ func Test(ctx context.Context) error {
 				}
 
 				var genLockID string
+				fmt.Println("LOOKING FOR GEN LOCK ID")
 				if cfg.LockFile != nil {
 					genLockID = cfg.LockFile.ID
+					fmt.Println("GEN LOCK ID FOUND: ", genLockID)
 				}
 
 				outDir, err := filepath.Abs(filepath.Dir(cfgDir))
@@ -79,6 +81,8 @@ func Test(ctx context.Context) error {
 					}
 					// If there are multiple SDKs in a workflow we ensure output path is unique
 					if targetOutput == outDir && !slices.Contains(testedTargets, name) {
+						fmt.Println("TARGET FOUND: ", name)
+						fmt.Println(genLockID)
 						targetLockIDs[name] = genLockID
 						testedTargets = append(testedTargets, name)
 					}
@@ -101,7 +105,7 @@ func Test(ctx context.Context) error {
 			errs = append(errs, err)
 		}
 
-		var testReportURL string
+		testReportURL := "placeholder"
 		if genLockID, ok := targetLockIDs[target]; ok && genLockID != "" {
 			testReportURL = formatTestReportURL(ctx, genLockID)
 		} else {
