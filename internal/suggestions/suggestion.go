@@ -2,13 +2,15 @@ package suggestions
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+
+	"github.com/google/go-github/v63/github"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
-	"regexp"
-	"strconv"
-	"strings"
 )
 
 var (
@@ -38,7 +40,10 @@ func WriteSuggestions(g *git.Git, prNumber int, out string) error {
 	for i := 0; i < len(commentsInfo.lineNums); i++ {
 		if commentsInfo.lineNums[i] != 0 {
 			comment := formatComment(commentsInfo.errs[i], commentsInfo.suggestions[i], commentsInfo.explanations[i], 0, i+1)
-			if err := g.WritePRComment(prNumber, fileName, comment, commentsInfo.lineNums[i]); err != nil {
+			if err := g.WritePRComment(prNumber, comment, github.PullRequestComment{
+				Line: &commentsInfo.lineNums[i],
+				Path: github.String(fileName),
+			}); err != nil {
 				logging.Info(fmt.Sprintf("failed to write PR comment: %s", err.Error()))
 				commentsInfo.lineNums[i] = 0
 			}

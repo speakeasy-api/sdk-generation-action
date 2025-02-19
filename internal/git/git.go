@@ -875,18 +875,35 @@ func (g *Git) WritePRBody(prNumber int, body string) error {
 	return nil
 }
 
-func (g *Git) WritePRComment(prNumber int, fileName, body string, line int) error {
+func (g *Git) ListPRComments(prNumber int) ([]*github.PullRequestComment, error) {
+	comments, _, err := g.client.PullRequests.ListComments(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get PR comments: %w", err)
+	}
+
+	return comments, nil
+}
+
+func (g *Git) DeletePRComment(commentID int64) error {
+	_, err := g.client.PullRequests.DeleteComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), commentID)
+	if err != nil {
+		return fmt.Errorf("failed to delete PR comment: %w", err)
+	}
+
+	return nil
+}
+
+func (g *Git) WritePRComment(prNumber int, body string, options github.PullRequestComment) error {
 	pr, _, err := g.client.PullRequests.Get(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber)
 	if err != nil {
 		return fmt.Errorf("failed to get PR: %w", err)
 	}
 
-	_, _, err = g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber, &github.PullRequestComment{
-		Body:     github.String(sanitizeExplanations(body)),
-		Line:     github.Int(line),
-		Path:     github.String(fileName),
-		CommitID: github.String(pr.GetHead().GetSHA()),
-	})
+	options.Body = github.String(sanitizeExplanations(body))
+	options.CommitID = github.String(pr.GetHead().GetSHA())
+
+	_, _, err = g.client.PullRequests.CreateComment(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber, &options)
+
 	if err != nil {
 		return fmt.Errorf("failed to create PR comment: %w", err)
 	}
@@ -1045,16 +1062,16 @@ func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version s
 	return defaultDownloadUrl, defaultTagName
 }
 
-func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
+func (g *Git) GetChangedFilesForPRorBranch() ([]string, *int, error) {
 	ctx := context.Background()
 	eventPath := os.Getenv("GITHUB_EVENT_PATH")
 	if eventPath == "" {
-		return nil, fmt.Errorf("no workflow event payload path")
+		return nil, nil, fmt.Errorf("no workflow event payload path")
 	}
 
 	data, err := os.ReadFile(eventPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read workflow event payload: %w", err)
+		return nil, nil, fmt.Errorf("failed to read workflow event payload: %w", err)
 	}
 
 	var payload struct {
@@ -1065,7 +1082,7 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 	}
 
 	if err := json.Unmarshal(data, &payload); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal workflow event payload: %w", err)
+		return nil, nil, fmt.Errorf("failed to unmarshal workflow event payload: %w", err)
 	}
 
 	prNumber := payload.Number
@@ -1073,8 +1090,9 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 	if payload.Number == 0 {
 		ref := strings.TrimPrefix(environment.GetRef(), "refs/heads/")
 		if ref == "main" || ref == "master" {
+			files, err := g.GetCommitedFiles()
 			// We just need to get the commit diff since we are not in a separate branch of PR
-			return g.GetCommitedFiles()
+			return files, nil, err
 		}
 
 		opts := &github.PullRequestListOptions{
@@ -1083,6 +1101,7 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 		}
 
 		if prs, _, _ := g.client.PullRequests.List(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), opts); len(prs) > 0 {
+			prNumber = prs[0].GetNumber()
 			os.Setenv("GH_PULL_REQUEST", prs[0].GetURL())
 		}
 
@@ -1095,13 +1114,13 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 		// Get the feature branch reference
 		branchRef, err := g.repo.Reference(plumbing.ReferenceName(environment.GetRef()), true)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get feature branch reference: %w", err)
+			return nil, nil, fmt.Errorf("failed to get feature branch reference: %w", err)
 		}
 
 		// Get the latest commit on the feature branch
 		latestCommit, err := g.repo.CommitObject(branchRef.Hash())
 		if err != nil {
-			return nil, fmt.Errorf("failed to get latest commit of feature branch: %w", err)
+			return nil, nil, fmt.Errorf("failed to get latest commit of feature branch: %w", err)
 		}
 
 		var files []string
@@ -1118,7 +1137,7 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 				opt,
 			)
 			if err != nil {
-				return nil, fmt.Errorf("failed to compare commits via GitHub API: %w", err)
+				return nil, nil, fmt.Errorf("failed to compare commits via GitHub API: %w", err)
 			}
 
 			// Collect filenames from this page
@@ -1136,7 +1155,7 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 		}
 
 		logging.Info("Found %d files", len(files))
-		return files, nil
+		return files, &prNumber, nil
 
 	} else {
 		prURL := fmt.Sprintf("https://github.com/%s/%s/pull/%d", os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber)
@@ -1148,7 +1167,7 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 		for {
 			files, resp, err := g.client.PullRequests.ListFiles(ctx, os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), prNumber, opts)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get changed files: %w", err)
+				return nil, nil, fmt.Errorf("failed to get changed files: %w", err)
 			}
 
 			for _, file := range files {
@@ -1163,7 +1182,7 @@ func (g *Git) GetChangedFilesForPRorBranch() ([]string, error) {
 
 		logging.Info("Found %d files", len(allFiles))
 
-		return allFiles, nil
+		return allFiles, &prNumber, nil
 	}
 }
 
