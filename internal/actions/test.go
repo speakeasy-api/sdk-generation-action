@@ -59,6 +59,11 @@ func Test(ctx context.Context) error {
 					return fmt.Errorf("failed to load config: %w", err)
 				}
 
+				fmt.Println(cfg.LockFile.Management)
+				fmt.Println(cfg.LockFile.ID)
+				fmt.Println(cfg.LockFile.LockVersion)
+				fmt.Println(cfg.Config.Languages)
+
 				var genLockID string
 				fmt.Println("LOOKING FOR GEN LOCK ID")
 				if cfg.LockFile != nil {
