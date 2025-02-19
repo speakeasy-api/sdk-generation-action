@@ -61,6 +61,11 @@ func Test(ctx context.Context) error {
 					return fmt.Errorf("failed to load config: %w", err)
 				}
 
+				file, _ := os.ReadFile(file)
+
+				fmt.Println("file")
+				fmt.Println(string(file))
+
 				fmt.Println(cfgDir)
 				fmt.Println(cfg.LockFile.Management)
 				fmt.Println(cfg.LockFile.ID)
