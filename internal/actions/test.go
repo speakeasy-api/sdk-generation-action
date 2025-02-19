@@ -42,6 +42,8 @@ func Test(ctx context.Context) error {
 
 	var prNumber *int
 	targetLockIDs := make(map[string]string)
+	fmt.Println("TESTED TARGETS")
+	fmt.Println(testedTargets)
 	if len(testedTargets) == 0 {
 		// We look for all files modified in the PR or Branch to see what SDK targets have been modified
 		files, number, err := g.GetChangedFilesForPRorBranch()
@@ -54,11 +56,12 @@ func Test(ctx context.Context) error {
 		for _, file := range files {
 			if strings.Contains(file, "gen.yaml") || strings.Contains(file, "gen.lock") {
 				cfgDir := filepath.Dir(file)
-				cfg, err := config.Load(filepath.Dir(file))
+				cfg, err := config.Load(cfgDir)
 				if err != nil {
 					return fmt.Errorf("failed to load config: %w", err)
 				}
 
+				fmt.Println(cfgDir)
 				fmt.Println(cfg.LockFile.Management)
 				fmt.Println(cfg.LockFile.ID)
 				fmt.Println(cfg.LockFile.LockVersion)
