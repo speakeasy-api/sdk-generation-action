@@ -17,7 +17,12 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-const testReportCommentPrefix = "view your test report for target %s"
+const testReportHeader = "SDK Tests Report"
+
+type TestReport struct {
+	Success bool
+	URL     string
+}
 
 func Test(ctx context.Context) error {
 	g, err := initAction()
@@ -55,22 +60,18 @@ func Test(ctx context.Context) error {
 
 		for _, file := range files {
 			if strings.Contains(file, "gen.yaml") || strings.Contains(file, "gen.lock") {
-				cfgDir := filepath.Dir(file)
-				cfg, err := config.Load(cfgDir)
+
+				cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", file))
 				if err != nil {
 					return fmt.Errorf("failed to load config: %w", err)
 				}
+
+				relativeCfgDir := filepath.Dir(file)
 
 				file, _ := os.ReadFile(file)
 
 				fmt.Println("file")
 				fmt.Println(string(file))
-
-				fmt.Println(cfgDir)
-				fmt.Println(cfg.LockFile.Management)
-				fmt.Println(cfg.LockFile.ID)
-				fmt.Println(cfg.LockFile.LockVersion)
-				fmt.Println(cfg.Config.Languages)
 
 				var genLockID string
 				fmt.Println("LOOKING FOR GEN LOCK ID")
@@ -79,10 +80,12 @@ func Test(ctx context.Context) error {
 					fmt.Println("GEN LOCK ID FOUND: ", genLockID)
 				}
 
-				outDir, err := filepath.Abs(filepath.Dir(cfgDir))
+				relativeOutDir, err := filepath.Abs(filepath.Dir(relativeCfgDir))
 				if err != nil {
 					return err
 				}
+				fmt.Println("THIS IS THE OUT DIR")
+				fmt.Println(relativeOutDir)
 				for name, target := range wf.Targets {
 					targetOutput := ""
 					if target.Output != nil {
@@ -93,7 +96,7 @@ func Test(ctx context.Context) error {
 						return err
 					}
 					// If there are multiple SDKs in a workflow we ensure output path is unique
-					if targetOutput == outDir && !slices.Contains(testedTargets, name) {
+					if targetOutput == relativeCfgDir && !slices.Contains(testedTargets, name) {
 						fmt.Println("TARGET FOUND: ", name)
 						fmt.Println(genLockID)
 						targetLockIDs[name] = genLockID
@@ -110,6 +113,8 @@ func Test(ctx context.Context) error {
 
 	// we will pretty much never have a test action for multiple targets
 	// but if a customer manually setup their triggers in this way, we will run test sequentially for clear output
+
+	testReports := make(map[string]TestReport)
 	var errs []error
 	for _, target := range testedTargets {
 		// TODO: Once we have stable test reports we will probably want to use GH API to leave a PR comment/clean up old comments
@@ -128,9 +133,16 @@ func Test(ctx context.Context) error {
 		if testReportURL == "" {
 			fmt.Println(fmt.Sprintf("No test report URL could be formed for target %s", target))
 		} else {
-			if err := writeTestReportComment(g, prNumber, testReportURL, target, err != nil); err != nil {
-				fmt.Println(fmt.Sprintf("Failed to write test report comment: %s\n", err.Error()))
+			testReports[target] = TestReport{
+				Success: err == nil,
+				URL:     testReportURL,
 			}
+		}
+	}
+
+	if len(testReports) > 0 {
+		if err := writeTestReportComment(g, prNumber, testReports); err != nil {
+			fmt.Println(fmt.Sprintf("Failed to write test report comment: %s\n", err.Error()))
 		}
 	}
 
@@ -166,28 +178,36 @@ func formatTestReportURL(ctx context.Context, genLockID string) string {
 	return fmt.Sprintf("https://app.speakeasy.com/org/%s/%s/targets/%s/tests/%s", orgSlug, workspaceSlug, genLockID, executionID)
 }
 
-func writeTestReportComment(g *git.Git, prNumber *int, testReportURL, targetName string, isError bool) error {
+func writeTestReportComment(g *git.Git, prNumber *int, testReports map[string]TestReport) error {
 	if prNumber == nil {
-		fmt.Println(fmt.Sprintf("No PR number found for target %s must skip test report comment", targetName))
-		return nil
+		return fmt.Errorf("PR number is nil, cannot post comment")
 	}
 
 	currentPRComments, _ := g.ListIssueComments(*prNumber)
 	for _, comment := range currentPRComments {
 		commentBody := comment.GetBody()
-		if strings.Contains(commentBody, fmt.Sprintf(testReportCommentPrefix, targetName)) {
+		if strings.Contains(commentBody, testReportHeader) {
 			if err := g.DeleteIssueComment(comment.GetID()); err != nil {
 				fmt.Println(fmt.Sprintf("Failed to delete existing test report comment: %s\n", err.Error()))
 			}
 		}
 	}
 
-	titleComment := "✅ Tests Passed ✅"
-	if isError {
-		titleComment = "❌ Tests Failed ❌"
+	titleComment := fmt.Sprintf("## **%s**\n\n", testReportHeader)
+
+	tableHeader := "| Target | Status | Report |\n|--------|--------|--------|\n"
+
+	var tableRows strings.Builder
+	for target, report := range testReports {
+		statusEmoji := "✅"
+		if !report.Success {
+			statusEmoji = "❌"
+		}
+		tableRows.WriteString(fmt.Sprintf("| %s | %s | [view report](%s) |\n", target, statusEmoji, report.URL))
 	}
 
-	body := titleComment + "\n\n" + fmt.Sprintf(testReportCommentPrefix, targetName) + " " + fmt.Sprintf("[here](%s)", testReportURL)
+	// Combine everything
+	body := titleComment + tableHeader + tableRows.String()
 
 	err := g.WriteIssueComment(*prNumber, body)
 
