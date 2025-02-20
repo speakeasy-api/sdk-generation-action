@@ -67,7 +67,6 @@ func Test(ctx context.Context) error {
 				var genLockID string
 				if cfg.LockFile != nil {
 					genLockID = cfg.LockFile.ID
-					fmt.Println("GEN LOCK ID FOUND: ", genLockID)
 				}
 
 				outDir, err := filepath.Abs(configDir)
