@@ -61,13 +61,16 @@ func Test(ctx context.Context) error {
 		for _, file := range files {
 			if strings.Contains(file, "gen.yaml") || strings.Contains(file, "gen.lock") {
 				cfgDir := filepath.Dir(file)
-				cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", cfgDir))
+				cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", filepath.Dir(cfgDir)))
 				if err != nil {
 					return fmt.Errorf("failed to load config: %w", err)
 				}
 
-				var genLockID string
 				fmt.Println("LOOKING FOR GEN LOCK ID")
+				fmt.Println(*cfg.LockFile)
+				fmt.Println(cfg.Config.Languages)
+
+				var genLockID string
 				if cfg.LockFile != nil {
 					genLockID = cfg.LockFile.ID
 					fmt.Println("GEN LOCK ID FOUND: ", genLockID)
@@ -87,7 +90,7 @@ func Test(ctx context.Context) error {
 						return err
 					}
 					fmt.Println("THESE ARE OUR DIRS")
-					fmt.Println(filepath.Join(environment.GetWorkspace(), "repo", cfgDir))
+					fmt.Println(filepath.Join(environment.GetWorkspace(), "repo", filepath.Dir(cfgDir)))
 					fmt.Println(outDir)
 					fmt.Println(targetOutput)
 					// If there are multiple SDKs in a workflow we ensure output path is unique
