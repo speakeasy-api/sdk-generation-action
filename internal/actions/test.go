@@ -47,8 +47,6 @@ func Test(ctx context.Context) error {
 
 	var prNumber *int
 	targetLockIDs := make(map[string]string)
-	fmt.Println("TESTED TARGETS")
-	fmt.Println(testedTargets)
 	if len(testedTargets) == 0 {
 		// We look for all files modified in the PR or Branch to see what SDK targets have been modified
 		files, number, err := g.GetChangedFilesForPRorBranch()
@@ -60,15 +58,11 @@ func Test(ctx context.Context) error {
 
 		for _, file := range files {
 			if strings.Contains(file, "gen.yaml") || strings.Contains(file, "gen.lock") {
-				cfgDir := filepath.Dir(file)
-				cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", filepath.Dir(cfgDir)))
+				configDir := filepath.Dir(filepath.Dir(file)) // gets out of .speakeasy
+				cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", configDir))
 				if err != nil {
 					return fmt.Errorf("failed to load config: %w", err)
 				}
-
-				fmt.Println("LOOKING FOR GEN LOCK ID")
-				fmt.Println(*cfg.LockFile)
-				fmt.Println(cfg.Config.Languages)
 
 				var genLockID string
 				if cfg.LockFile != nil {
@@ -76,7 +70,7 @@ func Test(ctx context.Context) error {
 					fmt.Println("GEN LOCK ID FOUND: ", genLockID)
 				}
 
-				outDir, err := filepath.Abs(filepath.Dir(cfgDir))
+				outDir, err := filepath.Abs(configDir)
 				if err != nil {
 					return err
 				}
@@ -89,10 +83,6 @@ func Test(ctx context.Context) error {
 					if err != nil {
 						return err
 					}
-					fmt.Println("THESE ARE OUR DIRS")
-					fmt.Println(filepath.Join(environment.GetWorkspace(), "repo", filepath.Dir(cfgDir)))
-					fmt.Println(outDir)
-					fmt.Println(targetOutput)
 					// If there are multiple SDKs in a workflow we ensure output path is unique
 					if targetOutput == outDir && !slices.Contains(testedTargets, name) {
 						testedTargets = append(testedTargets, name)
@@ -113,13 +103,12 @@ func Test(ctx context.Context) error {
 	testReports := make(map[string]TestReport)
 	var errs []error
 	for _, target := range testedTargets {
-		// TODO: Once we have stable test reports we will probably want to use GH API to leave a PR comment/clean up old comments
 		err := cli.Test(target)
 		if err != nil {
 			errs = append(errs, err)
 		}
 
-		testReportURL := "placeholder"
+		testReportURL := ""
 		if genLockID, ok := targetLockIDs[target]; ok && genLockID != "" {
 			testReportURL = formatTestReportURL(ctx, genLockID)
 		} else {
@@ -199,7 +188,7 @@ func writeTestReportComment(g *git.Git, prNumber *int, testReports map[string]Te
 		if !report.Success {
 			statusEmoji = "❌"
 		}
-		tableRows.WriteString(fmt.Sprintf("| %s | %s | [view report](%s) |\n", target, statusEmoji, report.URL))
+		tableRows.WriteString(fmt.Sprintf("| %s | <p align='center'>%s</p> | [view report](%s) |\n", target, statusEmoji, report.URL))
 	}
 
 	// Combine everything
