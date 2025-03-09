@@ -24,11 +24,11 @@ The included workflows provides option for publishing the SDKs to various packag
 
 This action provides a self contained solution for automatically generating new versions of a client SDK when either the reference OpenAPI doc is updated or the Speakeasy CLI that is used to generate the SDKs is updated.
 
-For more information please see our docsite linked below. 
+Configuration for the supported workflows is documented in [seperate repository](https://github.com/speakeasy-api/sdk-gen-config). 
 
-## Workflow usage
+## Workflow Reference Documentation
 
-### [Generation Workflow Documentation](https://www.speakeasy.com/docs/workflow-reference/generation-reference)
+### [Generation Workflow](https://www.speakeasy.com/docs/workflow-reference/generation-reference)
 
 ### [Publishing Workflow](https://www.speakeasy.com/docs/workflow-reference/publishing-reference)
 
