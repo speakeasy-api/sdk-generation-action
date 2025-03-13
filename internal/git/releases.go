@@ -153,12 +153,12 @@ func (g *Git) AttachMCPBinary(path string, releaseID *int64) error {
 		if enable, ok := tsConfig.Cfg["enableMCPServer"].(bool); ok && enable {
 			binaryPath := "./bin/mcp-server"
 
-			installCmd := exec.Command("bun", "install")
+			installCmd := exec.Command("npm", "install")
 			installCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo")
 			installCmd.Env = os.Environ()
 			installCmd.Stdout = os.Stdout
 			installCmd.Stderr = os.Stderr
-			
+
 			if err := installCmd.Run(); err != nil {
 				return fmt.Errorf("failed to install dependencies: %w", err)
 			}
