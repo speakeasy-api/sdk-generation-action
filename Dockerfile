@@ -25,9 +25,11 @@ RUN apk add --update --no-cache bash curl git
 ### Install Node / NPM
 RUN apk add --update --no-cache nodejs npm
 
-### Install Bun
-RUN npm install -g bun && \
-    bun --version
+### Install Bun (using the official installation script)
+RUN apk add --no-cache unzip
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:${PATH}"
+RUN bun --version
 
 ### Install Python
 RUN apk add --update --no-cache python3 py3-pip python3-dev pipx
