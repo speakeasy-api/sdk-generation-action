@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v63/github"
+	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/telemetry"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
@@ -95,7 +96,7 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 			}
 		} else {
 			tagName := github.String(tag)
-			_, _, err = g.client.Repositories.CreateRelease(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), &github.RepositoryRelease{
+			release, _, err := g.client.Repositories.CreateRelease(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), &github.RepositoryRelease{
 				TagName:         tagName,
 				TargetCommitish: github.String(commitHash),
 				Name:            github.String(fmt.Sprintf("%s - %s - %s", lang, tag, environment.GetInvokeTime().Format("2006-01-02 15:04:05"))),
@@ -121,6 +122,11 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 
 				return fmt.Errorf("failed to create release for tag %s: %w", *tagName, err)
 			} else {
+				if lang == "typescript" {
+					if err := g.AttachMCPBinary(info.Path, release.ID); err != nil {
+						fmt.Println(fmt.Sprintf("attempted building standalone MCP binary: %v", err))
+					}
+				}
 				// Go has no publishing job, so we publish a CLI event on github release here
 				if lang == "go" {
 					if _, publishEventErr := telemetry.TriggerPublishingEvent(info.Path, "success", utils.GetRegistryName(lang)); publishEventErr != nil {
@@ -131,5 +137,49 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 		}
 	}
 
+	return nil
+}
+
+func (g *Git) AttachMCPBinary(path string, releaseID *int64) error {
+	if releaseID == nil {
+		fmt.Println("No release ID present ... skipping MCP binary upload")
+		return nil
+	}
+	loadedCfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", path))
+	if err != nil {
+		return err
+	}
+	if tsConfig, ok := loadedCfg.Config.Languages["typescript"]; ok {
+		if enable, ok := tsConfig.Cfg["enableMCPServer"].(bool); ok && enable {
+			binaryPath := "./bin/mcp-server"
+			buildCmd := exec.Command("bun", "build", "./src/mcp-server/mcp-server.ts", // TODO: Do we potentially need to worry about this path?
+				"--compile", "--outfile", binaryPath)
+			buildCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo")
+			buildCmd.Env = os.Environ()
+			buildCmd.Stdout = os.Stdout
+			buildCmd.Stderr = os.Stderr
+
+			if err := buildCmd.Run(); err != nil {
+				return fmt.Errorf("failed to build mcp-server binary: %w", err)
+			}
+
+			file, err := os.Open(binaryPath)
+			if err != nil {
+				return fmt.Errorf("failed to open binary file: %w", err)
+			}
+			defer file.Close()
+
+			_, _, err = g.client.Repositories.UploadReleaseAsset(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), *releaseID, &github.UploadOptions{
+				Name: "mcp-server",
+			}, file)
+
+			if err != nil {
+				return fmt.Errorf("failed to upload mcp-server release asset: %w", err)
+			}
+
+		}
+	}
+
+	fmt.Println("No MCP server present ... skipping MCP binary upload")
 	return nil
 }

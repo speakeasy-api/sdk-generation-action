@@ -110,7 +110,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.42.0
         with:
           github_access_token: ${{ secrets.github_access_token }}
           action: "release"
