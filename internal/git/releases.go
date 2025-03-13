@@ -174,7 +174,7 @@ func (g *Git) AttachMCPBinary(path string, releaseID *int64) error {
 				return fmt.Errorf("failed to build mcp-server binary: %w", err)
 			}
 
-			file, err := os.Open(binaryPath)
+			file, err := os.Open(filepath.Join(environment.GetWorkspace(), "repo", binaryPath))
 			if err != nil {
 				return fmt.Errorf("failed to open binary file: %w", err)
 			}
