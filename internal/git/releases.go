@@ -151,8 +151,8 @@ func (g *Git) AttachMCPBinary(path string, releaseID *int64) error {
 	}
 	if tsConfig, ok := loadedCfg.Config.Languages["typescript"]; ok {
 		if enable, ok := tsConfig.Cfg["enableMCPServer"].(bool); ok && enable {
-			binaryPath := "./bin/mcp-server"
-
+			// https://bun.sh/docs/bundler/executables#cross-compile-to-other-platforms
+			platformTargets := []string{"bun-darwin-arm64", "bun-darwin-x64", "bun-windows-x64-modern", "bun-linux-x64-modern"}
 			installCmd := exec.Command("npm", "install")
 			installCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo")
 			installCmd.Env = os.Environ()
@@ -163,29 +163,10 @@ func (g *Git) AttachMCPBinary(path string, releaseID *int64) error {
 				return fmt.Errorf("failed to install dependencies: %w", err)
 			}
 
-			buildCmd := exec.Command("bun", "build", "./src/mcp-server/mcp-server.ts", // TODO: Do we potentially need to worry about this path?
-				"--compile", "--outfile", binaryPath)
-			buildCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo")
-			buildCmd.Env = os.Environ()
-			buildCmd.Stdout = os.Stdout
-			buildCmd.Stderr = os.Stderr
-
-			if err := buildCmd.Run(); err != nil {
-				return fmt.Errorf("failed to build mcp-server binary: %w", err)
-			}
-
-			file, err := os.Open(filepath.Join(environment.GetWorkspace(), "repo", binaryPath))
-			if err != nil {
-				return fmt.Errorf("failed to open binary file: %w", err)
-			}
-			defer file.Close()
-
-			_, _, err = g.client.Repositories.UploadReleaseAsset(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), *releaseID, &github.UploadOptions{
-				Name: "mcp-server",
-			}, file)
-
-			if err != nil {
-				return fmt.Errorf("failed to upload mcp-server release asset: %w", err)
+			for _, platform := range platformTargets {
+				if err := g.buildAndAttachMCPBinaryForTargetOS(platform, *releaseID); err != nil {
+					return err
+				}
 			}
 
 			fmt.Println("Uploaded MCP server binary to release assets")
@@ -194,5 +175,43 @@ func (g *Git) AttachMCPBinary(path string, releaseID *int64) error {
 	}
 
 	fmt.Println("No MCP server present ... skipping MCP binary upload")
+	return nil
+}
+
+func (g *Git) buildAndAttachMCPBinaryForTargetOS(platform string, releaseID int64) error {
+	binaryPath := "./bin/mcp-server" + strings.TrimPrefix(platform, "bun")
+	buildCmd := exec.Command("bun", "build", "./src/mcp-server/mcp-server.ts", // TODO: Do we potentially need to worry about this path?
+		"--compile", fmt.Sprintf("--target=%s", platform), "--outfile", binaryPath)
+	buildCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo")
+	buildCmd.Env = os.Environ()
+	buildCmd.Stdout = os.Stdout
+	buildCmd.Stderr = os.Stderr
+
+	if err := buildCmd.Run(); err != nil {
+		return fmt.Errorf("failed to build mcp-server binary: %w", err)
+	}
+
+	chmodCmd := exec.Command("chmod", "+x", binaryPath)
+	chmodCmd.Stdout = os.Stdout
+	chmodCmd.Stderr = os.Stderr
+
+	if err := chmodCmd.Run(); err != nil {
+		return fmt.Errorf("failed to make binary executable: %w", err)
+	}
+
+	file, err := os.Open(filepath.Join(environment.GetWorkspace(), "repo", binaryPath))
+	if err != nil {
+		return fmt.Errorf("failed to open binary file: %w", err)
+	}
+	defer file.Close()
+
+	_, _, err = g.client.Repositories.UploadReleaseAsset(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), releaseID, &github.UploadOptions{
+		Name: "mcp-server" + strings.TrimPrefix(platform, "bun"),
+	}, file)
+
+	if err != nil {
+		return fmt.Errorf("failed to upload mcp-server release asset: %w", err)
+	}
+
 	return nil
 }
