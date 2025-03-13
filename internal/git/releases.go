@@ -165,7 +165,7 @@ func (g *Git) AttachMCPBinary(path string, releaseID *int64) error {
 
 			for _, platform := range platformTargets {
 				if err := g.buildAndAttachMCPBinaryForTargetOS(platform, *releaseID); err != nil {
-					return err
+					fmt.Println(fmt.Sprintf("Attempted building standalone MCP binary for %s: %s", platform, err.Error()))
 				}
 			}
 
