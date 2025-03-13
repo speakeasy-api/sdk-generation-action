@@ -26,7 +26,7 @@ RUN apk add --update --no-cache bash curl git
 RUN apk add --update --no-cache nodejs npm
 
 # Install dependencies for Bun and ARM64 emulation
-RUN apk add --update --no-cache curl libgcc libstdc++ gcompat unzip bash qemu-aarch64t
+RUN apk add --update --no-cache curl libgcc libstdc++ gcompat unzip bash qemu-aarch64 libc6-compat
 
 ### Download and install Bun
 RUN curl -L -o /tmp/bun.zip https://github.com/oven-sh/bun/releases/download/bun-v1.2.5/bun-linux-aarch64.zip \
