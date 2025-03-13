@@ -152,6 +152,17 @@ func (g *Git) AttachMCPBinary(path string, releaseID *int64) error {
 	if tsConfig, ok := loadedCfg.Config.Languages["typescript"]; ok {
 		if enable, ok := tsConfig.Cfg["enableMCPServer"].(bool); ok && enable {
 			binaryPath := "./bin/mcp-server"
+
+			installCmd := exec.Command("bun", "install")
+			installCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo")
+			installCmd.Env = os.Environ()
+			installCmd.Stdout = os.Stdout
+			installCmd.Stderr = os.Stderr
+			
+			if err := installCmd.Run(); err != nil {
+				return fmt.Errorf("failed to install dependencies: %w", err)
+			}
+
 			buildCmd := exec.Command("bun", "build", "./src/mcp-server/mcp-server.ts", // TODO: Do we potentially need to worry about this path?
 				"--compile", "--outfile", binaryPath)
 			buildCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo")
