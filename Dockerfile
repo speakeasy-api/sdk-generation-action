@@ -25,10 +25,14 @@ RUN apk add --update --no-cache bash curl git
 ### Install Node / NPM
 RUN apk add --update --no-cache nodejs npm
 
-### Install Bun (using the official installation script)
-RUN apk add --no-cache unzip
-RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:${PATH}"
+### Install required cross-compile dependencies for Bun
+RUN apk add --update curl libgcc libstdc++ gcompat unzip bash
+
+### Download and install Bun
+RUN curl -L -o /tmp/bun.zip https://github.com/oven-sh/bun/releases/download/bun-v1.2.5/bun-linux-aarch64.zip \
+    && unzip -d /tmp /tmp/bun.zip \
+    && mv /tmp/bun-linux-aarch64/bun /usr/local/bin/ \
+    && chmod +x /usr/local/bin/bun
 RUN bun --version
 
 ### Install Python

@@ -152,7 +152,7 @@ func (g *Git) AttachMCPBinary(path string, releaseID *int64) error {
 	if tsConfig, ok := loadedCfg.Config.Languages["typescript"]; ok {
 		if enable, ok := tsConfig.Cfg["enableMCPServer"].(bool); ok && enable {
 			// https://bun.sh/docs/bundler/executables#cross-compile-to-other-platforms
-			platformTargets := []string{"bun-darwin-arm64", "bun-darwin-x64", "bun-windows-x64-modern", "bun-linux-x64-modern"}
+			platformTargets := []string{"bun-darwin-arm64", "bun-linux-x64-modern", "bun-windows-x64-modern"}
 			installCmd := exec.Command("npm", "install")
 			installCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo")
 			installCmd.Env = os.Environ()
@@ -165,7 +165,7 @@ func (g *Git) AttachMCPBinary(path string, releaseID *int64) error {
 
 			for _, platform := range platformTargets {
 				if err := g.buildAndAttachMCPBinaryForTargetOS(platform, *releaseID); err != nil {
-					fmt.Println(fmt.Sprintf("Attempted building standalone MCP binary for %s: %s", platform, err.Error()))
+					return fmt.Errorf("failed to build and attach MCP binary for %s: %w", platform, err)
 				}
 			}
 
@@ -180,6 +180,9 @@ func (g *Git) AttachMCPBinary(path string, releaseID *int64) error {
 
 func (g *Git) buildAndAttachMCPBinaryForTargetOS(platform string, releaseID int64) error {
 	binaryPath := "./bin/mcp-server" + strings.TrimPrefix(platform, "bun")
+	if strings.Contains(platform, "windows") { // Bun will automatically append this anyways.
+		binaryPath += ".exe"
+	}
 	buildCmd := exec.Command("bun", "build", "./src/mcp-server/mcp-server.ts", // TODO: Do we potentially need to worry about this path?
 		"--compile", fmt.Sprintf("--target=%s", platform), "--outfile", binaryPath)
 	buildCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo")
