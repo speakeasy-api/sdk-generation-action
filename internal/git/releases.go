@@ -188,6 +188,8 @@ func (g *Git) AttachMCPBinary(path string, releaseID *int64) error {
 				return fmt.Errorf("failed to upload mcp-server release asset: %w", err)
 			}
 
+			fmt.Println("Uploaded MCP server binary to release assets")
+			return nil
 		}
 	}
 
