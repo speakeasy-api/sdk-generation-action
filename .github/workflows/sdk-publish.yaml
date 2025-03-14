@@ -106,11 +106,12 @@ jobs:
       swift_regenerated: ${{ steps.release.outputs.swift_regenerated }}
       swift_directory: ${{ steps.release.outputs.swift_directory }}
       use_sonatype_legacy: ${{ steps.release.outputs.use_sonatype_legacy }}
+      mcp_release_typescript: ${{ steps.release.outputs.mcp_release_typescript }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.43.0
         with:
           github_access_token: ${{ secrets.github_access_token }}
           action: "release"
@@ -249,6 +250,41 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: npm publish --access public
+      - name: Build & Upload MCP Server Binaries
+        if: ${{ needs.release.outputs.mcp_server_typescript != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_access_token }}
+        continue-on-error: true  # Ensures this step doesn't fail the job
+        run: |
+          PLATFORMS=("bun-darwin-arm64" "bun-windows-x64-modern" "bun-linux-x64-modern")
+
+          for TARGET in "${PLATFORMS[@]}"; do
+            # Set the correct binary path
+            if [[ "$TARGET" == "bun-windows-x64-modern" ]]; then
+              BINARY_PATH="./bin/mcp-server-${TARGET}.exe"
+            else
+              BINARY_PATH="./bin/mcp-server-${TARGET}"
+            fi
+
+            # Build the MCP Server binary
+            bun build ./src/mcp-server/mcp-server.ts --compile --target=$TARGET --outfile=$BINARY_PATH
+
+            # Only run chmod for non-Windows targets
+            if [[ "$TARGET" != "bun-windows-x64-modern" ]]; then
+              chmod +x $BINARY_PATH
+            fi
+
+            # Fetch GitHub Release Upload URL
+            UPLOAD_URL=$(gh api repos/${{ github.repository }}/releases/${{ needs.release.outputs.mcp_server_typescript }} --jq .upload_url | sed "s/{?name,label}//")
+
+            # Upload the binary
+            curl -X POST \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary @$BINARY_PATH \
+              "$UPLOAD_URL?name=$(basename $BINARY_PATH)"
+          done
+
       - id: publish-event
         uses: speakeasy-api/sdk-generation-action@v15
         if: always()
