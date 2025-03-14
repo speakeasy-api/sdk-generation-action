@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v63/github"
+	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/telemetry"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
@@ -121,6 +122,11 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 
 				return fmt.Errorf("failed to create release for tag %s: %w", *tagName, err)
 			} else {
+				if lang == "typescript" {
+					if err := g.AttachMCPReleaseTag(info.Path, *tagName, outputs); err != nil {
+						fmt.Println(fmt.Sprintf("attempted to tag standalone MCP binary: %v", err))
+					}
+				}
 				// Go has no publishing job, so we publish a CLI event on github release here
 				if lang == "go" {
 					if _, publishEventErr := telemetry.TriggerPublishingEvent(info.Path, "success", utils.GetRegistryName(lang)); publishEventErr != nil {
@@ -131,5 +137,21 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 		}
 	}
 
+	return nil
+}
+
+func (g *Git) AttachMCPReleaseTag(path, tagName string, outputs map[string]string) error {
+	loadedCfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", path))
+	if err != nil {
+		return err
+	}
+	if tsConfig, ok := loadedCfg.Config.Languages["typescript"]; ok {
+		if enable, ok := tsConfig.Cfg["enableMCPServer"].(bool); ok && enable {
+			outputs[fmt.Sprintf("mcp_release_%s", "typescript")] = tagName
+			return nil
+		}
+	}
+
+	fmt.Println("No MCP server present ... skipping MCP binary tagging")
 	return nil
 }
