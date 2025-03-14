@@ -148,6 +148,7 @@ func (g *Git) AttachMCPReleaseTag(path, tagName string, outputs map[string]strin
 	if tsConfig, ok := loadedCfg.Config.Languages["typescript"]; ok {
 		if enable, ok := tsConfig.Cfg["enableMCPServer"].(bool); ok && enable {
 			outputs[fmt.Sprintf("mcp_release_%s", "typescript")] = tagName
+			return nil
 		}
 	}
 
