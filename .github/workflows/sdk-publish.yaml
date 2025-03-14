@@ -274,15 +274,15 @@ jobs:
               chmod +x $BINARY_PATH
             fi
 
-            # Fetch GitHub Release Upload URL
-            UPLOAD_URL=$(gh api repos/${{ github.repository }}/releases/${{ needs.release.outputs.mcp_server_typescript }} --jq .upload_url | sed "s/{?name,label}//")
+            # Fetch the upload URL for the release associated with the specific tag
+            UPLOAD_URL=$(gh api repos/${{ github.repository }}/releases/tags/${{ needs.release.outputs.mcp_server_typescript }} --jq .upload_url | sed "s/{?name,label}//")
 
-            # Upload the binary
+            # Upload the binary to the GitHub Release
             curl -X POST \
               -H "Authorization: token $GITHUB_TOKEN" \
               -H "Content-Type: application/octet-stream" \
-              --data-binary @$BINARY_PATH \
-              "$UPLOAD_URL?name=$(basename $BINARY_PATH)"
+              --data-binary @"$BINARY_PATH" \
+              "$UPLOAD_URL?name=$(basename "$BINARY_PATH")"
           done
 
       - id: publish-event
