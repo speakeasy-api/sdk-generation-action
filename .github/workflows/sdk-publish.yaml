@@ -267,7 +267,7 @@ jobs:
             fi
 
             # Build the MCP Server binary
-            bun build ./src/mcp-server/mcp-server.ts --compile --target=$TARGET --outfile=$BINARY_PATH
+            npx bun build ./src/mcp-server/mcp-server.ts --compile --target=$TARGET --outfile=$BINARY_PATH
 
             # Only run chmod for non-Windows targets
             if [[ "$TARGET" != "bun-windows-x64-modern" ]]; then
