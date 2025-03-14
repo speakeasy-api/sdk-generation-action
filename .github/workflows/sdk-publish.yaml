@@ -251,7 +251,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: npm publish --access public
       - name: Build & Upload MCP Server Binaries
-        if: ${{ needs.release.outputs.mcp_server_typescript != '' }}
+        if: ${{ needs.release.outputs.mcp_release_typescript != '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.github_access_token }}
         continue-on-error: true  # Ensures this step doesn't fail the job
@@ -275,7 +275,7 @@ jobs:
             fi
 
             # Fetch the upload URL for the release associated with the specific tag
-            UPLOAD_URL=$(gh api repos/${{ github.repository }}/releases/tags/${{ needs.release.outputs.mcp_server_typescript }} --jq .upload_url | sed "s/{?name,label}//")
+            UPLOAD_URL=$(gh api repos/${{ github.repository }}/releases/tags/${{ needs.release.outputs.mcp_release_typescript }} --jq .upload_url | sed "s/{?name,label}//")
 
             # Upload the binary to the GitHub Release
             curl -X POST \
