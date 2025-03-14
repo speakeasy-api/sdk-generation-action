@@ -25,6 +25,16 @@ RUN apk add --update --no-cache bash curl git
 ### Install Node / NPM
 RUN apk add --update --no-cache nodejs npm
 
+# Install dependencies for Bun and ARM64 emulation
+RUN apk add --update curl libgcc libstdc++ gcompat unzip
+
+### Download and install Bun
+RUN curl -L -o /tmp/bun.zip https://github.com/oven-sh/bun/releases/download/bun-v1.2.5/bun-linux-aarch64.zip \
+    && unzip -d /tmp /tmp/bun.zip \
+    && mv /tmp/bun-linux-aarch64/bun /usr/local/bin/ \
+    && chmod +x /usr/local/bin/bun
+RUN bun --version
+
 ### Install Python
 RUN apk add --update --no-cache python3 py3-pip python3-dev pipx
 
