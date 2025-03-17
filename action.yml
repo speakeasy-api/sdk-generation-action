@@ -181,6 +181,8 @@ outputs:
     description: "The name of the publishing registry"
   target_directory:
     description: "The directory the SDK target was generated to"
+  mcp_release_typescript:
+    description: "The release tag used for standalone ts mcp binaries"
 runs:
   using: "docker"
   image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v15"
