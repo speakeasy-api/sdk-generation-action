@@ -254,7 +254,7 @@ jobs:
         if: ${{ needs.release.outputs.mcp_release_typescript != '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.github_access_token }}
-        continue-on-error: true  # Ensures this step doesn't fail the job
+        continue-on-error: true # Ensures this step doesn't fail the job
         run: |
           PLATFORMS=("bun-darwin-arm64" "bun-windows-x64-modern" "bun-linux-x64-modern")
 
@@ -597,9 +597,9 @@ jobs:
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - uses: actions/checkout@v3
       - name: Set up Ruby
-        uses: ruby/setup-ruby@ec02537da5712d66d4d50a0f33b7eb52773b5ed1
+        uses: ruby/setup-ruby@d8d83c3960843afb664e821fed6be52f37da5267 # v1.231.0
         with:
-          ruby-version: "3.1"
+          ruby-version: "3.2"
       - name: Install dependencies
         run: gem build && bundle install && rake rubocop
       - name: Publish
