@@ -4,7 +4,11 @@ on:
   workflow_call:
     inputs:
       runs-on:
-        description: The GitHub Action Runner
+        description: |-
+          Define the type of machine to run the job on. This can be a single string value or a JSON-encoded string value
+          to define a runs-on compatible array/object, such as '["one", "two"]'. Refer to the GitHub Actions
+          documentation at https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idruns-on
+          for more details about runs-on values.
         default: ubuntu-22.04
         required: false
         type: string
@@ -146,7 +150,7 @@ on:
 jobs:
   run-workflow:
     name: Generate Target
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     outputs:
       commit_hash: ${{ steps.run-workflow.outputs.commit_hash }}
       publish_python: ${{ steps.run-workflow.outputs.publish_python }}
@@ -262,7 +266,7 @@ jobs:
       needs.run-workflow.outputs.publish_python == 'true'
       && inputs.mode != 'pr' }}
     name: Publish Python SDK
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -353,7 +357,7 @@ jobs:
       needs.run-workflow.outputs.publish_typescript == 'true'
       && inputs.mode != 'pr' }}
     name: Publish Typescript SDK
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -423,7 +427,7 @@ jobs:
       needs.run-workflow.outputs.publish_java == 'true'
       && inputs.mode != 'pr' }}
     name: Publish Java SDK
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -509,7 +513,7 @@ jobs:
       needs.run-workflow.outputs.publish_ruby == 'true'
       && inputs.mode != 'pr' }}
     name: Publish Ruby SDK
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -584,7 +588,7 @@ jobs:
       needs.run-workflow.outputs.publish_csharp == 'true'
       && inputs.mode != 'pr' }}
     name: Publish C# SDK
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -649,7 +653,7 @@ jobs:
       needs.run-workflow.outputs.publish_php == 'true'
       && inputs.mode != 'pr' }}
     name: Publish PHP SDK
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
