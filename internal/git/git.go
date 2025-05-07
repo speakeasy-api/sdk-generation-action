@@ -368,34 +368,52 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error getting worktree: %w", err)
 	}
 
-	logging.Info("Commit and pushing changes to git")
+	isSigned := ""
+	if environment.GetSignedCommits() {
+		isSigned = " (signed)"
+	}
+	logging.Info("Commit and pushing changes to git " + isSigned)
 
-	if err := g.Add("."); err != nil {
-		return "", fmt.Errorf("error adding changes: %w", err)
+	speakeasyVersionSuffix := "(v" + speakeasyVersion + ")"
+
+	commits := []struct {
+		paths []string
+		msg   string
+	}{
+		{paths: []string{"**/.speakeasy/", "*gen.yaml", "*gen.lock", "*workflow.yaml", "*workflow.lock"}, msg: "build: Speakeasy config and lock files " + speakeasyVersionSuffix},
+		{paths: []string{"*.md"}, msg: "docs: regenerate markdown files " + speakeasyVersionSuffix},
+		{paths: []string{"."}, msg: "feat: regenerate SDK " + speakeasyVersionSuffix},
 	}
 
-	var commitMessage string
-	if action == environment.ActionRunWorkflow {
-		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
-		if sourcesOnly {
-			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
-		}
-	} else if action == environment.ActionSuggest {
-		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
-	}
-
-	// Create commit message
+	var lastCommitHash plumbing.Hash
 	if !environment.GetSignedCommits() {
-		commitHash, err := w.Commit(commitMessage, &git.CommitOptions{
-			Author: &object.Signature{
-				Name:  "speakeasybot",
-				Email: "bot@speakeasyapi.dev",
-				When:  time.Now(),
-			},
-			All: true,
-		})
+		var err error
+
+		err = w.Reset(&git.ResetOptions{Mode: git.SoftReset})
 		if err != nil {
-			return "", fmt.Errorf("error committing changes: %w", err)
+			return "", fmt.Errorf("error resetting: %w", err)
+		}
+
+		for i, commit := range commits {
+			for _, path := range commit.paths {
+				if err = g.Add(path); err != nil {
+					logging.Info(fmt.Errorf("unable to add changes for %v: %w", path, err).Error())
+				}
+			}
+
+			commitHash, err := w.Commit(commit.msg, &git.CommitOptions{
+				Author: &object.Signature{
+					Name:  "speakeasybot",
+					Email: "bot@speakeasyapi.dev",
+					When:  time.Now(),
+				},
+				AllowEmptyCommits: false,
+				All:               i == len(commits)-1,
+			})
+			if err != nil {
+				logging.Info(fmt.Errorf("unable to commit changes for %v: %w", commit.paths, err).Error())
+			}
+			lastCommitHash = commitHash
 		}
 
 		if err := g.repo.Push(&git.PushOptions{
@@ -404,7 +422,11 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		}); err != nil {
 			return "", pushErr(err)
 		}
-		return commitHash.String(), nil
+		return lastCommitHash.String(), nil
+	}
+
+	if err := g.Add("."); err != nil {
+		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
 	branch, err := g.GetCurrentBranch()
@@ -447,7 +469,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	// Commit changes
 	commitResult, _, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
-		Message: github.String(commitMessage),
+		Message: github.String(commits[len(commits)-1].msg),
 		Tree:    &github.Tree{SHA: tree.SHA},
 		Parents: []*github.Commit{parentCommit}}, &github.CreateCommitOptions{})
 	if err != nil {
@@ -520,6 +542,7 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 	tree, _, err = g.client.Git.CreateTree(context.Background(), owner, repo, *ref.Object.SHA, entries)
 	return tree, err
 }
+
 func (g *Git) Add(arg string) error {
 	// We execute this manually because go-git doesn't properly support gitignore
 	cmd := exec.Command("git", "add", arg)

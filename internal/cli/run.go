@@ -61,11 +61,6 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		args = append(args, "--set-version", environment.SetVersion())
 	}
 
-	// If we are in PR mode we skip testing on generation, this should run as a PR check
-	if environment.SkipTesting() || (environment.GetMode() == environment.ModePR && !sourcesOnly) {
-		args = append(args, "--skip-testing")
-	}
-
 	if environment.ForceGeneration() {
 		fmt.Println("\nforce input enabled - setting SPEAKEASY_FORCE_GENERATION=true")
 		os.Setenv("SPEAKEASY_FORCE_GENERATION", "true")
