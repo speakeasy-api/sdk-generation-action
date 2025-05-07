@@ -150,7 +150,7 @@ on:
 jobs:
   run-workflow:
     name: Generate Target
-    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     outputs:
       commit_hash: ${{ steps.run-workflow.outputs.commit_hash }}
       publish_python: ${{ steps.run-workflow.outputs.publish_python }}
@@ -266,7 +266,7 @@ jobs:
       needs.run-workflow.outputs.publish_python == 'true'
       && inputs.mode != 'pr' }}
     name: Publish Python SDK
-    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -357,7 +357,7 @@ jobs:
       needs.run-workflow.outputs.publish_typescript == 'true'
       && inputs.mode != 'pr' }}
     name: Publish Typescript SDK
-    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -427,7 +427,7 @@ jobs:
       needs.run-workflow.outputs.publish_java == 'true'
       && inputs.mode != 'pr' }}
     name: Publish Java SDK
-    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -513,7 +513,7 @@ jobs:
       needs.run-workflow.outputs.publish_ruby == 'true'
       && inputs.mode != 'pr' }}
     name: Publish Ruby SDK
-    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -588,7 +588,7 @@ jobs:
       needs.run-workflow.outputs.publish_csharp == 'true'
       && inputs.mode != 'pr' }}
     name: Publish C# SDK
-    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
@@ -653,7 +653,7 @@ jobs:
       needs.run-workflow.outputs.publish_php == 'true'
       && inputs.mode != 'pr' }}
     name: Publish PHP SDK
-    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: [run-workflow]
     defaults:
       run:
