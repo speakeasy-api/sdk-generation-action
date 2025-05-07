@@ -78,7 +78,7 @@ on:
 jobs:
   release:
     name: Create Github Release
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     outputs:
       publish_python: ${{ steps.release.outputs.publish_python }}
       publish_typescript: ${{ steps.release.outputs.publish_typescript }}
@@ -147,7 +147,7 @@ jobs:
   publish-pypi:
     if: ${{ needs.release.outputs.python_regenerated == 'true' && needs.release.outputs.publish_python == 'true' }}
     name: Publish Python SDK
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     needs: release
     defaults:
       run:
@@ -230,7 +230,7 @@ jobs:
   publish-npm:
     if: ${{ needs.release.outputs.typescript_regenerated == 'true' && needs.release.outputs.publish_typescript == 'true' }}
     name: Publish Typescript SDK
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     needs: release
     defaults:
       run:
@@ -327,7 +327,7 @@ jobs:
   publish-java:
     if: ${{ needs.release.outputs.java_regenerated == 'true' && needs.release.outputs.publish_java == 'true' }}
     name: Publish Java SDK
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     needs: release
     defaults:
       run:
@@ -404,7 +404,7 @@ jobs:
   publish-packagist:
     if: ${{ needs.release.outputs.php_regenerated == 'true' && needs.release.outputs.publish_php == 'true' }}
     name: Publish PHP SDK
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     needs: release
     defaults:
       run:
@@ -462,7 +462,7 @@ jobs:
   publish-nuget:
     if: ${{ needs.release.outputs.csharp_regenerated == 'true' && needs.release.outputs.publish_csharp == 'true' }}
     name: Publish C# SDK
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     needs: release
     defaults:
       run:
@@ -519,7 +519,7 @@ jobs:
   publish-terraform:
     if: ${{ needs.release.outputs.terraform_regenerated == 'true' && needs.release.outputs.publish_terraform == 'true' }}
     name: Publish Terraform Provider
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     needs: release
     steps:
       - name: Tune GitHub-hosted runner network
@@ -587,7 +587,7 @@ jobs:
   publish-gems:
     if: ${{ needs.release.outputs.ruby_regenerated == 'true' && needs.release.outputs.publish_ruby == 'true' }}
     name: Publish Ruby SDK
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     needs: release
     defaults:
       run:
