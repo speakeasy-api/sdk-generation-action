@@ -11,7 +11,6 @@ on:
           for more details about runs-on values.
         default: ubuntu-22.04
         required: false
-        type: string
       speakeasy_version:
         description: The version of the Speakeasy CLI to use or "latest" [DEPRECATED]
         default: latest
@@ -65,7 +64,7 @@ on:
         description: |
           Any required environment variables to set for the speakeasy run execution. Set as a string with each entry of the form "key=value".
 
-          Example: 
+          Example:
             environment: |
               SPECIFICATION_URL=https://api.example.com/swagger.json
           Where .speakeasy/workflow.yaml contains:
