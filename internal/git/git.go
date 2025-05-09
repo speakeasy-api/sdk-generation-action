@@ -368,11 +368,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error getting worktree: %w", err)
 	}
 
-	isSigned := ""
-	if environment.GetSignedCommits() {
-		isSigned = " (signed)"
-	}
-	logging.Info("Commit and pushing changes to git " + isSigned)
+	logging.Info("Commit and pushing changes to git")
 
 	catchAllCommitMessage := "feat: regenerated with Speakeasy CLI"
 	if action == environment.ActionSuggest {
