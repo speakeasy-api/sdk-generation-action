@@ -374,15 +374,18 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	}
 	logging.Info("Commit and pushing changes to git " + isSigned)
 
-	speakeasyVersionSuffix := "(v" + speakeasyVersion + ")"
+	catchAllCommitMessage := "feat: regenerated with Speakeasy CLI"
+	if action == environment.ActionSuggest {
+		catchAllCommitMessage = "feat: suggestions for OpenAPI spec"
+	}
 
 	commits := []struct {
 		paths []string
 		msg   string
 	}{
-		{paths: []string{"**/.speakeasy/", "*gen.yaml", "*gen.lock", "*workflow.yaml", "*workflow.lock"}, msg: "build: Speakeasy config and lock files " + speakeasyVersionSuffix},
-		{paths: []string{"*.md"}, msg: "docs: regenerate markdown files " + speakeasyVersionSuffix},
-		{paths: []string{"."}, msg: "feat: regenerate SDK " + speakeasyVersionSuffix},
+		{paths: []string{"**/.speakeasy/", "*gen.yaml", "*gen.lock", "*workflow.yaml", "*workflow.lock"}, msg: "build: Speakeasy config and lock files"},
+		{paths: []string{"*.md"}, msg: "docs: regenerate markdown files"},
+		{paths: []string{"."}, msg: catchAllCommitMessage},
 	}
 
 	var lastCommitHash plumbing.Hash
@@ -420,6 +423,8 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return lastCommitHash.String(), nil
 	}
 
+	// ---- START Signed commits ----
+	// TODO: Due to priority constraints we don't split up into multiple commits like we do above
 	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
@@ -464,7 +469,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	// Commit changes
 	commitResult, _, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
-		Message: github.String(commits[len(commits)-1].msg),
+		Message: github.String(catchAllCommitMessage),
 		Tree:    &github.Tree{SHA: tree.SHA},
 		Parents: []*github.Commit{parentCommit}}, &github.CreateCommitOptions{})
 	if err != nil {
