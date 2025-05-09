@@ -388,10 +388,10 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		{paths: []string{"."}, msg: catchAllCommitMessage},
 	}
 
-	var lastCommitHash plumbing.Hash
 	if !environment.GetSignedCommits() {
 		var err error
 
+		var commitHash plumbing.Hash
 		for i, commit := range commits {
 			for _, path := range commit.paths {
 				if err = g.Add(path); err != nil {
@@ -399,19 +399,20 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 				}
 			}
 
-			commitHash, err := w.Commit(commit.msg, &git.CommitOptions{
+			h, err := w.Commit(commit.msg, &git.CommitOptions{
 				Author: &object.Signature{
 					Name:  "speakeasybot",
 					Email: "bot@speakeasyapi.dev",
 					When:  time.Now(),
 				},
 				AllowEmptyCommits: false,
-				All:               i == len(commits)-1,
+				All:               commit.msg == catchAllCommitMessage,
 			})
 			if err != nil {
 				logging.Info(fmt.Errorf("unable to commit changes for %v: %w", commit.paths, err).Error())
+			} else {
+				commitHash = h
 			}
-			lastCommitHash = commitHash
 		}
 
 		if err := g.repo.Push(&git.PushOptions{
@@ -420,7 +421,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		}); err != nil {
 			return "", pushErr(err)
 		}
-		return lastCommitHash.String(), nil
+		return commitHash.String(), nil
 	}
 
 	// ---- START Signed commits ----
