@@ -389,11 +389,6 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if !environment.GetSignedCommits() {
 		var err error
 
-		err = w.Reset(&git.ResetOptions{Mode: git.SoftReset})
-		if err != nil {
-			return "", fmt.Errorf("error resetting: %w", err)
-		}
-
 		for i, commit := range commits {
 			for _, path := range commit.paths {
 				if err = g.Add(path); err != nil {
