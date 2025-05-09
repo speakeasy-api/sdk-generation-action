@@ -387,8 +387,8 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if !environment.GetSignedCommits() {
 		var err error
 
-		var commitHash plumbing.Hash
-		for i, commit := range commits {
+		var lastCommitHash plumbing.Hash
+		for _, commit := range commits {
 			for _, path := range commit.paths {
 				if err = g.Add(path); err != nil {
 					logging.Info(fmt.Errorf("unable to add changes for %v: %w", path, err).Error())
@@ -407,7 +407,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 			if err != nil {
 				logging.Info(fmt.Errorf("unable to commit changes for %v: %w", commit.paths, err).Error())
 			} else {
-				commitHash = h
+				lastCommitHash = h
 			}
 		}
 
@@ -417,7 +417,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		}); err != nil {
 			return "", pushErr(err)
 		}
-		return commitHash.String(), nil
+		return lastCommitHash.String(), nil
 	}
 
 	// ---- START Signed commits ----
