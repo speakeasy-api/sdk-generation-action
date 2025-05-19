@@ -370,45 +370,36 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	logging.Info("Commit and pushing changes to git")
 
-	catchAllCommitMessage := "feat: regenerated with Speakeasy CLI"
-	if action == environment.ActionSuggest {
-		catchAllCommitMessage = "feat: suggestions for OpenAPI spec"
+	if environment.GetIncrementalCommits() {
+		return g.commitAndPushIncremental(openAPIDocVersion, speakeasyVersion, doc, action, sourcesOnly)
 	}
 
-	commits := []struct {
-		paths []string
-		msg   string
-	}{
-		{paths: []string{"**/.speakeasy/", "*gen.yaml", "*gen.lock", "*workflow.yaml", "*workflow.lock"}, msg: "build: Speakeasy config and lock files"},
-		{paths: []string{"*.md"}, msg: "docs: regenerate markdown files"},
-		{paths: []string{"."}, msg: catchAllCommitMessage},
+	if err := g.Add("."); err != nil {
+		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
+	var commitMessage string
+	if action == environment.ActionRunWorkflow {
+		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
+		if sourcesOnly {
+			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
+		}
+	} else if action == environment.ActionSuggest {
+		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
+	}
+
+	// Create commit message
 	if !environment.GetSignedCommits() {
-		var err error
-
-		var lastCommitHash plumbing.Hash
-		for _, commit := range commits {
-			for _, path := range commit.paths {
-				if err = g.Add(path); err != nil {
-					logging.Info(fmt.Errorf("unable to add changes for %v: %w", path, err).Error())
-				}
-			}
-
-			h, err := w.Commit(commit.msg, &git.CommitOptions{
-				Author: &object.Signature{
-					Name:  "speakeasybot",
-					Email: "bot@speakeasyapi.dev",
-					When:  time.Now(),
-				},
-				AllowEmptyCommits: false,
-				All:               commit.msg == catchAllCommitMessage,
-			})
-			if err != nil {
-				logging.Info(fmt.Errorf("unable to commit changes for %v: %w", commit.paths, err).Error())
-			} else {
-				lastCommitHash = h
-			}
+		commitHash, err := w.Commit(commitMessage, &git.CommitOptions{
+			Author: &object.Signature{
+				Name:  "speakeasybot",
+				Email: "bot@speakeasyapi.dev",
+				When:  time.Now(),
+			},
+			All: true,
+		})
+		if err != nil {
+			return "", fmt.Errorf("error committing changes: %w", err)
 		}
 
 		if err := g.repo.Push(&git.PushOptions{
@@ -417,13 +408,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		}); err != nil {
 			return "", pushErr(err)
 		}
-		return lastCommitHash.String(), nil
-	}
-
-	// ---- START Signed commits ----
-	// TODO: Due to priority constraints we don't split up into multiple commits like we do above
-	if err := g.Add("."); err != nil {
-		return "", fmt.Errorf("error adding changes: %w", err)
+		return commitHash.String(), nil
 	}
 
 	branch, err := g.GetCurrentBranch()
@@ -466,7 +451,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	// Commit changes
 	commitResult, _, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
-		Message: github.String(catchAllCommitMessage),
+		Message: github.String(commitMessage),
 		Tree:    &github.Tree{SHA: tree.SHA},
 		Parents: []*github.Commit{parentCommit}}, &github.CreateCommitOptions{})
 	if err != nil {
@@ -481,6 +466,60 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	g.client.Git.UpdateRef(context.Background(), owner, repo, newRef, true)
 
 	return *commitResult.SHA, nil
+}
+
+func (g *Git) commitAndPushIncremental(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool) (string, error) {
+	catchAllCommitMessage := "feat: regenerated with Speakeasy CLI"
+	if action == environment.ActionSuggest {
+		catchAllCommitMessage = "feat: suggestions for OpenAPI spec"
+	}
+
+	if environment.GetSignedCommits() {
+		return "", fmt.Errorf("signed commits are not supported for incremental commits")
+	}
+
+	commits := []struct {
+		paths []string
+		msg   string
+	}{
+		{paths: []string{"**/.speakeasy/", "*gen.yaml", "*gen.lock", "*workflow.yaml", "*workflow.lock"}, msg: "build: Speakeasy config and lock files"},
+		{paths: []string{"*.md"}, msg: "docs: regenerate markdown files"},
+		{paths: []string{"."}, msg: catchAllCommitMessage},
+	}
+
+	var err error
+
+	var lastCommitHash plumbing.Hash
+	for _, commit := range commits {
+		for _, path := range commit.paths {
+			if err = g.Add(path); err != nil {
+				logging.Info(fmt.Errorf("unable to add changes for %v: %w", path, err).Error())
+			}
+		}
+
+		h, err := w.Commit(commit.msg, &git.CommitOptions{
+			Author: &object.Signature{
+				Name:  "speakeasybot",
+				Email: "bot@speakeasyapi.dev",
+				When:  time.Now(),
+			},
+			AllowEmptyCommits: false,
+			All:               commit.msg == catchAllCommitMessage,
+		})
+		if err != nil {
+			logging.Info(fmt.Errorf("unable to commit changes for %v: %w", commit.paths, err).Error())
+		} else {
+			lastCommitHash = h
+		}
+	}
+
+	if err := g.repo.Push(&git.PushOptions{
+		Auth:  getGithubAuth(g.accessToken),
+		Force: true, // This is necessary because at the beginning of the workflow we reset the branch
+	}); err != nil {
+		return "", pushErr(err)
+	}
+	return lastCommitHash.String(), nil
 }
 
 // getOrCreateRef returns the commit branch reference object if it exists or creates it
