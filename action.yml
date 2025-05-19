@@ -26,6 +26,10 @@ inputs:
     description: "Sign commits with GPG"
     default: "false"
     required: false
+  granular_commits:
+    description: "Commit and push granular changes"
+    default: "false"
+    required: false
   sources:
     description: "The sources to tag (comma or newline separated)"
     required: false
@@ -202,6 +206,7 @@ runs:
     - ${{ inputs.branch_name }}
     - ${{ inputs.cli_output }}
     - ${{ inputs.signed_commits }}
+    - ${{ inputs.granular_commits }}
     - ${{ inputs.previous_gen_version }}
     - ${{ inputs.openapi_doc_output }}
     - ${{ inputs.output_tests }}
