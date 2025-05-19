@@ -12,6 +12,9 @@ test-direct-mode-multi-sdk:
 test-pr-mode:
 	docker compose run --rm main ./testing/test.sh ./testing/pr-mode.env
 
+test-pr-mode-granular-commits:
+	docker compose run --rm main ./testing/test.sh ./testing/pr-mode-granular-commits.env
+
 test-pr-mode-signed-commits:
 	docker compose run --rm main ./testing/test.sh ./testing/pr-mode-signed-commits.env
 
