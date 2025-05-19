@@ -244,8 +244,8 @@ func GetSignedCommits() bool {
 	return os.Getenv("INPUT_SIGNED_COMMITS") == "true"
 }
 
-func GetIncrementalCommits() bool {
-	return os.Getenv("INPUT_INCREMENTAL_COMMITS") == "true"
+func GetGranularCommits() bool {
+	return os.Getenv("INPUT_GRANULAR_COMMITS") == "true"
 }
 
 func GetBranchName() string {

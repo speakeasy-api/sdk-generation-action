@@ -363,15 +363,17 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", nil
 	}
 
+	logging.Info("Commit and pushing changes to git")
+
+	if environment.GetGranularCommits() &&
+		// TODO: Support signed commits with granular commits
+		!environment.GetSignedCommits() {
+		return g.granularCommitAndPush(openAPIDocVersion, speakeasyVersion, doc, action, sourcesOnly)
+	}
+
 	w, err := g.repo.Worktree()
 	if err != nil {
 		return "", fmt.Errorf("error getting worktree: %w", err)
-	}
-
-	logging.Info("Commit and pushing changes to git")
-
-	if environment.GetIncrementalCommits() {
-		return g.commitAndPushIncremental(openAPIDocVersion, speakeasyVersion, doc, action, sourcesOnly)
 	}
 
 	if err := g.Add("."); err != nil {
@@ -468,7 +470,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	return *commitResult.SHA, nil
 }
 
-func (g *Git) commitAndPushIncremental(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool) (string, error) {
+func (g *Git) granularCommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool) (string, error) {
 	w, err := g.repo.Worktree()
 	if err != nil {
 		return "", fmt.Errorf("error getting worktree: %w", err)
@@ -477,10 +479,6 @@ func (g *Git) commitAndPushIncremental(openAPIDocVersion, speakeasyVersion, doc 
 	catchAllCommitMessage := "feat: regenerated with Speakeasy CLI"
 	if action == environment.ActionSuggest {
 		catchAllCommitMessage = "feat: suggestions for OpenAPI spec"
-	}
-
-	if environment.GetSignedCommits() {
-		return "", fmt.Errorf("signed commits are not supported for incremental commits")
 	}
 
 	commits := []struct {
