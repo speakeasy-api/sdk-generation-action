@@ -469,6 +469,11 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 }
 
 func (g *Git) commitAndPushIncremental(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool) (string, error) {
+	w, err := g.repo.Worktree()
+	if err != nil {
+		return "", fmt.Errorf("error getting worktree: %w", err)
+	}
+
 	catchAllCommitMessage := "feat: regenerated with Speakeasy CLI"
 	if action == environment.ActionSuggest {
 		catchAllCommitMessage = "feat: suggestions for OpenAPI spec"
@@ -486,8 +491,6 @@ func (g *Git) commitAndPushIncremental(openAPIDocVersion, speakeasyVersion, doc 
 		{paths: []string{"*.md"}, msg: "docs: regenerate markdown files"},
 		{paths: []string{"."}, msg: catchAllCommitMessage},
 	}
-
-	var err error
 
 	var lastCommitHash plumbing.Hash
 	for _, commit := range commits {
