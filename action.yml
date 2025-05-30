@@ -185,7 +185,7 @@ outputs:
     description: "The release tag used for standalone ts mcp binaries"
 runs:
   using: "docker"
-  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v15"
+  image: "docker://ghcr.io/speakeasy-api/sdk-generation-action:v15.45.0-pre2"
   env:
     SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
     SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
