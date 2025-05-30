@@ -41,6 +41,26 @@ RUN apk add --update --no-cache dotnet6-sdk
 ### Install .NET8.0
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin -Channel 8.0 -InstallDir ${DOTNET_ROOT}
 
+# Manually install libssl1.1 and libcrypto1.1 because they are required for .NET 5.0 and alpine 3.20 does not have them
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then \
+        CRYPTO_URL="https://dl-cdn.alpinelinux.org/alpine/v3.16/main/x86_64/libcrypto1.1-1.1.1w-r1.apk"; \
+        SSL_URL="https://dl-cdn.alpinelinux.org/alpine/v3.16/main/x86_64/libssl1.1-1.1.1w-r1.apk"; \
+    elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+        CRYPTO_URL="https://dl-cdn.alpinelinux.org/alpine/v3.16/main/aarch64/libcrypto1.1-1.1.1w-r1.apk"; \
+        SSL_URL="https://dl-cdn.alpinelinux.org/alpine/v3.16/main/aarch64/libssl1.1-1.1.1w-r1.apk"; \
+    else \
+        echo "Unsupported architecture: $ARCH" && exit 1; \
+    fi && \
+    echo "Downloading libcrypto1.1 from $CRYPTO_URL" && \
+    wget -q -O /tmp/libcrypto1.1.apk "$CRYPTO_URL" && \
+    echo "Downloading libssl1.1 from $SSL_URL" && \
+    wget -q -O /tmp/libssl1.1.apk "$SSL_URL" && \
+    apk add --allow-untrusted /tmp/libcrypto1.1.apk /tmp/libssl1.1.apk && \
+    rm /tmp/libcrypto1.1.apk /tmp/libssl1.1.apk && \
+    echo "libcrypto1.1 and libssl1.1 installation completed."
+
+
 # ### Install .NET5.0
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin -Channel 5.0 -InstallDir ${DOTNET_ROOT}
 RUN dotnet --list-sdks
