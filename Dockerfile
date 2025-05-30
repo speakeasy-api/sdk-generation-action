@@ -40,6 +40,9 @@ RUN apk add --update --no-cache dotnet6-sdk
 
 ### Install .NET8.0
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin -Channel 8.0 -InstallDir ${DOTNET_ROOT}
+
+# ### Install .NET5.0
+RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin -Channel 5.0 -InstallDir ${DOTNET_ROOT}
 RUN dotnet --list-sdks
 
 ### Install PHP and Composer
