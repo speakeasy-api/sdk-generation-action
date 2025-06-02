@@ -185,7 +185,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		langCfg := loadedCfg.Config.Languages[lang]
 		langConfigs[lang] = &langCfg
 
-		outputs[fmt.Sprintf("%s_directory", lang)] = dir
+		outputs[utils.OutputTargetDirectory(lang)] = dir
 
 		previousManagementInfo := previousManagementInfos[targetID]
 		dirty, dirtyMsg, err := g.CheckDirDirty(dir, map[string]string{
@@ -227,7 +227,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 	langGenInfo := map[string]LanguageGenInfo{}
 
 	for lang := range langGenerated {
-		outputs[lang+"_regenerated"] = "true"
+		outputs[utils.OutputTargetRegenerated(lang)] = "true"
 
 		langCfg := langConfigs[lang]
 
@@ -344,7 +344,7 @@ func AddTargetPublishOutputs(target workflow.Target, outputs map[string]string, 
 		published = true // Treat as published if we don't have an installation URL
 	}
 
-	outputs[fmt.Sprintf("publish_%s", lang)] = fmt.Sprintf("%t", published)
+	outputs[utils.OutputTargetPublish(lang)] = fmt.Sprintf("%t", published)
 
 	if published && lang == "java" && target.Publishing.Java != nil {
 		outputs["use_sonatype_legacy"] = strconv.FormatBool(target.Publishing.Java.UseSonatypeLegacy)

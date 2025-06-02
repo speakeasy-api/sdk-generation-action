@@ -108,8 +108,9 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 					if release.Body != nil && strings.Contains(*release.Body, PublishingCompletedString) {
 						fmt.Println(fmt.Sprintf("a github release with tag %s has already been published ... skipping publishing", *tagName))
 						fmt.Println(fmt.Sprintf("to publish this version again please check with your package managed delete the github tag and release"))
-						if _, ok := outputs[fmt.Sprintf("publish_%s", lang)]; ok {
-							outputs[fmt.Sprintf("publish_%s", lang)] = "false"
+						outputName := utils.OutputTargetPublish(lang)
+						if _, ok := outputs[outputName]; ok {
+							outputs[outputName] = "false"
 						}
 					}
 					// TODO: Consider deleting and recreating the release if we are moving forward with publishing
@@ -121,17 +122,20 @@ func (g *Git) CreateRelease(releaseInfo releases.ReleasesInfo, outputs map[strin
 				}
 
 				return fmt.Errorf("failed to create release for tag %s: %w", *tagName, err)
-			} else {
-				if lang == "typescript" {
-					if err := g.AttachMCPReleaseTag(info.Path, *tagName, outputs); err != nil {
-						fmt.Println(fmt.Sprintf("attempted to tag standalone MCP binary: %v", err))
-					}
-				}
+			}
+
+			switch lang {
+			case "go":
 				// Go has no publishing job, so we publish a CLI event on github release here
-				if lang == "go" {
-					if _, publishEventErr := telemetry.TriggerPublishingEvent(info.Path, "success", utils.GetRegistryName(lang)); publishEventErr != nil {
-						fmt.Printf("failed to write publishing event: %v\n", publishEventErr)
-					}
+				if _, publishEventErr := telemetry.TriggerPublishingEvent(info.Path, "success", utils.GetRegistryName(lang)); publishEventErr != nil {
+					fmt.Printf("failed to write publishing event: %v\n", publishEventErr)
+				}
+			case "mcp-typescript":
+				// This target should always upload the MCP binaries to the release
+				outputs[utils.OutputTargetMCPRelease(lang)] = *tagName
+			case "typescript":
+				if err := g.AttachMCPReleaseTag(info.Path, *tagName, outputs); err != nil {
+					fmt.Printf("attempted to tag standalone MCP binary: %v\n", err)
 				}
 			}
 		}
@@ -147,7 +151,7 @@ func (g *Git) AttachMCPReleaseTag(path, tagName string, outputs map[string]strin
 	}
 	if tsConfig, ok := loadedCfg.Config.Languages["typescript"]; ok {
 		if enable, ok := tsConfig.Cfg["enableMCPServer"].(bool); ok && enable {
-			outputs[fmt.Sprintf("mcp_release_%s", "typescript")] = tagName
+			outputs[utils.OutputTargetMCPRelease("typescript")] = tagName
 			return nil
 		}
 	}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-github/v63/github"
 	"github.com/pkg/errors"
+	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
 	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
 	"github.com/speakeasy-api/versioning-reports/versioning"
 
@@ -115,23 +116,21 @@ func RunWorkflow() error {
 			LanguagesGenerated: map[string]releases.GenerationInfo{},
 		}
 
-		supportedLanguages := cli.GetSupportedLanguages()
-		for _, lang := range supportedLanguages {
-			langGenInfo, ok := runRes.GenInfo.Languages[lang]
-
-			if ok && outputs[fmt.Sprintf("%s_regenerated", lang)] == "true" {
+		for _, supportedTargetName := range cli.GetSupportedTargetNames() {
+			langGenInfo, ok := runRes.GenInfo.Languages[supportedTargetName]
+			if ok && outputs[utils.OutputTargetRegenerated(supportedTargetName)] == "true" {
 				anythingRegenerated = true
 
-				path := outputs[fmt.Sprintf("%s_directory", lang)]
+				path := outputs[utils.OutputTargetDirectory(supportedTargetName)]
 				path = strings.TrimPrefix(path, "./")
 
-				releaseInfo.LanguagesGenerated[lang] = releases.GenerationInfo{
+				releaseInfo.LanguagesGenerated[supportedTargetName] = releases.GenerationInfo{
 					Version: langGenInfo.Version,
 					Path:    path,
 				}
 
-				if published, ok := outputs[fmt.Sprintf("publish_%s", lang)]; ok && published == "true" {
-					releaseInfo.Languages[lang] = releases.LanguageReleaseInfo{
+				if published, ok := outputs[utils.OutputTargetPublish(supportedTargetName)]; ok && published == "true" {
+					releaseInfo.Languages[supportedTargetName] = releases.LanguageReleaseInfo{
 						PackageName: langGenInfo.PackageName,
 						Version:     langGenInfo.Version,
 						Path:        path,
@@ -276,7 +275,7 @@ func finalize(inputs finalizeInputs) error {
 		if !inputs.SourcesOnly {
 			releaseInfo = inputs.currentRelease
 			// We still read from releases info for terraform generations since they use the goreleaser
-			if inputs.Outputs["terraform_regenerated"] == "true" {
+			if inputs.Outputs[utils.OutputTargetRegenerated("terraform")] == "true" {
 				releaseInfo, err = getReleasesInfo()
 				if err != nil {
 					return err
