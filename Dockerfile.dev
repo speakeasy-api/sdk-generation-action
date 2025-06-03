@@ -1,5 +1,5 @@
 # Dev Stage - Includes build tools, compilers, and source code
-FROM golang:1.23-alpine3.20 AS dev
+FROM golang:1.23-alpine3.21 AS dev
 
 # Install development tools
 RUN apk update && apk add --no-cache \
@@ -7,7 +7,7 @@ RUN apk update && apk add --no-cache \
     python3 py3-pip python3-dev pipx \
     openjdk11 gradle \
     build-base ruby ruby-bundler ruby-dev \
-    dotnet6-sdk \
+    dotnet8-sdk \
     php82 php-ctype php-dom php-json php-mbstring php-phar php-tokenizer php-xml php-xmlwriter php-curl php-openssl php-iconv \
     --repository http://nl.alpinelinux.org/alpine/edge/testing/
 
