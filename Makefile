@@ -26,3 +26,6 @@ test-validate-action:
 
 test-overlay:
 	docker compose run --rm main ./testing/test.sh ./testing/overlay-test.env
+
+test-manual-repo-url:
+	docker compose run --rm main ./testing/test.sh ./testing/manual-repo-url.env
