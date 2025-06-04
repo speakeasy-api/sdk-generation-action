@@ -236,6 +236,7 @@ jobs:
           cli_environment_variables: ${{ inputs.environment }}
           pnpm_version: ${{ inputs.pnpm_version }}
           poetry_version: ${{ inputs.poetry_version }}
+          github_repository: ${{ inputs.github_repository }}
       - uses: ravsamhq/notify-slack-action@v2
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' && env.SLACK_WEBHOOK_URL != '' }}
         with:
