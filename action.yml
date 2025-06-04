@@ -108,8 +108,8 @@ inputs:
   poetry_version:
     description: "Version of poetry to install. Not recommended for use without consulting Speakeasy support."
     required: false
-  repo_url:
-    description: "The repository URL for the SDK."
+  github_repository:
+    description: "The GitHub repository path for the SDK. Eg: speakeasy-api/speakeasy-sdk-python"
     default: ""
     required: false
 outputs:
