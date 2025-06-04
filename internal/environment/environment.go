@@ -287,6 +287,9 @@ func GetWorkingDirectory() string {
 }
 
 func GetRepo() string {
+	if os.Getenv("INPUT_GITHUB_REPOSITORY") != "" {
+		return os.Getenv("INPUT_GITHUB_REPOSITORY")
+	}
 	return os.Getenv("GITHUB_REPOSITORY")
 }
 

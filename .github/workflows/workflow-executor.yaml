@@ -95,6 +95,11 @@ on:
         description: "Version of poetry to install. Not recommended for use without consulting Speakeasy support."
         required: false
         type: string
+      repo_url:
+        description: "The repository URL for the SDK."
+        default: ""
+        required: false
+        type: string
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
