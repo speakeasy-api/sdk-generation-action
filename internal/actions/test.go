@@ -48,6 +48,16 @@ func Test(ctx context.Context) error {
 	if providedTargetName := environment.SpecifiedTarget(); providedTargetName != "" && os.Getenv("GITHUB_EVENT_NAME") == "workflow_dispatch" {
 		testedTargets = append(testedTargets, providedTargetName)
 	}
+	
+	// If no target is specified via workflow dispatch, check for testing enabled targets and pick the first one
+	if len(testedTargets) == 0 {
+		for name, target := range wf.Targets {
+			if target.Testing != nil && target.Testing.Enabled != nil && *target.Testing.Enabled {
+				testedTargets = append(testedTargets, name)
+				break // Pick the first one with testing enabled
+			}
+		}
+	}
 
 	var prNumber *int
 	targetLockIDs := make(map[string]string)
