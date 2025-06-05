@@ -35,7 +35,7 @@ jobs:
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: apply-tags
         name: Apply Tags
-        uses: speakeasy-api/sdk-generation-action@pr-222
+        uses: speakeasy-api/sdk-generation-action@bflad/gen-1422-feature-initial-mcp-typescript-handling-in-sdk-generation
         with:
           action: "tag"
           sources: ${{ inputs.sources }}
