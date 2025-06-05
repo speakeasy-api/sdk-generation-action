@@ -51,12 +51,10 @@ jobs:
       - id: test
         name: Run Tests
         if: steps.check_commit.outputs.run_tests == 'true'
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@pr-222
         with:
           action: "test"
           working_directory: ${{ inputs.working_directory }}
           target: ${{ inputs.target }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           github_access_token: ${{ secrets.github_access_token }}
-
-
