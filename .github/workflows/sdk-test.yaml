@@ -58,5 +58,3 @@ jobs:
           target: ${{ inputs.target }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           github_access_token: ${{ secrets.github_access_token }}
-
-

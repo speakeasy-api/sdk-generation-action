@@ -31,18 +31,16 @@ var defaultSupportedTargets = []string{
 	"csharp",
 	"go",
 	"java",
+	"mcp-typescript",
 	"php",
 	"postman",
 	"python",
 	"ruby",
-	"swift",
 	"terraform",
 	"typescript",
-	"unity",
-	"docs",
 }
 
-func GetSupportedLanguages() []string {
+func GetSupportedTargetNames() []string {
 	out, err := runSpeakeasyCommand("generate", "supported-targets")
 	if err == nil && out != "" {
 		out = strings.Trim(out, "\n")

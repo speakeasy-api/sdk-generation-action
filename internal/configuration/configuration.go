@@ -22,7 +22,7 @@ func GetWorkflowAndValidateLanguages(checkLangSupported bool) (*workflow.Workflo
 	}
 
 	if checkLangSupported {
-		if err := AssertLangsSupported(langs); err != nil {
+		if err := AssertTargetNamesSupported(langs); err != nil {
 			return nil, err
 		}
 	}
@@ -43,15 +43,11 @@ func getWorkflow() (*workflow.Workflow, error) {
 	return wf, err
 }
 
-func AssertLangsSupported(langs []string) error {
-	supportedLangs := cli.GetSupportedLanguages()
-	for _, l := range langs {
-		if l == "docs" {
-			return nil
-		}
-
-		if !slices.Contains(supportedLangs, l) {
-			return fmt.Errorf("unsupported language: %s", l)
+func AssertTargetNamesSupported(workflowTargetNames []string) error {
+	supportedTargetNames := cli.GetSupportedTargetNames()
+	for _, workflowTargetName := range workflowTargetNames {
+		if !slices.Contains(supportedTargetNames, workflowTargetName) {
+			return fmt.Errorf("unsupported target: %s", workflowTargetName)
 		}
 	}
 

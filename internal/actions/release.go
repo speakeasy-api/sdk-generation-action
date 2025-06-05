@@ -13,6 +13,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/run"
+	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 )
 
@@ -77,8 +78,8 @@ func Release() error {
 
 	outputs := map[string]string{}
 	for lang, info := range latestRelease.Languages {
-		outputs[fmt.Sprintf("%s_regenerated", lang)] = "true"
-		outputs[fmt.Sprintf("%s_directory", lang)] = info.Path
+		outputs[utils.OutputTargetRegenerated(lang)] = "true"
+		outputs[utils.OutputTargetDirectory(lang)] = info.Path
 	}
 
 	if err = addPublishOutputs(dir, outputs); err != nil {

@@ -91,6 +91,7 @@ jobs:
       publish_php: ${{ steps.release.outputs.publish_php }}
       publish_ruby: ${{ steps.release.outputs.publish_ruby }}
       publish_csharp: ${{ steps.release.outputs.publish_csharp }}
+      publish_mcp_typescript: ${{ steps.release.outputs.publish_mcp_typescript }}
       python_regenerated: ${{ steps.release.outputs.python_regenerated }}
       python_directory: ${{ steps.release.outputs.python_directory }}
       typescript_regenerated: ${{ steps.release.outputs.typescript_regenerated }}
@@ -101,6 +102,8 @@ jobs:
       go_directory: ${{ steps.release.outputs.go_directory }}
       java_regenerated: ${{ steps.release.outputs.java_regenerated }}
       java_directory: ${{ steps.release.outputs.java_directory }}
+      mcp_typescript_regenerated: ${{ steps.release.outputs.mcp_typescript_regenerated }}
+      mcp_typescript_directory: ${{ steps.release.outputs.mcp_typescript_directory }}
       php_regenerated: ${{ steps.release.outputs.php_regenerated }}
       php_directory: ${{ steps.release.outputs.php_directory }}
       ruby_regenerated: ${{ steps.release.outputs.ruby_regenerated }}
@@ -328,6 +331,99 @@ jobs:
           GH_ACTION_VERSION: "v15"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
+  publish-npm-mcp:
+    if: ${{ needs.release.outputs.mcp_typescript_regenerated == 'true' && needs.release.outputs.publish_mcp_typescript == 'true' }}
+    name: Publish MCP Typescript Server
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
+    needs: release
+    defaults:
+      run:
+        working-directory: ${{ needs.release.outputs.mcp_typescript_directory }}
+    steps:
+      - uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1.0.0
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22.x"
+          registry-url: "https://registry.npmjs.org"
+      - run: npm install
+      - env:
+          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+        run: npm publish --access public
+      - name: Build & Upload MCP Server Binaries
+        if: ${{ needs.release.outputs.mcp_release_typescript != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_access_token }}
+        continue-on-error: true # Ensures this step doesn't fail the job
+        run: |
+          PLATFORMS=("bun-darwin-arm64" "bun-windows-x64-modern" "bun-linux-x64-modern")
+
+          for TARGET in "${PLATFORMS[@]}"; do
+            # Set the correct binary path
+            if [[ "$TARGET" == "bun-windows-x64-modern" ]]; then
+              BINARY_PATH="./bin/mcp-server-${TARGET}.exe"
+            else
+              BINARY_PATH="./bin/mcp-server-${TARGET}"
+            fi
+
+            # Build the MCP Server binary
+            npx bun build ./src/mcp-server/mcp-server.ts --compile --target=$TARGET --outfile=$BINARY_PATH
+
+            # Only run chmod for non-Windows targets
+            if [[ "$TARGET" != "bun-windows-x64-modern" ]]; then
+              chmod +x $BINARY_PATH
+            fi
+
+            # Fetch the upload URL for the release associated with the specific tag
+            UPLOAD_URL=$(gh api repos/${{ github.repository }}/releases/tags/${{ needs.release.outputs.mcp_release_typescript }} --jq .upload_url | sed "s/{?name,label}//")
+
+            # Upload the binary to the GitHub Release
+            curl -X POST \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary @"$BINARY_PATH" \
+              "$UPLOAD_URL?name=$(basename "$BINARY_PATH")"
+          done
+
+      - id: publish-event
+        uses: speakeasy-api/sdk-generation-action@v15
+        if: always()
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          action: publish-event
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          target_directory: ${{ needs.release.outputs.mcp_typescript_directory }}
+          registry_name: "npm"
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          GH_ACTION_VERSION: "v15"
+      - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2.5.0
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "Failed to publish Typescript SDK"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log-result
+        uses: speakeasy-api/sdk-generation-action@v15
+        if: always()
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log-result
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          GH_ACTION_VERSION: "v15"
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET_TYPE: "mcp"
   publish-java:
     if: ${{ needs.release.outputs.java_regenerated == 'true' && needs.release.outputs.publish_java == 'true' }}
     name: Publish Java SDK

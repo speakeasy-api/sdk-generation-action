@@ -127,6 +127,8 @@ outputs:
     description: "Whether the Java SDK will be published to the provided OSSRH URL"
   publish_csharp:
     description: "Whether the C# SDK will be published to Nuget"
+  publish_mcp_typescript:
+    description: "Whether the MCP Typescript target will be published to NPM"
   python_regenerated:
     description: "true if the Python SDK was regenerated"
   python_directory:
@@ -143,6 +145,10 @@ outputs:
     description: "true if the Java SDK was regenerated"
   java_directory:
     description: "The directory the Java SDK was generated to"
+  mcp_typescript_regenerated:
+    description: "true if the MCP Typescript target was regenerated"
+  mcp_typescript_directory:
+    description: "The directory the MCP Typescript target was generated to"
   terraform_regenerated:
     description: "true if the Terraform Provider was regenerated"
   terraform_directory:
