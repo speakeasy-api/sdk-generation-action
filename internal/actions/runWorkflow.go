@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-github/v63/github"
 	"github.com/pkg/errors"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
@@ -172,7 +173,7 @@ func RunWorkflow() error {
 		return nil
 	}
 
-	return fmt.Errorf("Versioning info: %v\n\nGen info: %v", runRes.VersioningInfo, runRes.GenInfo)
+	return fmt.Errorf("Run res: %s", spew.Sdump(runRes))
 
 	if err := finalize(finalizeInputs{
 		Outputs:              outputs,
