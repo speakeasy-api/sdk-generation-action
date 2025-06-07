@@ -172,6 +172,8 @@ func RunWorkflow() error {
 		return nil
 	}
 
+	return fmt.Errorf("Versioning info: %v\n\nGen info: %v", runRes.VersioningInfo, runRes.GenInfo)
+
 	if err := finalize(finalizeInputs{
 		Outputs:              outputs,
 		BranchName:           branchName,
