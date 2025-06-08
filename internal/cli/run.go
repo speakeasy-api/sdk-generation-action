@@ -23,6 +23,7 @@ type RunResults struct {
 func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, repoSubdirectories map[string]string, manualVersionBump *versioning.BumpType) (*RunResults, error) {
 	args := []string{
 		"run",
+		"--debug",
 	}
 
 	if sourcesOnly {
