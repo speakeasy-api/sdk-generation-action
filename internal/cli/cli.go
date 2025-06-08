@@ -140,6 +140,8 @@ func GetChangelog(lang, genVersion, previousGenVersion string, targetVersions ma
 		args = append(args, "-p", strings.Join(previosVersionsStrings, ","))
 	}
 
+	return "", fmt.Errorf("About to run changelog command: %s", strings.Join(args, " "))
+
 	out, err := runSpeakeasyCommand(args...)
 	if err != nil {
 		return "", err
