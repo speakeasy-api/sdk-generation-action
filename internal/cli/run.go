@@ -24,6 +24,7 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	args := []string{
 		"run",
 		"--debug",
+		"--verbose",
 	}
 
 	if sourcesOnly {
