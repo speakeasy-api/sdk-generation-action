@@ -23,9 +23,9 @@ type RunResults struct {
 func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, repoSubdirectories map[string]string, manualVersionBump *versioning.BumpType) (*RunResults, error) {
 	args := []string{
 		"run",
-		"--debug",
-		"--verbose",
 	}
+
+	os.Setenv("SPEAKEASY_LOG_LEVEL", "debug")
 
 	if sourcesOnly {
 		args = append(args, "-s", "all")
