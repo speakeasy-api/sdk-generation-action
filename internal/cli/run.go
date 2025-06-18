@@ -103,6 +103,9 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	}
 	os.Setenv("SPEAKEASY_CHANGELOG_DIR", tmpDir)
 
+	// List and log all files in the changelog directory
+	logChangelogDirectoryContents(tmpDir)
+
 	// file2, err := os.CreateTemp(os.TempDir(), "speakeasy-sdk-changelog")
 	// if err != nil {
 	// 	return nil, fmt.Errorf("error creating sdk changelog file: %w", err)
@@ -169,4 +172,53 @@ func getChangesReportURL(out string) string {
 	}
 
 	return ""
+}
+
+func logChangelogDirectoryContents(dir string) {
+	logging.Info("=== CHANGELOG DIRECTORY CONTENTS ===")
+	logging.Info("Directory: %s", dir)
+
+	// First, list all files in the directory
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		logging.Info("Error reading changelog directory: %s", err)
+		return
+	}
+
+	if len(files) == 0 {
+		logging.Info("No files found in changelog directory")
+		return
+	}
+
+	logging.Info("Files found in directory:")
+	for _, file := range files {
+		if !file.IsDir() {
+			logging.Info("  - %s", file.Name())
+		}
+	}
+
+	// Now read and log the content of each file
+	logging.Info("=== FILE CONTENTS ===")
+	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			content, err := os.ReadFile(path)
+			if err != nil {
+				logging.Info("Error reading file %s: %s", path, err)
+				return nil
+			}
+			relativePath, _ := filepath.Rel(dir, path)
+			logging.Info("=== FILE: %s ===", relativePath)
+			logging.Info("Content:\n%s", string(content))
+			logging.Info("=== END FILE: %s ===", relativePath)
+		}
+		return nil
+	})
+	if err != nil {
+		logging.Info("Error walking changelog directory: %s", err)
+	}
+
+	logging.Info("=== END CHANGELOG DIRECTORY CONTENTS ===")
 }
