@@ -182,6 +182,7 @@ func RunWorkflow() error {
 		LintingReportURL:     runRes.LintingReportURL,
 		ChangesReportURL:     runRes.ChangesReportURL,
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
+		SDKChangelog:         runRes.SDKChangelog,
 		GenInfo:              runRes.GenInfo,
 		currentRelease:       &releaseInfo,
 	}); err != nil {
@@ -207,6 +208,7 @@ type finalizeInputs struct {
 	LintingReportURL     string
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
+	SDKChangelog         map[string]string
 	VersioningReport     *versioning.MergedVersionReport
 	VersioningInfo       versionbumps.VersioningInfo
 	GenInfo              *run.GenerationInfo
@@ -220,6 +222,11 @@ func finalize(inputs finalizeInputs) error {
 		return nil
 	}
 
+	logging.Info("******\n")
+	for key, value := range inputs.SDKChangelog {
+		logging.Info("Key: %s, Value: %s\n", key, value)
+	}
+	logging.Info("******\n")
 	branchName, err := inputs.Git.FindAndCheckoutBranch(inputs.BranchName)
 	if err != nil {
 		return err
@@ -250,6 +257,7 @@ func finalize(inputs finalizeInputs) error {
 			ChangesReportURL:     inputs.ChangesReportURL,
 			VersioningInfo:       inputs.VersioningInfo,
 			OpenAPIChangeSummary: inputs.OpenAPIChangeSummary,
+			SDKChangelog:         inputs.SDKChangelog,
 		})
 
 		if err != nil {

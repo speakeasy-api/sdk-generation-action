@@ -40,6 +40,7 @@ type RunResult struct {
 	ChangesReportURL     string
 	VersioningReport     *versioning.MergedVersionReport
 	VersioningInfo       versionbumps.VersioningInfo
+	SDKChangelog         map[string]string
 }
 
 type Git interface {
@@ -156,6 +157,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 			OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
 			LintingReportURL:     runRes.LintingReportURL,
 			ChangesReportURL:     runRes.ChangesReportURL,
+			SDKChangelog:         runRes.SDKChangelog,
 		}, outputs, nil
 	}
 
@@ -260,6 +262,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
 		LintingReportURL:     runRes.LintingReportURL,
 		ChangesReportURL:     runRes.ChangesReportURL,
+		SDKChangelog:         runRes.SDKChangelog,
 	}, outputs, nil
 }
 

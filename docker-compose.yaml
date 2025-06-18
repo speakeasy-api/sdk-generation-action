@@ -7,10 +7,12 @@ services:
       dockerfile: Dockerfile.dev
     volumes:
       - .:/app  # Live code reloading
+      - /tmp/kanwar-changelog-speakeasy:/tmp/kanwar-changelog-speakeasy
     stdin_open: true
     tty: true
     container_name: main_container
     environment:
+      - SPEAKEASY_CLI_LOCATION=/tmp/kanwar-changelog-speakeasy 
       - INPUT_DEBUG=true
       - INPUT_GITHUB_ACCESS_TOKEN=${GITHUB_TOKEN}
       - GITHUB_SERVER_URL=https://github.com

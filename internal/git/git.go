@@ -543,6 +543,7 @@ type PRInfo struct {
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
 	VersioningInfo       versionbumps.VersioningInfo
+	SDKChangelog         map[string]string
 }
 
 func (g *Git) getRepoMetadata() (string, string) {
@@ -559,6 +560,9 @@ func (g *Git) getOwnerAndRepo(githubRepoLocation string) (string, string) {
 }
 
 func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
+
+	logging.Info("JUST LOGGING\n\n\n")
+	fmt.Println("info.sdkChangelog", info.SDKChangelog)
 	var changelog string
 	var err error
 
@@ -569,9 +573,10 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 	if info.PreviousGenVersion != "" {
 		previousGenVersions = strings.Split(info.PreviousGenVersion, ";")
 	}
-
+	logging.Info("JUST LOGGING 0.1")
 	// Deprecated -- kept around for old CLI versions. VersioningReport is newer pathway
 	if info.ReleaseInfo != nil && info.VersioningInfo.VersionReport == nil {
+		logging.Info("JUST LOGGING 1")
 		for language, genInfo := range info.ReleaseInfo.LanguagesGenerated {
 			genPath := path.Join(environment.GetWorkspace(), "repo", genInfo.Path)
 
@@ -589,7 +594,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 					continue
 				}
 			}
-
+			logging.Info("JUST LOGGING 2")
 			var previousVersions map[string]string
 
 			if len(previousGenVersions) > 0 {
@@ -607,12 +612,17 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 				}
 			}
 
+			logging.Info("JUST LOGGING 3")
 			versionChangelog, err := cli.GetChangelog(language, info.ReleaseInfo.GenerationVersion, "", targetVersions, previousVersions)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get changelog for language %s: %w", language, err)
 			}
-
+			logging.Info("JUST LOGGING 4")
 			changelog += fmt.Sprintf("\n\n## %s CHANGELOG\n\n%s", strings.ToUpper(language), versionChangelog)
+			sdkChangelog := info.SDKChangelog[language]
+			if sdkChangelog != "" {
+				changelog += fmt.Sprintf("\n\n## %s SDK CHANGELOG\n\n%s", strings.ToUpper(language), sdkChangelog)
+			}
 		}
 
 		if changelog == "" {

@@ -41,6 +41,13 @@ func GetVersion(pinnedVersion string) string {
 }
 
 func Download(pinnedVersion string, g Git) (string, error) {
+	// Check for speakeasy_cli_location environment variable
+	if cliLocation := os.Getenv("SPEAKEASY_CLI_LOCATION"); cliLocation != "" {
+		fmt.Println("Using speakeasy CLI from SPEAKEASY_CLI_LOCATION:", cliLocation)
+
+		return "latest", nil
+	}
+
 	version := GetVersion(pinnedVersion)
 
 	link, version, err := g.GetDownloadLink(version)
@@ -76,10 +83,15 @@ func Download(pinnedVersion string, g Git) (string, error) {
 }
 
 func runSpeakeasyCommand(args ...string) (string, error) {
-	baseDir := environment.GetBaseDir()
-	extraRunEnvVars := environment.SpeakeasyEnvVars()
+	var cmdPath string
+	if os.Getenv("SPEAKEASY_CLI_LOCATION") != "" {
+		cmdPath = filepath.Join(os.Getenv("SPEAKEASY_CLI_LOCATION"))
 
-	cmdPath := filepath.Join(baseDir, "bin", "speakeasy")
+	} else {
+		baseDir := environment.GetBaseDir()
+		cmdPath = filepath.Join(baseDir, "bin", "speakeasy")
+	}
+	extraRunEnvVars := environment.SpeakeasyEnvVars()
 
 	cmd := exec.Command(cmdPath, args...)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
