@@ -103,9 +103,6 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	}
 	os.Setenv("SPEAKEASY_CHANGELOG_DIR", tmpDir)
 
-	// List and log all files in the changelog directory
-	logChangelogDirectoryContents(tmpDir)
-
 	// file2, err := os.CreateTemp(os.TempDir(), "speakeasy-sdk-changelog")
 	// if err != nil {
 	// 	return nil, fmt.Errorf("error creating sdk changelog file: %w", err)
@@ -120,6 +117,9 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	if err != nil {
 		return nil, fmt.Errorf("error running workflow: %w - %s", err, out)
 	}
+
+	// List and log all files in the changelog directory
+	logChangelogDirectoryContents(tmpDir)
 
 	sdkChangelog := map[string]string{}
 
