@@ -15,6 +15,17 @@ import (
 )
 
 func main() {
+	// Log action version and branch information
+	fmt.Println("=== SDK Generation Action Debug Info ===")
+	fmt.Printf("Action Repository: %s\n", os.Getenv("GITHUB_ACTION_REPOSITORY"))
+	fmt.Printf("Action Ref: %s\n", os.Getenv("GITHUB_ACTION_REF"))
+	fmt.Printf("Action Path: %s\n", os.Getenv("GITHUB_ACTION_PATH"))
+	fmt.Printf("Workflow Ref: %s\n", os.Getenv("GITHUB_REF"))
+	fmt.Printf("Workflow SHA: %s\n", os.Getenv("GITHUB_SHA"))
+	fmt.Printf("Repository: %s\n", os.Getenv("GITHUB_REPOSITORY"))
+	fmt.Printf("Event Name: %s\n", os.Getenv("GITHUB_EVENT_NAME"))
+	fmt.Println("delhi!!!")
+
 	if environment.IsDebugMode() {
 		envs := os.Environ()
 		slices.SortFunc(envs, func(i, j string) int {
