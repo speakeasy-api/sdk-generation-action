@@ -159,7 +159,7 @@ func RunWorkflow() error {
 	}
 
 	outputs["resolved_speakeasy_version"] = resolvedVersion
-
+	logging.Info("******\n")
 	if sourcesOnly {
 		if _, err := g.CommitAndPush("", resolvedVersion, "", environment.ActionRunWorkflow, sourcesOnly); err != nil {
 			return err
@@ -223,8 +223,19 @@ func finalize(inputs finalizeInputs) error {
 	}
 
 	logging.Info("******\n")
-	for key, value := range inputs.SDKChangelog {
-		logging.Info("Key: %s, Value: %s\n", key, value)
+	logging.Info("SDK Changelog Summary:\n")
+	if len(inputs.SDKChangelog) == 0 {
+		logging.Info("No SDK changelogs found\n")
+	} else {
+		for key, value := range inputs.SDKChangelog {
+			contentLength := len(value)
+			if contentLength == 0 {
+				logging.Info("Language: %s - Empty changelog\n", key)
+			} else {
+				logging.Info("Language: %s - Changelog length: %d characters\n", key, contentLength)
+				logging.Info("Changelog content:\n%s\n", value)
+			}
+		}
 	}
 	logging.Info("******\n")
 	branchName, err := inputs.Git.FindAndCheckoutBranch(inputs.BranchName)

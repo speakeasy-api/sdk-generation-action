@@ -126,13 +126,27 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	for language, changelogGenerated := range languagesWithSdkChangelog {
 		if changelogGenerated {
 			filename := filepath.Join(tmpDir, language+"_changelog.txt")
+			logging.Info("Attempting to read changelog for language %s from file: %s", language, filename)
+
 			content, err := os.ReadFile(filename)
 			if err != nil {
-				// handle error (e.g., file might not exist)
+				logging.Info("Failed to read changelog for language %s: %v", language, err)
 				continue
 			}
-			sdkChangelog[language] = string(content)
+
+			contentStr := string(content)
+			contentLength := len(contentStr)
+			logging.Info("Successfully read changelog for language %s - Length: %d characters", language, contentLength)
+			if contentLength == 0 {
+				logging.Info("Warning: Empty changelog content for language %s", language)
+			}
+
+			sdkChangelog[language] = contentStr
 		}
+	}
+	for language, changelog := range sdkChangelog {
+		logging.Info("Language: %s", language)
+		logging.Info("Changelog:\n%s", changelog)
 	}
 
 	lintingReportURL := getLintingReportURL(out)
