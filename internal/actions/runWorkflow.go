@@ -257,7 +257,7 @@ func finalize(inputs finalizeInputs) error {
 		if err != nil {
 			return err
 		}
-
+		logging.Info("JUST LOGGING... \n\n\n")
 		pr, err = inputs.Git.CreateOrUpdatePR(git.PRInfo{
 			BranchName:           branchName,
 			ReleaseInfo:          inputs.currentRelease,
