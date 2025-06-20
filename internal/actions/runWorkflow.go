@@ -251,6 +251,8 @@ func finalize(inputs finalizeInputs) error {
 		}
 	}()
 
+	x := environment.GetMode()
+	logging.Info("getMode in finalize: %s\n", x)
 	switch environment.GetMode() {
 	case environment.ModePR:
 		branchName, pr, err := inputs.Git.FindExistingPR(branchName, environment.ActionFinalize, inputs.SourcesOnly)
