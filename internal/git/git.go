@@ -619,6 +619,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 			}
 			logging.Info("JUST LOGGING 4")
 			changelog += fmt.Sprintf("\n\n## %s CHANGELOG(old way)\n\n%s", strings.ToUpper(language), versionChangelog)
+			changelog += "twitter5"
 			sdkChangelog := info.SDKChangelog[language]
 			if sdkChangelog != "" {
 				changelog += fmt.Sprintf("\n\n## %s SDK CHANGELOG\n\n%s", strings.ToUpper(language), sdkChangelog)
@@ -633,9 +634,11 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 			}
 			if strings.TrimSpace(changelog) != "" {
 				changelog = "\n\n\n## CHANGELOG (really old)\n\n" + changelog
+				changelog += "twitter4"
 			}
 		} else {
 			changelog = "\n" + changelog
+			changelog += "twitter3"
 		}
 	}
 
@@ -705,6 +708,7 @@ Based on:
 		}
 
 		body += stripCodes(info.VersioningInfo.VersionReport.GetMarkdownSection())
+		body += "twitter2"
 
 	} else {
 		if len(info.OpenAPIChangeSummary) > 0 {
@@ -715,9 +719,8 @@ Based on:
 		}
 
 		body += changelog
+		body += "twitter1"
 	}
-
-	body += "JUST PRINT SOMETHING CUSTOM"
 
 	const maxBodyLength = 65536
 
