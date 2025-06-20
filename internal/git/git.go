@@ -717,6 +717,8 @@ Based on:
 		body += changelog
 	}
 
+	body += "JUST PRINT SOMETHING CUSTOM"
+
 	const maxBodyLength = 65536
 
 	if len(body) > maxBodyLength {
