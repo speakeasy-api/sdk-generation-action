@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 )
 
 type Mode string
@@ -118,6 +119,7 @@ func SpecifiedCodeSamplesTargets() []string {
 
 func GetMode() Mode {
 	mode := os.Getenv("INPUT_MODE")
+	logging.Info("getMode -> %s \n\n\n", mode)
 	if mode == "" {
 		return ModeDirect
 	}
