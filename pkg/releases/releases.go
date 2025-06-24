@@ -70,6 +70,7 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
 		case "typescript":
 			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_typescript")
+			logging.Info("sdk_changelog is : %+v\n", sdk_changelog)
 			pkgID = "NPM"
 			pkgURL = fmt.Sprintf("https://www.npmjs.com/package/%s/v/%s", info.PackageName, info.Version)
 		case "python":
@@ -116,6 +117,7 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 		}
 		if sdk_changelog != "" {
 			final_sdk_changelog = append(final_sdk_changelog, fmt.Sprintf("- [%s v%s] %s", "SDK_CHANGELOG", info.Version, sdk_changelog))
+			logging.Info("final_sdk_changelog is : %v\n", final_sdk_changelog)
 		}
 	}
 
