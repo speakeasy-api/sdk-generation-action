@@ -149,7 +149,7 @@ func RunWorkflow() error {
 			return err
 		}
 
-		if err := releases.UpdateReleasesFile(releaseInfo, releasesDir); err != nil {
+		if err := releases.UpdateReleasesFile(releaseInfo, runRes.VersioningInfo, releasesDir); err != nil {
 			return err
 		}
 

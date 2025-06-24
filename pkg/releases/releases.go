@@ -12,6 +12,8 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
+	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
+	"github.com/speakeasy-api/versioning-reports/versioning"
 )
 
 type LanguageReleaseInfo struct {
@@ -37,11 +39,12 @@ type ReleasesInfo struct {
 	LanguagesGenerated map[string]GenerationInfo
 }
 
-func (r ReleasesInfo) String() string {
+func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.VersioningInfo) string {
 	generationOutput := []string{}
 	releasesOutput := []string{}
+	final_sdk_changelog := []string{}
 
-	for lang, info := range r.LanguagesGenerated {
+	for lang, info := range releaseInfo.LanguagesGenerated {
 		generationOutput = append(generationOutput, fmt.Sprintf("- [%s v%s] %s", lang, info.Version, info.Path))
 	}
 
@@ -49,15 +52,16 @@ func (r ReleasesInfo) String() string {
 		generationOutput = append([]string{"\n### Generated"}, generationOutput...)
 	}
 
-	for lang, info := range r.Languages {
+	for lang, info := range releaseInfo.Languages {
 		pkgID := ""
 		pkgURL := ""
-
+		sdk_changelog := ""
+		reports := versioningInfo.VersionReport.Reports
 		switch lang {
 		case "go":
 			pkgID = "Go"
 			repoPath := os.Getenv("GITHUB_REPOSITORY")
-
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
 			tag := fmt.Sprintf("v%s", info.Version)
 			if info.Path != "." {
 				tag = fmt.Sprintf("%s/%s", info.Path, tag)
@@ -65,30 +69,37 @@ func (r ReleasesInfo) String() string {
 
 			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
 		case "typescript":
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
 			pkgID = "NPM"
 			pkgURL = fmt.Sprintf("https://www.npmjs.com/package/%s/v/%s", info.PackageName, info.Version)
 		case "python":
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
 			pkgID = "PyPI"
 			pkgURL = fmt.Sprintf("https://pypi.org/project/%s/%s", info.PackageName, info.Version)
 		case "php":
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
 			pkgID = "Composer"
 			pkgURL = fmt.Sprintf("https://packagist.org/packages/%s#v%s", info.PackageName, info.Version)
 		case "terraform":
 			pkgID = "Terraform"
 			pkgURL = fmt.Sprintf("https://registry.terraform.io/providers/%s/%s", info.PackageName, info.Version)
 		case "java":
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
 			pkgID = "Maven Central"
 			lastDotIndex := strings.LastIndex(info.PackageName, ".")
 			groupID := info.PackageName[:lastDotIndex]      // everything before last occurrence of '.'
 			artifactID := info.PackageName[lastDotIndex+1:] // everything after last occurrence of '.'
 			pkgURL = fmt.Sprintf("https://central.sonatype.com/artifact/%s/%s/%s", groupID, artifactID, info.Version)
 		case "ruby":
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
 			pkgID = "Ruby Gems"
 			pkgURL = fmt.Sprintf("https://rubygems.org/gems/%s/versions/%s", info.PackageName, info.Version)
 		case "csharp":
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
 			pkgID = "NuGet"
 			pkgURL = fmt.Sprintf("https://www.nuget.org/packages/%s/%s", info.PackageName, info.Version)
 		case "swift":
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
 			pkgID = "Swift Package Manager"
 			repoPath := os.Getenv("GITHUB_REPOSITORY")
 
@@ -103,6 +114,9 @@ func (r ReleasesInfo) String() string {
 		if pkgID != "" {
 			releasesOutput = append(releasesOutput, fmt.Sprintf("- [%s v%s] %s - %s", pkgID, info.Version, pkgURL, info.Path))
 		}
+		if sdk_changelog != "" {
+			final_sdk_changelog = append(final_sdk_changelog, fmt.Sprintf("- [%s v%s] %s", "SDK_CHANGELOG", info.Version, sdk_changelog))
+		}
 	}
 
 	if len(releasesOutput) > 0 {
@@ -111,12 +125,22 @@ func (r ReleasesInfo) String() string {
 
 	return fmt.Sprintf(`%s## %s
 ### Changes
+
 Based on:
 - OpenAPI Doc %s %s
-- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", r.ReleaseTitle, r.DocVersion, r.DocLocation, r.SpeakeasyVersion, r.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
+- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s%s`, "\n\n", releaseInfo.ReleaseTitle, releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"), strings.Join(final_sdk_changelog, "\n"))
 }
 
-func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
+func findPRReportByKey(reports []versioning.VersionReport, key string) string {
+	for _, report := range reports {
+		if report.Key == key {
+			return report.PRReport
+		}
+	}
+	return ""
+}
+
+func UpdateReleasesFile(releaseInfo ReleasesInfo, versioningInfo versionbumps.VersioningInfo, dir string) error {
 	releasesPath := GetReleasesPath(dir)
 
 	logging.Debug("Updating releases file at %s", releasesPath)
@@ -127,7 +151,7 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
 	}
 	defer f.Close()
 
-	_, err = f.WriteString(releaseInfo.String())
+	_, err = f.WriteString(generateReleaseInfo(releaseInfo, versioningInfo))
 	if err != nil {
 		return fmt.Errorf("error writing to releases file: %w", err)
 	}
