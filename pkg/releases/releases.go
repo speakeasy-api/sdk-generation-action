@@ -59,7 +59,7 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 		logging.Info("lang is: %s, key is: %s, sdk_changelog is: %s", lang, key, sdk_changelog)
 		if sdk_changelog != "" {
 			logging.Info("sdk_changelog is: %s, ", sdk_changelog)
-			final_sdk_changelog = append(final_sdk_changelog, fmt.Sprintf("%s\n%s", "SDK_CHANGELOG", sdk_changelog))
+			final_sdk_changelog = append(final_sdk_changelog, fmt.Sprintf("%s\n%s\n", "SDK_CHANGELOG", sdk_changelog))
 		}
 	}
 
