@@ -69,37 +69,37 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 
 			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
 		case "typescript":
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_typescript")
 			pkgID = "NPM"
 			pkgURL = fmt.Sprintf("https://www.npmjs.com/package/%s/v/%s", info.PackageName, info.Version)
 		case "python":
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_python")
 			pkgID = "PyPI"
 			pkgURL = fmt.Sprintf("https://pypi.org/project/%s/%s", info.PackageName, info.Version)
 		case "php":
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_php")
 			pkgID = "Composer"
 			pkgURL = fmt.Sprintf("https://packagist.org/packages/%s#v%s", info.PackageName, info.Version)
 		case "terraform":
 			pkgID = "Terraform"
 			pkgURL = fmt.Sprintf("https://registry.terraform.io/providers/%s/%s", info.PackageName, info.Version)
 		case "java":
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_java")
 			pkgID = "Maven Central"
 			lastDotIndex := strings.LastIndex(info.PackageName, ".")
 			groupID := info.PackageName[:lastDotIndex]      // everything before last occurrence of '.'
 			artifactID := info.PackageName[lastDotIndex+1:] // everything after last occurrence of '.'
 			pkgURL = fmt.Sprintf("https://central.sonatype.com/artifact/%s/%s/%s", groupID, artifactID, info.Version)
 		case "ruby":
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_ruby")
 			pkgID = "Ruby Gems"
 			pkgURL = fmt.Sprintf("https://rubygems.org/gems/%s/versions/%s", info.PackageName, info.Version)
 		case "csharp":
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_csharp")
 			pkgID = "NuGet"
 			pkgURL = fmt.Sprintf("https://www.nuget.org/packages/%s/%s", info.PackageName, info.Version)
 		case "swift":
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
+			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_swift")
 			pkgID = "Swift Package Manager"
 			repoPath := os.Getenv("GITHUB_REPOSITORY")
 
