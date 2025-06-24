@@ -103,7 +103,8 @@ func RunWorkflow() error {
 	anythingRegenerated := false
 
 	var releaseInfo releases.ReleasesInfo
-	logging.Info("runRes.Geninfo is : %v\n", runRes.GenInfo)
+	b2, _ := json.MarshalIndent(runRes, "", "  ")
+	logging.Info("runRes is : %s\n", b2)
 	b, _ := json.MarshalIndent(runRes.VersioningInfo, "", "  ")
 	logging.Info("runRes.VersioningInfo is : %s\n", b)
 	if runRes.GenInfo != nil {

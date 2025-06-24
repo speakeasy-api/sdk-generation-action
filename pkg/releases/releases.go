@@ -49,9 +49,18 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 
 	b2, _ := json.MarshalIndent(releaseInfo.Languages, "", "  ")
 	logging.Info("releaseInfo.Languages : %s\n", b2)
+	reports := versioningInfo.VersionReport.Reports
 
 	for lang, info := range releaseInfo.LanguagesGenerated {
 		generationOutput = append(generationOutput, fmt.Sprintf("- [%s v%s] %s", lang, info.Version, info.Path))
+
+		key := fmt.Sprintf("SDK_CHANGELOG_%s", strings.ToLower(lang))
+		sdk_changelog := findPRReportByKey(reports, key)
+		logging.Info("lang is: %s, key is: %s, sdk_changelog is: %s", lang, key, sdk_changelog)
+		if sdk_changelog != "" {
+			logging.Info("sdk_changelog is: %s, ", sdk_changelog)
+			final_sdk_changelog = append(final_sdk_changelog, fmt.Sprintf("%s\n%s", "SDK_CHANGELOG", sdk_changelog))
+		}
 	}
 
 	if len(generationOutput) > 0 {
@@ -61,13 +70,10 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 	for lang, info := range releaseInfo.Languages {
 		pkgID := ""
 		pkgURL := ""
-		sdk_changelog := ""
-		reports := versioningInfo.VersionReport.Reports
 		switch lang {
 		case "go":
 			pkgID = "Go"
 			repoPath := os.Getenv("GITHUB_REPOSITORY")
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_go")
 			tag := fmt.Sprintf("v%s", info.Version)
 			if info.Path != "." {
 				tag = fmt.Sprintf("%s/%s", info.Path, tag)
@@ -75,38 +81,30 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 
 			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
 		case "typescript":
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_typescript")
-			logging.Info("sdk_changelog is (inside case) : %+v\n", sdk_changelog)
 			pkgID = "NPM"
 			pkgURL = fmt.Sprintf("https://www.npmjs.com/package/%s/v/%s", info.PackageName, info.Version)
 		case "python":
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_python")
 			pkgID = "PyPI"
 			pkgURL = fmt.Sprintf("https://pypi.org/project/%s/%s", info.PackageName, info.Version)
 		case "php":
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_php")
 			pkgID = "Composer"
 			pkgURL = fmt.Sprintf("https://packagist.org/packages/%s#v%s", info.PackageName, info.Version)
 		case "terraform":
 			pkgID = "Terraform"
 			pkgURL = fmt.Sprintf("https://registry.terraform.io/providers/%s/%s", info.PackageName, info.Version)
 		case "java":
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_java")
 			pkgID = "Maven Central"
 			lastDotIndex := strings.LastIndex(info.PackageName, ".")
 			groupID := info.PackageName[:lastDotIndex]      // everything before last occurrence of '.'
 			artifactID := info.PackageName[lastDotIndex+1:] // everything after last occurrence of '.'
 			pkgURL = fmt.Sprintf("https://central.sonatype.com/artifact/%s/%s/%s", groupID, artifactID, info.Version)
 		case "ruby":
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_ruby")
 			pkgID = "Ruby Gems"
 			pkgURL = fmt.Sprintf("https://rubygems.org/gems/%s/versions/%s", info.PackageName, info.Version)
 		case "csharp":
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_csharp")
 			pkgID = "NuGet"
 			pkgURL = fmt.Sprintf("https://www.nuget.org/packages/%s/%s", info.PackageName, info.Version)
 		case "swift":
-			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_swift")
 			pkgID = "Swift Package Manager"
 			repoPath := os.Getenv("GITHUB_REPOSITORY")
 
@@ -120,10 +118,6 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 
 		if pkgID != "" {
 			releasesOutput = append(releasesOutput, fmt.Sprintf("- [%s v%s] %s - %s", pkgID, info.Version, pkgURL, info.Path))
-		}
-		if sdk_changelog != "" {
-			final_sdk_changelog = append(final_sdk_changelog, fmt.Sprintf("- [%s v%s] %s", "SDK_CHANGELOG", info.Version, sdk_changelog))
-			logging.Info("final_sdk_changelog is : %v\n", final_sdk_changelog)
 		}
 	}
 
