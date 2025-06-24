@@ -151,12 +151,16 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo, versioningInfo versionbumps.Ve
 
 	f, err := os.OpenFile(releasesPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
+		fmt.Println("ERROR: error while opening file: ", err.Error())
 		return fmt.Errorf("error opening releases file: %w", err)
 	}
 	defer f.Close()
 
-	_, err = f.WriteString(generateReleaseInfo(releaseInfo, versioningInfo))
+	releaseInfoString := generateReleaseInfo(releaseInfo, versioningInfo)
+	logging.Info("releaseInfoString is: %s", releaseInfoString)
+	_, err = f.WriteString(releaseInfoString)
 	if err != nil {
+		fmt.Println("ERROR: error while writing to file: ", err.Error())
 		return fmt.Errorf("error writing to releases file: %w", err)
 	}
 

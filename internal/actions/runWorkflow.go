@@ -155,6 +155,7 @@ func RunWorkflow() error {
 		}
 
 		if err := releases.UpdateReleasesFile(releaseInfo, runRes.VersioningInfo, releasesDir); err != nil {
+			fmt.Println("ERROR: error while updating releases file: ", err.Error())
 			return err
 		}
 
