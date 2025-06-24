@@ -1,6 +1,7 @@
 package releases
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
@@ -43,6 +44,11 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 	generationOutput := []string{}
 	releasesOutput := []string{}
 	final_sdk_changelog := []string{}
+	b, _ := json.MarshalIndent(releaseInfo, "", "  ")
+	logging.Info("release : %s\n", b)
+
+	b2, _ := json.MarshalIndent(releaseInfo.Languages, "", "  ")
+	logging.Info("releaseInfo.Languages : %s\n", b2)
 
 	for lang, info := range releaseInfo.LanguagesGenerated {
 		generationOutput = append(generationOutput, fmt.Sprintf("- [%s v%s] %s", lang, info.Version, info.Path))
@@ -70,7 +76,7 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
 		case "typescript":
 			sdk_changelog = findPRReportByKey(reports, "SDK_CHANGELOG_typescript")
-			logging.Info("sdk_changelog is : %+v\n", sdk_changelog)
+			logging.Info("sdk_changelog is (inside case) : %+v\n", sdk_changelog)
 			pkgID = "NPM"
 			pkgURL = fmt.Sprintf("https://www.npmjs.com/package/%s/v/%s", info.PackageName, info.Version)
 		case "python":
