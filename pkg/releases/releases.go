@@ -123,6 +123,7 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 		releasesOutput = append([]string{"\n### Releases"}, releasesOutput...)
 	}
 
+	logging.Info("sdk_changelog is : %v\n", final_sdk_changelog)
 	return fmt.Sprintf(`%s## %s
 ### Changes
 
@@ -141,6 +142,7 @@ func findPRReportByKey(reports []versioning.VersionReport, key string) string {
 }
 
 func UpdateReleasesFile(releaseInfo ReleasesInfo, versioningInfo versionbumps.VersioningInfo, dir string) error {
+	logging.Info("inside update releases file method")
 	releasesPath := GetReleasesPath(dir)
 
 	logging.Debug("Updating releases file at %s", releasesPath)
