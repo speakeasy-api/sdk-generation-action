@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -103,7 +104,8 @@ func RunWorkflow() error {
 
 	var releaseInfo releases.ReleasesInfo
 	logging.Info("runRes.Geninfo is : %v\n", runRes.GenInfo)
-	logging.Info("runRes.VersioningInfo is : %+v\n", runRes.VersioningInfo)
+	b, _ := json.MarshalIndent(runRes.VersioningInfo, "", "  ")
+	logging.Info("runRes.VersioningInfo is : %s\n", b)
 	if runRes.GenInfo != nil {
 		docVersion := runRes.GenInfo.OpenAPIDocVersion
 		resolvedVersion = runRes.GenInfo.SpeakeasyVersion
