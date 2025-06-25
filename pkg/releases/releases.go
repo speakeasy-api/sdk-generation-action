@@ -40,7 +40,7 @@ type ReleasesInfo struct {
 	LanguagesGenerated map[string]GenerationInfo
 }
 
-func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.VersioningInfo) string {
+func GenerateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.VersioningInfo) string {
 	generationOutput := []string{}
 	releasesOutput := []string{}
 	final_sdk_changelog := []string{}
@@ -59,7 +59,7 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 		logging.Info("lang is: %s, key is: %s, sdk_changelog is: %s", lang, key, sdk_changelog)
 		if sdk_changelog != "" {
 			logging.Info("sdk_changelog is: %s, ", sdk_changelog)
-			final_sdk_changelog = append(final_sdk_changelog, fmt.Sprintf("###%s\n%s\n", "SDK_CHANGELOG", sdk_changelog))
+			final_sdk_changelog = append(final_sdk_changelog, sdk_changelog)
 		}
 	}
 
@@ -131,7 +131,7 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 %s
 Based on:
 - OpenAPI Doc %s %s
-- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", releaseInfo.ReleaseTitle, releaseInfo.DocVersion, strings.Join(final_sdk_changelog, "\n"), releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
+- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", releaseInfo.ReleaseTitle, strings.Join(final_sdk_changelog, "\n"), releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
 }
 
 func findPRReportByKey(reports []versioning.VersionReport, key string) string {
@@ -156,7 +156,7 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo, versioningInfo versionbumps.Ve
 	}
 	defer f.Close()
 
-	releaseInfoString := generateReleaseInfo(releaseInfo, versioningInfo)
+	releaseInfoString := GenerateReleaseInfo(releaseInfo, versioningInfo)
 	logging.Info("releaseInfoString is: %s", releaseInfoString)
 	bytesWritten, err := f.WriteString(releaseInfoString)
 	if err != nil {
