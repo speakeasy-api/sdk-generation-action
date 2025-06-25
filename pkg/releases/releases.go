@@ -59,7 +59,7 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 		logging.Info("lang is: %s, key is: %s, sdk_changelog is: %s", lang, key, sdk_changelog)
 		if sdk_changelog != "" {
 			logging.Info("sdk_changelog is: %s, ", sdk_changelog)
-			final_sdk_changelog = append(final_sdk_changelog, fmt.Sprintf("%s\n%s\n", "SDK_CHANGELOG", sdk_changelog))
+			final_sdk_changelog = append(final_sdk_changelog, fmt.Sprintf("###%s\n%s\n", "SDK_CHANGELOG", sdk_changelog))
 		}
 	}
 
@@ -131,7 +131,7 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 %s
 Based on:
 - OpenAPI Doc %s %s
-- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", strings.Join(final_sdk_changelog, "\n"), releaseInfo.ReleaseTitle, releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
+- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", releaseInfo.ReleaseTitle, releaseInfo.DocVersion, strings.Join(final_sdk_changelog, "\n"), releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
 }
 
 func findPRReportByKey(reports []versioning.VersionReport, key string) string {
