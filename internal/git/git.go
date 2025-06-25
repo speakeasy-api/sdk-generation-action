@@ -561,8 +561,7 @@ func (g *Git) getOwnerAndRepo(githubRepoLocation string) (string, string) {
 
 func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 
-	logging.Info("JUST LOGGING\n\n\n")
-	fmt.Println("info.sdkChangelog", info.SDKChangelog)
+	logging.Info("Within CreateOrUpdatePR")
 	var changelog string
 	var err error
 
@@ -573,10 +572,8 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 	if info.PreviousGenVersion != "" {
 		previousGenVersions = strings.Split(info.PreviousGenVersion, ";")
 	}
-	logging.Info("JUST LOGGING 0.1")
 	// Deprecated -- kept around for old CLI versions. VersioningReport is newer pathway
 	if info.ReleaseInfo != nil && info.VersioningInfo.VersionReport == nil {
-		logging.Info("JUST LOGGING 1")
 		for language, genInfo := range info.ReleaseInfo.LanguagesGenerated {
 			genPath := path.Join(environment.GetWorkspace(), "repo", genInfo.Path)
 
@@ -594,7 +591,6 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 					continue
 				}
 			}
-			logging.Info("JUST LOGGING 2")
 			var previousVersions map[string]string
 
 			if len(previousGenVersions) > 0 {
@@ -612,18 +608,11 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 				}
 			}
 
-			logging.Info("JUST LOGGING 3")
 			versionChangelog, err := cli.GetChangelog(language, info.ReleaseInfo.GenerationVersion, "", targetVersions, previousVersions)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get changelog for language %s: %w", language, err)
 			}
-			logging.Info("JUST LOGGING 4")
-			changelog += fmt.Sprintf("\n\n## %s CHANGELOG(old way)\n\n%s", strings.ToUpper(language), versionChangelog)
-			changelog += "twitter5"
-			sdkChangelog := info.SDKChangelog[language]
-			if sdkChangelog != "" {
-				changelog += fmt.Sprintf("\n\n## %s SDK CHANGELOG\n\n%s", strings.ToUpper(language), sdkChangelog)
-			}
+			changelog += fmt.Sprintf("\n\n## %s CHANGELOG\n\n%s", strings.ToUpper(language), versionChangelog)
 		}
 
 		if changelog == "" {
@@ -633,22 +622,12 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 				return nil, fmt.Errorf("failed to get changelog: %w", err)
 			}
 			if strings.TrimSpace(changelog) != "" {
-				changelog = "\n\n\n## CHANGELOG (really old)\n\n" + changelog
-				changelog += "twitter4"
+				changelog = "\n\n\n## CHANGELOG\n\n" + changelog
 			}
 		} else {
 			changelog = "\n" + changelog
-			changelog += "twitter3"
 		}
 	}
-
-	// for language, sdkChangelog := range info.SDKChangelog {
-	// 	genPath := path.Join(environment.GetWorkspace(), "repo", genInfo.Path)
-
-	// 	var targetVersions map[string]string
-
-	// 	cfg, err := genConfig.Load(genPath)
-	// }
 
 	title := getGenPRTitlePrefix()
 	if environment.IsDocsGeneration() {
@@ -708,7 +687,6 @@ Based on:
 		}
 
 		body += stripCodes(info.VersioningInfo.VersionReport.GetMarkdownSection())
-		body += "twitter2"
 
 	} else {
 		if len(info.OpenAPIChangeSummary) > 0 {
@@ -719,7 +697,6 @@ Based on:
 		}
 
 		body += changelog
-		body += "twitter1"
 	}
 
 	const maxBodyLength = 65536

@@ -44,12 +44,13 @@ func GenerateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 	generationOutput := []string{}
 	releasesOutput := []string{}
 	final_sdk_changelog := []string{}
-	b, _ := json.MarshalIndent(releaseInfo, "", "  ")
-	logging.Info("release : %s\n", b)
+	releaseInformation, _ := json.MarshalIndent(releaseInfo, "", "  ")
+	logging.Info("releaseInfo : %s\n", releaseInformation)
 
-	b2, _ := json.MarshalIndent(releaseInfo.Languages, "", "  ")
-	logging.Info("releaseInfo.Languages : %s\n", b2)
-	reports := versioningInfo.VersionReport.Reports
+	reports := []versioning.VersionReport{}
+	if versioningInfo.VersionReport != nil {
+		reports = versioningInfo.VersionReport.Reports
+	}
 
 	for lang, info := range releaseInfo.LanguagesGenerated {
 		generationOutput = append(generationOutput, fmt.Sprintf("- [%s v%s] %s", lang, info.Version, info.Path))
@@ -125,13 +126,22 @@ func GenerateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 		releasesOutput = append([]string{"\n### Releases"}, releasesOutput...)
 	}
 
-	logging.Info("sdk_changelog is : %v\n", final_sdk_changelog)
-	return fmt.Sprintf(`%s## %s
+	logging.Info("Sdk Changelog is : %v\n", final_sdk_changelog)
+	if len(final_sdk_changelog) > 0 {
+		return fmt.Sprintf(`%s## %s
 ### Changes
 %s
 Based on:
 - OpenAPI Doc %s %s
 - Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", releaseInfo.ReleaseTitle, strings.Join(final_sdk_changelog, "\n"), releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
+	} else {
+		return fmt.Sprintf(`%s## %s
+### Changes
+Based on:
+- OpenAPI Doc %s %s
+- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", releaseInfo.ReleaseTitle, releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
+	}
+
 }
 
 func findPRReportByKey(reports []versioning.VersionReport, key string) string {
@@ -144,32 +154,30 @@ func findPRReportByKey(reports []versioning.VersionReport, key string) string {
 }
 
 func UpdateReleasesFile(releaseInfo ReleasesInfo, versioningInfo versionbumps.VersioningInfo, dir string) error {
-	logging.Info("inside update releases file method")
 	releasesPath := GetReleasesPath(dir)
 
-	logging.Debug("Updating releases file at %s", releasesPath)
 	logging.Info("Updating releases file at %s", releasesPath)
 	f, err := os.OpenFile(releasesPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
-		fmt.Println("ERROR: error while opening file: ", err.Error())
+		logging.Error("ERROR: error while opening file: %s", err.Error())
 		return fmt.Errorf("error opening releases file: %w", err)
 	}
 	defer f.Close()
 
-	releaseInfoString := GenerateReleaseInfo(releaseInfo, versioningInfo)
-	logging.Info("releaseInfoString is: %s", releaseInfoString)
-	bytesWritten, err := f.WriteString(releaseInfoString)
+	finalReleaseInfo := GenerateReleaseInfo(releaseInfo, versioningInfo)
+	logging.Info("releaseInfoString is: %s", finalReleaseInfo)
+	bytesWritten, err := f.WriteString(finalReleaseInfo)
+	logging.Info("Successfully updated releases file at  %s. Number of bytes written: %d", releasesPath, bytesWritten)
 	if err != nil {
 		fmt.Println("ERROR: error while writing to file: ", err.Error())
 		return fmt.Errorf("error writing to releases file: %w", err)
 	}
-	logging.Info("Successfully updated releases file at  %s. Number of bytes written: %d", releasesPath, bytesWritten)
 
 	return nil
 }
 
 var (
-	releaseInfoRegex        = regexp.MustCompile(`(?s)## (.*?)\n### Changes\nBased on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) (\((.*?)\))?.*?`)
+	releaseInfoRegex        = regexp.MustCompile(`(?s)## (.*?)\n### Changes\n(.*?)Based on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) (\((.*?)\))?.*?`)
 	generatedLanguagesRegex = regexp.MustCompile(`- \[([a-z]+) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (.*)`)
 	npmReleaseRegex         = regexp.MustCompile(`- \[NPM v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/www\.npmjs\.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?) - (.*)`)
 	pypiReleaseRegex        = regexp.MustCompile(`- \[PyPI v(\d+\.\d+\.\d+(?:-?\w+(?:\.\w+)*)?)] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+(?:-?\w+(?:\.\w+)*)?) - (.*)`)
@@ -243,22 +251,22 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 
 	matches := releaseInfoRegex.FindStringSubmatch(lastRelease)
 
-	if len(matches) < 5 {
+	if len(matches) < 6 {
 		return nil, fmt.Errorf("error parsing last release info")
 	}
 
 	genVersion := ""
-	if len(matches) == 7 {
-		genVersion = matches[6]
+	if len(matches) == 8 {
+		genVersion = matches[7]
 	} else {
-		genVersion = matches[4]
+		genVersion = matches[5]
 	}
 
 	info := &ReleasesInfo{
 		ReleaseTitle:       matches[1],
-		DocVersion:         matches[2],
-		DocLocation:        matches[3],
-		SpeakeasyVersion:   matches[4],
+		DocVersion:         matches[3],
+		DocLocation:        matches[4],
+		SpeakeasyVersion:   matches[5],
 		GenerationVersion:  genVersion,
 		Languages:          map[string]LanguageReleaseInfo{},
 		LanguagesGenerated: map[string]GenerationInfo{},

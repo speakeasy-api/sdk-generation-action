@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/telemetry"
 	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
 
@@ -16,15 +17,14 @@ import (
 
 func main() {
 	// Log action version and branch information
-	fmt.Println("=== SDK Generation Action Debug Info ===")
-	fmt.Printf("Action Repository: %s\n", os.Getenv("GITHUB_ACTION_REPOSITORY"))
-	fmt.Printf("Action Ref: %s\n", os.Getenv("GITHUB_ACTION_REF"))
-	fmt.Printf("Action Path: %s\n", os.Getenv("GITHUB_ACTION_PATH"))
-	fmt.Printf("Workflow Ref: %s\n", os.Getenv("GITHUB_REF"))
-	fmt.Printf("Workflow SHA: %s\n", os.Getenv("GITHUB_SHA"))
-	fmt.Printf("Repository: %s\n", os.Getenv("GITHUB_REPOSITORY"))
-	fmt.Printf("Event Name: %s\n", os.Getenv("GITHUB_EVENT_NAME"))
-	fmt.Println("delhi!!!")
+	logging.Info("=== SDK Generation Action Debug Info ===")
+	logging.Info("Action Repository: %s", os.Getenv("GITHUB_ACTION_REPOSITORY"))
+	logging.Info("Action Ref: %s", os.Getenv("GITHUB_ACTION_REF"))
+	logging.Info("Action Path: %s", os.Getenv("GITHUB_ACTION_PATH"))
+	logging.Info("Workflow Ref: %s", os.Getenv("GITHUB_REF"))
+	logging.Info("Workflow SHA: %s", os.Getenv("GITHUB_SHA"))
+	logging.Info("Repository: %s", os.Getenv("GITHUB_REPOSITORY"))
+	logging.Info("Event Name: %s", os.Getenv("GITHUB_EVENT_NAME"))
 
 	if environment.IsDebugMode() {
 		envs := os.Environ()

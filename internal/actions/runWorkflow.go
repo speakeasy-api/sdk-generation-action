@@ -103,10 +103,8 @@ func RunWorkflow() error {
 	anythingRegenerated := false
 
 	var releaseInfo releases.ReleasesInfo
-	b2, _ := json.MarshalIndent(runRes, "", "  ")
-	logging.Info("runRes is : %s\n", b2)
-	b, _ := json.MarshalIndent(runRes.VersioningInfo, "", "  ")
-	logging.Info("runRes.VersioningInfo is : %s\n", b)
+	runResultInfo, _ := json.MarshalIndent(runRes, "", "  ")
+	logging.Info("runRes info is  is : %s\n", runResultInfo)
 	if runRes.GenInfo != nil {
 		docVersion := runRes.GenInfo.OpenAPIDocVersion
 		resolvedVersion = runRes.GenInfo.SpeakeasyVersion
@@ -155,7 +153,7 @@ func RunWorkflow() error {
 		}
 
 		if err := releases.UpdateReleasesFile(releaseInfo, runRes.VersioningInfo, releasesDir); err != nil {
-			fmt.Println("ERROR: error while updating releases file: ", err.Error())
+			logging.Error("ERROR: error while updating releases file: %v", err.Error())
 			return err
 		}
 
@@ -165,7 +163,6 @@ func RunWorkflow() error {
 	}
 
 	outputs["resolved_speakeasy_version"] = resolvedVersion
-	logging.Info("******\n")
 	if sourcesOnly {
 		if _, err := g.CommitAndPush("", resolvedVersion, "", environment.ActionRunWorkflow, sourcesOnly); err != nil {
 			return err
@@ -188,7 +185,6 @@ func RunWorkflow() error {
 		LintingReportURL:     runRes.LintingReportURL,
 		ChangesReportURL:     runRes.ChangesReportURL,
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
-		SDKChangelog:         runRes.SDKChangelog,
 		GenInfo:              runRes.GenInfo,
 		currentRelease:       &releaseInfo,
 	}); err != nil {
@@ -214,11 +210,12 @@ type finalizeInputs struct {
 	LintingReportURL     string
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
-	SDKChangelog         map[string]string
-	VersioningReport     *versioning.MergedVersionReport
-	VersioningInfo       versionbumps.VersioningInfo
-	GenInfo              *run.GenerationInfo
-	currentRelease       *releases.ReleasesInfo
+	// key is language name, value is changelog content
+	SDKChangelog     map[string]string
+	VersioningReport *versioning.MergedVersionReport
+	VersioningInfo   versionbumps.VersioningInfo
+	GenInfo          *run.GenerationInfo
+	currentRelease   *releases.ReleasesInfo
 }
 
 // Sets outputs and creates or adds releases info
@@ -228,22 +225,6 @@ func finalize(inputs finalizeInputs) error {
 		return nil
 	}
 
-	logging.Info("******\n")
-	logging.Info("SDK Changelog Summary:\n")
-	if len(inputs.SDKChangelog) == 0 {
-		logging.Info("No SDK changelogs found\n")
-	} else {
-		for key, value := range inputs.SDKChangelog {
-			contentLength := len(value)
-			if contentLength == 0 {
-				logging.Info("Language: %s - Empty changelog\n", key)
-			} else {
-				logging.Info("Language: %s - Changelog length: %d characters\n", key, contentLength)
-				logging.Info("Changelog content:\n%s\n", value)
-			}
-		}
-	}
-	logging.Info("******\n")
 	branchName, err := inputs.Git.FindAndCheckoutBranch(inputs.BranchName)
 	if err != nil {
 		return err
@@ -257,15 +238,13 @@ func finalize(inputs finalizeInputs) error {
 		}
 	}()
 
-	x := environment.GetMode()
-	logging.Info("getMode in finalize: %s\n", x)
+	logging.Debug("getMode from the environment: %s\n", environment.GetMode())
 	switch environment.GetMode() {
 	case environment.ModePR:
 		branchName, pr, err := inputs.Git.FindExistingPR(branchName, environment.ActionFinalize, inputs.SourcesOnly)
 		if err != nil {
 			return err
 		}
-		logging.Info("JUST LOGGING... \n\n\n")
 		pr, err = inputs.Git.CreateOrUpdatePR(git.PRInfo{
 			BranchName:           branchName,
 			ReleaseInfo:          inputs.currentRelease,

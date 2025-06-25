@@ -4,12 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
-	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/registry"
 	"github.com/speakeasy-api/versioning-reports/versioning"
 )
@@ -20,7 +18,6 @@ type RunResults struct {
 	LintingReportURL     string
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
-	SDKChangelog         map[string]string
 }
 
 func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, repoSubdirectories map[string]string, manualVersionBump *versioning.BumpType) (*RunResults, error) {
@@ -28,20 +25,14 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		"run",
 	}
 
-	languagesWithSdkChangelog := map[string]bool{}
 	if sourcesOnly {
 		args = append(args, "-s", "all")
 	} else {
 		specifiedTarget := environment.SpecifiedTarget()
 		if specifiedTarget != "" {
 			args = append(args, "-t", specifiedTarget)
-			languagesWithSdkChangelog[specifiedTarget] = true
 		} else {
 			args = append(args, "-t", "all")
-			supportedTargets := GetSupportedTargetNames()
-			for _, target := range supportedTargets {
-				languagesWithSdkChangelog[target] = true
-			}
 		}
 		urls, err := json.Marshal(installationURLs)
 		if err != nil {
@@ -97,56 +88,9 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		return nil, fmt.Errorf("error closing change summary file: %w", err)
 	}
 
-	tmpDir, err := os.MkdirTemp("", "sdk-changelog")
-	if err != nil {
-		logging.Info("failed create the changelog directory. Err %s", err)
-	}
-	os.Setenv("SPEAKEASY_CHANGELOG_DIR", tmpDir)
-
-	// file2, err := os.CreateTemp(os.TempDir(), "speakeasy-sdk-changelog")
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error creating sdk changelog file: %w", err)
-	// }
-	// err = file2.Close()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error closing sdk changelog file: %w", err)
-	// }
-	// os.Setenv("SPEAKEASY_CHANGELOG_LOCATION", file2.Name())
-
 	out, err := runSpeakeasyCommand(args...)
 	if err != nil {
 		return nil, fmt.Errorf("error running workflow: %w - %s", err, out)
-	}
-
-	// List and log all files in the changelog directory
-	logChangelogDirectoryContents(tmpDir)
-
-	sdkChangelog := map[string]string{}
-
-	for language, changelogGenerated := range languagesWithSdkChangelog {
-		if changelogGenerated {
-			filename := filepath.Join(tmpDir, language+"_changelog.txt")
-			logging.Info("Attempting to read changelog for language %s from file: %s", language, filename)
-
-			content, err := os.ReadFile(filename)
-			if err != nil {
-				logging.Info("Failed to read changelog for language %s: %v", language, err)
-				continue
-			}
-
-			contentStr := string(content)
-			contentLength := len(contentStr)
-			logging.Info("Successfully read changelog for language %s - Length: %d characters", language, contentLength)
-			if contentLength == 0 {
-				logging.Info("Warning: Empty changelog content for language %s", language)
-			}
-
-			sdkChangelog[language] = contentStr
-		}
-	}
-	for language, changelog := range sdkChangelog {
-		logging.Info("Language: %s", language)
-		logging.Info("Changelog:\n%s", changelog)
 	}
 
 	lintingReportURL := getLintingReportURL(out)
@@ -161,7 +105,6 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		LintingReportURL:     lintingReportURL,
 		ChangesReportURL:     changesReportURL,
 		OpenAPIChangeSummary: string(changeSummary),
-		SDKChangelog:         sdkChangelog,
 	}, nil
 }
 
@@ -186,53 +129,4 @@ func getChangesReportURL(out string) string {
 	}
 
 	return ""
-}
-
-func logChangelogDirectoryContents(dir string) {
-	logging.Info("=== CHANGELOG DIRECTORY CONTENTS ===")
-	logging.Info("Directory: %s", dir)
-
-	// First, list all files in the directory
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		logging.Info("Error reading changelog directory: %s", err)
-		return
-	}
-
-	if len(files) == 0 {
-		logging.Info("No files found in changelog directory")
-		return
-	}
-
-	logging.Info("Files found in directory:")
-	for _, file := range files {
-		if !file.IsDir() {
-			logging.Info("  - %s", file.Name())
-		}
-	}
-
-	// Now read and log the content of each file
-	logging.Info("=== FILE CONTENTS ===")
-	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			content, err := os.ReadFile(path)
-			if err != nil {
-				logging.Info("Error reading file %s: %s", path, err)
-				return nil
-			}
-			relativePath, _ := filepath.Rel(dir, path)
-			logging.Info("=== FILE: %s ===", relativePath)
-			logging.Info("Content:\n%s", string(content))
-			logging.Info("=== END FILE: %s ===", relativePath)
-		}
-		return nil
-	})
-	if err != nil {
-		logging.Info("Error walking changelog directory: %s", err)
-	}
-
-	logging.Info("=== END CHANGELOG DIRECTORY CONTENTS ===")
 }

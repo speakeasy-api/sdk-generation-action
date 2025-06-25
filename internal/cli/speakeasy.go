@@ -42,12 +42,7 @@ func GetVersion(pinnedVersion string) string {
 }
 
 func Download(pinnedVersion string, g Git) (string, error) {
-	// Check for speakeasy_cli_location environment variable
-	if cliLocation := os.Getenv("SPEAKEASY_CLI_LOCATION"); cliLocation != "" {
-		fmt.Println("Using speakeasy CLI from SPEAKEASY_CLI_LOCATION:", cliLocation)
-
-		return "latest", nil
-	}
+	// Can add a check here to use local speakeasy cli instead of downloading it
 
 	version := GetVersion(pinnedVersion)
 
@@ -84,18 +79,12 @@ func Download(pinnedVersion string, g Git) (string, error) {
 }
 
 func runSpeakeasyCommand(args ...string) (string, error) {
-	var cmdPath string
-	if os.Getenv("SPEAKEASY_CLI_LOCATION") != "" {
-		cmdPath = filepath.Join(os.Getenv("SPEAKEASY_CLI_LOCATION"))
-
-	} else {
-		baseDir := environment.GetBaseDir()
-		cmdPath = filepath.Join(baseDir, "bin", "speakeasy")
-	}
+	// Can add code here to use a local speakeasy binary
+	baseDir := environment.GetBaseDir()
 	extraRunEnvVars := environment.SpeakeasyEnvVars()
-
-	logging.Info("cmdPath -> %s \n\n\n", cmdPath)
-	logging.Info("args -> %s \n\n\n", args)
+	cmdPath := filepath.Join(baseDir, "bin", "speakeasy")
+	logging.Info("The command path being executed: %s", cmdPath)
+	logging.Info("The command args: %s", args)
 	cmd := exec.Command(cmdPath, args...)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
