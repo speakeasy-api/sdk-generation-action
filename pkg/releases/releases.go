@@ -128,10 +128,10 @@ func generateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 	logging.Info("sdk_changelog is : %v\n", final_sdk_changelog)
 	return fmt.Sprintf(`%s## %s
 ### Changes
-
+%s
 Based on:
 - OpenAPI Doc %s %s
-- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s%s`, "\n\n", releaseInfo.ReleaseTitle, releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"), strings.Join(final_sdk_changelog, "\n"))
+- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", strings.Join(final_sdk_changelog, "\n"), releaseInfo.ReleaseTitle, releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
 }
 
 func findPRReportByKey(reports []versioning.VersionReport, key string) string {
