@@ -43,7 +43,11 @@ func GetVersion(pinnedVersion string) string {
 
 func Download(pinnedVersion string, g Git) (string, error) {
 	// Can add a check here to use local speakeasy cli instead of downloading it
+	if cliLocation := os.Getenv("SPEAKEASY_CLI_LOCATION"); cliLocation != "" {
+		fmt.Println("Using speakeasy CLI from SPEAKEASY_CLI_LOCATION:", cliLocation)
 
+		return "latest", nil
+	}
 	version := GetVersion(pinnedVersion)
 
 	link, version, err := g.GetDownloadLink(version)
