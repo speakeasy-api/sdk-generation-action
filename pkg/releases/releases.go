@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	config "github.com/speakeasy-api/sdk-gen-config"
@@ -56,7 +57,11 @@ func GenerateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 		reports = versioningInfo.VersionReport.Reports
 	}
 
-	for lang, info := range releaseInfo.LanguagesGenerated {
+	// Sort languages for consistent output (typescript first for backward compatibility)
+	langKeys := sortedLangKeys(releaseInfo.LanguagesGenerated)
+
+	for _, lang := range langKeys {
+		info := releaseInfo.LanguagesGenerated[lang]
 		generationOutput = append(generationOutput, fmt.Sprintf("- [%s v%s] %s", lang, info.Version, info.Path))
 
 		key := fmt.Sprintf("SDK_CHANGELOG_%s", strings.ToLower(lang))
@@ -72,7 +77,11 @@ func GenerateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 		generationOutput = append([]string{"\n### Generated"}, generationOutput...)
 	}
 
-	for lang, info := range releaseInfo.Languages {
+	// Sort languages for consistent output (typescript first for backward compatibility)
+	releaseLangKeys := sortedLangKeys(releaseInfo.Languages)
+
+	for _, lang := range releaseLangKeys {
+		info := releaseInfo.Languages[lang]
 		pkgID := ""
 		pkgURL := ""
 		switch lang {
@@ -131,20 +140,44 @@ func GenerateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 	}
 
 	logging.Debug("Sdk Changelog is : %v\n", final_sdk_changelog)
+
+	var builder strings.Builder
+
+	// Start with header
+	builder.WriteString("\n\n## ")
+	builder.WriteString(releaseInfo.ReleaseTitle)
+	builder.WriteString("\n### Changes\n")
+
+	// Add SDK changelog if present
 	if len(final_sdk_changelog) > 0 {
-		return fmt.Sprintf(`%s## %s
-### Changes
-%s
-Based on:
-- OpenAPI Doc %s %s
-- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", releaseInfo.ReleaseTitle, strings.Join(final_sdk_changelog, "\n"), releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
-	} else {
-		return fmt.Sprintf(`%s## %s
-### Changes
-Based on:
-- OpenAPI Doc %s %s
-- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", releaseInfo.ReleaseTitle, releaseInfo.DocVersion, releaseInfo.DocLocation, releaseInfo.SpeakeasyVersion, releaseInfo.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
+		builder.WriteString(strings.Join(final_sdk_changelog, "\n"))
+		builder.WriteString("\n")
 	}
+
+	// Add metadata section
+	builder.WriteString("Based on:\n")
+	builder.WriteString("- OpenAPI Doc ")
+	builder.WriteString(releaseInfo.DocVersion)
+	builder.WriteString(" ")
+	builder.WriteString(releaseInfo.DocLocation)
+	builder.WriteString("\n")
+	builder.WriteString("- Speakeasy CLI ")
+	builder.WriteString(releaseInfo.SpeakeasyVersion)
+	builder.WriteString(" (")
+	builder.WriteString(releaseInfo.GenerationVersion)
+	builder.WriteString(") https://github.com/speakeasy-api/speakeasy")
+
+	// Add generation output if present
+	if len(generationOutput) > 0 {
+		builder.WriteString(strings.Join(generationOutput, "\n"))
+	}
+
+	// Add releases output if present
+	if len(releasesOutput) > 0 {
+		builder.WriteString(strings.Join(releasesOutput, "\n"))
+	}
+
+	return builder.String()
 
 }
 
@@ -413,4 +446,22 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 
 func GetReleasesPath(dir string) string {
 	return path.Join(environment.GetWorkspace(), "repo", dir, "RELEASES.md")
+}
+
+// sortedLangKeys returns the sorted keys of a map[string]T, with "typescript" first, then the rest alphabetically.
+func sortedLangKeys[T any](m map[string]T) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		if keys[i] == "typescript" {
+			return true
+		}
+		if keys[j] == "typescript" {
+			return false
+		}
+		return keys[i] < keys[j]
+	})
+	return keys
 }
