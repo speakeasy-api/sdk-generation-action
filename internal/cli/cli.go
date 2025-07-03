@@ -39,6 +39,15 @@ var defaultSupportedTargets = []string{
 	"terraform",
 	"typescript",
 }
+var DefaultSupportedTargetsForChangelog = []string{
+	"typescript",
+	"python",
+	"go",
+	"java",
+	"csharp",
+	"php",
+	"ruby",
+}
 
 func GetSupportedTargetNames() []string {
 	out, err := runSpeakeasyCommand("generate", "supported-targets")

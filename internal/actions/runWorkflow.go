@@ -121,9 +121,11 @@ func RunWorkflow() error {
 			DocLocation:        environment.GetOpenAPIDocLocation(),
 			Languages:          map[string]releases.LanguageReleaseInfo{},
 			LanguagesGenerated: map[string]releases.GenerationInfo{},
+			LanguageChangelog:  map[string]string{},
 		}
 
-		for _, supportedTargetName := range cli.GetSupportedTargetNames() {
+		supportedTargetNames := cli.GetSupportedTargetNames()
+		for _, supportedTargetName := range supportedTargetNames {
 			langGenInfo, ok := runRes.GenInfo.Languages[supportedTargetName]
 			if ok && outputs[utils.OutputTargetRegenerated(supportedTargetName)] == "true" {
 				anythingRegenerated = true
@@ -146,6 +148,17 @@ func RunWorkflow() error {
 			}
 		}
 
+		if runRes.VersioningInfo.VersionReport != nil {
+			reports := runRes.VersioningInfo.VersionReport.Reports
+			for _, target := range cli.DefaultSupportedTargetsForChangelog {
+				key := fmt.Sprintf("SDK_CHANGELOG_%s", strings.ToLower(target))
+				sdk_changelog := releases.FindPRReportByKey(reports, key)
+				logging.Debug("lang is: %s, key is: %s, sdk_changelog is: %s", target, key, sdk_changelog)
+				releaseInfo.LanguageChangelog[target] = sdk_changelog
+			}
+
+		}
+
 		if environment.PushCodeSamplesOnly() {
 			// If we're just pushing code samples we don't want to raise a PR
 			return nil
@@ -156,7 +169,7 @@ func RunWorkflow() error {
 			return err
 		}
 
-		if err := releases.UpdateReleasesFile(releaseInfo, runRes.VersioningInfo, releasesDir); err != nil {
+		if err := releases.UpdateReleasesFile(releaseInfo, releasesDir); err != nil {
 			logging.Debug("error while updating releases file: %v", err.Error())
 			return err
 		}

@@ -4,9 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
-	"github.com/speakeasy-api/versioning-reports/versioning"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -115,7 +113,7 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 		},
 	}
 
-	info, err := releases.ParseReleases(releases.GenerateReleaseInfo(r, versionbumps.VersioningInfo{}))
+	info, err := releases.ParseReleases(releases.GenerateReleaseInfo(r))
 	assert.NoError(t, err)
 	assert.Equal(t, r, *info)
 }
@@ -139,7 +137,7 @@ func TestReleases_GoPackageNameConstruction_Success(t *testing.T) {
 		LanguagesGenerated: map[string]releases.GenerationInfo{},
 	}
 
-	info, err := releases.ParseReleases(releases.GenerateReleaseInfo(r, versionbumps.VersioningInfo{}))
+	info, err := releases.ParseReleases(releases.GenerateReleaseInfo(r))
 	assert.NoError(t, err)
 	assert.Equal(t, r, *info)
 }
@@ -311,7 +309,7 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 		},
 	}
 
-	info, err := releases.ParseReleases(releases.GenerateReleaseInfo(r1, versionbumps.VersioningInfo{}) + releases.GenerateReleaseInfo(r2, versionbumps.VersioningInfo{}))
+	info, err := releases.ParseReleases(releases.GenerateReleaseInfo(r1) + releases.GenerateReleaseInfo(r2))
 	assert.NoError(t, err)
 	assert.Equal(t, r2, *info)
 }
@@ -454,18 +452,8 @@ func TestReleases_GenerateReleaseMd(t *testing.T) {
 		LanguagesGenerated: map[string]releases.GenerationInfo{
 			"typescript": {Version: "0.1.0", Path: "."},
 		},
-	}
-
-	// Simulate the versioningInfo.VersionReport.Reports to return the changelog for typescript
-	versioningInfo := versionbumps.VersioningInfo{
-		ManualBump: false,
-		VersionReport: &versioning.MergedVersionReport{
-			Reports: []versioning.VersionReport{
-				{
-					Key:      "SDK_CHANGELOG_typescript",
-					PRReport: "### Changelog for typescript SDK\n#### Methods Added:\n - stats.getCount\n - stats.getRandom",
-				},
-			},
+		LanguageChangelog: map[string]string{
+			"typescript": "### Changelog for typescript SDK\n#### Methods Added:\n - stats.getCount\n - stats.getRandom",
 		},
 	}
 
@@ -483,7 +471,7 @@ Based on:
 ### Generated
 - [typescript v0.1.0] .`
 
-	actual := releases.GenerateReleaseInfo(releaseInfo, versioningInfo)
+	actual := releases.GenerateReleaseInfo(releaseInfo)
 
 	if actual != expected {
 		t.Errorf("Expected:\n%s\nGot:\n%s", expected, actual)
@@ -502,22 +490,9 @@ func TestReleases_GenerateReleaseMdForMultipleLanguages(t *testing.T) {
 			"typescript": {Version: "0.1.0", Path: "."},
 			"go":         {Version: "0.1.0", Path: "."},
 		},
-	}
-
-	// Simulate the versioningInfo.VersionReport.Reports to return the changelog for typescript
-	versioningInfo := versionbumps.VersioningInfo{
-		ManualBump: false,
-		VersionReport: &versioning.MergedVersionReport{
-			Reports: []versioning.VersionReport{
-				{
-					Key:      "SDK_CHANGELOG_typescript",
-					PRReport: "### Changelog for typescript SDK\n#### Methods Added:\n - stats.getCount\n - stats.getRandom",
-				},
-				{
-					Key:      "SDK_CHANGELOG_go",
-					PRReport: "### Changelog for go SDK\n#### Methods Added:\n - stats.getCount\n - stats.getRandom",
-				},
-			},
+		LanguageChangelog: map[string]string{
+			"typescript": "### Changelog for typescript SDK\n#### Methods Added:\n - stats.getCount\n - stats.getRandom",
+			"go":         "### Changelog for go SDK\n#### Methods Added:\n - stats.getCount\n - stats.getRandom",
 		},
 	}
 
@@ -540,7 +515,7 @@ Based on:
 - [typescript v0.1.0] .
 - [go v0.1.0] .`
 
-	actual := releases.GenerateReleaseInfo(releaseInfo, versioningInfo)
+	actual := releases.GenerateReleaseInfo(releaseInfo)
 
 	if actual != expected {
 		t.Errorf("\n**Expected**:\n%s\n\n**Got**:\n%s", expected, actual)
@@ -559,14 +534,7 @@ func TestReleases_GenerateReleaseMdWhenNoSdkChangelogPresent(t *testing.T) {
 			"typescript": {Version: "0.1.0", Path: "."},
 			"go":         {Version: "0.1.0", Path: "."},
 		},
-	}
-
-	// Simulate the versioningInfo.VersionReport.Reports to return the changelog for typescript
-	versioningInfo := versionbumps.VersioningInfo{
-		ManualBump: false,
-		VersionReport: &versioning.MergedVersionReport{
-			Reports: []versioning.VersionReport{},
-		},
+		LanguageChangelog: map[string]string{},
 	}
 
 	expected := `
@@ -580,50 +548,7 @@ Based on:
 - [typescript v0.1.0] .
 - [go v0.1.0] .`
 
-	actual := releases.GenerateReleaseInfo(releaseInfo, versioningInfo)
-
-	if actual != expected {
-		t.Errorf("\n**Expected**:\n%s\n\n**Got**:\n%s", expected, actual)
-	}
-}
-
-func TestReleases_GenerateReleaseMdWithNoRelevantSdkChangelog(t *testing.T) {
-	releaseInfo := releases.ReleasesInfo{
-		ReleaseTitle:      "2025-06-24 19:00:10",
-		DocVersion:        "",
-		DocLocation:       "",
-		SpeakeasyVersion:  "0.0.1",
-		GenerationVersion: "2.623.3",
-		Languages:         map[string]releases.LanguageReleaseInfo{},
-		LanguagesGenerated: map[string]releases.GenerationInfo{
-			"typescript": {Version: "0.1.0", Path: "."},
-		},
-	}
-
-	// Simulate the versioningInfo.VersionReport.Reports to return the changelog for typescript
-	versioningInfo := versionbumps.VersioningInfo{
-		ManualBump: false,
-		VersionReport: &versioning.MergedVersionReport{
-			Reports: []versioning.VersionReport{
-				{
-					Key:      "SDK_CHANGELOG_python",
-					PRReport: "### Changelog for typescript SDK\n#### Methods Added:\n - stats.getCount\n - stats.getRandom",
-				},
-			},
-		},
-	}
-
-	expected := `
-
-## 2025-06-24 19:00:10
-### Changes
-Based on:
-- OpenAPI Doc  
-- Speakeasy CLI 0.0.1 (2.623.3) https://github.com/speakeasy-api/speakeasy
-### Generated
-- [typescript v0.1.0] .`
-
-	actual := releases.GenerateReleaseInfo(releaseInfo, versioningInfo)
+	actual := releases.GenerateReleaseInfo(releaseInfo)
 
 	if actual != expected {
 		t.Errorf("\n**Expected**:\n%s\n\n**Got**:\n%s", expected, actual)

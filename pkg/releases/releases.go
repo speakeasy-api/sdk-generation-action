@@ -14,7 +14,6 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
-	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
 	"github.com/speakeasy-api/versioning-reports/versioning"
 )
 
@@ -39,9 +38,10 @@ type ReleasesInfo struct {
 	DocLocation        string
 	Languages          map[string]LanguageReleaseInfo
 	LanguagesGenerated map[string]GenerationInfo
+	LanguageChangelog  map[string]string
 }
 
-func GenerateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.VersioningInfo) string {
+func GenerateReleaseInfo(releaseInfo ReleasesInfo) string {
 	generationOutput := []string{}
 	releasesOutput := []string{}
 	final_sdk_changelog := []string{}
@@ -52,29 +52,25 @@ func GenerateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 		logging.Debug("releaseInfo : %s\n", releaseInformation)
 	}
 
-	reports := []versioning.VersionReport{}
-	if versioningInfo.VersionReport != nil {
-		reports = versioningInfo.VersionReport.Reports
-	}
-
 	// Sort languages for consistent output (typescript first for backward compatibility)
 	langKeys := sortedLangKeys(releaseInfo.LanguagesGenerated)
 
 	for _, lang := range langKeys {
 		info := releaseInfo.LanguagesGenerated[lang]
 		generationOutput = append(generationOutput, fmt.Sprintf("- [%s v%s] %s", lang, info.Version, info.Path))
-
-		key := fmt.Sprintf("SDK_CHANGELOG_%s", strings.ToLower(lang))
-		sdk_changelog := findPRReportByKey(reports, key)
-		logging.Debug("lang is: %s, key is: %s, sdk_changelog is: %s", lang, key, sdk_changelog)
-		if sdk_changelog != "" {
-			logging.Debug("sdk_changelog is: %s, ", sdk_changelog)
-			final_sdk_changelog = append(final_sdk_changelog, sdk_changelog)
-		}
 	}
-
 	if len(generationOutput) > 0 {
 		generationOutput = append([]string{"\n### Generated"}, generationOutput...)
+	}
+
+	// Sort languages for consistent output (typescript first for backward compatibility)
+	changelogLangKeys := sortedLangKeys(releaseInfo.LanguageChangelog)
+
+	for _, lang := range changelogLangKeys {
+		sdk_changelog := releaseInfo.LanguageChangelog[lang]
+		if sdk_changelog != "" {
+			final_sdk_changelog = append(final_sdk_changelog, sdk_changelog)
+		}
 	}
 
 	// Sort languages for consistent output (typescript first for backward compatibility)
@@ -181,7 +177,7 @@ func GenerateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 
 }
 
-func findPRReportByKey(reports []versioning.VersionReport, key string) string {
+func FindPRReportByKey(reports []versioning.VersionReport, key string) string {
 	for _, report := range reports {
 		if report.Key == key {
 			return report.PRReport
@@ -190,7 +186,7 @@ func findPRReportByKey(reports []versioning.VersionReport, key string) string {
 	return ""
 }
 
-func UpdateReleasesFile(releaseInfo ReleasesInfo, versioningInfo versionbumps.VersioningInfo, dir string) error {
+func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
 	releasesPath := GetReleasesPath(dir)
 
 	logging.Debug("Updating releases file at %s", releasesPath)
@@ -201,7 +197,7 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo, versioningInfo versionbumps.Ve
 	}
 	defer f.Close()
 
-	finalReleaseInfo := GenerateReleaseInfo(releaseInfo, versioningInfo)
+	finalReleaseInfo := GenerateReleaseInfo(releaseInfo)
 	logging.Debug("releaseInfo is: %s", finalReleaseInfo)
 	bytesWritten, err := f.WriteString(finalReleaseInfo)
 	logging.Debug("Successfully updated releases file at  %s. Number of bytes written: %d", releasesPath, bytesWritten)
