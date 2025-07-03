@@ -686,6 +686,7 @@ Based on:
 `, versionBumpMsg)
 		}
 
+		// SDK changelog are added here, by reading the PR reports
 		body += stripCodes(info.VersioningInfo.VersionReport.GetMarkdownSection())
 
 	} else {
