@@ -473,7 +473,6 @@ func TestReleases_GenerateReleaseMd(t *testing.T) {
 
 ## 2025-06-24 19:00:10
 ### Changes
-### SDK CHANGELOG
 ### Changelog for typescript SDK
 #### Methods Added:
  - stats.getCount

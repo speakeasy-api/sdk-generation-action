@@ -561,7 +561,7 @@ func (g *Git) getOwnerAndRepo(githubRepoLocation string) (string, string) {
 
 func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 
-	logging.Info("Within CreateOrUpdatePR")
+	logging.Debug("Starting: Create or Update PR")
 	var changelog string
 	var err error
 

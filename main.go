@@ -17,14 +17,14 @@ import (
 
 func main() {
 	// Log action version and branch information
-	logging.Info("=== SDK Generation Action Debug Info ===")
-	logging.Info("Action Repository: %s", os.Getenv("GITHUB_ACTION_REPOSITORY"))
-	logging.Info("Action Ref: %s", os.Getenv("GITHUB_ACTION_REF"))
-	logging.Info("Action Path: %s", os.Getenv("GITHUB_ACTION_PATH"))
-	logging.Info("Workflow Ref: %s", os.Getenv("GITHUB_REF"))
-	logging.Info("Workflow SHA: %s", os.Getenv("GITHUB_SHA"))
-	logging.Info("Repository: %s", os.Getenv("GITHUB_REPOSITORY"))
-	logging.Info("Event Name: %s", os.Getenv("GITHUB_EVENT_NAME"))
+	logging.Debug("=== SDK Generation Action Debug Info ===")
+	logging.Debug("Action Repository: %s", os.Getenv("GITHUB_ACTION_REPOSITORY"))
+	logging.Debug("Action Ref: %s", os.Getenv("GITHUB_ACTION_REF"))
+	logging.Debug("Action Path: %s", os.Getenv("GITHUB_ACTION_PATH"))
+	logging.Debug("Workflow Ref: %s", os.Getenv("GITHUB_REF"))
+	logging.Debug("Workflow SHA: %s", os.Getenv("GITHUB_SHA"))
+	logging.Debug("Repository: %s", os.Getenv("GITHUB_REPOSITORY"))
+	logging.Debug("Event Name: %s", os.Getenv("GITHUB_EVENT_NAME"))
 
 	if environment.IsDebugMode() {
 		envs := os.Environ()

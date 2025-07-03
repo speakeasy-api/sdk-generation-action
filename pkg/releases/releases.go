@@ -44,8 +44,12 @@ func GenerateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 	generationOutput := []string{}
 	releasesOutput := []string{}
 	final_sdk_changelog := []string{}
-	releaseInformation, _ := json.MarshalIndent(releaseInfo, "", "  ")
-	logging.Info("releaseInfo : %s\n", releaseInformation)
+	releaseInformation, err := json.MarshalIndent(releaseInfo, "", "  ")
+	if err != nil {
+		logging.Debug("Unable to marshal release info. Error: %s", err)
+	} else {
+		logging.Debug("releaseInfo : %s\n", releaseInformation)
+	}
 
 	reports := []versioning.VersionReport{}
 	if versioningInfo.VersionReport != nil {
@@ -57,9 +61,9 @@ func GenerateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 
 		key := fmt.Sprintf("SDK_CHANGELOG_%s", strings.ToLower(lang))
 		sdk_changelog := findPRReportByKey(reports, key)
-		logging.Info("lang is: %s, key is: %s, sdk_changelog is: %s", lang, key, sdk_changelog)
+		logging.Debug("lang is: %s, key is: %s, sdk_changelog is: %s", lang, key, sdk_changelog)
 		if sdk_changelog != "" {
-			logging.Info("sdk_changelog is: %s, ", sdk_changelog)
+			logging.Debug("sdk_changelog is: %s, ", sdk_changelog)
 			final_sdk_changelog = append(final_sdk_changelog, sdk_changelog)
 		}
 	}
@@ -126,7 +130,7 @@ func GenerateReleaseInfo(releaseInfo ReleasesInfo, versioningInfo versionbumps.V
 		releasesOutput = append([]string{"\n### Releases"}, releasesOutput...)
 	}
 
-	logging.Info("Sdk Changelog is : %v\n", final_sdk_changelog)
+	logging.Debug("Sdk Changelog is : %v\n", final_sdk_changelog)
 	if len(final_sdk_changelog) > 0 {
 		return fmt.Sprintf(`%s## %s
 ### Changes
@@ -156,20 +160,20 @@ func findPRReportByKey(reports []versioning.VersionReport, key string) string {
 func UpdateReleasesFile(releaseInfo ReleasesInfo, versioningInfo versionbumps.VersioningInfo, dir string) error {
 	releasesPath := GetReleasesPath(dir)
 
-	logging.Info("Updating releases file at %s", releasesPath)
+	logging.Debug("Updating releases file at %s", releasesPath)
 	f, err := os.OpenFile(releasesPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
-		logging.Error("ERROR: error while opening file: %s", err.Error())
+		logging.Debug("error while opening file: %s", err.Error())
 		return fmt.Errorf("error opening releases file: %w", err)
 	}
 	defer f.Close()
 
 	finalReleaseInfo := GenerateReleaseInfo(releaseInfo, versioningInfo)
-	logging.Info("releaseInfoString is: %s", finalReleaseInfo)
+	logging.Debug("releaseInfo is: %s", finalReleaseInfo)
 	bytesWritten, err := f.WriteString(finalReleaseInfo)
-	logging.Info("Successfully updated releases file at  %s. Number of bytes written: %d", releasesPath, bytesWritten)
+	logging.Debug("Successfully updated releases file at  %s. Number of bytes written: %d", releasesPath, bytesWritten)
 	if err != nil {
-		fmt.Println("ERROR: error while writing to file: ", err.Error())
+		logging.Debug("error while writing to file: %s", err.Error())
 		return fmt.Errorf("error writing to releases file: %w", err)
 	}
 

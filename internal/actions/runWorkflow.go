@@ -103,8 +103,12 @@ func RunWorkflow() error {
 	anythingRegenerated := false
 
 	var releaseInfo releases.ReleasesInfo
-	runResultInfo, _ := json.MarshalIndent(runRes, "", "  ")
-	logging.Info("runRes info is  is : %s\n", runResultInfo)
+	runResultInfo, err := json.MarshalIndent(runRes, "", "  ")
+	if err != nil {
+		logging.Debug("failed to marshal runRes : %s\n", err)
+	} else {
+		logging.Debug("Result of running the command is: %s\n", runResultInfo)
+	}
 	if runRes.GenInfo != nil {
 		docVersion := runRes.GenInfo.OpenAPIDocVersion
 		resolvedVersion = runRes.GenInfo.SpeakeasyVersion
@@ -153,7 +157,7 @@ func RunWorkflow() error {
 		}
 
 		if err := releases.UpdateReleasesFile(releaseInfo, runRes.VersioningInfo, releasesDir); err != nil {
-			logging.Error("ERROR: error while updating releases file: %v", err.Error())
+			logging.Debug("error while updating releases file: %v", err.Error())
 			return err
 		}
 
