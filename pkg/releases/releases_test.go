@@ -453,7 +453,7 @@ func TestReleases_GenerateReleaseMd(t *testing.T) {
 			"typescript": {Version: "0.1.0", Path: "."},
 		},
 		LanguageChangelog: map[string]string{
-			"typescript": "### Changelog for typescript SDK\n#### Methods Added:\n - stats.getCount\n - stats.getRandom",
+			"typescript": "### Changelog for typescript SDK\n#### Methods Added:\n - stats.getCount\n - stats.getRandom\n",
 		},
 	}
 
@@ -491,8 +491,8 @@ func TestReleases_GenerateReleaseMdForMultipleLanguages(t *testing.T) {
 			"go":         {Version: "0.1.0", Path: "."},
 		},
 		LanguageChangelog: map[string]string{
-			"typescript": "### Changelog for typescript SDK\n#### Methods Added:\n - stats.getCount\n - stats.getRandom",
-			"go":         "### Changelog for go SDK\n#### Methods Added:\n - stats.getCount\n - stats.getRandom",
+			"typescript": "### Changelog for typescript SDK\n#### Methods Added:\n - stats.getCount\n - stats.getRandom\n",
+			"go":         "### Changelog for go SDK\n#### Methods Added:\n - stats.getCount\n - stats.getRandom\n",
 		},
 	}
 

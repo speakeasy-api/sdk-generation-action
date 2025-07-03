@@ -146,8 +146,7 @@ func GenerateReleaseInfo(releaseInfo ReleasesInfo) string {
 
 	// Add SDK changelog if present
 	if len(final_sdk_changelog) > 0 {
-		builder.WriteString(strings.Join(final_sdk_changelog, "\n"))
-		builder.WriteString("\n")
+		builder.WriteString(strings.Join(final_sdk_changelog, ""))
 	}
 
 	// Add metadata section
