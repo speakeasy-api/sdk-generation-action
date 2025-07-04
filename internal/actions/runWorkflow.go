@@ -20,6 +20,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
+	releasesv2 "github.com/speakeasy-api/sdk-generation-action/pkg/releases_v2"
 )
 
 func RunWorkflow() error {
@@ -170,9 +171,16 @@ func RunWorkflow() error {
 			return err
 		}
 
-		if err := releases.UpdateReleasesFile(releaseInfo, releasesDir); err != nil {
-			logging.Debug("error while updating releases file: %v", err.Error())
-			return err
+		if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
+			if err := releasesv2.UpdateReleasesFile(releaseInfo, releasesDir); err != nil {
+				logging.Debug("error while updating releases file: %v", err.Error())
+				return err
+			}
+		} else {
+			if err := releases.UpdateReleasesFile(releaseInfo, releasesDir); err != nil {
+				logging.Debug("error while updating releases file: %v", err.Error())
+				return err
+			}
 		}
 
 		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, releaseInfo); err != nil {
