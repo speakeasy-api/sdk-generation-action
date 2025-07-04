@@ -380,7 +380,8 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if action == environment.ActionRunWorkflow {
 		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 		// Do not add commitInfo to commit message if all values of releaseInfo are zero values
-		if !isZeroReleasesInfo(releaseInfo) {
+		// Gate the sdk changelog release behind an env variable
+		if !isZeroReleasesInfo(releaseInfo) && os.Getenv("ENABLE_SDK_CHANGELOG") == "true" {
 			commitMessage += "\n" + commitInfo
 		}
 		if sourcesOnly {
@@ -549,7 +550,6 @@ type PRInfo struct {
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
 	VersioningInfo       versionbumps.VersioningInfo
-	SDKChangelog         map[string]string
 }
 
 func (g *Git) getRepoMetadata() (string, string) {

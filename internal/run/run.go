@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -69,6 +70,9 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 
 	installationURLs := map[string]string{}
 	repoURL := getRepoURL()
+	if strings.Contains(strings.ToLower(repoURL), "speakeasy") {
+		os.Setenv("ENABLE_SDK_CHANGELOG", "true")
+	}
 	repoSubdirectories := map[string]string{}
 	previousManagementInfos := map[string]config.Management{}
 

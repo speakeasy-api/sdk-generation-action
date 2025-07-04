@@ -154,9 +154,10 @@ func RunWorkflow() error {
 				key := fmt.Sprintf("SDK_CHANGELOG_%s", strings.ToLower(target))
 				sdk_changelog := releases.FindPRReportByKey(reports, key)
 				logging.Debug("lang is: %s, key is: %s, sdk_changelog is: %s", target, key, sdk_changelog)
-				releaseInfo.LanguageChangelog[target] = sdk_changelog
+				if sdk_changelog != "" {
+					releaseInfo.LanguageChangelog[target] = sdk_changelog
+				}
 			}
-
 		}
 
 		if environment.PushCodeSamplesOnly() {
@@ -227,12 +228,10 @@ type finalizeInputs struct {
 	LintingReportURL     string
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
-	// key is language name, value is changelog content
-	SDKChangelog     map[string]string
-	VersioningReport *versioning.MergedVersionReport
-	VersioningInfo   versionbumps.VersioningInfo
-	GenInfo          *run.GenerationInfo
-	currentRelease   *releases.ReleasesInfo
+	VersioningReport     *versioning.MergedVersionReport
+	VersioningInfo       versionbumps.VersioningInfo
+	GenInfo              *run.GenerationInfo
+	currentRelease       *releases.ReleasesInfo
 }
 
 // Sets outputs and creates or adds releases info
@@ -272,7 +271,6 @@ func finalize(inputs finalizeInputs) error {
 			ChangesReportURL:     inputs.ChangesReportURL,
 			VersioningInfo:       inputs.VersioningInfo,
 			OpenAPIChangeSummary: inputs.OpenAPIChangeSummary,
-			SDKChangelog:         inputs.SDKChangelog,
 		})
 
 		if err != nil {
