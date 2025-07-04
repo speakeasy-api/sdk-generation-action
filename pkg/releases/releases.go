@@ -211,6 +211,7 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
 var (
 	releaseInfoRegex        = regexp.MustCompile(`(?s)## (.*?)\n### Changes\n(.*?)Based on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) (\((.*?)\))?.*?`)
 	generatedLanguagesRegex = regexp.MustCompile(`- \[([a-z]+) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (.*)`)
+	langHeaderRegex         = regexp.MustCompile(`(?m)^## ([^\s]+) SDK Changes Detected:`)
 	npmReleaseRegex         = regexp.MustCompile(`- \[NPM v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/www\.npmjs\.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?) - (.*)`)
 	pypiReleaseRegex        = regexp.MustCompile(`- \[PyPI v(\d+\.\d+\.\d+(?:-?\w+(?:\.\w+)*)?)] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+(?:-?\w+(?:\.\w+)*)?) - (.*)`)
 	goReleaseRegex          = regexp.MustCompile(`- \[Go v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?) - (.*)`)
@@ -277,8 +278,13 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 
 	lastRelease := releases[len(releases)-1]
 	var previousRelease *string = nil
+
 	if len(releases) > 1 {
 		previousRelease = &releases[len(releases)-2]
+	}
+
+	if lastRelease == "" {
+		return nil, fmt.Errorf("no release header found")
 	}
 
 	matches := releaseInfoRegex.FindStringSubmatch(lastRelease)
@@ -313,6 +319,31 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 			}
 		}
 	}
+
+	// --- Begin logic to populate LanguageChangelog ---
+	// Parse changelog content from matches[2]
+	changelogContent := matches[2]
+	fmt.Printf("changelogContent: %s\n", changelogContent)
+
+	info.LanguageChangelog = make(map[string]string)
+
+	// Split the changelogContent into sections by language header
+	// The header format is: ## <Language> SDK Changes Detected:
+	indices := langHeaderRegex.FindAllStringSubmatchIndex(changelogContent, -1)
+
+	for i, match := range indices {
+		lang := strings.ToLower(changelogContent[match[2]:match[3]])
+		start := match[0]
+		var end int
+		if i+1 < len(indices) {
+			end = indices[i+1][0]
+		} else {
+			end = len(changelogContent)
+		}
+		section := changelogContent[start:end]
+		info.LanguageChangelog[lang] = section
+	}
+	// --- End logic to populate LanguageChangelog ---
 
 	npmMatches := npmReleaseRegex.FindStringSubmatch(lastRelease)
 
