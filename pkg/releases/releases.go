@@ -64,10 +64,8 @@ func (r ReleasesInfo) String() string {
 		generationOutput = append([]string{"\n### Generated"}, generationOutput...)
 	}
 
-	// Sort languages for consistent output (typescript first for backward compatibility)
-	changelogLangKeys := sortedLangKeys(r.LanguageChangelog)
-
-	for _, lang := range changelogLangKeys {
+	// We only add sdk changelog for languages that are generated
+	for _, lang := range langKeys {
 		sdk_changelog := r.LanguageChangelog[lang]
 		if sdk_changelog != "" {
 			finalSdkChangelog = append(finalSdkChangelog, sdk_changelog)
