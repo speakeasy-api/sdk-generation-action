@@ -375,7 +375,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
-	commitInfo := releases.GenerateReleaseInfo(releaseInfo)
+	commitInfo := releaseInfo.String()
 	var commitMessage string
 	if action == environment.ActionRunWorkflow {
 		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)

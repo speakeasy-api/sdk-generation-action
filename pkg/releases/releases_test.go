@@ -120,7 +120,7 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 			"python":     "## Python SDK Changes Detected:\n* sdk.api.v1.users.profile.settings.update_appearance(): **Added**\n* sdk.api.v1.users.profile.settings.get_privacy(): **Deleted**\n* sdk.cloud.regions.clusters.nodes.get_metrics(): **Added** request.period [breaking]\n* sdk.admin.analytics.reports.revenue.daily.get_summary(): **Changed** response\n",
 		},
 	}
-	info, err := releases.ParseReleases(releases.GenerateReleaseInfo(r))
+	info, err := releases.ParseReleases(r.String())
 	assert.NoError(t, err)
 	assert.Equal(t, r, *info)
 }
@@ -145,7 +145,7 @@ func TestReleases_GoPackageNameConstruction_Success(t *testing.T) {
 		LanguageChangelog:  map[string]string{},
 	}
 
-	info, err := releases.ParseReleases(releases.GenerateReleaseInfo(r))
+	info, err := releases.ParseReleases(r.String())
 	assert.NoError(t, err)
 	assert.Equal(t, r, *info)
 }
@@ -329,7 +329,7 @@ func TestReleases_ReversableSerializationMultiple_Success(t *testing.T) {
 		},
 	}
 
-	info, err := releases.ParseReleases(releases.GenerateReleaseInfo(r1) + releases.GenerateReleaseInfo(r2))
+	info, err := releases.ParseReleases(r1.String() + r2.String())
 	assert.NoError(t, err)
 	assert.Equal(t, r2, *info)
 }
@@ -540,7 +540,7 @@ Based on:
 ### Generated
 - [typescript v0.1.0] .`
 
-	actual := releases.GenerateReleaseInfo(releaseInfo)
+	actual := releaseInfo.String()
 
 	if actual != expected {
 		t.Errorf("Expected:\n%s\nGot:\n%s", expected, actual)
@@ -581,7 +581,7 @@ Based on:
 ### Generated
 - [typescript v0.1.0] .
 - [go v0.1.0] .`
-	actual := releases.GenerateReleaseInfo(releaseInfo)
+	actual := releaseInfo.String()
 
 	if actual != expected {
 		t.Errorf("\n**Expected**:\n%s\n\n**Got**:\n%s", expected, actual)
@@ -613,7 +613,7 @@ Based on:
 - [typescript v0.1.0] .
 - [go v0.1.0] .`
 
-	actual := releases.GenerateReleaseInfo(releaseInfo)
+	actual := releaseInfo.String()
 
 	if actual != expected {
 		t.Errorf("\n**Expected**:\n%s\n\n**Got**:\n%s", expected, actual)
