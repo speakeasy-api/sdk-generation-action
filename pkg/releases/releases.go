@@ -41,6 +41,7 @@ type ReleasesInfo struct {
 	LanguageChangelog  map[string]string
 }
 
+// This representation is used when adding body to Github releases
 func (r ReleasesInfo) String() string {
 	generationOutput := []string{}
 	releasesOutput := []string{}
@@ -174,141 +175,6 @@ func (r ReleasesInfo) String() string {
 
 	return builder.String()
 }
-
-// func GenerateReleaseInfo(releaseInfo ReleasesInfo) string {
-// 	generationOutput := []string{}
-// 	releasesOutput := []string{}
-// 	finalSdkChangelog := []string{}
-// 	releaseInformation, err := json.MarshalIndent(releaseInfo, "", "  ")
-// 	if err != nil {
-// 		logging.Debug("Unable to marshal release info. Error: %s", err)
-// 	} else {
-// 		logging.Debug("releaseInfo : %s\n", releaseInformation)
-// 	}
-
-// 	// Sort languages for consistent output (typescript first for backward compatibility)
-// 	langKeys := sortedLangKeys(releaseInfo.LanguagesGenerated)
-
-// 	for _, lang := range langKeys {
-// 		info := releaseInfo.LanguagesGenerated[lang]
-// 		generationOutput = append(generationOutput, fmt.Sprintf("- [%s v%s] %s", lang, info.Version, info.Path))
-// 	}
-// 	if len(generationOutput) > 0 {
-// 		generationOutput = append([]string{"\n### Generated"}, generationOutput...)
-// 	}
-
-// 	// Sort languages for consistent output (typescript first for backward compatibility)
-// 	changelogLangKeys := sortedLangKeys(releaseInfo.LanguageChangelog)
-
-// 	for _, lang := range changelogLangKeys {
-// 		sdk_changelog := releaseInfo.LanguageChangelog[lang]
-// 		if sdk_changelog != "" {
-// 			finalSdkChangelog = append(finalSdkChangelog, sdk_changelog)
-// 		}
-// 	}
-
-// 	// Sort languages for consistent output (typescript first for backward compatibility)
-// 	releaseLangKeys := sortedLangKeys(releaseInfo.Languages)
-
-// 	for _, lang := range releaseLangKeys {
-// 		info := releaseInfo.Languages[lang]
-// 		pkgID := ""
-// 		pkgURL := ""
-// 		switch lang {
-// 		case "go":
-// 			pkgID = "Go"
-// 			repoPath := os.Getenv("GITHUB_REPOSITORY")
-// 			tag := fmt.Sprintf("v%s", info.Version)
-// 			if info.Path != "." {
-// 				tag = fmt.Sprintf("%s/%s", info.Path, tag)
-// 			}
-
-// 			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
-// 		case "typescript":
-// 			pkgID = "NPM"
-// 			pkgURL = fmt.Sprintf("https://www.npmjs.com/package/%s/v/%s", info.PackageName, info.Version)
-// 		case "python":
-// 			pkgID = "PyPI"
-// 			pkgURL = fmt.Sprintf("https://pypi.org/project/%s/%s", info.PackageName, info.Version)
-// 		case "php":
-// 			pkgID = "Composer"
-// 			pkgURL = fmt.Sprintf("https://packagist.org/packages/%s#v%s", info.PackageName, info.Version)
-// 		case "terraform":
-// 			pkgID = "Terraform"
-// 			pkgURL = fmt.Sprintf("https://registry.terraform.io/providers/%s/%s", info.PackageName, info.Version)
-// 		case "java":
-// 			pkgID = "Maven Central"
-// 			lastDotIndex := strings.LastIndex(info.PackageName, ".")
-// 			groupID := info.PackageName[:lastDotIndex]      // everything before last occurrence of '.'
-// 			artifactID := info.PackageName[lastDotIndex+1:] // everything after last occurrence of '.'
-// 			pkgURL = fmt.Sprintf("https://central.sonatype.com/artifact/%s/%s/%s", groupID, artifactID, info.Version)
-// 		case "ruby":
-// 			pkgID = "Ruby Gems"
-// 			pkgURL = fmt.Sprintf("https://rubygems.org/gems/%s/versions/%s", info.PackageName, info.Version)
-// 		case "csharp":
-// 			pkgID = "NuGet"
-// 			pkgURL = fmt.Sprintf("https://www.nuget.org/packages/%s/%s", info.PackageName, info.Version)
-// 		case "swift":
-// 			pkgID = "Swift Package Manager"
-// 			repoPath := os.Getenv("GITHUB_REPOSITORY")
-
-// 			tag := fmt.Sprintf("v%s", info.Version)
-// 			if info.Path != "." {
-// 				tag = fmt.Sprintf("%s/%s", info.Path, tag)
-// 			}
-
-// 			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
-// 		}
-
-// 		if pkgID != "" {
-// 			releasesOutput = append(releasesOutput, fmt.Sprintf("- [%s v%s] %s - %s", pkgID, info.Version, pkgURL, info.Path))
-// 		}
-// 	}
-
-// 	if len(releasesOutput) > 0 {
-// 		releasesOutput = append([]string{"\n### Releases"}, releasesOutput...)
-// 	}
-
-// 	logging.Debug("Sdk Changelog is : %v\n", finalSdkChangelog)
-
-// 	var builder strings.Builder
-
-// 	// Start with header
-// 	builder.WriteString("\n\n## ")
-// 	builder.WriteString(releaseInfo.ReleaseTitle)
-// 	builder.WriteString("\n### Changes\n")
-
-// 	// Add SDK changelog if present
-// 	if len(finalSdkChangelog) > 0 {
-// 		builder.WriteString(strings.Join(finalSdkChangelog, ""))
-// 	}
-
-// 	// Add metadata section
-// 	builder.WriteString("Based on:\n")
-// 	builder.WriteString("- OpenAPI Doc ")
-// 	builder.WriteString(releaseInfo.DocVersion)
-// 	builder.WriteString(" ")
-// 	builder.WriteString(releaseInfo.DocLocation)
-// 	builder.WriteString("\n")
-// 	builder.WriteString("- Speakeasy CLI ")
-// 	builder.WriteString(releaseInfo.SpeakeasyVersion)
-// 	builder.WriteString(" (")
-// 	builder.WriteString(releaseInfo.GenerationVersion)
-// 	builder.WriteString(") https://github.com/speakeasy-api/speakeasy")
-
-// 	// Add generation output if present
-// 	if len(generationOutput) > 0 {
-// 		builder.WriteString(strings.Join(generationOutput, "\n"))
-// 	}
-
-// 	// Add releases output if present
-// 	if len(releasesOutput) > 0 {
-// 		builder.WriteString(strings.Join(releasesOutput, "\n"))
-// 	}
-
-// 	return builder.String()
-
-// }
 
 func FindPRReportByKey(reports []versioning.VersionReport, key string) string {
 	for _, report := range reports {
