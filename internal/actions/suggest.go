@@ -8,6 +8,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/suggestions"
+	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 )
 
 func Suggest() error {
@@ -60,7 +61,7 @@ func Suggest() error {
 
 	outputs["cli_output"] = out
 
-	if _, err := g.CommitAndPush("", "", environment.GetOpenAPIDocOutput(), environment.ActionSuggest, false); err != nil {
+	if _, err := g.CommitAndPush("", "", environment.GetOpenAPIDocOutput(), environment.ActionSuggest, false, releases.ReleasesInfo{}); err != nil {
 		return err
 	}
 

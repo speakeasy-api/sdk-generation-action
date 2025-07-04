@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"slices"
@@ -353,7 +354,7 @@ func (g *Git) DeleteBranch(branchName string) error {
 	return nil
 }
 
-func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool) (string, error) {
+func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, releaseInfo releases.ReleasesInfo) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
@@ -374,9 +375,14 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
+	commitInfo := releases.GenerateReleaseInfo(releaseInfo)
 	var commitMessage string
 	if action == environment.ActionRunWorkflow {
 		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
+		// Do not add commitInfo to commit message if all values of releaseInfo are zero values
+		if !isZeroReleasesInfo(releaseInfo) {
+			commitMessage += "\n" + commitInfo
+		}
 		if sourcesOnly {
 			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
 		}
@@ -1345,4 +1351,9 @@ func pushErr(err error) error {
 		return fmt.Errorf("error pushing changes: %w", err)
 	}
 	return nil
+}
+
+// isZeroReleasesInfo returns true if all fields of ReleasesInfo are zero values
+func isZeroReleasesInfo(info releases.ReleasesInfo) bool {
+	return reflect.DeepEqual(info, releases.ReleasesInfo{})
 }
