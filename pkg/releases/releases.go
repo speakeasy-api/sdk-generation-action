@@ -44,7 +44,7 @@ type ReleasesInfo struct {
 func GenerateReleaseInfo(releaseInfo ReleasesInfo) string {
 	generationOutput := []string{}
 	releasesOutput := []string{}
-	final_sdk_changelog := []string{}
+	finalSdkChangelog := []string{}
 	releaseInformation, err := json.MarshalIndent(releaseInfo, "", "  ")
 	if err != nil {
 		logging.Debug("Unable to marshal release info. Error: %s", err)
@@ -69,7 +69,7 @@ func GenerateReleaseInfo(releaseInfo ReleasesInfo) string {
 	for _, lang := range changelogLangKeys {
 		sdk_changelog := releaseInfo.LanguageChangelog[lang]
 		if sdk_changelog != "" {
-			final_sdk_changelog = append(final_sdk_changelog, sdk_changelog)
+			finalSdkChangelog = append(finalSdkChangelog, sdk_changelog)
 		}
 	}
 
@@ -135,7 +135,7 @@ func GenerateReleaseInfo(releaseInfo ReleasesInfo) string {
 		releasesOutput = append([]string{"\n### Releases"}, releasesOutput...)
 	}
 
-	logging.Debug("Sdk Changelog is : %v\n", final_sdk_changelog)
+	logging.Debug("Sdk Changelog is : %v\n", finalSdkChangelog)
 
 	var builder strings.Builder
 
@@ -145,8 +145,8 @@ func GenerateReleaseInfo(releaseInfo ReleasesInfo) string {
 	builder.WriteString("\n### Changes\n")
 
 	// Add SDK changelog if present
-	if len(final_sdk_changelog) > 0 {
-		builder.WriteString(strings.Join(final_sdk_changelog, ""))
+	if len(finalSdkChangelog) > 0 {
+		builder.WriteString(strings.Join(finalSdkChangelog, ""))
 	}
 
 	// Add metadata section

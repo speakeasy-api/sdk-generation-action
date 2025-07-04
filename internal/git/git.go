@@ -381,7 +381,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 		// Do not add commitInfo to commit message if all values of releaseInfo are zero values
 		// Gate the sdk changelog release behind an env variable
-		if !isZeroReleasesInfo(releaseInfo) && os.Getenv("ENABLE_SDK_CHANGELOG") == "true" {
+		if !isZeroReleasesInfo(releaseInfo) && os.Getenv("SDK_CHANGELOG_JUL_2025") == "true" {
 			commitMessage += "\n" + commitInfo
 		}
 		if sourcesOnly {

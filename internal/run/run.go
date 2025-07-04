@@ -70,8 +70,10 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 
 	installationURLs := map[string]string{}
 	repoURL := getRepoURL()
+	// Setting this environment variable to gate the enabling of sdkChangelogJul2025 changes to affect only limited number of repos
+	// We only use the sdkChangelogJul2025 changelogs when this env variable is set. This is a temporary.
 	if strings.Contains(strings.ToLower(repoURL), "speakeasy") {
-		os.Setenv("ENABLE_SDK_CHANGELOG", "true")
+		os.Setenv("SDK_CHANGELOG_JUL_2025", "true")
 	}
 	repoSubdirectories := map[string]string{}
 	previousManagementInfos := map[string]config.Management{}
