@@ -524,7 +524,7 @@ func TestReleases_GenerateReleaseMd(t *testing.T) {
 			"typescript": {Version: "0.1.0", Path: "."},
 		},
 		LanguageChangelog: map[string]string{
-			"typescript": "### Changelog for typescript SDK\n#### Methods Added:\n - stats.getCount\n - stats.getRandom\n",
+			"typescript": "## Typescript SDK Changes Detected:\n* sdk.createUser(): **Added** request.email, **Changed** response [breaking]\n",
 		},
 	}
 
@@ -532,10 +532,8 @@ func TestReleases_GenerateReleaseMd(t *testing.T) {
 
 ## 2025-06-24 19:00:10
 ### Changes
-### Changelog for typescript SDK
-#### Methods Added:
- - stats.getCount
- - stats.getRandom
+## Typescript SDK Changes Detected:
+* sdk.createUser(): **Added** request.email, **Changed** response [breaking]
 Based on:
 - OpenAPI Doc  
 - Speakeasy CLI 0.0.1 (2.623.3) https://github.com/speakeasy-api/speakeasy
