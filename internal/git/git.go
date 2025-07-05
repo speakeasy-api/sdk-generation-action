@@ -378,15 +378,18 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	commitInfo := releaseInfo.String()
 	var commitMessage string
 	if action == environment.ActionRunWorkflow {
-		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
-		// Do not add commitInfo to commit message if all values of releaseInfo are zero values
-		// Gate the sdk changelog release behind an env variable
-		if !isZeroReleasesInfo(releaseInfo) && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
-			commitMessage += "\n" + commitInfo
-		}
 		if sourcesOnly {
 			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
+		} else {
+			// Do not add commitInfo to commit message if all values of releaseInfo are zero values
+			// Gate the sdk changelog release behind an env variable
+			if !isZeroReleasesInfo(releaseInfo) && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
+				commitMessage += "" + commitInfo
+			} else {
+				commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
+			}
 		}
+
 	} else if action == environment.ActionSuggest {
 		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
 	}

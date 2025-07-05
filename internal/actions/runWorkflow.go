@@ -153,10 +153,10 @@ func RunWorkflow() error {
 			reports := runRes.VersioningInfo.VersionReport.Reports
 			for _, target := range cli.DefaultSupportedTargetsForChangelog {
 				key := fmt.Sprintf("SDK_CHANGELOG_%s", strings.ToLower(target))
-				sdk_changelog := releases.FindPRReportByKey(reports, key)
-				logging.Debug("lang is: %s, key is: %s, sdk_changelog is: %s", target, key, sdk_changelog)
-				if sdk_changelog != "" {
-					releaseInfo.LanguageChangelog[target] = sdk_changelog
+				sdkChangelog := releases.FindPRReportByKey(reports, key)
+				logging.Debug("lang is: %s, key is: %s, sdk_changelog is: %s", target, key, sdkChangelog)
+				if sdkChangelog != "" {
+					releaseInfo.LanguageChangelog[target] = sdkChangelog
 				}
 			}
 		}
