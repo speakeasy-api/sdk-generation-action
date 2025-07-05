@@ -22,6 +22,7 @@ import (
 )
 
 func RunWorkflow() error {
+	logging.Debug("just logging a debug log")
 	g, err := initAction()
 	if err != nil {
 		return err
