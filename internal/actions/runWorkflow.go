@@ -279,6 +279,7 @@ func finalize(inputs finalizeInputs) error {
 			ChangesReportURL:     inputs.ChangesReportURL,
 			VersioningInfo:       inputs.VersioningInfo,
 			OpenAPIChangeSummary: inputs.OpenAPIChangeSummary,
+			GenInfo:              inputs.GenInfo,
 		})
 
 		if err != nil {

@@ -28,6 +28,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
+	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 	"github.com/speakeasy-api/versioning-reports/versioning"
@@ -553,6 +554,7 @@ type PRInfo struct {
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
 	VersioningInfo       versionbumps.VersioningInfo
+	GenInfo              *run.GenerationInfo
 }
 
 func (g *Git) getRepoMetadata() (string, string) {
@@ -568,7 +570,7 @@ func (g *Git) getOwnerAndRepo(githubRepoLocation string) (string, string) {
 	return ownerAndRepo[0], ownerAndRepo[1]
 }
 
-func (g *Git) CreateOrUpdatePR(info PRInfo, changes string, packageName string) (*github.PullRequest, error) {
+func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 	logging.Debug("Starting: Create or Update PR")
 	labelTypes := g.UpsertLabelTypes(context.Background())
 	var changelog string
@@ -579,6 +581,30 @@ func (g *Git) CreateOrUpdatePR(info PRInfo, changes string, packageName string) 
 	if info.PreviousGenVersion != "" {
 		previousGenVersions = strings.Split(info.PreviousGenVersion, ";")
 	}
+	packageName := ""
+	languageForPr := "go"
+
+	if info.GenInfo != nil && info.ReleaseInfo != nil {
+		for lang, langGenerationInfo := range info.GenInfo.Languages {
+			if _, exists := info.ReleaseInfo.LanguagesGenerated[lang]; exists {
+				if langGenerationInfo.PackageName != "" {
+					languageForPr = lang
+					packageName = langGenerationInfo.PackageName
+					break
+				}
+			}
+		}
+	}
+	generatorChanges := ""
+	if info.VersioningInfo.VersionReport != nil {
+		reports := info.VersioningInfo.VersionReport.Reports
+		key := fmt.Sprintf("SDK_CHANGELOG_%s", strings.ToLower(languageForPr))
+		sdkChangelog := releases.FindPRReportByKey(reports, key)
+		if sdkChangelog != "" {
+			generatorChanges = sdkChangelog
+		}
+	}
+
 	// Deprecated -- kept around for old CLI versions. VersioningReport is newer pathway
 	if info.ReleaseInfo != nil && info.VersioningInfo.VersionReport == nil {
 		for language, genInfo := range info.ReleaseInfo.LanguagesGenerated {
@@ -636,8 +662,6 @@ func (g *Git) CreateOrUpdatePR(info PRInfo, changes string, packageName string) 
 		}
 	}
 	if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
-		// TODO: fetch this from the generator
-		generatorChanges := ""
 		title := speakeasyGenMinimumPrTitle
 		//eg. chore: 🐝 Update -
 		title += " " + packageName
