@@ -161,6 +161,31 @@ func RunWorkflow() error {
 			}
 		}
 
+		var commitMessages map[string]string
+		var commitHeadings map[string]string
+		if runRes.VersioningInfo.VersionReport != nil {
+			reports := runRes.VersioningInfo.VersionReport.Reports
+			for _, target := range cli.DefaultSupportedTargetsForChangelog {
+				key := fmt.Sprintf("%s_commit_heading", strings.ToLower(target))
+				commitHeading := releases.FindPRReportByKey(reports, key)
+				logging.Debug("lang is: %s, key is: %s, commitHeading is: %s", target, key, commitHeading)
+				if commitHeading != "" {
+					commitHeadings[target] = commitHeading
+				}
+			}
+		}
+		if runRes.VersioningInfo.VersionReport != nil {
+			reports := runRes.VersioningInfo.VersionReport.Reports
+			for _, target := range cli.DefaultSupportedTargetsForChangelog {
+				key := fmt.Sprintf("%s_commit_message", strings.ToLower(target))
+				commitMessage := releases.FindPRReportByKey(reports, key)
+				logging.Debug("lang is: %s, key is: %s, commitMessage is: %s", target, key, commitMessage)
+				if commitMessage != "" {
+					commitMessages[target] = commitMessage
+				}
+			}
+		}
+
 		if environment.PushCodeSamplesOnly() {
 			// If we're just pushing code samples we don't want to raise a PR
 			return nil
@@ -172,7 +197,7 @@ func RunWorkflow() error {
 		}
 
 		if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
-			if err := releasesv2.UpdateReleasesFile(releaseInfo, releasesDir); err != nil {
+			if err := releasesv2.UpdateReleasesFile(releaseInfo, releasesDir, runRes.VersioningInfo); err != nil {
 				logging.Debug("error while updating releases file: %v", err.Error())
 				return err
 			}
@@ -183,7 +208,7 @@ func RunWorkflow() error {
 			}
 		}
 
-		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, releaseInfo); err != nil {
+		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, releaseInfo, commitHeadings, commitMessages); err != nil {
 			return err
 		}
 	}

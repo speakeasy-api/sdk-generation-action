@@ -355,7 +355,7 @@ func (g *Git) DeleteBranch(branchName string) error {
 	return nil
 }
 
-func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, releaseInfo releases.ReleasesInfo) (string, error) {
+func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, releaseInfo releases.ReleasesInfo, commitHeadings map[string]string, commitMessages map[string]string) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
@@ -376,7 +376,6 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
-	commitInfo := releaseInfo.String()
 	var commitMessage string
 	if action == environment.ActionRunWorkflow {
 		if sourcesOnly {
@@ -385,7 +384,13 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 			// Do not add commitInfo to commit message if all values of releaseInfo are zero values
 			// Gate the sdk changelog release behind an env variable
 			if !isZeroReleasesInfo(releaseInfo) && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
-				commitMessage += "" + commitInfo
+				// TODO: How to figure out the language to use?
+				lang := "go"
+
+				commitHeading := commitHeadings[lang]
+				newCommitMessage := commitMessages[lang]
+				fullCommitMessage := commitHeading + "\n" + newCommitMessage
+				commitMessage += "" + fullCommitMessage
 			} else {
 				commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 			}
