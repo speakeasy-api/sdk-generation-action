@@ -54,7 +54,7 @@ func (r ReleasesInfo) String() string {
 	}
 
 	// Sort languages for consistent output (typescript first for backward compatibility)
-	langKeys := sortedLangKeys(r.LanguagesGenerated)
+	langKeys := SortedLangKeys(r.LanguagesGenerated)
 
 	for _, lang := range langKeys {
 		info := r.LanguagesGenerated[lang]
@@ -73,7 +73,7 @@ func (r ReleasesInfo) String() string {
 	}
 
 	// Sort languages for consistent output (typescript first for backward compatibility)
-	releaseLangKeys := sortedLangKeys(r.Languages)
+	releaseLangKeys := SortedLangKeys(r.Languages)
 
 	for _, lang := range releaseLangKeys {
 		info := r.Languages[lang]
@@ -472,8 +472,8 @@ func GetReleasesPath(dir string) string {
 	return path.Join(environment.GetWorkspace(), "repo", dir, "RELEASES.md")
 }
 
-// sortedLangKeys returns the sorted keys of a map[string]T, with "typescript" first, then the rest alphabetically.
-func sortedLangKeys[T any](m map[string]T) []string {
+// SortedLangKeys returns the sorted keys of a map[string]T, with "typescript" first, then the rest alphabetically.
+func SortedLangKeys[T any](m map[string]T) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
