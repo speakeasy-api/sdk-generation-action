@@ -37,7 +37,7 @@ func Test_ParseReleasesV2(t *testing.T) {
 			"go": "## Go SDK Changes Detected:\n* Sdk.Deployments.CreateDeployment(): **Changed** request.Request.RequestBody.GitSource.[class] [breaking], **Added** response.Microfrontends.[class].Applications.{}.IsDefaultApp\n* Sdk.Marketplace.Get-Resource(): **Added**\n* Sdk.Projects.UpdateProjectDataCache(): **Added** response.Security.BotIdEnabled\n* Sdk.Domains.CheckDomainStatus(): **Added** error.status[408]\n* Sdk.Security.PutFirewallConfig(): **Added** request.RequestBody.BotIdEnabled, **Added** response.Active.BotIdEnabled\n",
 		}
 
-	content := releaseContent(releaseInfo, languageChangelog)
+	content := ReleaseContent(releaseInfo, languageChangelog)
 
 	languageInfo, parsedContent, err := ParseReleasesV2(content)
 	// err should be nil
@@ -102,7 +102,7 @@ func Test_ParseReleasesV2_TypeScript(t *testing.T) {
 		"typescript": "## TypeScript SDK Changes Detected:\n* Sdk.Deployments.CreateDeployment(): **Changed** request.Request.RequestBody.GitSource.[class] [breaking], **Added** response.Microfrontends.[class].Applications.{}.IsDefaultApp\n* Sdk.Rolling-Release.GetRollingReleaseBillingStatus(): **Added**\n* Sdk.Projects.GetProjects(): **Added** response.Projects.[].Security.ManagedRules\n* Sdk.Integrations.Update-Integration-Deployment-Action(): **Added** request.Request.RequestBody.StatusUrlak\n* Sdk.User.ListUserEvents(): **Added** response.Events.[].Payload.[class].NewOwner.MfaConfiguration.Totp\n",
 	}
 
-	content := releaseContent(releaseInfo, languageChangelog)
+	content := ReleaseContent(releaseInfo, languageChangelog)
 
 	languageInfo, parsedContent, err := ParseReleasesV2(content)
 	// err should be nil
@@ -166,7 +166,7 @@ func Test_ParseReleasesV2_Python(t *testing.T) {
 		"python": "## Python SDK Changes Detected:\n* Sdk.Deployments.CancelDeployment(): **Added** response.Microfrontends.[class].Applications.{}.IsDefaultApp\n* Sdk.Deployments.GetDeployment(): **Added** response.[class].Microfrontends.[class].GroupIds.{}.IsDefaultApp\n* Sdk.Marketplace.Get-Resources(): **Added**\n* Sdk.Marketplace.Delete-Resource(): **Added**\n* Sdk.Security.UpdateFirewallConfig(): **Added** request.RequestBody.[class]\n",
 	}
 
-	content := releaseContent(releaseInfo, languageChangelog)
+	content := ReleaseContent(releaseInfo, languageChangelog)
 
 	languageInfo, parsedContent, err := ParseReleasesV2(content)
 	// err should be nil
@@ -230,7 +230,7 @@ func Test_ParseReleasesV2_Java(t *testing.T) {
 		"java": "## Java SDK Changes Detected:\n* Sdk.Deployments.Update-Integration-Deployment-Action(): **Added** request.Request.RequestBody.StatusUrl\n* Sdk.Projects.CreateProject(): **Added** response.Security.BotIdEnabled\n* Sdk.Projects.UpdateProject(): **Added** response.Security.BotIdEnabled\n* Sdk.Security.GetFirewallConfig(): **Added** response.BotIdEnabled\n* Sdk.Domains.CheckDomainStatus(): **Added** error.status[408]\n",
 	}
 
-	content := releaseContent(releaseInfo, languageChangelog)
+	content := ReleaseContent(releaseInfo, languageChangelog)
 
 	languageInfo, parsedContent, err := ParseReleasesV2(content)
 	// err should be nil
@@ -294,7 +294,7 @@ func Test_ParseReleasesV2_CSharp(t *testing.T) {
 		"csharp": "## C# SDK Changes Detected:\n* Sdk.Deployments.CreateDeployment(): **Changed** request.Request.RequestBody.GitSource.[class] [breaking], **Added** response.Microfrontends.[class].Applications.{}.IsDefaultApp\n* Sdk.Rolling-Release.GetRollingReleaseBillingStatus(): **Added**\n* Sdk.Marketplace.Get-Resource(): **Added**\n* Sdk.Security.PutFirewallConfig(): **Added** request.RequestBody.BotIdEnabled, **Added** response.Active.BotIdEnabled\n",
 	}
 
-	content := releaseContent(releaseInfo, languageChangelog)
+	content := ReleaseContent(releaseInfo, languageChangelog)
 
 	languageInfo, parsedContent, err := ParseReleasesV2(content)
 	// err should be nil
@@ -357,7 +357,7 @@ func Test_ParseReleasesV2_PHP(t *testing.T) {
 		"php": "## PHP SDK Changes Detected:\n* Sdk.Marketplace.Get-Resources(): **Added**\n* Sdk.Marketplace.Delete-Resource(): **Added**\n* Sdk.Projects.UpdateProjectDataCache(): **Added** response.Security.BotIdEnabled\n* Sdk.User.ListUserEvents(): **Added** response.Events.[].Payload.[class].NewOwner.MfaConfiguration.Totp\n* Sdk.Security.UpdateFirewallConfig(): **Added** request.RequestBody.[class]\n",
 	}
 
-	content := releaseContent(releaseInfo, languageChangelog)
+	content := ReleaseContent(releaseInfo, languageChangelog)
 
 	languageInfo, parsedContent, err := ParseReleasesV2(content)
 	// err should be nil
@@ -421,7 +421,7 @@ func Test_ParseReleasesV2_Ruby(t *testing.T) {
 		"ruby": "## Ruby SDK Changes Detected:\n* Sdk.Deployments.Update-Integration-Deployment-Action(): **Added** request.Request.RequestBody.StatusUrl\n* Sdk.Integrations.Update-Integration-Deployment-Action(): **Added** request.Request.RequestBody.StatusUrlak\n* Sdk.Domains.CheckDomainStatus(): **Added** error.status[408]\n* Sdk.Security.PutFirewallConfig(): **Added** request.RequestBody.BotIdEnabled, **Added** response.Active.BotIdEnabled\n* Sdk.Security.GetFirewallConfig(): **Added** response.BotIdEnabled\n",
 	}
 
-	content := releaseContent(releaseInfo, languageChangelog)
+	content := ReleaseContent(releaseInfo, languageChangelog)
 
 	languageInfo, parsedContent, err := ParseReleasesV2(content)
 	// err should be nil
@@ -485,7 +485,7 @@ func Test_ParseReleasesV2_Swift(t *testing.T) {
 		"swift": "## Swift SDK Changes Detected:\n* Sdk.Deployments.CancelDeployment(): **Added** response.Microfrontends.[class].Applications.{}.IsDefaultApp\n* Sdk.Rolling-Release.GetRollingReleaseBillingStatus(): **Added**\n* Sdk.Projects.GetProjects(): **Added** response.Projects.[].Security.ManagedRules\n* Sdk.Projects.CreateProject(): **Added** response.Security.BotIdEnabled\n* Sdk.Marketplace.Get-Resource(): **Added**\n",
 	}
 
-	content := releaseContent(releaseInfo, languageChangelog)
+	content := ReleaseContent(releaseInfo, languageChangelog)
 
 	languageInfo, parsedContent, err := ParseReleasesV2(content)
 	// err should be nil

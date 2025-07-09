@@ -18,7 +18,7 @@ const speakeasyUrl = "https://speakeasy.com"
 const speakeasyReleasesUrl = "https://github.com/speakeasy-api/speakeasy/releases"
 
 // This representation is used when adding body to Github releases
-func releaseContent(releaseInfo releases.ReleasesInfo, languagesChangelogMap map[string]string) string {
+func ReleaseContent(releaseInfo releases.ReleasesInfo, languagesChangelogMap map[string]string) string {
 
 	releasesInformation := []string{}
 
@@ -153,6 +153,22 @@ func UpdateReleasesFile(releaseInfo releases.ReleasesInfo, dir string, versionin
 	}
 	defer f.Close()
 
+	languagesChangelogMap := GenerateLanguageChangelogMap(releaseInfo, versioningInfo)
+
+	finalReleaseInfo := ReleaseContent(releaseInfo, languagesChangelogMap)
+
+	logging.Debug("releaseInfo is: %s", finalReleaseInfo)
+	bytesWritten, err := f.WriteString(finalReleaseInfo)
+	logging.Debug("Successfully updated releases file at  %s. Number of bytes written: %d", releasesPath, bytesWritten)
+	if err != nil {
+		logging.Debug("error while writing to file: %s", err.Error())
+		return fmt.Errorf("error writing to releases file: %w", err)
+	}
+
+	return nil
+}
+
+func GenerateLanguageChangelogMap(releaseInfo releases.ReleasesInfo, versioningInfo versionbumps.VersioningInfo) map[string]string {
 	releaseLangKeys := releases.SortedLangKeys(releaseInfo.Languages)
 	languagesChangelogMap := make(map[string]string)
 	if versioningInfo.VersionReport != nil {
@@ -165,17 +181,7 @@ func UpdateReleasesFile(releaseInfo releases.ReleasesInfo, dir string, versionin
 			}
 		}
 	}
-	finalReleaseInfo := releaseContent(releaseInfo, languagesChangelogMap)
-
-	logging.Debug("releaseInfo is: %s", finalReleaseInfo)
-	bytesWritten, err := f.WriteString(finalReleaseInfo)
-	logging.Debug("Successfully updated releases file at  %s. Number of bytes written: %d", releasesPath, bytesWritten)
-	if err != nil {
-		logging.Debug("error while writing to file: %s", err.Error())
-		return fmt.Errorf("error writing to releases file: %w", err)
-	}
-
-	return nil
+	return languagesChangelogMap
 }
 
 var (

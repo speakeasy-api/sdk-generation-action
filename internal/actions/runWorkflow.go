@@ -327,11 +327,23 @@ func finalize(inputs finalizeInputs) error {
 
 	case environment.ModeDirect:
 		var releaseInfo *releases.ReleasesInfo
+		var languages map[string]releases.LanguageReleaseInfo = releaseInfo.Languages
+		var releaseInfoContent string
 		if !inputs.SourcesOnly {
-			releaseInfo = inputs.currentRelease
+			if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
+				languageChangelogMap := releasesv2.GenerateLanguageChangelogMap(*releaseInfo, inputs.VersioningInfo)
+				releaseInfoContent = releasesv2.ReleaseContent(*releaseInfo, languageChangelogMap)
+			} else {
+				releaseInfo = inputs.currentRelease
+				releaseInfoContent = releaseInfo.String()
+			}
+			languages = releaseInfo.Languages
+
 			// We still read from releases info for terraform generations since they use the goreleaser
 			if inputs.Outputs[utils.OutputTargetRegenerated("terraform")] == "true" {
 				releaseInfo, err = getReleasesInfo()
+				releaseInfoContent = releaseInfo.String()
+				languages = releaseInfo.Languages
 				if err != nil {
 					return err
 				}
@@ -344,7 +356,7 @@ func finalize(inputs finalizeInputs) error {
 		}
 
 		if !inputs.SourcesOnly {
-			if err := inputs.Git.CreateRelease(*releaseInfo, inputs.Outputs); err != nil {
+			if err := inputs.Git.CreateRelease(releaseInfoContent, languages, inputs.Outputs); err != nil {
 				return err
 			}
 		}
