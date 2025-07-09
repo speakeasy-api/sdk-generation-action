@@ -112,6 +112,7 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 			},
 		},
 	}
+
 	info, err := releases.ParseReleases(r.String())
 	assert.NoError(t, err)
 	assert.Equal(t, r, *info)

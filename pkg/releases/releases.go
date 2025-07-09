@@ -113,13 +113,13 @@ func (r ReleasesInfo) String() string {
 Based on:
 - OpenAPI Doc %s %s
 - Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", r.ReleaseTitle, r.DocVersion, r.DocLocation, r.SpeakeasyVersion, r.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
-
 }
 
 func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
 	releasesPath := GetReleasesPath(dir)
 
 	logging.Debug("Updating releases file at %s", releasesPath)
+
 	f, err := os.OpenFile(releasesPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
 		logging.Debug("error while opening file: %s", err.Error())
@@ -203,7 +203,6 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 
 	lastRelease := releases[len(releases)-1]
 	var previousRelease *string = nil
-
 	if len(releases) > 1 {
 		previousRelease = &releases[len(releases)-2]
 	}
