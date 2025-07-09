@@ -30,7 +30,6 @@ func Test_ParseReleasesV2(t *testing.T) {
 		LanguagesGenerated: map[string]releases.GenerationInfo{
 			"go": {Version: "0.1.0", Path: "."},
 		},
-		LanguageChangelog: map[string]string{},
 	}
 	languageChangelog :=
 		map[string]string{
@@ -96,7 +95,6 @@ func Test_ParseReleasesV2_TypeScript(t *testing.T) {
 		LanguagesGenerated: map[string]releases.GenerationInfo{
 			"typescript": {Version: "1.2.0", Path: "."},
 		},
-		LanguageChangelog: map[string]string{},
 	}
 	languageChangelog := map[string]string{
 		"typescript": "## TypeScript SDK Changes Detected:\n* Sdk.Deployments.CreateDeployment(): **Changed** request.Request.RequestBody.GitSource.[class] [breaking], **Added** response.Microfrontends.[class].Applications.{}.IsDefaultApp\n* Sdk.Rolling-Release.GetRollingReleaseBillingStatus(): **Added**\n* Sdk.Projects.GetProjects(): **Added** response.Projects.[].Security.ManagedRules\n* Sdk.Integrations.Update-Integration-Deployment-Action(): **Added** request.Request.RequestBody.StatusUrlak\n* Sdk.User.ListUserEvents(): **Added** response.Events.[].Payload.[class].NewOwner.MfaConfiguration.Totp\n",
@@ -160,7 +158,6 @@ func Test_ParseReleasesV2_Python(t *testing.T) {
 		LanguagesGenerated: map[string]releases.GenerationInfo{
 			"python": {Version: "2.1.5", Path: "."},
 		},
-		LanguageChangelog: map[string]string{},
 	}
 	languageChangelog := map[string]string{
 		"python": "## Python SDK Changes Detected:\n* Sdk.Deployments.CancelDeployment(): **Added** response.Microfrontends.[class].Applications.{}.IsDefaultApp\n* Sdk.Deployments.GetDeployment(): **Added** response.[class].Microfrontends.[class].GroupIds.{}.IsDefaultApp\n* Sdk.Marketplace.Get-Resources(): **Added**\n* Sdk.Marketplace.Delete-Resource(): **Added**\n* Sdk.Security.UpdateFirewallConfig(): **Added** request.RequestBody.[class]\n",
@@ -224,7 +221,6 @@ func Test_ParseReleasesV2_Java(t *testing.T) {
 		LanguagesGenerated: map[string]releases.GenerationInfo{
 			"java": {Version: "3.0.2", Path: "."},
 		},
-		LanguageChangelog: map[string]string{},
 	}
 	languageChangelog := map[string]string{
 		"java": "## Java SDK Changes Detected:\n* Sdk.Deployments.Update-Integration-Deployment-Action(): **Added** request.Request.RequestBody.StatusUrl\n* Sdk.Projects.CreateProject(): **Added** response.Security.BotIdEnabled\n* Sdk.Projects.UpdateProject(): **Added** response.Security.BotIdEnabled\n* Sdk.Security.GetFirewallConfig(): **Added** response.BotIdEnabled\n* Sdk.Domains.CheckDomainStatus(): **Added** error.status[408]\n",
@@ -288,7 +284,6 @@ func Test_ParseReleasesV2_CSharp(t *testing.T) {
 		LanguagesGenerated: map[string]releases.GenerationInfo{
 			"csharp": {Version: "4.1.3", Path: "."},
 		},
-		LanguageChangelog: map[string]string{},
 	}
 	languageChangelog := map[string]string{
 		"csharp": "## C# SDK Changes Detected:\n* Sdk.Deployments.CreateDeployment(): **Changed** request.Request.RequestBody.GitSource.[class] [breaking], **Added** response.Microfrontends.[class].Applications.{}.IsDefaultApp\n* Sdk.Rolling-Release.GetRollingReleaseBillingStatus(): **Added**\n* Sdk.Marketplace.Get-Resource(): **Added**\n* Sdk.Security.PutFirewallConfig(): **Added** request.RequestBody.BotIdEnabled, **Added** response.Active.BotIdEnabled\n",
@@ -351,7 +346,6 @@ func Test_ParseReleasesV2_PHP(t *testing.T) {
 		LanguagesGenerated: map[string]releases.GenerationInfo{
 			"php": {Version: "5.2.1", Path: "."},
 		},
-		LanguageChangelog: map[string]string{},
 	}
 	languageChangelog := map[string]string{
 		"php": "## PHP SDK Changes Detected:\n* Sdk.Marketplace.Get-Resources(): **Added**\n* Sdk.Marketplace.Delete-Resource(): **Added**\n* Sdk.Projects.UpdateProjectDataCache(): **Added** response.Security.BotIdEnabled\n* Sdk.User.ListUserEvents(): **Added** response.Events.[].Payload.[class].NewOwner.MfaConfiguration.Totp\n* Sdk.Security.UpdateFirewallConfig(): **Added** request.RequestBody.[class]\n",
@@ -415,7 +409,6 @@ func Test_ParseReleasesV2_Ruby(t *testing.T) {
 		LanguagesGenerated: map[string]releases.GenerationInfo{
 			"ruby": {Version: "6.0.4", Path: "."},
 		},
-		LanguageChangelog: map[string]string{},
 	}
 	languageChangelog := map[string]string{
 		"ruby": "## Ruby SDK Changes Detected:\n* Sdk.Deployments.Update-Integration-Deployment-Action(): **Added** request.Request.RequestBody.StatusUrl\n* Sdk.Integrations.Update-Integration-Deployment-Action(): **Added** request.Request.RequestBody.StatusUrlak\n* Sdk.Domains.CheckDomainStatus(): **Added** error.status[408]\n* Sdk.Security.PutFirewallConfig(): **Added** request.RequestBody.BotIdEnabled, **Added** response.Active.BotIdEnabled\n* Sdk.Security.GetFirewallConfig(): **Added** response.BotIdEnabled\n",
@@ -479,7 +472,6 @@ func Test_ParseReleasesV2_Swift(t *testing.T) {
 		LanguagesGenerated: map[string]releases.GenerationInfo{
 			"swift": {Version: "7.1.2", Path: "."},
 		},
-		LanguageChangelog: map[string]string{},
 	}
 	languageChangelog := map[string]string{
 		"swift": "## Swift SDK Changes Detected:\n* Sdk.Deployments.CancelDeployment(): **Added** response.Microfrontends.[class].Applications.{}.IsDefaultApp\n* Sdk.Rolling-Release.GetRollingReleaseBillingStatus(): **Added**\n* Sdk.Projects.GetProjects(): **Added** response.Projects.[].Security.ManagedRules\n* Sdk.Projects.CreateProject(): **Added** response.Security.BotIdEnabled\n* Sdk.Marketplace.Get-Resource(): **Added**\n",

@@ -1,13 +1,11 @@
 package releases
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strings"
 
 	config "github.com/speakeasy-api/sdk-gen-config"
@@ -38,45 +36,22 @@ type ReleasesInfo struct {
 	DocLocation        string
 	Languages          map[string]LanguageReleaseInfo
 	LanguagesGenerated map[string]GenerationInfo
-	LanguageChangelog  map[string]string
 }
 
 // This representation is used when adding body to Github releases
 func (r ReleasesInfo) String() string {
 	generationOutput := []string{}
 	releasesOutput := []string{}
-	finalSdkChangelog := []string{}
-	releaseInformation, err := json.MarshalIndent(r, "", "  ")
-	if err != nil {
-		logging.Debug("Unable to marshal release info. Error: %s", err)
-	} else {
-		logging.Debug("releaseInfo : %s\n", releaseInformation)
-	}
 
-	// Sort languages for consistent output (typescript first for backward compatibility)
-	langKeys := SortedLangKeys(r.LanguagesGenerated)
-
-	for _, lang := range langKeys {
-		info := r.LanguagesGenerated[lang]
+	for lang, info := range r.LanguagesGenerated {
 		generationOutput = append(generationOutput, fmt.Sprintf("- [%s v%s] %s", lang, info.Version, info.Path))
 	}
+
 	if len(generationOutput) > 0 {
 		generationOutput = append([]string{"\n### Generated"}, generationOutput...)
 	}
 
-	// We only add sdk changelog for languages that are generated
-	for _, lang := range langKeys {
-		sdk_changelog := r.LanguageChangelog[lang]
-		if sdk_changelog != "" {
-			finalSdkChangelog = append(finalSdkChangelog, sdk_changelog)
-		}
-	}
-
-	// Sort languages for consistent output (typescript first for backward compatibility)
-	releaseLangKeys := SortedLangKeys(r.Languages)
-
-	for _, lang := range releaseLangKeys {
-		info := r.Languages[lang]
+	for lang, info := range r.Languages {
 		pkgID := ""
 		pkgURL := ""
 		switch lang {
@@ -134,44 +109,12 @@ func (r ReleasesInfo) String() string {
 		releasesOutput = append([]string{"\n### Releases"}, releasesOutput...)
 	}
 
-	logging.Debug("Sdk Changelog is : %v\n", finalSdkChangelog)
+	return fmt.Sprintf(`%s## %s
+### Changes
+Based on:
+- OpenAPI Doc %s %s
+- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", r.ReleaseTitle, r.DocVersion, r.DocLocation, r.SpeakeasyVersion, r.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
 
-	var builder strings.Builder
-
-	// Start with header
-	builder.WriteString("\n\n## ")
-	builder.WriteString(r.ReleaseTitle)
-	builder.WriteString("\n### Changes\n")
-
-	// Add SDK changelog if present
-	if len(finalSdkChangelog) > 0 {
-		builder.WriteString(strings.Join(finalSdkChangelog, ""))
-	}
-
-	// Add metadata section
-	builder.WriteString("Based on:\n")
-	builder.WriteString("- OpenAPI Doc ")
-	builder.WriteString(r.DocVersion)
-	builder.WriteString(" ")
-	builder.WriteString(r.DocLocation)
-	builder.WriteString("\n")
-	builder.WriteString("- Speakeasy CLI ")
-	builder.WriteString(r.SpeakeasyVersion)
-	builder.WriteString(" (")
-	builder.WriteString(r.GenerationVersion)
-	builder.WriteString(") https://github.com/speakeasy-api/speakeasy")
-
-	// Add generation output if present
-	if len(generationOutput) > 0 {
-		builder.WriteString(strings.Join(generationOutput, "\n"))
-	}
-
-	// Add releases output if present
-	if len(releasesOutput) > 0 {
-		builder.WriteString(strings.Join(releasesOutput, "\n"))
-	}
-
-	return builder.String()
 }
 
 func FindPRReportByKey(reports []versioning.VersionReport, key string) string {
@@ -194,12 +137,7 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
 	}
 	defer f.Close()
 
-	finalReleaseInfo := releaseInfo.String()
-	logging.Debug("releaseInfo is: %s", finalReleaseInfo)
-	bytesWritten, err := f.WriteString(finalReleaseInfo)
-	logging.Debug("Successfully updated releases file at  %s. Number of bytes written: %d", releasesPath, bytesWritten)
 	if err != nil {
-		logging.Debug("error while writing to file: %s", err.Error())
 		return fmt.Errorf("error writing to releases file: %w", err)
 	}
 
@@ -207,9 +145,8 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
 }
 
 var (
-	releaseInfoRegex        = regexp.MustCompile(`(?s)## (.*?)\n### Changes\n(.*?)Based on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) (\((.*?)\))?.*?`)
+	releaseInfoRegex        = regexp.MustCompile(`(?s)## (.*?)\n### Changes\nBased on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) (\((.*?)\))?.*?`)
 	generatedLanguagesRegex = regexp.MustCompile(`- \[([a-z]+) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (.*)`)
-	langHeaderRegex         = regexp.MustCompile(`(?m)^## ([^\s]+) SDK Changes Detected:`)
 	npmReleaseRegex         = regexp.MustCompile(`- \[NPM v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/www\.npmjs\.com\/package\/(.*?)\/v\/\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?) - (.*)`)
 	pypiReleaseRegex        = regexp.MustCompile(`- \[PyPI v(\d+\.\d+\.\d+(?:-?\w+(?:\.\w+)*)?)] (https:\/\/pypi\.org\/project\/(.*?)\/\d+\.\d+\.\d+(?:-?\w+(?:\.\w+)*)?) - (.*)`)
 	goReleaseRegex          = regexp.MustCompile(`- \[Go v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?) - (.*)`)
@@ -281,28 +218,24 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 		previousRelease = &releases[len(releases)-2]
 	}
 
-	if lastRelease == "" {
-		return nil, fmt.Errorf("no release header found")
-	}
-
 	matches := releaseInfoRegex.FindStringSubmatch(lastRelease)
 
-	if len(matches) < 6 {
+	if len(matches) < 5 {
 		return nil, fmt.Errorf("error parsing last release info")
 	}
 
 	genVersion := ""
-	if len(matches) == 8 {
-		genVersion = matches[7]
+	if len(matches) == 7 {
+		genVersion = matches[6]
 	} else {
-		genVersion = matches[5]
+		genVersion = matches[4]
 	}
 
 	info := &ReleasesInfo{
 		ReleaseTitle:       matches[1],
-		DocVersion:         matches[3],
-		DocLocation:        matches[4],
-		SpeakeasyVersion:   matches[5],
+		DocVersion:         matches[2],
+		DocLocation:        matches[3],
+		SpeakeasyVersion:   matches[4],
 		GenerationVersion:  genVersion,
 		Languages:          map[string]LanguageReleaseInfo{},
 		LanguagesGenerated: map[string]GenerationInfo{},
@@ -317,31 +250,6 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 			}
 		}
 	}
-
-	// --- Begin logic to populate LanguageChangelog ---
-	// Parse changelog content from matches[2]
-	changelogContent := matches[2]
-	fmt.Printf("changelogContent: %s\n", changelogContent)
-
-	info.LanguageChangelog = make(map[string]string)
-
-	// Split the changelogContent into sections by language header
-	// The header format is: ## <Language> SDK Changes Detected:
-	indices := langHeaderRegex.FindAllStringSubmatchIndex(changelogContent, -1)
-
-	for i, match := range indices {
-		lang := strings.ToLower(changelogContent[match[2]:match[3]])
-		start := match[0]
-		var end int
-		if i+1 < len(indices) {
-			end = indices[i+1][0]
-		} else {
-			end = len(changelogContent)
-		}
-		section := changelogContent[start:end]
-		info.LanguageChangelog[lang] = section
-	}
-	// --- End logic to populate LanguageChangelog ---
 
 	npmMatches := npmReleaseRegex.FindStringSubmatch(lastRelease)
 
@@ -470,22 +378,4 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 
 func GetReleasesPath(dir string) string {
 	return path.Join(environment.GetWorkspace(), "repo", dir, "RELEASES.md")
-}
-
-// SortedLangKeys returns the sorted keys of a map[string]T, with "typescript" first, then the rest alphabetically.
-func SortedLangKeys[T any](m map[string]T) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		if keys[i] == "typescript" {
-			return true
-		}
-		if keys[j] == "typescript" {
-			return false
-		}
-		return keys[i] < keys[j]
-	})
-	return keys
 }

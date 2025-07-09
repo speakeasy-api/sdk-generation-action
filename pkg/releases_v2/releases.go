@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
@@ -29,7 +30,7 @@ func ReleaseContent(releaseInfo releases.ReleasesInfo, languagesChangelogMap map
 		logging.Debug("releaseInfo : %s\n", releaseInformation)
 	}
 
-	releaseLangKeys := releases.SortedLangKeys(releaseInfo.Languages)
+	releaseLangKeys := SortedLangKeys(releaseInfo.Languages)
 	languageChosenForChangelog := ""
 
 	var releasesIsAList bool
@@ -169,7 +170,7 @@ func UpdateReleasesFile(releaseInfo releases.ReleasesInfo, dir string, versionin
 }
 
 func GenerateLanguageChangelogMap(releaseInfo releases.ReleasesInfo, versioningInfo versionbumps.VersioningInfo) map[string]string {
-	releaseLangKeys := releases.SortedLangKeys(releaseInfo.Languages)
+	releaseLangKeys := SortedLangKeys(releaseInfo.Languages)
 	languagesChangelogMap := make(map[string]string)
 	if versioningInfo.VersionReport != nil {
 		reports := versioningInfo.VersionReport.Reports
@@ -350,4 +351,22 @@ func ensureLeadingNewlines(content string) string {
 
 func GetReleasesPath(dir string) string {
 	return path.Join(environment.GetWorkspace(), "repo", dir, "RELEASES.md")
+}
+
+// SortedLangKeys returns the sorted keys of a map[string]T, with "typescript" first, then the rest alphabetically.
+func SortedLangKeys[T any](m map[string]T) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		if keys[i] == "typescript" {
+			return true
+		}
+		if keys[j] == "typescript" {
+			return false
+		}
+		return keys[i] < keys[j]
+	})
+	return keys
 }
