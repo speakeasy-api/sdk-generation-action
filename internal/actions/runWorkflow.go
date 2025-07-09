@@ -154,7 +154,7 @@ func RunWorkflow() error {
 			reports := runRes.VersioningInfo.VersionReport.Reports
 			for _, target := range cli.DefaultSupportedTargetsForChangelog {
 				key := fmt.Sprintf("%s_commit_heading", strings.ToLower(target))
-				commitHeading := releases.FindPRReportByKey(reports, key)
+				commitHeading := releasesv2.FindPRReportByKey(reports, key)
 				logging.Debug("lang is: %s, key is: %s, commitHeading is: %s", target, key, commitHeading)
 				if commitHeading != "" {
 					commitHeadings[target] = commitHeading
@@ -165,7 +165,7 @@ func RunWorkflow() error {
 			reports := runRes.VersioningInfo.VersionReport.Reports
 			for _, target := range cli.DefaultSupportedTargetsForChangelog {
 				key := fmt.Sprintf("%s_commit_message", strings.ToLower(target))
-				commitMessage := releases.FindPRReportByKey(reports, key)
+				commitMessage := releasesv2.FindPRReportByKey(reports, key)
 				logging.Debug("lang is: %s, key is: %s, commitMessage is: %s", target, key, commitMessage)
 				if commitMessage != "" {
 					commitMessages[target] = commitMessage

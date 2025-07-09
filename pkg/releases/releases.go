@@ -12,7 +12,6 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
-	"github.com/speakeasy-api/versioning-reports/versioning"
 )
 
 type LanguageReleaseInfo struct {
@@ -115,15 +114,6 @@ Based on:
 - OpenAPI Doc %s %s
 - Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy%s%s`, "\n\n", r.ReleaseTitle, r.DocVersion, r.DocLocation, r.SpeakeasyVersion, r.GenerationVersion, strings.Join(generationOutput, "\n"), strings.Join(releasesOutput, "\n"))
 
-}
-
-func FindPRReportByKey(reports []versioning.VersionReport, key string) string {
-	for _, report := range reports {
-		if report.Key == key {
-			return report.PRReport
-		}
-	}
-	return ""
 }
 
 func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {

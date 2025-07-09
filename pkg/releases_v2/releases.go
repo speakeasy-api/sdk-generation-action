@@ -13,6 +13,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
+	"github.com/speakeasy-api/versioning-reports/versioning"
 )
 
 const speakeasyUrl = "https://speakeasy.com"
@@ -176,7 +177,7 @@ func GenerateLanguageChangelogMap(releaseInfo releases.ReleasesInfo, versioningI
 		reports := versioningInfo.VersionReport.Reports
 		for _, lang := range releaseLangKeys {
 			key := fmt.Sprintf("SDK_CHANGELOG_%s", strings.ToLower(lang))
-			sdkChangelog := releases.FindPRReportByKey(reports, key)
+			sdkChangelog := FindPRReportByKey(reports, key)
 			if sdkChangelog != "" {
 				languagesChangelogMap[lang] = sdkChangelog
 			}
@@ -369,4 +370,13 @@ func SortedLangKeys[T any](m map[string]T) []string {
 		return keys[i] < keys[j]
 	})
 	return keys
+}
+
+func FindPRReportByKey(reports []versioning.VersionReport, key string) string {
+	for _, report := range reports {
+		if report.Key == key {
+			return report.PRReport
+		}
+	}
+	return ""
 }

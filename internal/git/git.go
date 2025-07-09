@@ -31,6 +31,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
+	releasesv2 "github.com/speakeasy-api/sdk-generation-action/pkg/releases_v2"
 	"github.com/speakeasy-api/versioning-reports/versioning"
 
 	"github.com/google/go-github/v63/github"
@@ -604,7 +605,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 	if info.VersioningInfo.VersionReport != nil {
 		reports := info.VersioningInfo.VersionReport.Reports
 		key := fmt.Sprintf("SDK_CHANGELOG_%s", strings.ToLower(languageForPr))
-		sdkChangelog := releases.FindPRReportByKey(reports, key)
+		sdkChangelog := releasesv2.FindPRReportByKey(reports, key)
 		if sdkChangelog != "" {
 			generatorChanges = sdkChangelog
 		}
