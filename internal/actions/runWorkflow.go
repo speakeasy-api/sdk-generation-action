@@ -202,7 +202,7 @@ func RunWorkflow() error {
 
 	outputs["resolved_speakeasy_version"] = resolvedVersion
 	if sourcesOnly {
-		if _, err := g.CommitAndPush("", resolvedVersion, "", environment.ActionRunWorkflow, sourcesOnly, releaseInfo); err != nil {
+		if _, err := g.CommitAndPush("", resolvedVersion, "", environment.ActionRunWorkflow, sourcesOnly, releaseInfo, nil, nil); err != nil {
 			return err
 		}
 	}
@@ -314,17 +314,16 @@ func finalize(inputs finalizeInputs) error {
 
 	case environment.ModeDirect:
 		var releaseInfo *releases.ReleasesInfo
-		var languages map[string]releases.LanguageReleaseInfo = releaseInfo.Languages
 		var releaseInfoContent string
+		var languages map[string]releases.LanguageReleaseInfo
 		if !inputs.SourcesOnly {
+			releaseInfo = inputs.currentRelease
+			languages = releaseInfo.Languages
+			releaseInfoContent = releaseInfo.String()
 			if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
 				languageChangelogMap := releasesv2.GenerateLanguageChangelogMap(*releaseInfo, inputs.VersioningInfo)
 				releaseInfoContent = releasesv2.ReleaseContent(*releaseInfo, languageChangelogMap)
-			} else {
-				releaseInfo = inputs.currentRelease
-				releaseInfoContent = releaseInfo.String()
 			}
-			languages = releaseInfo.Languages
 
 			// We still read from releases info for terraform generations since they use the goreleaser
 			if inputs.Outputs[utils.OutputTargetRegenerated("terraform")] == "true" {

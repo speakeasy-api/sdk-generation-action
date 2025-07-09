@@ -357,6 +357,10 @@ func (g *Git) DeleteBranch(branchName string) error {
 }
 
 func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, releaseInfo releases.ReleasesInfo, commitHeadings map[string]string, commitMessages map[string]string) (string, error) {
+	if commitHeadings == nil || commitMessages == nil {
+		logging.Info("commitHeadings is %v, commitMessages is %v, skipping commit", commitHeadings, commitMessages)
+	}
+
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
@@ -384,14 +388,35 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		} else {
 			// Do not add commitInfo to commit message if all values of releaseInfo are zero values
 			// Gate the sdk changelog release behind an env variable
-			if !isZeroReleasesInfo(releaseInfo) && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
-				// TODO: How to figure out the language to use?
-				lang := "go"
+			if !isZeroReleasesInfo(releaseInfo) && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && commitHeadings != nil && commitMessages != nil {
+				lang := ""
+				// count number of keys in releaseInfo.Languages
+				numberOfLanguagesGenerated := len(releaseInfo.LanguagesGenerated)
+				commitHeading := ""
+				newCommitMessage := ""
+				if numberOfLanguagesGenerated == 1 {
+					for key := range releaseInfo.Languages {
+						lang = key
+						break
+					}
+				} else {
+					// select a language from the released languages
+					for key := range releaseInfo.Languages {
+						lang = key
+						break
+					}
+				}
+				if numberOfLanguagesGenerated == 1 {
+					commitHeading = commitHeadings[lang]
+				} else {
+					// fallback to previous style of commit heading
+					commitHeading = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
+				}
 
-				commitHeading := commitHeadings[lang]
-				newCommitMessage := commitMessages[lang]
-				fullCommitMessage := commitHeading + "\n" + newCommitMessage
-				commitMessage += "" + fullCommitMessage
+				if lang != "" {
+					newCommitMessage = commitMessages[lang]
+				}
+				commitMessage = commitHeading + "\n" + newCommitMessage
 			} else {
 				commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 			}
@@ -588,7 +613,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 		previousGenVersions = strings.Split(info.PreviousGenVersion, ";")
 	}
 	packageName := ""
-	languageForPr := "go"
+	languageForPr := ""
 
 	if info.GenInfo != nil && info.ReleaseInfo != nil {
 		for lang, langGenerationInfo := range info.GenInfo.Languages {
@@ -602,7 +627,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 		}
 	}
 	generatorChanges := ""
-	if info.VersioningInfo.VersionReport != nil {
+	if info.VersioningInfo.VersionReport != nil && languageForPr != "" {
 		reports := info.VersioningInfo.VersionReport.Reports
 		key := fmt.Sprintf("SDK_CHANGELOG_%s", strings.ToLower(languageForPr))
 		sdkChangelog := releasesv2.FindPRReportByKey(reports, key)
@@ -667,6 +692,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 			changelog = "\n" + changelog
 		}
 	}
+	// JULY_2025 Updated PR title and body
 	if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
 		title := speakeasyGenMinimumPrTitle
 		//eg. chore: 🐝 Update -
@@ -678,7 +704,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 		title += " " + suffix1
 		//eg. chore: 🐝 Update - vercel/sdk - Generate 1.9.0
 
-		fmt.Print(title)
+		logging.Info("title is: %s", title)
 		body := ""
 		if info.LintingReportURL != "" || info.ChangesReportURL != "" {
 			body += fmt.Sprintf(`> [!IMPORTANT]
@@ -698,6 +724,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 		body += generatorChanges
 		body += changelog
 	} else {
+		// Old PR title and body
 		title := getGenPRTitlePrefix()
 		if environment.IsDocsGeneration() {
 			title = getDocsPRTitlePrefix()
@@ -707,6 +734,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 
 		suffix, labelBumpType, _ := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
 		title += suffix
+		body := ""
 
 		if info.LintingReportURL != "" || info.ChangesReportURL != "" {
 			body += fmt.Sprintf(`> [!IMPORTANT]

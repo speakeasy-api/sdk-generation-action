@@ -61,7 +61,7 @@ func Suggest() error {
 
 	outputs["cli_output"] = out
 
-	if _, err := g.CommitAndPush("", "", environment.GetOpenAPIDocOutput(), environment.ActionSuggest, false, releases.ReleasesInfo{}); err != nil {
+	if _, err := g.CommitAndPush("", "", environment.GetOpenAPIDocOutput(), environment.ActionSuggest, false, releases.ReleasesInfo{}, nil, nil); err != nil {
 		return err
 	}
 

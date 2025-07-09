@@ -42,8 +42,6 @@ func GetVersion(pinnedVersion string) string {
 }
 
 func Download(pinnedVersion string, g Git) (string, error) {
-	// Can add a check here to use local speakeasy cli instead of downloading it
-
 	version := GetVersion(pinnedVersion)
 
 	link, version, err := g.GetDownloadLink(version)
@@ -79,7 +77,6 @@ func Download(pinnedVersion string, g Git) (string, error) {
 }
 
 func runSpeakeasyCommand(args ...string) (string, error) {
-	// Can add code here to use a local speakeasy binary
 	baseDir := environment.GetBaseDir()
 	extraRunEnvVars := environment.SpeakeasyEnvVars()
 	cmdPath := filepath.Join(baseDir, "bin", "speakeasy")
