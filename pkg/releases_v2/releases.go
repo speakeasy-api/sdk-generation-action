@@ -134,9 +134,8 @@ func releaseContent(releaseInfo releases.ReleasesInfo, languagesChangelogMap map
 
 	if releaseFootNote != "" {
 		// foot note separator
-		builder.WriteString("\n\t")
+		builder.WriteString("\t\n")
 		builder.WriteString(releaseFootNote)
-		builder.WriteString("\n")
 	}
 	logging.Debug("Full Sdk Changelog is : %v\n", builder.String())
 
@@ -222,10 +221,9 @@ func ParseReleasesV2(data string) (map[string]releases.LanguageReleaseInfo, stri
 		return nil, "", fmt.Errorf("no release header found")
 	}
 
-	// Return the entire original data as string
-	releaseContent := lastRelease
+	releaseContent := strings.TrimSuffix(ensureLeadingNewlines(lastRelease), "\n")
 
-	// Parse languages from the last release
+	// Parse languages from the target release
 	languages := make(map[string]releases.LanguageReleaseInfo)
 
 	// Parse NPM/TypeScript releases
@@ -331,6 +329,14 @@ func ParseReleasesV2(data string) (map[string]releases.LanguageReleaseInfo, stri
 	}
 
 	return languages, releaseContent, nil
+}
+
+// ensureLeadingNewlines ensures the content starts with \n\n for consistent formatting
+func ensureLeadingNewlines(content string) string {
+	if strings.HasPrefix(content, "\n\n") {
+		return content
+	}
+	return "\n\n" + content
 }
 
 func GetReleasesPath(dir string) string {
