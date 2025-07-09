@@ -182,15 +182,14 @@ var (
 	releaseInfoRegex        = regexp.MustCompile(`(?s)## (.*?)\n### Changes\n(.*?)Based on:\n- OpenAPI Doc (.*?) (.*?)\n- Speakeasy CLI (.*?) (\((.*?)\))?.*?`)
 	generatedLanguagesRegex = regexp.MustCompile(`- \[([a-z]+) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (.*)`)
 	langHeaderRegex         = regexp.MustCompile(`(?m)^## ([^\s]+) SDK Changes Detected:`)
-	// Updated regexes to handle new format: [PackageType PackageName vVersion](URL) - Path
-	npmReleaseRegex      = regexp.MustCompile(`\[npm (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/www\.npmjs\.com\/package\/.*?\/v\/\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\) - (.*)`)
-	pypiReleaseRegex     = regexp.MustCompile(`\[PyPI (.*?) v(\d+\.\d+\.\d+(?:-?\w+(?:\.\w+)*)?)\]\((https:\/\/pypi\.org\/project\/.*?\/\d+\.\d+\.\d+(?:-?\w+(?:\.\w+)*)?)\) - (.*)`)
-	goReleaseRegex       = regexp.MustCompile(`\[Go (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https?:\/\/[^\)]+)\) - ([^#]*)`)
-	composerReleaseRegex = regexp.MustCompile(`\[Composer (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/packagist\.org\/packages\/.*?#v\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\) - (.*)`)
-	mavenReleaseRegex    = regexp.MustCompile(`\[Maven Central (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/central\.sonatype\.com\/artifact\/.*?)\) - (.*)`)
-	rubyGemReleaseRegex  = regexp.MustCompile(`\[Ruby Gems (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/rubygems\.org\/gems\/.*?\/versions\/.*?)\) - (.*)`)
-	nugetReleaseRegex    = regexp.MustCompile(`\[NuGet (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/www\.nuget\.org\/packages\/.*?)\) - (.*)`)
-	swiftReleaseRegex    = regexp.MustCompile(`\[Swift Package Manager (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/github\.com\/.*?\/releases\/tag\/.*?)\) - (.*)`)
+	npmReleaseRegex         = regexp.MustCompile(`\[npm (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/www\.npmjs\.com\/package\/.*?\/v\/\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\) - (.*)`)
+	pypiReleaseRegex        = regexp.MustCompile(`\[PyPI (.*?) v(\d+\.\d+\.\d+(?:-?\w+(?:\.\w+)*)?)\]\((https:\/\/pypi\.org\/project\/.*?\/\d+\.\d+\.\d+(?:-?\w+(?:\.\w+)*)?)\) - (.*)`)
+	goReleaseRegex          = regexp.MustCompile(`\[Go (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https?:\/\/[^\)]+)\) - ([^#]*)`)
+	composerReleaseRegex    = regexp.MustCompile(`\[Composer (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/packagist\.org\/packages\/.*?#v\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\) - (.*)`)
+	mavenReleaseRegex       = regexp.MustCompile(`\[Maven Central (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/central\.sonatype\.com\/artifact\/.*?)\) - (.*)`)
+	rubyGemReleaseRegex     = regexp.MustCompile(`\[Ruby Gems (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/rubygems\.org\/gems\/.*?\/versions\/.*?)\) - (.*)`)
+	nugetReleaseRegex       = regexp.MustCompile(`\[NuGet (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/www\.nuget\.org\/packages\/.*?)\) - (.*)`)
+	swiftReleaseRegex       = regexp.MustCompile(`\[Swift Package Manager (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/github\.com\/.*?\/releases\/tag\/.*?)\) - (.*)`)
 )
 
 func GetLastReleaseInfo(dir string) (map[string]releases.LanguageReleaseInfo, string, error) {
