@@ -130,10 +130,11 @@ func releaseContent(releaseInfo releases.ReleasesInfo, languagesChangelogMap map
 	}
 	if generatorChanges != "" {
 		builder.WriteString(generatorChanges)
-		builder.WriteString("\n")
 	}
 
 	if releaseFootNote != "" {
+		// foot note separator
+		builder.WriteString("\n\t")
 		builder.WriteString(releaseFootNote)
 		builder.WriteString("\n")
 	}
@@ -183,14 +184,14 @@ var (
 	generatedLanguagesRegex = regexp.MustCompile(`- \[([a-z]+) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (.*)`)
 	langHeaderRegex         = regexp.MustCompile(`(?m)^## ([^\s]+) SDK Changes Detected:`)
 	// Updated regexes to handle new format: [PackageType PackageName vVersion](URL) - Path
-	npmReleaseRegex         = regexp.MustCompile(`\[npm (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/www\.npmjs\.com\/package\/.*?\/v\/\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\) - (.*)`)
-	pypiReleaseRegex        = regexp.MustCompile(`\[PyPI (.*?) v(\d+\.\d+\.\d+(?:-?\w+(?:\.\w+)*)?)\]\((https:\/\/pypi\.org\/project\/.*?\/\d+\.\d+\.\d+(?:-?\w+(?:\.\w+)*)?)\) - (.*)`)
-	goReleaseRegex          = regexp.MustCompile(`\[Go (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https?:\/\/[^\)]+)\) - ([^#]*)`)
-	composerReleaseRegex    = regexp.MustCompile(`\[Composer (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/packagist\.org\/packages\/.*?#v\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\) - (.*)`)
-	mavenReleaseRegex       = regexp.MustCompile(`\[Maven Central (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/central\.sonatype\.com\/artifact\/.*?)\) - (.*)`)
-	rubyGemReleaseRegex     = regexp.MustCompile(`\[Ruby Gems (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/rubygems\.org\/gems\/.*?\/versions\/.*?)\) - (.*)`)
-	nugetReleaseRegex       = regexp.MustCompile(`\[NuGet (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/www\.nuget\.org\/packages\/.*?)\) - (.*)`)
-	swiftReleaseRegex       = regexp.MustCompile(`\[Swift Package Manager (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/github\.com\/.*?\/releases\/tag\/.*?)\) - (.*)`)
+	npmReleaseRegex      = regexp.MustCompile(`\[npm (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/www\.npmjs\.com\/package\/.*?\/v\/\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\) - (.*)`)
+	pypiReleaseRegex     = regexp.MustCompile(`\[PyPI (.*?) v(\d+\.\d+\.\d+(?:-?\w+(?:\.\w+)*)?)\]\((https:\/\/pypi\.org\/project\/.*?\/\d+\.\d+\.\d+(?:-?\w+(?:\.\w+)*)?)\) - (.*)`)
+	goReleaseRegex       = regexp.MustCompile(`\[Go (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https?:\/\/[^\)]+)\) - ([^#]*)`)
+	composerReleaseRegex = regexp.MustCompile(`\[Composer (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/packagist\.org\/packages\/.*?#v\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\) - (.*)`)
+	mavenReleaseRegex    = regexp.MustCompile(`\[Maven Central (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/central\.sonatype\.com\/artifact\/.*?)\) - (.*)`)
+	rubyGemReleaseRegex  = regexp.MustCompile(`\[Ruby Gems (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/rubygems\.org\/gems\/.*?\/versions\/.*?)\) - (.*)`)
+	nugetReleaseRegex    = regexp.MustCompile(`\[NuGet (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/www\.nuget\.org\/packages\/.*?)\) - (.*)`)
+	swiftReleaseRegex    = regexp.MustCompile(`\[Swift Package Manager (.*?) v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)\]\((https:\/\/github\.com\/.*?\/releases\/tag\/.*?)\) - (.*)`)
 )
 
 func GetLastReleaseInfo(dir string) (map[string]releases.LanguageReleaseInfo, string, error) {
@@ -208,25 +209,21 @@ func GetLastReleaseInfo(dir string) (map[string]releases.LanguageReleaseInfo, st
 
 func ParseReleasesV2(data string) (map[string]releases.LanguageReleaseInfo, string, error) {
 	releaseEntries := strings.Split(data, "\n\n")
+
 	if len(releaseEntries) == 0 {
 		return nil, "", fmt.Errorf("no releases found")
 	}
 
 	// Find the entry that contains release information (starts with ##)
-	var lastRelease string
-	for i := len(releaseEntries) - 1; i >= 0; i-- {
-		if strings.HasPrefix(strings.TrimSpace(releaseEntries[i]), "##") {
-			lastRelease = releaseEntries[i]
-			break
-		}
-	}
-	
+	lastRelease := ""
+	lastRelease = releaseEntries[len(releaseEntries)-1]
+
 	if lastRelease == "" {
 		return nil, "", fmt.Errorf("no release header found")
 	}
 
 	// Return the entire original data as string
-	releaseContent := data
+	releaseContent := lastRelease
 
 	// Parse languages from the last release
 	languages := make(map[string]releases.LanguageReleaseInfo)
