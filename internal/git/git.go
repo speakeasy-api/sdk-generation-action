@@ -11,7 +11,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"runtime"
 	"slices"
@@ -356,7 +355,7 @@ func (g *Git) DeleteBranch(branchName string) error {
 	return nil
 }
 
-func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, releaseInfo releases.ReleasesInfo, commitHeadings map[string]string, commitMessages map[string]string) (string, error) {
+func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, releaseInfo *releases.ReleasesInfo, commitHeadings map[string]string, commitMessages map[string]string) (string, error) {
 	if commitHeadings == nil || commitMessages == nil {
 		logging.Info("commitHeadings is %v, commitMessages is %v, skipping commit", commitHeadings, commitMessages)
 	}
@@ -388,7 +387,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		} else {
 			// Do not add commitInfo to commit message if all values of releaseInfo are zero values
 			// Gate the sdk changelog release behind an env variable
-			if !isZeroReleasesInfo(releaseInfo) && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && commitHeadings != nil && commitMessages != nil {
+			if releaseInfo != nil && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && commitHeadings != nil && commitMessages != nil {
 				lang := ""
 				// count number of keys in releaseInfo.Languages
 				numberOfLanguagesGenerated := len(releaseInfo.LanguagesGenerated)
@@ -1443,9 +1442,4 @@ func pushErr(err error) error {
 		return fmt.Errorf("error pushing changes: %w", err)
 	}
 	return nil
-}
-
-// isZeroReleasesInfo returns true if all fields of ReleasesInfo are zero values
-func isZeroReleasesInfo(info releases.ReleasesInfo) bool {
-	return reflect.DeepEqual(info, releases.ReleasesInfo{})
 }
