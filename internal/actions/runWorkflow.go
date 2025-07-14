@@ -149,17 +149,7 @@ func RunWorkflow() error {
 		}
 
 		var commitMessages map[string]string
-		if runRes.VersioningInfo.VersionReport != nil {
-			reports := runRes.VersioningInfo.VersionReport.Reports
-			for _, target := range cli.DefaultSupportedTargetsForChangelog {
-				key := fmt.Sprintf("%s_commit_message", strings.ToLower(target))
-				commitMessage := releasesv2.FindPRReportByKey(reports, key)
-				logging.Debug("lang is: %s, key is: %s, commitMessage is: %s", target, key, commitMessage)
-				if commitMessage != "" {
-					commitMessages[target] = commitMessage
-				}
-			}
-		}
+		updateCommitMessages(commitMessages, runRes)
 
 		if environment.PushCodeSamplesOnly() {
 			// If we're just pushing code samples we don't want to raise a PR
@@ -172,12 +162,14 @@ func RunWorkflow() error {
 		}
 
 		if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
-			if err := releasesv2.UpdateReleasesFile(releaseInfo, releasesDir, runRes.VersioningInfo); err != nil {
+			err := releasesv2.UpdateReleasesFile(releaseInfo, releasesDir, runRes.VersioningInfo)
+			if err != nil {
 				logging.Debug("error while updating releases file: %v", err.Error())
 				return err
 			}
 		} else {
-			if err := releases.UpdateReleasesFile(releaseInfo, releasesDir); err != nil {
+			err := releases.UpdateReleasesFile(releaseInfo, releasesDir)
+			if err != nil {
 				logging.Debug("error while updating releases file: %v", err.Error())
 				return err
 			}
@@ -391,6 +383,20 @@ func addDirectModeBranchTagging() error {
 	}
 
 	return nil
+}
+
+func updateCommitMessages(commitMessages map[string]string, runRes *run.RunResult) {
+	if runRes.VersioningInfo.VersionReport != nil {
+		reports := runRes.VersioningInfo.VersionReport.Reports
+		for _, target := range cli.DefaultSupportedTargetsForChangelog {
+			key := fmt.Sprintf("%s_commit_message", strings.ToLower(target))
+			commitMessage := releasesv2.FindPRReportByKey(reports, key)
+			logging.Debug("lang is: %s, key is: %s, commitMessage is: %s", target, key, commitMessage)
+			if commitMessage != "" {
+				commitMessages[target] = commitMessage
+			}
+		}
+	}
 }
 
 func getReleasesInfo() (*releases.ReleasesInfo, error) {
