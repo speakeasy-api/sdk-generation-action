@@ -39,6 +39,8 @@ var defaultSupportedTargets = []string{
 	"terraform",
 	"typescript",
 }
+
+// Targets for the new changelog - JULY 2025
 var DefaultSupportedTargetsForChangelog = []string{
 	"typescript",
 	"python",
