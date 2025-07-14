@@ -372,6 +372,7 @@ func SortedLangKeys[T any](m map[string]T) []string {
 	return keys
 }
 
+// We search through the PR reports which are written to the file system by the speakeasy cli
 func FindPRReportByKey(reports []versioning.VersionReport, key string) string {
 	for _, report := range reports {
 		if report.Key == key {

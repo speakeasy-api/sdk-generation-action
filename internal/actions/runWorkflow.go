@@ -149,18 +149,6 @@ func RunWorkflow() error {
 		}
 
 		var commitMessages map[string]string
-		var commitHeadings map[string]string
-		if runRes.VersioningInfo.VersionReport != nil {
-			reports := runRes.VersioningInfo.VersionReport.Reports
-			for _, target := range cli.DefaultSupportedTargetsForChangelog {
-				key := fmt.Sprintf("%s_commit_heading", strings.ToLower(target))
-				commitHeading := releasesv2.FindPRReportByKey(reports, key)
-				logging.Debug("lang is: %s, key is: %s, commitHeading is: %s", target, key, commitHeading)
-				if commitHeading != "" {
-					commitHeadings[target] = commitHeading
-				}
-			}
-		}
 		if runRes.VersioningInfo.VersionReport != nil {
 			reports := runRes.VersioningInfo.VersionReport.Reports
 			for _, target := range cli.DefaultSupportedTargetsForChangelog {
@@ -195,14 +183,14 @@ func RunWorkflow() error {
 			}
 		}
 
-		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, &releaseInfo, commitHeadings, commitMessages); err != nil {
+		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, &releaseInfo, commitMessages); err != nil {
 			return err
 		}
 	}
 
 	outputs["resolved_speakeasy_version"] = resolvedVersion
 	if sourcesOnly {
-		if _, err := g.CommitAndPush("", resolvedVersion, "", environment.ActionRunWorkflow, sourcesOnly, &releaseInfo, nil, nil); err != nil {
+		if _, err := g.CommitAndPush("", resolvedVersion, "", environment.ActionRunWorkflow, sourcesOnly, &releaseInfo, nil); err != nil {
 			return err
 		}
 	}

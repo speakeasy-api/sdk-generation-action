@@ -355,9 +355,9 @@ func (g *Git) DeleteBranch(branchName string) error {
 	return nil
 }
 
-func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, releaseInfo *releases.ReleasesInfo, commitHeadings map[string]string, commitMessages map[string]string) (string, error) {
-	if commitHeadings == nil || commitMessages == nil {
-		logging.Info("commitHeadings is %v, commitMessages is %v, skipping commit", commitHeadings, commitMessages)
+func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, releaseInfo *releases.ReleasesInfo, commitMessages map[string]string) (string, error) {
+	if commitMessages == nil {
+		logging.Info("commitMessages is %v", commitMessages)
 	}
 
 	if g.repo == nil {
@@ -387,11 +387,10 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		} else {
 			// Do not add commitInfo to commit message if all values of releaseInfo are zero values
 			// Gate the sdk changelog release behind an env variable
-			if releaseInfo != nil && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && commitHeadings != nil && commitMessages != nil {
+			if releaseInfo != nil && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && commitMessages != nil {
 				lang := ""
 				// count number of keys in releaseInfo.Languages
 				numberOfLanguagesGenerated := len(releaseInfo.LanguagesGenerated)
-				commitHeading := ""
 				newCommitMessage := ""
 				if numberOfLanguagesGenerated == 1 {
 					for key := range releaseInfo.Languages {
@@ -405,17 +404,11 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 						break
 					}
 				}
-				if numberOfLanguagesGenerated == 1 {
-					commitHeading = commitHeadings[lang]
-				} else {
-					// fallback to previous style of commit heading
-					commitHeading = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
-				}
 
 				if lang != "" {
 					newCommitMessage = commitMessages[lang]
 				}
-				commitMessage = commitHeading + "\n" + newCommitMessage
+				commitMessage = newCommitMessage
 			} else {
 				commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 			}
