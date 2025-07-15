@@ -380,40 +380,23 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
-	var commitMessage string
+	var commitMessage string = ""
 	if action == environment.ActionRunWorkflow {
 		if sourcesOnly {
 			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
-		} else {
-			// Do not add commitInfo to commit message if all values of releaseInfo are zero values
+		} else if releaseInfo != nil && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && commitMessages != nil {
 			// Gate the sdk changelog release behind an env variable
-			if releaseInfo != nil && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && commitMessages != nil {
-				lang := ""
-				// count number of keys in releaseInfo.Languages
-				numberOfLanguagesGenerated := len(releaseInfo.LanguagesGenerated)
-				newCommitMessage := ""
-				if numberOfLanguagesGenerated == 1 {
-					for key := range releaseInfo.Languages {
-						lang = key
-						break
-					}
-				} else {
-					// select a language from the released languages
-					for key := range releaseInfo.Languages {
-						lang = key
-						break
-					}
-				}
-
-				if lang != "" {
-					newCommitMessage = commitMessages[lang]
-				}
-				commitMessage = newCommitMessage
-			} else {
-				commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
+			lang := ""
+			for key := range releaseInfo.Languages {
+				lang = key
+				break
 			}
+			if lang != "" {
+				commitMessage = commitMessages[lang]
+			}
+		} else {
+			commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 		}
-
 	} else if action == environment.ActionSuggest {
 		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
 	}
