@@ -592,7 +592,6 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 
 	if info.GenInfo != nil && info.ReleaseInfo != nil {
 		for lang, langGenerationInfo := range info.GenInfo.Languages {
-			// Combine all conditions into one
 			if _, exists := info.ReleaseInfo.LanguagesGenerated[lang]; !exists || langGenerationInfo.PackageName == "" {
 				continue
 			}
