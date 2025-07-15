@@ -698,75 +698,8 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 		body += generatorChanges
 		body += changelog
 	} else {
-		// Old PR title and body
-		title := getGenPRTitlePrefix()
-		if environment.IsDocsGeneration() {
-			title = getDocsPRTitlePrefix()
-		} else if info.SourceGeneration {
-			title = getGenSourcesTitlePrefix()
-		}
-
-		suffix, labelBumpType, _ := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
-		title += suffix
-
-		if info.LintingReportURL != "" || info.ChangesReportURL != "" {
-			body += fmt.Sprintf(`> [!IMPORTANT]
-	`)
-		}
-
-		if info.LintingReportURL != "" {
-			body += fmt.Sprintf(`> Linting report available at: <%s>
-	`, info.LintingReportURL)
-		}
-
-		if info.ChangesReportURL != "" {
-			body += fmt.Sprintf(`> OpenAPI Change report available at: <%s>
-	`, info.ChangesReportURL)
-		}
-
-		if info.SourceGeneration {
-			body += "Update of compiled sources"
-		} else {
-			body += fmt.Sprintf(`# SDK update
-	Based on:
-	- OpenAPI Doc %s %s
-	- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy
-	`, info.ReleaseInfo.DocVersion, info.ReleaseInfo.DocLocation, info.ReleaseInfo.SpeakeasyVersion, info.ReleaseInfo.GenerationVersion)
-		}
-
-		if info.VersioningInfo.VersionReport != nil {
-
-			// We keep track of explicit bump types and whether that bump type is manual or automated in the PR body
-			if labelBumpType != nil && *labelBumpType != versioning.BumpCustom && *labelBumpType != versioning.BumpNone {
-				// be very careful if changing this it critically aligns with a regex in parseBumpFromPRBody
-				versionBumpMsg := "Version Bump Type: " + fmt.Sprintf("[%s]", string(*labelBumpType)) + " - "
-				if info.VersioningInfo.ManualBump {
-					versionBumpMsg += string(versionbumps.BumpMethodManual) + " (manual)"
-					// if manual we bold the message
-					versionBumpMsg = "**" + versionBumpMsg + "**"
-					versionBumpMsg += fmt.Sprintf("\n\nThis PR will stay on the current version until the %s label is removed and/or modified.", string(*labelBumpType))
-				} else {
-					versionBumpMsg += string(versionbumps.BumpMethodAutomated) + " (automated)"
-				}
-				body += fmt.Sprintf(`## Versioning
-	
-	%s
-	`, versionBumpMsg)
-			}
-
-			// SDK changelog are added here, by reading the PR reports
-			body += stripCodes(info.VersioningInfo.VersionReport.GetMarkdownSection())
-
-		} else {
-			if len(info.OpenAPIChangeSummary) > 0 {
-				body += fmt.Sprintf(`## OpenAPI Change Summary
-	
-	%s
-	`, stripCodes(info.OpenAPIChangeSummary))
-			}
-
-			body += changelog
-		}
+		// Call helper with correct type for labelTypes
+		title, body = g.generateOldPRTitleAndBody(info, labelTypes, changelog)
 	}
 	_, _, labels := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
 
@@ -825,6 +758,80 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 	logging.Info("PR: %s", url)
 
 	return info.PR, nil
+}
+
+// --- Helper function for old PR title/body generation ---
+func (g *Git) generateOldPRTitleAndBody(info PRInfo, labelTypes map[string]github.Label, changelog string) (string, string) {
+	var body = ""
+	title := getGenPRTitlePrefix()
+	if environment.IsDocsGeneration() {
+		title = getDocsPRTitlePrefix()
+	} else if info.SourceGeneration {
+		title = getGenSourcesTitlePrefix()
+	}
+
+	suffix, labelBumpType, _ := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
+	title += suffix
+
+	if info.LintingReportURL != "" || info.ChangesReportURL != "" {
+		body += fmt.Sprintf(`> [!IMPORTANT]
+	`)
+	}
+
+	if info.LintingReportURL != "" {
+		body += fmt.Sprintf(`> Linting report available at: <%s>
+	`, info.LintingReportURL)
+	}
+
+	if info.ChangesReportURL != "" {
+		body += fmt.Sprintf(`> OpenAPI Change report available at: <%s>
+	`, info.ChangesReportURL)
+	}
+
+	if info.SourceGeneration {
+		body += "Update of compiled sources"
+	} else {
+		body += fmt.Sprintf(`# SDK update
+	Based on:
+	- OpenAPI Doc %s %s
+	- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy
+	`, info.ReleaseInfo.DocVersion, info.ReleaseInfo.DocLocation, info.ReleaseInfo.SpeakeasyVersion, info.ReleaseInfo.GenerationVersion)
+	}
+
+	if info.VersioningInfo.VersionReport != nil {
+		// We keep track of explicit bump types and whether that bump type is manual or automated in the PR body
+		if labelBumpType != nil && *labelBumpType != versioning.BumpCustom && *labelBumpType != versioning.BumpNone {
+			// be very careful if changing this it critically aligns with a regex in parseBumpFromPRBody
+			versionBumpMsg := "Version Bump Type: " + fmt.Sprintf("[%s]", string(*labelBumpType)) + " - "
+			if info.VersioningInfo.ManualBump {
+				versionBumpMsg += string(versionbumps.BumpMethodManual) + " (manual)"
+				// if manual we bold the message
+				versionBumpMsg = "**" + versionBumpMsg + "**"
+				versionBumpMsg += fmt.Sprintf("\n\nThis PR will stay on the current version until the %s label is removed and/or modified.", string(*labelBumpType))
+			} else {
+				versionBumpMsg += string(versionbumps.BumpMethodAutomated) + " (automated)"
+			}
+			body += fmt.Sprintf(`## Versioning
+	
+	%s
+	`, versionBumpMsg)
+		}
+
+		// SDK changelog are added here, by reading the PR reports
+		body += stripCodes(info.VersioningInfo.VersionReport.GetMarkdownSection())
+
+	} else {
+		if len(info.OpenAPIChangeSummary) > 0 {
+			body += fmt.Sprintf(`## OpenAPI Change Summary
+	
+	%s
+	`, stripCodes(info.OpenAPIChangeSummary))
+		}
+
+		body += changelog
+	}
+
+	return title, body
 }
 
 func notEquivalent(desired []*github.Label, actual []*github.Label) bool {
