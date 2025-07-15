@@ -162,17 +162,13 @@ func RunWorkflow() error {
 		}
 
 		if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
-			err := releasesv2.UpdateReleasesFile(releaseInfo, releasesDir, runRes.VersioningInfo)
-			if err != nil {
-				logging.Debug("error while updating releases file: %v", err.Error())
-				return err
-			}
+			err = releasesv2.UpdateReleasesFile(releaseInfo, releasesDir, runRes.VersioningInfo)
 		} else {
-			err := releases.UpdateReleasesFile(releaseInfo, releasesDir)
-			if err != nil {
-				logging.Debug("error while updating releases file: %v", err.Error())
-				return err
-			}
+			err = releases.UpdateReleasesFile(releaseInfo, releasesDir)
+		}
+		if err != nil {
+			logging.Debug("error while updating releases file: %v", err.Error())
+			return err
 		}
 
 		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, &releaseInfo, commitMessages); err != nil {
