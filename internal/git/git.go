@@ -613,90 +613,14 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 
 	// Deprecated -- kept around for old CLI versions. VersioningReport is newer pathway
 	if info.ReleaseInfo != nil && info.VersioningInfo.VersionReport == nil {
-		for language, genInfo := range info.ReleaseInfo.LanguagesGenerated {
-			genPath := path.Join(environment.GetWorkspace(), "repo", genInfo.Path)
-
-			var targetVersions map[string]string
-
-			cfg, err := genConfig.Load(genPath)
-			if err != nil {
-				logging.Debug("failed to load gen config for retrieving granular versions for changelog at path %s: %v", genPath, err)
-				continue
-			} else {
-				ok := false
-				targetVersions, ok = cfg.LockFile.Features[language]
-				if !ok {
-					logging.Debug("failed to find language %s in gen config for retrieving granular versions for changelog at path %s", language, genPath)
-					continue
-				}
-			}
-			var previousVersions map[string]string
-
-			if len(previousGenVersions) > 0 {
-				for _, previous := range previousGenVersions {
-					langVersions := strings.Split(previous, ":")
-
-					if len(langVersions) == 2 && langVersions[0] == language {
-						previousVersions = map[string]string{}
-
-						pairs := strings.Split(langVersions[1], ",")
-						for i := 0; i < len(pairs); i += 2 {
-							previousVersions[pairs[i]] = pairs[i+1]
-						}
-					}
-				}
-			}
-
-			versionChangelog, err := cli.GetChangelog(language, info.ReleaseInfo.GenerationVersion, "", targetVersions, previousVersions)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get changelog for language %s: %w", language, err)
-			}
-			changelog += fmt.Sprintf("\n\n## Generator Changelog\n\n%s", versionChangelog)
-		}
-
-		if changelog == "" {
-			// Not using granular version, grab old changelog
-			changelog, err = cli.GetChangelog("", info.ReleaseInfo.GenerationVersion, info.PreviousGenVersion, nil, nil)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get changelog: %w", err)
-			}
-			if strings.TrimSpace(changelog) != "" {
-				changelog = "\n\n\n## Changelog\n\n" + changelog
-			}
-		} else {
-			changelog = "\n" + changelog
+		changelog, err = g.generateGeneratorChangelogForOldCLIVersions(info, previousGenVersions, changelog)
+		if err != nil {
+			return nil, err
 		}
 	}
 	// JULY_2025 Updated PR title and body
 	if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
-		title := speakeasyGenMinimumPrTitle
-		//eg. chore: 🐝 Update -
-		title += " " + packageName
-		//eg. chore: 🐝 Update - vercel/sdk
-		title += " - " + environment.GetWorkflowName()
-		//eg. chore: 🐝 Update - vercel/sdk - Generate
-		suffix1, _, _ := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
-		title += " " + suffix1
-		//eg. chore: 🐝 Update - vercel/sdk - Generate 1.9.0
-
-		logging.Info("title is: %s", title)
-		if info.LintingReportURL != "" || info.ChangesReportURL != "" {
-			body += fmt.Sprintf(`> [!IMPORTANT]
-	`)
-		}
-
-		if info.LintingReportURL != "" {
-			body += fmt.Sprintf(`> Linting report available at: <%s>
-	`, info.LintingReportURL)
-		}
-
-		if info.ChangesReportURL != "" {
-			body += fmt.Sprintf(`> OpenAPI Change report available at: <%s>
-	`, info.ChangesReportURL)
-		}
-		body += "# " + packageName + " update"
-		body += generatorChanges
-		body += changelog
+		body = g.generateNewPRTitleAndBody(packageName, info, labelTypes, changelog, generatorChanges)
 	} else {
 		// Call helper with correct type for labelTypes
 		title, body = g.generateOldPRTitleAndBody(info, labelTypes, changelog)
@@ -832,6 +756,99 @@ func (g *Git) generateOldPRTitleAndBody(info PRInfo, labelTypes map[string]githu
 	}
 
 	return title, body
+}
+
+// --- Helper function for old PR title/body generation ---
+func (g *Git) generateNewPRTitleAndBody(packageName string, info PRInfo, labelTypes map[string]github.Label, changelog string, generatorChanges string) string {
+	var body = ""
+	title := speakeasyGenMinimumPrTitle
+	//eg. chore: 🐝 Update -
+	title += " " + packageName
+	//eg. chore: 🐝 Update - vercel/sdk
+	title += " - " + environment.GetWorkflowName()
+	//eg. chore: 🐝 Update - vercel/sdk - Generate
+	suffix1, _, _ := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
+	title += " " + suffix1
+	//eg. chore: 🐝 Update - vercel/sdk - Generate 1.9.0
+
+	logging.Info("title is: %s", title)
+	if info.LintingReportURL != "" || info.ChangesReportURL != "" {
+		body += fmt.Sprintf(`> [!IMPORTANT]
+`)
+	}
+
+	if info.LintingReportURL != "" {
+		body += fmt.Sprintf(`> Linting report available at: <%s>
+`, info.LintingReportURL)
+	}
+
+	if info.ChangesReportURL != "" {
+		body += fmt.Sprintf(`> OpenAPI Change report available at: <%s>
+`, info.ChangesReportURL)
+	}
+	body += "# " + packageName + " update"
+	body += generatorChanges
+	body += changelog
+	return body
+}
+
+// --- Helper function for changelog generation for old CLI versions ---
+func (g *Git) generateGeneratorChangelogForOldCLIVersions(info PRInfo, previousGenVersions []string, changelog string) (string, error) {
+	for language, genInfo := range info.ReleaseInfo.LanguagesGenerated {
+		genPath := path.Join(environment.GetWorkspace(), "repo", genInfo.Path)
+
+		var targetVersions map[string]string
+
+		cfg, err := genConfig.Load(genPath)
+		if err != nil {
+			logging.Debug("failed to load gen config for retrieving granular versions for changelog at path %s: %v", genPath, err)
+			continue
+		} else {
+			ok := false
+			targetVersions, ok = cfg.LockFile.Features[language]
+			if !ok {
+				logging.Debug("failed to find language %s in gen config for retrieving granular versions for changelog at path %s", language, genPath)
+				continue
+			}
+		}
+		var previousVersions map[string]string
+
+		if len(previousGenVersions) > 0 {
+			for _, previous := range previousGenVersions {
+				langVersions := strings.Split(previous, ":")
+
+				if len(langVersions) == 2 && langVersions[0] == language {
+					previousVersions = map[string]string{}
+
+					pairs := strings.Split(langVersions[1], ",")
+					for i := 0; i < len(pairs); i += 2 {
+						previousVersions[pairs[i]] = pairs[i+1]
+					}
+				}
+			}
+		}
+
+		versionChangelog, err := cli.GetChangelog(language, info.ReleaseInfo.GenerationVersion, "", targetVersions, previousVersions)
+		if err != nil {
+			return changelog, fmt.Errorf("failed to get changelog for language %s: %w", language, err)
+		}
+		changelog += fmt.Sprintf("\n\n## Generator Changelog\n\n%s", versionChangelog)
+	}
+
+	if changelog == "" {
+		// Not using granular version, grab old changelog
+		var err error
+		changelog, err = cli.GetChangelog("", info.ReleaseInfo.GenerationVersion, info.PreviousGenVersion, nil, nil)
+		if err != nil {
+			return changelog, fmt.Errorf("failed to get changelog: %w", err)
+		}
+		if strings.TrimSpace(changelog) != "" {
+			changelog = "\n\n\n## Changelog\n\n" + changelog
+		}
+	} else {
+		changelog = "\n" + changelog
+	}
+	return changelog, nil
 }
 
 func notEquivalent(desired []*github.Label, actual []*github.Label) bool {
