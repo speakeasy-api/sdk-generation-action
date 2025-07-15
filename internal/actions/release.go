@@ -69,6 +69,11 @@ func Release() error {
 	releaseInfoContent := ""
 
 	if usingReleasesMd {
+		latestRelease, err = releases.GetLastReleaseInfo(dir)
+		if err != nil {
+			return err
+		}
+	} else {
 		if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
 			languages, releaseInfoContent, err = releasesv2.GetLastReleaseInfo(dir)
 			if err != nil {
@@ -79,17 +84,10 @@ func Release() error {
 				releaseInfoContent = latestRelease.String()
 			}
 		} else {
-			latestRelease, err = releases.GetLastReleaseInfo(dir)
+			latestRelease, err = releases.GetReleaseInfoFromGenerationFiles(dir)
 			languages = latestRelease.Languages
 			releaseInfoContent = latestRelease.String()
 		}
-		if err != nil {
-			return err
-		}
-	} else {
-		latestRelease, err = releases.GetReleaseInfoFromGenerationFiles(dir)
-		languages = latestRelease.Languages
-		releaseInfoContent = latestRelease.String()
 		if err != nil {
 			return err
 		}
