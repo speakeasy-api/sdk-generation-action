@@ -592,13 +592,13 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 
 	if info.GenInfo != nil && info.ReleaseInfo != nil {
 		for lang, langGenerationInfo := range info.GenInfo.Languages {
-			if _, exists := info.ReleaseInfo.LanguagesGenerated[lang]; exists {
-				if langGenerationInfo.PackageName != "" {
-					languageForPr = lang
-					packageName = langGenerationInfo.PackageName
-					break
-				}
+			// Combine all conditions into one
+			if _, exists := info.ReleaseInfo.LanguagesGenerated[lang]; !exists || langGenerationInfo.PackageName == "" {
+				continue
 			}
+			languageForPr = lang
+			packageName = langGenerationInfo.PackageName
+			break
 		}
 	}
 	generatorChanges := ""
