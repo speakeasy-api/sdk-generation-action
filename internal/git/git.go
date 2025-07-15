@@ -680,7 +680,6 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 		//eg. chore: 🐝 Update - vercel/sdk - Generate 1.9.0
 
 		logging.Info("title is: %s", title)
-		body := ""
 		if info.LintingReportURL != "" || info.ChangesReportURL != "" {
 			body += fmt.Sprintf(`> [!IMPORTANT]
 	`)
@@ -709,7 +708,6 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 
 		suffix, labelBumpType, _ := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
 		title += suffix
-		body := ""
 
 		if info.LintingReportURL != "" || info.ChangesReportURL != "" {
 			body += fmt.Sprintf(`> [!IMPORTANT]
