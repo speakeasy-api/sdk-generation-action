@@ -20,7 +20,6 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
-	releasesv2 "github.com/speakeasy-api/sdk-generation-action/pkg/releases_v2"
 )
 
 func RunWorkflow() error {
@@ -161,11 +160,7 @@ func RunWorkflow() error {
 			return err
 		}
 
-		if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
-			err = releasesv2.UpdateReleasesFile(releaseInfo, releasesDir, runRes.VersioningInfo, runRes.ReleaseNotes)
-		} else {
-			err = releases.UpdateReleasesFile(releaseInfo, releasesDir)
-		}
+		err = releases.UpdateReleasesFile(releaseInfo, releasesDir)
 		if err != nil {
 			logging.Debug("error while updating releases file: %v", err.Error())
 			return err
@@ -389,7 +384,7 @@ func updateCommitMessages(commitMessages map[string]string, runRes *run.RunResul
 		reports := runRes.VersioningInfo.VersionReport.Reports
 		for _, target := range cli.DefaultSupportedTargetsForChangelog {
 			key := fmt.Sprintf("%s_commit_message", strings.ToLower(target))
-			commitMessage := releasesv2.FindPRReportByKey(reports, key)
+			commitMessage := releases.FindPRReportByKey(reports, key)
 			logging.Debug("lang is: %s, key is: %s, commitMessage is: %s", target, key, commitMessage)
 			if commitMessage != "" {
 				commitMessages[target] = commitMessage

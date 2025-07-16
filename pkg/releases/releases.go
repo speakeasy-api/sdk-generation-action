@@ -12,6 +12,7 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
+	"github.com/speakeasy-api/versioning-reports/versioning"
 )
 
 type LanguageReleaseInfo struct {
@@ -368,4 +369,14 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 
 func GetReleasesPath(dir string) string {
 	return path.Join(environment.GetWorkspace(), "repo", dir, "RELEASES.md")
+}
+
+// We search through the PR reports which are written to the file system by the speakeasy cli
+func FindPRReportByKey(reports []versioning.VersionReport, key string) string {
+	for _, report := range reports {
+		if report.Key == key {
+			return report.PRReport
+		}
+	}
+	return ""
 }
