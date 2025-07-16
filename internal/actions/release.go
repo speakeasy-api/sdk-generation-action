@@ -68,10 +68,12 @@ func Release() error {
 	var newReleaseInfo map[string]string = nil
 	oldReleaseContent := ""
 
+	// Old way of getting release Info (uses RELEASES.md)
 	if usingReleasesMd {
 		latestRelease, err = releases.GetLastReleaseInfo(dir)
 	} else {
 		// newReleaseInfo is present only if SDK_CHANGELOG_JULY_2025 env is true
+		// New way of getting release Info (uses gen.lockfile)
 		latestRelease, newReleaseInfo, err = releases.GetReleaseInfoFromGenerationFiles(dir)
 	}
 	if err != nil {

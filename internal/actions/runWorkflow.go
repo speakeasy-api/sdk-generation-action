@@ -299,6 +299,7 @@ func finalize(inputs finalizeInputs) error {
 			}
 
 			// We still read from releases info for terraform generations since they use the goreleaser
+			// Read from Releases.md for terraform generations
 			if inputs.Outputs[utils.OutputTargetRegenerated("terraform")] == "true" {
 				releaseInfo, err = getReleasesInfo()
 				oldReleaseInfo = releaseInfo.String()
