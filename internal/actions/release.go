@@ -15,7 +15,6 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
-	releasesv2 "github.com/speakeasy-api/sdk-generation-action/pkg/releases_v2"
 )
 
 func Release() error {
@@ -66,32 +65,20 @@ func Release() error {
 
 	var languages map[string]releases.LanguageReleaseInfo
 	var latestRelease *releases.ReleasesInfo
-	releaseInfoContent := ""
+	var newReleaseInfo map[string]string = nil
+	oldReleaseContent := ""
 
 	if usingReleasesMd {
 		latestRelease, err = releases.GetLastReleaseInfo(dir)
-		if err != nil {
-			return err
-		}
 	} else {
-		if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
-			languages, releaseInfoContent, err = releasesv2.GetLastReleaseInfo(dir)
-			if err != nil {
-				logging.Info("Error getting last release info using releases v2: Error: %s\n", err.Error())
-				// Fallback to releases v1
-				latestRelease, err = releases.GetLastReleaseInfo(dir)
-				languages = latestRelease.Languages
-				releaseInfoContent = latestRelease.String()
-			}
-		} else {
-			latestRelease, err = releases.GetReleaseInfoFromGenerationFiles(dir)
-			languages = latestRelease.Languages
-			releaseInfoContent = latestRelease.String()
-		}
-		if err != nil {
-			return err
-		}
+		// newReleaseInfo is present only if SDK_CHANGELOG_JULY_2025 env is true
+		latestRelease, newReleaseInfo, err = releases.GetReleaseInfoFromGenerationFiles(dir)
 	}
+	if err != nil {
+		return err
+	}
+	languages = latestRelease.Languages
+	oldReleaseContent = latestRelease.String()
 
 	outputs := map[string]string{}
 	for lang, info := range latestRelease.Languages {
@@ -103,13 +90,7 @@ func Release() error {
 		return err
 	}
 
-	// Backup in case the release info content is empty or the languages map is empty
-	if releaseInfoContent == "" || len(languages) == 0 {
-		logging.Info("ReleaseInfoContent %s and languages map is %+v . \n", releaseInfoContent, languages)
-		releaseInfoContent = latestRelease.String()
-		languages = latestRelease.Languages
-	}
-	if err := g.CreateRelease(releaseInfoContent, languages, outputs); err != nil {
+	if err := g.CreateRelease(oldReleaseContent, languages, outputs, newReleaseInfo); err != nil {
 		return err
 	}
 

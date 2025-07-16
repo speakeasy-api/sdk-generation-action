@@ -161,16 +161,16 @@ func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
 	return ParseReleases(string(data))
 }
 
-func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, error) {
+func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, map[string]string, error) {
 	cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", path))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	cfgFile := cfg.Config
 	lockFile := cfg.LockFile
 	if cfgFile == nil || lockFile == nil {
-		return nil, fmt.Errorf("config or lock file not found")
+		return nil, nil, fmt.Errorf("config or lock file not found")
 	}
 
 	releaseInfo := ReleasesInfo{
@@ -195,7 +195,7 @@ func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, error) {
 		}
 	}
 
-	return &releaseInfo, nil
+	return &releaseInfo, lockFile.ReleaseNotes, nil
 }
 
 func ParseReleases(data string) (*ReleasesInfo, error) {
