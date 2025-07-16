@@ -698,17 +698,17 @@ func (g *Git) generateOldPRTitleAndBody(info PRInfo, labelTypes map[string]githu
 
 	if info.LintingReportURL != "" || info.ChangesReportURL != "" {
 		body += fmt.Sprintf(`> [!IMPORTANT]
-	`)
+`)
 	}
 
 	if info.LintingReportURL != "" {
 		body += fmt.Sprintf(`> Linting report available at: <%s>
-	`, info.LintingReportURL)
+`, info.LintingReportURL)
 	}
 
 	if info.ChangesReportURL != "" {
 		body += fmt.Sprintf(`> OpenAPI Change report available at: <%s>
-	`, info.ChangesReportURL)
+`, info.ChangesReportURL)
 	}
 
 	if info.SourceGeneration {
