@@ -618,7 +618,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 	}
 	// JULY_2025 Updated PR title and body
 	if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
-		body = g.generateNewPRTitleAndBody(packageName, info, labelTypes, changelog, generatorChanges)
+		body = g.generateNewPRBody(packageName, info, changelog, generatorChanges)
 	} else {
 		// Call helper with correct type for labelTypes
 		title, body = g.generateOldPRTitleAndBody(info, labelTypes, changelog)
@@ -757,19 +757,8 @@ func (g *Git) generateOldPRTitleAndBody(info PRInfo, labelTypes map[string]githu
 }
 
 // --- Helper function for old PR title/body generation ---
-func (g *Git) generateNewPRTitleAndBody(packageName string, info PRInfo, labelTypes map[string]github.Label, changelog string, generatorChanges string) string {
+func (g *Git) generateNewPRBody(packageName string, info PRInfo, changelog string, generatorChanges string) string {
 	var body = ""
-	title := speakeasyGenMinimumPrTitle
-	//eg. chore: 🐝 Update -
-	title += " " + packageName
-	//eg. chore: 🐝 Update - vercel/sdk
-	title += " - " + environment.GetWorkflowName()
-	//eg. chore: 🐝 Update - vercel/sdk - Generate
-	suffix1, _, _ := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
-	title += " " + suffix1
-	//eg. chore: 🐝 Update - vercel/sdk - Generate 1.9.0
-
-	logging.Info("title is: %s", title)
 	if info.LintingReportURL != "" || info.ChangesReportURL != "" {
 		body += fmt.Sprintf(`> [!IMPORTANT]
 `)
