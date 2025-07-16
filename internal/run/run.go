@@ -41,6 +41,8 @@ type RunResult struct {
 	ChangesReportURL     string
 	VersioningReport     *versioning.MergedVersionReport
 	VersioningInfo       versionbumps.VersioningInfo
+	// key is language, value is release notes
+	ReleaseNotes map[string]string
 }
 
 type Git interface {
@@ -50,6 +52,7 @@ type Git interface {
 func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 	workspace := environment.GetWorkspace()
 	outputs := map[string]string{}
+	releaseNotes := map[string]string{}
 
 	executeSpeakeasyVersion, err := cli.GetSpeakeasyVersion()
 	if err != nil {
@@ -190,6 +193,9 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		currentManagementInfo := loadedCfg.LockFile.Management
 		langCfg := loadedCfg.Config.Languages[lang]
 		langConfigs[lang] = &langCfg
+		if loadedCfg.LockFile.ReleaseNotes != nil {
+			releaseNotes[lang] = loadedCfg.LockFile.ReleaseNotes[lang]
+		}
 
 		outputs[utils.OutputTargetDirectory(lang)] = dir
 
@@ -266,6 +272,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
 		LintingReportURL:     runRes.LintingReportURL,
 		ChangesReportURL:     runRes.ChangesReportURL,
+		ReleaseNotes:         releaseNotes,
 	}, outputs, nil
 }
 

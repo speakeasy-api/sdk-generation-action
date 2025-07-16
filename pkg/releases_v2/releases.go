@@ -144,7 +144,12 @@ func ReleaseContent(releaseInfo releases.ReleasesInfo, languagesChangelogMap map
 	return builder.String()
 }
 
-func UpdateReleasesFile(releaseInfo releases.ReleasesInfo, dir string, versioningInfo versionbumps.VersioningInfo) error {
+func UpdateReleasesFile(releaseInfo releases.ReleasesInfo, dir string, versioningInfo versionbumps.VersioningInfo, releaseNotes map[string]string) error {
+	if releaseNotes == nil {
+		releaseNotes = map[string]string{}
+		logging.Debug("releaseNotes is completely empty")
+	}
+
 	releasesPath := GetReleasesPath(dir)
 
 	logging.Debug("Updating releases file at %s", releasesPath)
@@ -155,7 +160,13 @@ func UpdateReleasesFile(releaseInfo releases.ReleasesInfo, dir string, versionin
 	}
 	defer f.Close()
 
-	languagesChangelogMap := GenerateLanguageChangelogMap(releaseInfo, versioningInfo)
+	var languagesChangelogMap = make(map[string]string)
+	releaseLangKeys := SortedLangKeys(releaseInfo.Languages)
+	for _, lang := range releaseLangKeys {
+		if releaseNotes[lang] != "" {
+			languagesChangelogMap[lang] = releaseNotes[lang]
+		}
+	}
 
 	finalReleaseInfo := ReleaseContent(releaseInfo, languagesChangelogMap)
 

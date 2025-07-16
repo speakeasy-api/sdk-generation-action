@@ -162,7 +162,7 @@ func RunWorkflow() error {
 		}
 
 		if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
-			err = releasesv2.UpdateReleasesFile(releaseInfo, releasesDir, runRes.VersioningInfo)
+			err = releasesv2.UpdateReleasesFile(releaseInfo, releasesDir, runRes.VersioningInfo, runRes.ReleaseNotes)
 		} else {
 			err = releases.UpdateReleasesFile(releaseInfo, releasesDir)
 		}
@@ -201,6 +201,7 @@ func RunWorkflow() error {
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
 		GenInfo:              runRes.GenInfo,
 		currentRelease:       &releaseInfo,
+		releaseNotes:         runRes.ReleaseNotes,
 	}); err != nil {
 		return err
 	}
@@ -228,6 +229,7 @@ type finalizeInputs struct {
 	VersioningInfo       versionbumps.VersioningInfo
 	GenInfo              *run.GenerationInfo
 	currentRelease       *releases.ReleasesInfo
+	releaseNotes         map[string]string
 }
 
 // Sets outputs and creates or adds releases info
@@ -297,8 +299,8 @@ func finalize(inputs finalizeInputs) error {
 			releaseInfo = inputs.currentRelease
 			languages = releaseInfo.Languages
 			oldReleaseInfo = releaseInfo.String()
-			if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
-				newReleaseInfo = releasesv2.GenerateLanguageChangelogMap(*releaseInfo, inputs.VersioningInfo)
+			if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && inputs.releaseNotes != nil {
+				newReleaseInfo = inputs.releaseNotes
 			}
 
 			// We still read from releases info for terraform generations since they use the goreleaser
