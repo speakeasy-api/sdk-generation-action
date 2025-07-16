@@ -148,6 +148,8 @@ func RunWorkflow() error {
 		}
 
 		var commitMessages map[string]string
+		// We set commit message from persisted reports.
+		// The reports were persisted by the speakeasy cli.
 		updateCommitMessages(commitMessages, runRes)
 
 		if environment.PushCodeSamplesOnly() {

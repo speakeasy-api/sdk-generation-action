@@ -72,7 +72,7 @@ func Release() error {
 	if usingReleasesMd {
 		latestRelease, err = releases.GetLastReleaseInfo(dir)
 	} else {
-		// newReleaseInfo is present only if SDK_CHANGELOG_JULY_2025 env is true
+		// newReleaseInfo variable is present only if SDK_CHANGELOG_JULY_2025 env is true
 		// New way of getting release Info (uses gen.lockfile)
 		latestRelease, newReleaseInfo, err = releases.GetReleaseInfoFromGenerationFiles(dir)
 	}
