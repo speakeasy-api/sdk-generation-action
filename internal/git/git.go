@@ -616,12 +616,13 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 			return nil, err
 		}
 	}
-	// JULY_2025 Updated PR title and body
-	if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" {
+
+	// Old way of getting PR body
+	title, body = g.generateOldPRTitleAndBody(info, labelTypes, changelog)
+
+	// New way of getting PR body
+	if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && changelog != "" {
 		body = g.generateNewPRBody(packageName, info, changelog, generatorChanges)
-	} else {
-		// Call helper with correct type for labelTypes
-		title, body = g.generateOldPRTitleAndBody(info, labelTypes, changelog)
 	}
 	_, _, labels := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
 
@@ -714,9 +715,9 @@ func (g *Git) generateOldPRTitleAndBody(info PRInfo, labelTypes map[string]githu
 		body += "Update of compiled sources"
 	} else {
 		body += fmt.Sprintf(`# SDK update
-	Based on:
-	- OpenAPI Doc %s %s
-	- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy
+Based on:
+- OpenAPI Doc %s %s
+- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy
 	`, info.ReleaseInfo.DocVersion, info.ReleaseInfo.DocLocation, info.ReleaseInfo.SpeakeasyVersion, info.ReleaseInfo.GenerationVersion)
 	}
 
@@ -734,9 +735,9 @@ func (g *Git) generateOldPRTitleAndBody(info PRInfo, labelTypes map[string]githu
 				versionBumpMsg += string(versionbumps.BumpMethodAutomated) + " (automated)"
 			}
 			body += fmt.Sprintf(`## Versioning
-	
-	%s
-	`, versionBumpMsg)
+
+%s
+`, versionBumpMsg)
 		}
 
 		// SDK changelog are added here, by reading the PR reports
@@ -745,9 +746,9 @@ func (g *Git) generateOldPRTitleAndBody(info PRInfo, labelTypes map[string]githu
 	} else {
 		if len(info.OpenAPIChangeSummary) > 0 {
 			body += fmt.Sprintf(`## OpenAPI Change Summary
-	
-	%s
-	`, stripCodes(info.OpenAPIChangeSummary))
+
+%s
+`, stripCodes(info.OpenAPIChangeSummary))
 		}
 
 		body += changelog
