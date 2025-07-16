@@ -127,6 +127,7 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
 	}
 	defer f.Close()
 
+	_, err = f.WriteString(releaseInfo.String())
 	if err != nil {
 		return fmt.Errorf("error writing to releases file: %w", err)
 	}
