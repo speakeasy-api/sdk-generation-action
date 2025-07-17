@@ -31,25 +31,34 @@ func Release() error {
 	dir := "."
 	usingReleasesMd := false
 	var providesExplicitTarget bool
+	fmt.Println("INFO: ", fmt.Sprintf("Starting release logic. Initial dir: %s, usingReleasesMd: %v", dir, usingReleasesMd))
 	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
+		fmt.Println("INFO: ", fmt.Sprintf("Specific target specified: %s", specificTarget))
 		workflow, err := configuration.GetWorkflowAndValidateLanguages(true)
+		fmt.Println("INFO: ", fmt.Sprintf("Loaded workflow: %+v, err: %v", workflow, err))
 		if err != nil {
 			return err
 		}
 		if target, ok := workflow.Targets[specificTarget]; ok {
+			fmt.Println("INFO: ", fmt.Sprintf("Found target: %+v", target))
 			if target.Output != nil {
 				dir = strings.TrimPrefix(*target.Output, "./")
+				fmt.Println("INFO: ", fmt.Sprintf("Target output set dir to: %s", dir))
 			}
 
 			dir = filepath.Join(environment.GetWorkingDirectory(), dir)
-
+			fmt.Println("INFO: ", fmt.Sprintf("Joined working directory, dir is now: %s", dir))
 			providesExplicitTarget = true
+		} else {
+			fmt.Println("INFO: ", fmt.Sprintf("Target %s not found in workflow.Targets", specificTarget))
 		}
 	}
 
 	if !providesExplicitTarget {
+		fmt.Println("INFO: ", fmt.Sprintf("No explicit target provided, getting committed files"))
 		// This searches for files that would be referenced in the GH Action trigger
 		files, err := g.GetCommitedFiles()
+		fmt.Println("INFO: ", fmt.Sprintf("Committed files: %v, err: %v", files, err))
 		if err != nil {
 			fmt.Printf("Failed to get commited files: %s\n", err.Error())
 		}
@@ -59,18 +68,21 @@ func Release() error {
 				logging.Debug("Found commited file: %s", file)
 			}
 		}
-
+		fmt.Println("INFO: ", fmt.Sprintf("Calling GetDirAndShouldUseReleasesMD with dir: %s, usingReleasesMd: %v", dir, usingReleasesMd))
 		dir, usingReleasesMd = GetDirAndShouldUseReleasesMD(files, dir, usingReleasesMd)
+		fmt.Println("INFO: ", fmt.Sprintf("After GetDirAndShouldUseReleasesMD, dir: %s, usingReleasesMd: %v", dir, usingReleasesMd))
 	}
-
+	fmt.Println("INFO: ", fmt.Sprintf("About to get latest release info. usingReleasesMd: %v, dir: %s", usingReleasesMd, dir))
 	var latestRelease *releases.ReleasesInfo
 	if usingReleasesMd {
 		latestRelease, err = releases.GetLastReleaseInfo(dir)
+		fmt.Println("INFO: ", fmt.Sprintf("Called GetLastReleaseInfo, latestRelease: %+v, err: %v", latestRelease, err))
 		if err != nil {
 			return err
 		}
 	} else {
 		latestRelease, err = releases.GetReleaseInfoFromGenerationFiles(dir)
+		fmt.Println("INFO: ", fmt.Sprintf("Called GetReleaseInfoFromGenerationFiles, latestRelease: %+v, err: %v", latestRelease, err))
 		if err != nil {
 			return err
 		}
