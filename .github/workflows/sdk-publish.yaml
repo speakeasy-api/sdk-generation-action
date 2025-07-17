@@ -118,7 +118,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: ./
         with:
           github_access_token: ${{ secrets.github_access_token }}
           action: "release"
@@ -138,7 +138,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
