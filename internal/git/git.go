@@ -581,28 +581,6 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 	if info.PreviousGenVersion != "" {
 		previousGenVersions = strings.Split(info.PreviousGenVersion, ";")
 	}
-	packageName := ""
-	languageForPr := ""
-
-	if info.GenInfo != nil && info.ReleaseInfo != nil {
-		for lang, langGenerationInfo := range info.GenInfo.Languages {
-			if _, exists := info.ReleaseInfo.LanguagesGenerated[lang]; !exists || langGenerationInfo.PackageName == "" {
-				continue
-			}
-			languageForPr = lang
-			packageName = langGenerationInfo.PackageName
-			break
-		}
-	}
-	generatorChanges := ""
-	if info.VersioningInfo.VersionReport != nil && languageForPr != "" {
-		reports := info.VersioningInfo.VersionReport.Reports
-		key := fmt.Sprintf("SDK_CHANGELOG_%s", strings.ToLower(languageForPr))
-		sdkChangelog := releases.FindPRReportByKey(reports, key)
-		if sdkChangelog != "" {
-			generatorChanges = sdkChangelog
-		}
-	}
 
 	// Deprecated -- kept around for old CLI versions. VersioningReport is newer pathway
 	if info.ReleaseInfo != nil && info.VersioningInfo.VersionReport == nil {
@@ -612,13 +590,11 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 		}
 	}
 
-	// Old way of getting PR body
-	title, body = g.generateOldPRTitleAndBody(info, labelTypes, changelog)
+	// We will use the old PR body if the SDK_CHANGELOG_JULY_2025 env is not set or set to false
+	// We will use the new PR body if SDK_CHANGELOG_JULY_2025 is set to true.
+	// Backwards compatible: If a client uses new sdk-action with old cli we will not get new changelog body
+	title, body = g.generatePRTitleAndBody(info, labelTypes, changelog)
 
-	// New way of getting PR body
-	if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && changelog != "" {
-		body = g.generateNewPRBody(packageName, info, changelog, generatorChanges)
-	}
 	_, _, labels := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
 
 	const maxBodyLength = 65536
@@ -679,7 +655,7 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 }
 
 // --- Helper function for old PR title/body generation ---
-func (g *Git) generateOldPRTitleAndBody(info PRInfo, labelTypes map[string]github.Label, changelog string) (string, string) {
+func (g *Git) generatePRTitleAndBody(info PRInfo, labelTypes map[string]github.Label, changelog string) (string, string) {
 	var body = ""
 	title := getGenPRTitlePrefix()
 	if environment.IsDocsGeneration() {
@@ -735,7 +711,7 @@ Based on:
 `, versionBumpMsg)
 		}
 
-		// SDK changelog are added here, by reading the PR reports
+		// New changelog is added here if speakeasy cli added a PR report
 		body += stripCodes(info.VersioningInfo.VersionReport.GetMarkdownSection())
 
 	} else {
@@ -1375,11 +1351,10 @@ func GetRepo() string {
 }
 
 const (
-	speakeasyGenMinimumPrTitle = "chore: 🐝 Update - "
-	speakeasyGenPRTitle        = "chore: 🐝 Update SDK - "
-	speakeasyGenSpecsTitle     = "chore: 🐝 Update Specs - "
-	speakeasySuggestPRTitle    = "chore: 🐝 Suggest OpenAPI changes - "
-	speakeasyDocsPRTitle       = "chore: 🐝 Update SDK Docs - "
+	speakeasyGenPRTitle     = "chore: 🐝 Update SDK - "
+	speakeasyGenSpecsTitle  = "chore: 🐝 Update Specs - "
+	speakeasySuggestPRTitle = "chore: 🐝 Suggest OpenAPI changes - "
+	speakeasyDocsPRTitle    = "chore: 🐝 Update SDK Docs - "
 )
 
 func getGenPRTitlePrefix() string {
