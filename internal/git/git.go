@@ -354,9 +354,9 @@ func (g *Git) DeleteBranch(branchName string) error {
 	return nil
 }
 
-func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, releaseInfo *releases.ReleasesInfo, commitMessages map[string]string) (string, error) {
-	if commitMessages == nil {
-		logging.Info("commitMessages is %v", commitMessages)
+func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, releaseInfo *releases.ReleasesInfo, mergedVersionReport *versioning.MergedVersionReport) (string, error) {
+	if mergedVersionReport == nil || mergedVersionReport.GetCommitMarkdownSection() == "" {
+		logging.Info("commitMessages is %v and CommitMarkdownSection is %v ", mergedVersionReport, mergedVersionReport.GetCommitMarkdownSection())
 	}
 
 	if g.repo == nil {
@@ -383,16 +383,10 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if action == environment.ActionRunWorkflow {
 		if sourcesOnly {
 			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
-		} else if releaseInfo != nil && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && commitMessages != nil {
-			// Gate the sdk changelog release behind an env variable
-			lang := ""
-			for key := range releaseInfo.Languages {
-				lang = key
-				break
-			}
-			if lang != "" {
-				commitMessage = commitMessages[lang]
-			}
+		} else if releaseInfo != nil && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && mergedVersionReport != nil && mergedVersionReport.GetCommitMarkdownSection() != "" {
+			logging.Debug("commitMarkdownSection is %v", mergedVersionReport.GetCommitMarkdownSection())
+			commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
+			commitMessage = commitMessage + "\n" + mergedVersionReport.GetCommitMarkdownSection()
 		} else {
 			commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 		}

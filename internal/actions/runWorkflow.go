@@ -51,6 +51,7 @@ func RunWorkflow() error {
 	mode := environment.GetMode()
 
 	wf, err := configuration.GetWorkflowAndValidateLanguages(true)
+
 	if err != nil {
 		return err
 	}
@@ -168,7 +169,7 @@ func RunWorkflow() error {
 			return err
 		}
 
-		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, &releaseInfo, commitMessages); err != nil {
+		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, &releaseInfo, runRes.VersioningReport); err != nil {
 			return err
 		}
 	}
