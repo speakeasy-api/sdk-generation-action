@@ -384,6 +384,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		if sourcesOnly {
 			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
 		} else if releaseInfo != nil && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && mergedVersionReport != nil && mergedVersionReport.GetCommitMarkdownSection() != "" {
+			// For clients using older cli with new sdk-action, GetCommitMarkdownSection would be empty so we will use the old commit message
 			logging.Debug("commitMarkdownSection is %v", mergedVersionReport.GetCommitMarkdownSection())
 			commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 			commitMessage = commitMessage + "\n" + mergedVersionReport.GetCommitMarkdownSection()
