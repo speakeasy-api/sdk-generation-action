@@ -28,6 +28,24 @@ type GenerationInfo struct {
 	Path    string
 }
 
+// TargetReleaseNotes maps workflow target name to their specific release content
+type TargetReleaseNotes map[string]string
+
+func (t TargetReleaseNotes) GetReleaseNotesForTarget(target string) string {
+	if t == nil {
+		return ""
+	}
+	return t[target]
+}
+
+func (t TargetReleaseNotes) HasReleaseNotesForTarget(target string) bool {
+	if t == nil {
+		return false
+	}
+	notes, exists := t[target]
+	return exists && notes != ""
+}
+
 type ReleasesInfo struct {
 	ReleaseTitle       string
 	DocVersion         string
@@ -163,8 +181,8 @@ func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
 	return ParseReleases(string(data))
 }
 
-func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, map[string]string, error) {
-	releaseInfoFromLockFile := make(map[string]string)
+func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, TargetReleaseNotes, error) {
+	releaseInfoFromLockFile := make(TargetReleaseNotes)
 	cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", path))
 	if err != nil {
 		return nil, nil, err
@@ -191,6 +209,7 @@ func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, map[string]s
 			Version:     lockFile.Management.ReleaseVersion,
 			Path:        path,
 		}
+		// Only newer speakeasy cli versions (released around July 2025) will have release notes in the lockfile
 		releaseInfoFromLockFile[lang] = lockFile.ReleaseNotes
 
 		releaseInfo.LanguagesGenerated[lang] = GenerationInfo{

@@ -65,16 +65,15 @@ func Release() error {
 
 	var languages map[string]releases.LanguageReleaseInfo
 	var latestRelease *releases.ReleasesInfo
-	var releaseInfoFromLockFile map[string]string = nil
+	var targetSpecificReleaseNotes releases.TargetReleaseNotes = nil
 	oldReleaseContent := ""
 
 	// Old way of getting release Info (uses RELEASES.md)
 	if usingReleasesMd {
 		latestRelease, err = releases.GetLastReleaseInfo(dir)
 	} else {
-		// newReleaseInfo variable is present only if SDK_CHANGELOG_JULY_2025 env is true
-		// New way of getting release Info (uses gen.lockfile)
-		latestRelease, releaseInfoFromLockFile, err = releases.GetReleaseInfoFromGenerationFiles(dir)
+		// targetSpecificReleaseNotes variable is present only if SDK_CHANGELOG_JULY_2025 env is true
+		latestRelease, targetSpecificReleaseNotes, err = releases.GetReleaseInfoFromGenerationFiles(dir)
 	}
 	if err != nil {
 		return err
@@ -83,7 +82,7 @@ func Release() error {
 	oldReleaseContent = latestRelease.String()
 
 	outputs := map[string]string{}
-	for lang, info := range latestRelease.Languages {
+	for lang, info := range languages {
 		outputs[utils.OutputTargetRegenerated(lang)] = "true"
 		outputs[utils.OutputTargetDirectory(lang)] = info.Path
 	}
@@ -92,7 +91,7 @@ func Release() error {
 		return err
 	}
 
-	if err := g.CreateRelease(oldReleaseContent, languages, outputs, releaseInfoFromLockFile); err != nil {
+	if err := g.CreateRelease(oldReleaseContent, languages, outputs, targetSpecificReleaseNotes); err != nil {
 		return err
 	}
 
@@ -101,7 +100,7 @@ func Release() error {
 	}
 
 	if os.Getenv("SPEAKEASY_API_KEY") != "" {
-		if err = addCurrentBranchTagging(g, latestRelease.Languages); err != nil {
+		if err = addCurrentBranchTagging(g, languages); err != nil {
 			return errors.Wrap(err, "failed to tag registry images")
 		}
 	}

@@ -50,7 +50,7 @@ func (g *Git) SetReleaseToPublished(version, directory string) error {
 	return nil
 }
 
-func (g *Git) CreateRelease(oldReleaseContent string, languages map[string]releases.LanguageReleaseInfo, outputs map[string]string, newReleaseInfo map[string]string) error {
+func (g *Git) CreateRelease(oldReleaseContent string, languages map[string]releases.LanguageReleaseInfo, outputs map[string]string, targetSpecificReleaseNotes releases.TargetReleaseNotes) error {
 	if g.repo == nil {
 		return fmt.Errorf("repo not cloned")
 	}
@@ -97,8 +97,8 @@ func (g *Git) CreateRelease(oldReleaseContent string, languages map[string]relea
 		} else {
 			tagName := github.String(tag)
 			releaseBody := oldReleaseContent
-			if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && newReleaseInfo != nil && newReleaseInfo[lang] != "" {
-				releaseBody = newReleaseInfo[lang]
+			if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && targetSpecificReleaseNotes.HasReleaseNotesForTarget(lang) {
+				releaseBody = targetSpecificReleaseNotes.GetReleaseNotesForTarget(lang)
 			}
 			_, _, err = g.client.Repositories.CreateRelease(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), &github.RepositoryRelease{
 				TagName:         tagName,
