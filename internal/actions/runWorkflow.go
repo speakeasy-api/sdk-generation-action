@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
 	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
-	"github.com/speakeasy-api/versioning-reports/versioning"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
@@ -169,7 +168,7 @@ func RunWorkflow() error {
 			return err
 		}
 
-		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, runRes.VersioningReport); err != nil {
+		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, runRes.VersioningInfo.VersionReport); err != nil {
 			return err
 		}
 	}
@@ -223,7 +222,6 @@ type finalizeInputs struct {
 	LintingReportURL     string
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
-	VersioningReport     *versioning.MergedVersionReport
 	VersioningInfo       versionbumps.VersioningInfo
 	GenInfo              *run.GenerationInfo
 	currentRelease       *releases.ReleasesInfo
