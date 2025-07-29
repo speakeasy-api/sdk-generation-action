@@ -712,6 +712,8 @@ Based on:
 		}
 
 		// New changelog is added here if speakeasy cli added a PR report
+		// Text inserted here is controlled entirely by the speakeasy cli.
+		// We want to move in a direction where the speakeasy CLI controls the messaging
 		body += stripCodes(info.VersioningInfo.VersionReport.GetMarkdownSection())
 
 	} else {
