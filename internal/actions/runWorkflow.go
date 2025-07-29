@@ -147,11 +147,6 @@ func RunWorkflow() error {
 			}
 		}
 
-		var commitMessages map[string]string
-		// We set commit message from persisted reports.
-		// The reports were persisted by the speakeasy cli.
-		updateCommitMessages(commitMessages, runRes)
-
 		if environment.PushCodeSamplesOnly() {
 			// If we're just pushing code samples we don't want to raise a PR
 			return nil
@@ -379,20 +374,6 @@ func addDirectModeBranchTagging() error {
 	}
 
 	return nil
-}
-
-func updateCommitMessages(commitMessages map[string]string, runRes *run.RunResult) {
-	if runRes.VersioningInfo.VersionReport != nil {
-		reports := runRes.VersioningInfo.VersionReport.Reports
-		for _, target := range cli.DefaultSupportedTargetsForChangelog {
-			key := fmt.Sprintf("%s_commit_message", strings.ToLower(target))
-			commitMessage := releases.FindPRReportByKey(reports, key)
-			logging.Debug("lang is: %s, key is: %s, commitMessage is: %s", target, key, commitMessage)
-			if commitMessage != "" {
-				commitMessages[target] = commitMessage
-			}
-		}
-	}
 }
 
 func getReleasesInfo() (*releases.ReleasesInfo, error) {
