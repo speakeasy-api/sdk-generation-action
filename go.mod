@@ -4,6 +4,8 @@ go 1.23
 
 replace github.com/speakeasy-api/versioning-reports => ../versioning-reports
 
+replace github.com/speakeasy-api/sdk-gen-config => ../sdk-gen-config
+
 require (
 	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.11.0

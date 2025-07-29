@@ -65,7 +65,7 @@ func Release() error {
 
 	var languages map[string]releases.LanguageReleaseInfo
 	var latestRelease *releases.ReleasesInfo
-	var newReleaseInfo map[string]string = nil
+	var releaseInfoFromLockFile map[string]string = nil
 	oldReleaseContent := ""
 
 	// Old way of getting release Info (uses RELEASES.md)
@@ -74,7 +74,7 @@ func Release() error {
 	} else {
 		// newReleaseInfo variable is present only if SDK_CHANGELOG_JULY_2025 env is true
 		// New way of getting release Info (uses gen.lockfile)
-		latestRelease, newReleaseInfo, err = releases.GetReleaseInfoFromGenerationFiles(dir)
+		latestRelease, releaseInfoFromLockFile, err = releases.GetReleaseInfoFromGenerationFiles(dir)
 	}
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func Release() error {
 		return err
 	}
 
-	if err := g.CreateRelease(oldReleaseContent, languages, outputs, newReleaseInfo); err != nil {
+	if err := g.CreateRelease(oldReleaseContent, languages, outputs, releaseInfoFromLockFile); err != nil {
 		return err
 	}
 

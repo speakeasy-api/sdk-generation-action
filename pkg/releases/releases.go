@@ -164,6 +164,7 @@ func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
 }
 
 func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, map[string]string, error) {
+	releaseInfoFromLockFile := make(map[string]string)
 	cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", path))
 	if err != nil {
 		return nil, nil, err
@@ -190,6 +191,7 @@ func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, map[string]s
 			Version:     lockFile.Management.ReleaseVersion,
 			Path:        path,
 		}
+		releaseInfoFromLockFile[lang] = lockFile.ReleaseNotes
 
 		releaseInfo.LanguagesGenerated[lang] = GenerationInfo{
 			Version: lockFile.Management.ReleaseVersion,
@@ -197,7 +199,7 @@ func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, map[string]s
 		}
 	}
 
-	return &releaseInfo, lockFile.ReleaseNotes, nil
+	return &releaseInfo, releaseInfoFromLockFile, nil
 }
 
 func ParseReleases(data string) (*ReleasesInfo, error) {
