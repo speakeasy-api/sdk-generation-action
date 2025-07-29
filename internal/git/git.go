@@ -354,7 +354,7 @@ func (g *Git) DeleteBranch(branchName string) error {
 	return nil
 }
 
-func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, releaseInfo *releases.ReleasesInfo, mergedVersionReport *versioning.MergedVersionReport) (string, error) {
+func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, mergedVersionReport *versioning.MergedVersionReport) (string, error) {
 	if mergedVersionReport == nil || mergedVersionReport.GetCommitMarkdownSection() == "" {
 		logging.Info("commitMessages is %v and CommitMarkdownSection is %v ", mergedVersionReport, mergedVersionReport.GetCommitMarkdownSection())
 	}
@@ -383,7 +383,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if action == environment.ActionRunWorkflow {
 		if sourcesOnly {
 			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
-		} else if releaseInfo != nil && os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && mergedVersionReport != nil && mergedVersionReport.GetCommitMarkdownSection() != "" {
+		} else if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && mergedVersionReport != nil && mergedVersionReport.GetCommitMarkdownSection() != "" {
 			// For clients using older cli with new sdk-action, GetCommitMarkdownSection would be empty so we will use the old commit message
 			logging.Debug("commitMarkdownSection is %v", mergedVersionReport.GetCommitMarkdownSection())
 			commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)

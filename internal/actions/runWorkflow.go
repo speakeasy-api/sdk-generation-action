@@ -169,14 +169,14 @@ func RunWorkflow() error {
 			return err
 		}
 
-		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, &releaseInfo, runRes.VersioningReport); err != nil {
+		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, runRes.VersioningReport); err != nil {
 			return err
 		}
 	}
 
 	outputs["resolved_speakeasy_version"] = resolvedVersion
 	if sourcesOnly {
-		if _, err := g.CommitAndPush("", resolvedVersion, "", environment.ActionRunWorkflow, sourcesOnly, &releaseInfo, nil); err != nil {
+		if _, err := g.CommitAndPush("", resolvedVersion, "", environment.ActionRunWorkflow, sourcesOnly, nil); err != nil {
 			return err
 		}
 	}
