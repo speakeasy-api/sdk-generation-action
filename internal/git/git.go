@@ -356,7 +356,7 @@ func (g *Git) DeleteBranch(branchName string) error {
 
 func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, mergedVersionReport *versioning.MergedVersionReport) (string, error) {
 	if mergedVersionReport == nil || mergedVersionReport.GetCommitMarkdownSection() == "" {
-		logging.Info("commitMessages is %v and CommitMarkdownSection is %v ", mergedVersionReport, mergedVersionReport.GetCommitMarkdownSection())
+		logging.Debug("commitMessages is %v and CommitMarkdownSection is %v ", mergedVersionReport, mergedVersionReport.GetCommitMarkdownSection())
 	}
 
 	if g.repo == nil {
@@ -391,8 +391,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
 		} else if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && mergedVersionReport != nil && mergedVersionReport.GetCommitMarkdownSection() != "" {
 			// For clients using older cli with new sdk-action, GetCommitMarkdownSection would be empty so we will use the old commit message
-			commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
-			commitMessage = commitMessage + "\n" + mergedVersionReport.GetCommitMarkdownSection()
+			commitMessage = mergedVersionReport.GetCommitMarkdownSection()
 		} else {
 			commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 		}
