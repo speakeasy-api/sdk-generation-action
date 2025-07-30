@@ -70,9 +70,11 @@ func Release() error {
 
 	// Old way of getting release Info (uses RELEASES.md)
 	if usingReleasesMd {
+		logging.Debug("Using RELEASES.md to get release info")
 		latestRelease, err = releases.GetLastReleaseInfo(dir)
 	} else {
 		// targetSpecificReleaseNotes variable is present only if SDK_CHANGELOG_JULY_2025 env is true
+		logging.Debug("Using gen lockfile to get release info")
 		latestRelease, targetSpecificReleaseNotes, err = releases.GetReleaseInfoFromGenerationFiles(dir)
 	}
 	if err != nil {
