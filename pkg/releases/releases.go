@@ -37,6 +37,21 @@ type ReleasesInfo struct {
 	LanguagesGenerated map[string]GenerationInfo
 }
 
+func (l LanguageReleaseInfo) IsPrerelease() bool {
+	re := regexp.MustCompile(
+		`(?i)^` + // case-insensitive
+			`(?:v)?\d+\.\d+(?:\.\d+)?` + // core: major.minor[.patch]
+			`(?:` +
+			`(?:a|b|rc)\d*` + // direct alpha/beta/rc suffix (e.g. 1.2.3a, 1.2rc1)
+			`|` +
+			`-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*` + // hyphen-style (e.g. -alpha.1, -BETA.2, -rc)
+			`)` +
+			`(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?` + // optional build metadata (allowed only after a prerelease)
+			`$`,
+	)
+	return re.MatchString(l.Version)
+}
+
 func (r ReleasesInfo) String() string {
 	generationOutput := []string{}
 	releasesOutput := []string{}
