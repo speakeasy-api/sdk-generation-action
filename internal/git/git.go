@@ -384,6 +384,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		// TODO: Remove these 2 log lines once the feature is stable.
 		logging.Debug("SDK_CHANGELOG_JULY_2025 is %s", os.Getenv("SDK_CHANGELOG_JULY_2025"))
 		logging.Debug("mergedVersionReport is %v", mergedVersionReport)
+		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 		if mergedVersionReport != nil {
 			logging.Debug("mergedVersionReport.GetCommitMarkdownSection() is %v", mergedVersionReport.GetCommitMarkdownSection())
 		}
@@ -392,11 +393,11 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		} else if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && mergedVersionReport != nil && mergedVersionReport.GetCommitMarkdownSection() != "" {
 			// For clients using older cli with new sdk-action, GetCommitMarkdownSection would be empty so we will use the old commit message
 			commitMessage = mergedVersionReport.GetCommitMarkdownSection()
-		} else {
-			commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 		}
 	} else if action == environment.ActionSuggest {
 		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
+	} else {
+		return "", errors.New("Invalid action")
 	}
 
 	// Create commit message
