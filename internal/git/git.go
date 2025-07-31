@@ -380,16 +380,11 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
+	logging.Debug("SDK_CHANGELOG_JULY_2025 is %s", os.Getenv("SDK_CHANGELOG_JULY_2025"))
 
 	var commitMessage string = ""
 	if action == environment.ActionRunWorkflow {
-		// TODO: Remove these 2 log lines once the feature is stable.
-		logging.Debug("SDK_CHANGELOG_JULY_2025 is %s", os.Getenv("SDK_CHANGELOG_JULY_2025"))
-		logging.Debug("mergedVersionReport is %v", mergedVersionReport)
 		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
-		if mergedVersionReport != nil {
-			logging.Debug("mergedVersionReport.GetCommitMarkdownSection() is %v", mergedVersionReport.GetCommitMarkdownSection())
-		}
 		if sourcesOnly {
 			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
 		} else if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && mergedVersionReport != nil && mergedVersionReport.GetCommitMarkdownSection() != "" {
@@ -399,7 +394,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	} else if action == environment.ActionSuggest {
 		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
 	} else {
-		return "", errors.New("Invalid action")
+		return "", errors.New("invalid action")
 	}
 
 	// Create commit message
@@ -719,7 +714,7 @@ Based on:
 
 		// New changelog is added here if speakeasy cli added a PR report
 		// Text inserted here is controlled entirely by the speakeasy cli.
-		// We want to move in a direction where the speakeasy CLI controls the messaging
+		// We want to move in a direction where the speakeasy CLI controls the messaging entirely
 		body += stripCodes(info.VersioningInfo.VersionReport.GetMarkdownSection())
 
 	} else {
