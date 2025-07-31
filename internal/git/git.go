@@ -354,11 +354,10 @@ func (g *Git) DeleteBranch(branchName string) error {
 }
 
 func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, mergedVersionReport *versioning.MergedVersionReport) (string, error) {
-	if mergedVersionReport == nil || mergedVersionReport.GetCommitMarkdownSection() == "" {
-		logging.Debug("mergedVersionReport is %v", mergedVersionReport)
-		if mergedVersionReport != nil {
-			logging.Debug("CommitMarkdownSection is %v ", mergedVersionReport.GetCommitMarkdownSection())
-		}
+	if mergedVersionReport == nil {
+		logging.Debug("mergedVersionReport is nil")
+	} else if mergedVersionReport.GetCommitMarkdownSection() == "" {
+		logging.Debug("mergedVersionReport.GetCommitMarkdownSection is empty ")
 	}
 
 	if g.repo == nil {
