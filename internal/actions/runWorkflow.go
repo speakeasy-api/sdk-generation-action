@@ -284,13 +284,13 @@ func finalize(inputs finalizeInputs) error {
 		var releaseInfo *releases.ReleasesInfo
 		var oldReleaseInfo string
 		var languages map[string]releases.LanguageReleaseInfo
-		var newReleaseInfo map[string]string = nil
+		var targetSpecificReleaseNotes releases.TargetReleaseNotes = nil
 		if !inputs.SourcesOnly {
 			releaseInfo = inputs.currentRelease
 			languages = releaseInfo.Languages
 			oldReleaseInfo = releaseInfo.String()
 			if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && inputs.releaseNotes != nil {
-				newReleaseInfo = inputs.releaseNotes
+				targetSpecificReleaseNotes = inputs.releaseNotes
 			}
 
 			// We still read from releases info for terraform generations since they use the goreleaser
@@ -298,7 +298,7 @@ func finalize(inputs finalizeInputs) error {
 			if inputs.Outputs[utils.OutputTargetRegenerated("terraform")] == "true" {
 				releaseInfo, err = getReleasesInfo()
 				oldReleaseInfo = releaseInfo.String()
-				newReleaseInfo = nil
+				targetSpecificReleaseNotes = nil
 				languages = releaseInfo.Languages
 				if err != nil {
 					return err
@@ -312,7 +312,7 @@ func finalize(inputs finalizeInputs) error {
 		}
 
 		if !inputs.SourcesOnly {
-			if err := inputs.Git.CreateRelease(oldReleaseInfo, languages, inputs.Outputs, newReleaseInfo); err != nil {
+			if err := inputs.Git.CreateRelease(oldReleaseInfo, languages, inputs.Outputs, targetSpecificReleaseNotes); err != nil {
 				return err
 			}
 		}
