@@ -98,6 +98,7 @@ func (g *Git) CreateRelease(oldReleaseContent string, languages map[string]relea
 			tagName := github.String(tag)
 			releaseBody := oldReleaseContent
 			if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && targetSpecificReleaseNotes.HasReleaseNotesForTarget(lang) {
+				fmt.Println(fmt.Sprintf("Using target specific release notes for %s", lang))
 				releaseBody = targetSpecificReleaseNotes.GetReleaseNotesForTarget(lang)
 			}
 			_, _, err = g.client.Repositories.CreateRelease(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), &github.RepositoryRelease{
