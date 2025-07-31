@@ -194,8 +194,8 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		currentManagementInfo := loadedCfg.LockFile.Management
 		langCfg := loadedCfg.Config.Languages[lang]
 		langConfigs[lang] = &langCfg
-		if loadedCfg.LockFile.ReleaseNotes != nil {
-			releaseNotes[lang] = loadedCfg.LockFile.ReleaseNotes[lang]
+		if loadedCfg.LockFile.ReleaseNotes != "" {
+			releaseNotes[lang] = loadedCfg.LockFile.ReleaseNotes
 		}
 
 		outputs[utils.OutputTargetDirectory(lang)] = dir

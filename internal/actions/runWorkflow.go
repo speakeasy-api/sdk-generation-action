@@ -50,7 +50,6 @@ func RunWorkflow() error {
 	mode := environment.GetMode()
 
 	wf, err := configuration.GetWorkflowAndValidateLanguages(true)
-
 	if err != nil {
 		return err
 	}
