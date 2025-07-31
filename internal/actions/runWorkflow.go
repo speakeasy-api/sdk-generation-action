@@ -219,7 +219,8 @@ type finalizeInputs struct {
 	VersioningInfo       versionbumps.VersioningInfo
 	GenInfo              *run.GenerationInfo
 	currentRelease       *releases.ReleasesInfo
-	releaseNotes         map[string]string
+	// key is language target name, value is release notes
+	releaseNotes map[string]string
 }
 
 // Sets outputs and creates or adds releases info
@@ -259,7 +260,6 @@ func finalize(inputs finalizeInputs) error {
 			ChangesReportURL:     inputs.ChangesReportURL,
 			VersioningInfo:       inputs.VersioningInfo,
 			OpenAPIChangeSummary: inputs.OpenAPIChangeSummary,
-			GenInfo:              inputs.GenInfo,
 		})
 
 		if err != nil {

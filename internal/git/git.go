@@ -27,7 +27,6 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
-	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 	"github.com/speakeasy-api/versioning-reports/versioning"
@@ -559,7 +558,6 @@ type PRInfo struct {
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
 	VersioningInfo       versionbumps.VersioningInfo
-	GenInfo              *run.GenerationInfo
 }
 
 func (g *Git) getRepoMetadata() (string, string) {
