@@ -730,29 +730,6 @@ Based on:
 	return title, body
 }
 
-// --- Helper function for old PR title/body generation ---
-func (g *Git) generateNewPRBody(packageName string, info PRInfo, changelog string, generatorChanges string) string {
-	var body = ""
-	if info.LintingReportURL != "" || info.ChangesReportURL != "" {
-		body += fmt.Sprintf(`> [!IMPORTANT]
-`)
-	}
-
-	if info.LintingReportURL != "" {
-		body += fmt.Sprintf(`> Linting report available at: <%s>
-`, info.LintingReportURL)
-	}
-
-	if info.ChangesReportURL != "" {
-		body += fmt.Sprintf(`> OpenAPI Change report available at: <%s>
-`, info.ChangesReportURL)
-	}
-	body += "# " + packageName + " update"
-	body += generatorChanges
-	body += changelog
-	return body
-}
-
 // --- Helper function for changelog generation for old CLI versions ---
 func (g *Git) generateGeneratorChangelogForOldCLIVersions(info PRInfo, previousGenVersions []string, changelog string) (string, error) {
 	for language, genInfo := range info.ReleaseInfo.LanguagesGenerated {
