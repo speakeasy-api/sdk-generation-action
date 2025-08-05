@@ -22,6 +22,7 @@ import (
 )
 
 func RunWorkflow() error {
+	logging.Info("custom workflow being run -> KD")
 	g, err := initAction()
 	if err != nil {
 		return err
