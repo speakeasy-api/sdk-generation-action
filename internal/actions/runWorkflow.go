@@ -122,8 +122,7 @@ func RunWorkflow() error {
 			LanguagesGenerated: map[string]releases.GenerationInfo{},
 		}
 
-		supportedTargetNames := cli.GetSupportedTargetNames()
-		for _, supportedTargetName := range supportedTargetNames {
+		for _, supportedTargetName := range cli.GetSupportedTargetNames() {
 			langGenInfo, ok := runRes.GenInfo.Languages[supportedTargetName]
 			if ok && outputs[utils.OutputTargetRegenerated(supportedTargetName)] == "true" {
 				anythingRegenerated = true
@@ -156,8 +155,7 @@ func RunWorkflow() error {
 			return err
 		}
 
-		err = releases.UpdateReleasesFile(releaseInfo, releasesDir)
-		if err != nil {
+		if err := releases.UpdateReleasesFile(releaseInfo, releasesDir); err != nil {
 			logging.Debug("error while updating releases file: %v", err.Error())
 			return err
 		}
