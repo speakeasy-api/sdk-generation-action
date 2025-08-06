@@ -22,7 +22,7 @@ import (
 )
 
 func RunWorkflow() error {
-	logging.Info("custom workflow being run -> KD")
+	logging.Info("SDK_CHANGELOG_JULY_2025: %s", os.Getenv("SDK_CHANGELOG_JULY_2025"))
 	g, err := initAction()
 	if err != nil {
 		return err

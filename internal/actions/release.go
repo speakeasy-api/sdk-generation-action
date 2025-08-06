@@ -18,6 +18,7 @@ import (
 )
 
 func Release() error {
+	logging.Info("SDK_CHANGELOG_JULY_2025: %s", os.Getenv("SDK_CHANGELOG_JULY_2025"))
 	accessToken := environment.GetAccessToken()
 	if accessToken == "" {
 		return errors.New("github access token is required")
