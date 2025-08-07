@@ -211,6 +211,7 @@ func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, TargetReleas
 		}
 		// Only newer speakeasy cli versions (released around July 2025) will have release notes in the lockfile
 		// For older versions it will be empty string
+
 		releaseInfoFromLockFile[lang] = lockFile.ReleaseNotes
 
 		releaseInfo.LanguagesGenerated[lang] = GenerationInfo{
