@@ -58,7 +58,7 @@ jobs:
       - id: test
         name: Run Tests
         if: steps.check_commit.outputs.run_tests == 'true'
-        uses: speakeasy-api/sdk-generation-action@15.37-uv
+        uses: speakeasy-api/sdk-generation-action@v15.37-uv
         with:
           action: "test"
           working_directory: ${{ inputs.working_directory }}
