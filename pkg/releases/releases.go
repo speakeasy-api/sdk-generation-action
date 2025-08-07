@@ -238,10 +238,8 @@ func GetTargetSpecificReleaseNotes(path string) (TargetReleaseNotes, error) {
 	for lang, info := range cfgFile.Languages {
 		packageName := utils.GetPackageName(lang, &info)
 		version := lockFile.Management.ReleaseVersion
-		notes := utils.GetPackageName(lang, &info)
-		notes += " "
-		notes += lockFile.Management.ReleaseVersion
-		firstLine := notes
+		notes := ""
+		partOfFirstLine := fmt.Sprintf("%s %s", utils.GetPackageName(lang, &info), lockFile.Management.ReleaseVersion)
 
 		pkgURL := ""
 		switch lang {
@@ -281,10 +279,11 @@ func GetTargetSpecificReleaseNotes(path string) (TargetReleaseNotes, error) {
 			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
 		}
 
+		firstLine := fmt.Sprintf("[%s](%s)", partOfFirstLine, pkgURL)
+		notes += firstLine
 		notes += "\n"
-		secondLine := fmt.Sprintf("[%s](%s)", firstLine, pkgURL)
-		notes += secondLine
 		notes += lockFile.ReleaseNotes
+		notes += "\n"
 
 		notes += fmt.Sprintf("Generated with [Speakeasy CLI %s](https://github.com/speakeasy-api/speakeasy/releases)\n", speakeasyVersion)
 
