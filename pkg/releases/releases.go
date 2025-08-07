@@ -180,18 +180,18 @@ func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
 	return ParseReleases(string(data))
 }
 
-func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, TargetReleaseNotes, error) {
-	releaseInfoFromLockFile := make(TargetReleaseNotes)
+func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, error) {
+
 	cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", path))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	cfgFile := cfg.Config
 	lockFile := cfg.LockFile
 	logging.Info("lockfile release notes: %v", lockFile.ReleaseNotes)
 	if cfgFile == nil || lockFile == nil {
-		return nil, nil, fmt.Errorf("config or lock file not found")
+		return nil, fmt.Errorf("config or lock file not found")
 	}
 
 	releaseInfo := ReleasesInfo{
@@ -209,10 +209,6 @@ func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, TargetReleas
 			Version:     lockFile.Management.ReleaseVersion,
 			Path:        path,
 		}
-		// Only newer speakeasy cli versions (released around July 2025) will have release notes in the lockfile
-		// For older versions it will be empty string
-
-		releaseInfoFromLockFile[lang] = lockFile.ReleaseNotes
 
 		releaseInfo.LanguagesGenerated[lang] = GenerationInfo{
 			Version: lockFile.Management.ReleaseVersion,
@@ -220,7 +216,86 @@ func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, TargetReleas
 		}
 	}
 
-	return &releaseInfo, releaseInfoFromLockFile, nil
+	return &releaseInfo, nil
+}
+
+func GetTargetSpecificReleaseNotes(path string) (TargetReleaseNotes, error) {
+	releaseInfoFromLockFile := make(TargetReleaseNotes)
+	cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", path))
+	if err != nil {
+		return nil, err
+	}
+
+	cfgFile := cfg.Config
+	lockFile := cfg.LockFile
+	logging.Info("lockfile release notes: %v", lockFile.ReleaseNotes)
+
+	if cfgFile == nil || lockFile == nil {
+		return nil, fmt.Errorf("config or lock file not found")
+	}
+
+	speakeasyVersion := lockFile.Management.SpeakeasyVersion
+	for lang, info := range cfgFile.Languages {
+		packageName := utils.GetPackageName(lang, &info)
+		version := lockFile.Management.ReleaseVersion
+		notes := utils.GetPackageName(lang, &info)
+		notes += " "
+		notes += lockFile.Management.ReleaseVersion
+		firstLine := notes
+
+		pkgURL := ""
+		switch lang {
+		case "go":
+			repoPath := os.Getenv("GITHUB_REPOSITORY")
+			tag := fmt.Sprintf("v%s", info.Version)
+			if path != "." {
+				tag = fmt.Sprintf("%s/%s", path, tag)
+			}
+
+			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
+		case "typescript":
+			pkgURL = fmt.Sprintf("https://www.npmjs.com/package/%s/v/%s", packageName, version)
+		case "python":
+			pkgURL = fmt.Sprintf("https://pypi.org/project/%s/%s", packageName, version)
+		case "php":
+			pkgURL = fmt.Sprintf("https://packagist.org/packages/%s#v%s", packageName, version)
+		case "terraform":
+			pkgURL = fmt.Sprintf("https://registry.terraform.io/providers/%s/%s", packageName, version)
+		case "java":
+			lastDotIndex := strings.LastIndex(packageName, ".")
+			groupID := packageName[:lastDotIndex]      // everything before last occurrence of '.'
+			artifactID := packageName[lastDotIndex+1:] // everything after last occurrence of '.'
+			pkgURL = fmt.Sprintf("https://central.sonatype.com/artifact/%s/%s/%s", groupID, artifactID, version)
+		case "ruby":
+			pkgURL = fmt.Sprintf("https://rubygems.org/gems/%s/versions/%s", packageName, version)
+		case "csharp":
+			pkgURL = fmt.Sprintf("https://www.nuget.org/packages/%s/%s", packageName, version)
+		case "swift":
+			repoPath := os.Getenv("GITHUB_REPOSITORY")
+
+			tag := fmt.Sprintf("v%s", info.Version)
+			if path != "." {
+				tag = fmt.Sprintf("%s/%s", path, tag)
+			}
+
+			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
+		}
+
+		notes += "\n"
+		secondLine := fmt.Sprintf("[%s](%s)", firstLine, pkgURL)
+		notes += secondLine
+		notes += lockFile.ReleaseNotes
+
+		notes += fmt.Sprintf("Generated with [Speakeasy CLI %s](https://github.com/speakeasy-api/speakeasy/releases)\n", speakeasyVersion)
+
+		if lockFile.ReleaseNotes == "" {
+			releaseInfoFromLockFile[lang] = ""
+		} else {
+			releaseInfoFromLockFile[lang] = notes
+		}
+	}
+
+	return releaseInfoFromLockFile, nil
 }
 
 func ParseReleases(data string) (*ReleasesInfo, error) {

@@ -99,9 +99,18 @@ func Release() error {
 		latestRelease, err = releases.GetLastReleaseInfo(dir)
 	} else {
 		logging.Info("Using gen lockfile to get release info")
-		// targetSpecificReleaseNotes variable is present only if SDK_CHANGELOG_JULY_2025 env is true
 		logging.Debug("Using gen lockfile to get release info")
-		latestRelease, targetSpecificReleaseNotes, err = releases.GetReleaseInfoFromGenerationFiles(dir)
+		latestRelease, err = releases.GetReleaseInfoFromGenerationFiles(dir)
+		if err != nil {
+			fmt.Printf("Error getting release info from generation files: %v\n", err)
+			return err
+		}
+		// targetSpecificReleaseNotes variable is present only if SDK_CHANGELOG_JULY_2025 env is true
+		targetSpecificReleaseNotes, err = releases.GetTargetSpecificReleaseNotes(dir)
+		if err != nil {
+			fmt.Printf("Error getting target specific release notes: %v\n", err)
+		}
+
 	}
 	if err != nil {
 		return err
