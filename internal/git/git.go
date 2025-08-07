@@ -725,7 +725,7 @@ func (g *Git) generatePRTitleAndBody(info PRInfo, labelTypes map[string]github.L
 
 	if !info.SourceGeneration {
 		body += fmt.Sprintf(`
-Based on (Speakeasy CLI)[https://github.com/speakeasy-api/speakeasy] %s
+Based on [Speakeasy CLI](https://github.com/speakeasy-api/speakeasy) %s
 `, info.ReleaseInfo.SpeakeasyVersion)
 	}
 
