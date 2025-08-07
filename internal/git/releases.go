@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-github/v63/github"
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/telemetry"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
@@ -97,6 +98,10 @@ func (g *Git) CreateRelease(oldReleaseContent string, languages map[string]relea
 		} else {
 			tagName := github.String(tag)
 			releaseBody := oldReleaseContent
+			logging.Info("SDK_CHANGELOG_JULY_2025: %s", os.Getenv("SDK_CHANGELOG_JULY_2025"))
+			logging.Info("targetSpecificReleaseNotes: %v", targetSpecificReleaseNotes)
+			logging.Info("targetSpecificReleaseNotes.HasReleaseNotesForTarget(lang): %v", targetSpecificReleaseNotes.HasReleaseNotesForTarget(lang))
+			logging.Info("lang: %v", lang)
 			if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && targetSpecificReleaseNotes.HasReleaseNotesForTarget(lang) {
 				fmt.Println(fmt.Sprintf("Using target specific release notes for %s", lang))
 				releaseBody = targetSpecificReleaseNotes.GetReleaseNotesForTarget(lang)

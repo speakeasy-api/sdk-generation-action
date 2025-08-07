@@ -19,6 +19,10 @@ import (
 
 func Release() error {
 	logging.Info("SDK_CHANGELOG_JULY_2025: %s", os.Getenv("SDK_CHANGELOG_JULY_2025"))
+	logging.Info("GITHUB_REPOSITORY: %s", os.Getenv("GITHUB_REPOSITORY"))
+	logging.Info("GITHUB_ACTION_REPOSITORY: %s", os.Getenv("GITHUB_ACTION_REPOSITORY"))
+	logging.Info("GITHUB_REPOSITORY_OWNER: %s", os.Getenv("GITHUB_REPOSITORY_OWNER"))
+
 	accessToken := environment.GetAccessToken()
 	if accessToken == "" {
 		return errors.New("github access token is required")
@@ -86,9 +90,11 @@ func Release() error {
 
 	// Old way of getting release Info (uses RELEASES.md)
 	if usingReleasesMd {
+		logging.Info("Using RELEASES.md to get release info")
 		logging.Debug("Using RELEASES.md to get release info")
 		latestRelease, err = releases.GetLastReleaseInfo(dir)
 	} else {
+		logging.Info("Using gen lockfile to get release info")
 		// targetSpecificReleaseNotes variable is present only if SDK_CHANGELOG_JULY_2025 env is true
 		logging.Debug("Using gen lockfile to get release info")
 		latestRelease, targetSpecificReleaseNotes, err = releases.GetReleaseInfoFromGenerationFiles(dir)
