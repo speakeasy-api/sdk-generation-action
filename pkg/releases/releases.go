@@ -189,6 +189,7 @@ func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, TargetReleas
 
 	cfgFile := cfg.Config
 	lockFile := cfg.LockFile
+	logging.Info("lockfile release notes: %v", lockFile.ReleaseNotes)
 	if cfgFile == nil || lockFile == nil {
 		return nil, nil, fmt.Errorf("config or lock file not found")
 	}
