@@ -685,11 +685,7 @@ func (g *Git) generatePRTitleAndBody(info PRInfo, labelTypes map[string]github.L
 	if info.SourceGeneration {
 		body += "Update of compiled sources"
 	} else {
-		body += fmt.Sprintf(`# SDK update
-Based on:
-- OpenAPI Doc %s %s
-- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy
-`, info.ReleaseInfo.DocVersion, info.ReleaseInfo.DocLocation, info.ReleaseInfo.SpeakeasyVersion, info.ReleaseInfo.GenerationVersion)
+		body += "# SDK update\n"
 	}
 
 	if info.VersioningInfo.VersionReport != nil {
@@ -725,6 +721,12 @@ Based on:
 		}
 
 		body += changelog
+	}
+
+	if !info.SourceGeneration {
+		body += fmt.Sprintf(`
+Based on (Speakeasy CLI)[https://github.com/speakeasy-api/speakeasy] %s
+`, info.ReleaseInfo.SpeakeasyVersion)
 	}
 
 	return title, body

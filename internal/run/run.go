@@ -80,6 +80,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 	if strings.Contains(strings.ToLower(repoURL), "speakeasy-api") || strings.Contains(strings.ToLower(repoURL), "speakeasy-sdks") || strings.Contains(strings.ToLower(repoURL), "ryan-timothy-albert") {
 		os.Setenv("SDK_CHANGELOG_JULY_2025", "true")
 	}
+	fmt.Println("SDK_CHANGELOG_JULY_2025: ", os.Getenv("SDK_CHANGELOG_JULY_2025"))
 	repoSubdirectories := map[string]string{}
 	previousManagementInfos := map[string]config.Management{}
 
