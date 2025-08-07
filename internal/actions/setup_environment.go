@@ -17,6 +17,10 @@ func SetupEnvironment() error {
 		return err
 	}
 
+	if err := installUv(); err != nil {
+		return err
+	}
+
 	if pnpmVersion := environment.GetPnpmVersion(); pnpmVersion != "" {
 		pnpmPackageSpec := "pnpm@" + pnpmVersion
 		cmd := exec.Command("npm", "install", "-g", pnpmPackageSpec)
@@ -42,6 +46,24 @@ func installPoetry() error {
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("error installing poetry: %w", err)
+	}
+
+	return nil
+}
+
+// Installs uv using pipx. If the INPUT_UV_VERSION environment variable
+// is set, it will install that version.
+func installUv() error {
+	uvSpec := "uv"
+
+	if uvVersion := environment.GetUvVersion(); uvVersion != "" {
+		uvSpec = "uv==" + uvVersion
+	}
+
+	cmd := exec.Command("pipx", "install", "--global", uvSpec)
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("error installing uv: %w", err)
 	}
 
 	return nil

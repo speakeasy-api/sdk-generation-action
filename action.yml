@@ -108,6 +108,9 @@ inputs:
   poetry_version:
     description: "Version of poetry to install. Not recommended for use without consulting Speakeasy support."
     required: false
+  uv_version:
+    description: "Version of uv to install. Not recommended for use without consulting Speakeasy support."
+    required: false
   github_repository:
     description: "The GitHub repository path for the SDK. Eg: speakeasy-api/speakeasy-sdk-python"
     default: ""

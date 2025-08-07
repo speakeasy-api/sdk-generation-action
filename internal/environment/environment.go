@@ -228,6 +228,10 @@ func GetPnpmVersion() string {
 	return os.Getenv("INPUT_PNPM_VERSION")
 }
 
+func GetUvVersion() string {
+	return os.Getenv("INPUT_UV_VERSION")
+}
+
 func GetWorkflowName() string {
 	return os.Getenv("GITHUB_WORKFLOW")
 }
