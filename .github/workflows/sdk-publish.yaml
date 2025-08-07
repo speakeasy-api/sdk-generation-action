@@ -126,6 +126,7 @@ jobs:
           working_directory: ${{ inputs.working_directory }}
           target: ${{ inputs.target }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          debug: ${{ inputs.debug }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:

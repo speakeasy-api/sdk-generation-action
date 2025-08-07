@@ -98,6 +98,10 @@ inputs:
     description: |
       Extra environment variables to set for the speakeasy run execution.
     required: false
+  debug:
+    description: "Enable debug mode for additional logging"
+    required: false
+    default: "false"
   pnpm_version:
     description: "Version of pnpm to install. Not recommended for use without consulting Speakeasy support."
     required: false
@@ -202,6 +206,7 @@ runs:
     OPENAI_API_KEY: ${{ inputs.openai_api_key }}
     OPENAPI_DOC_AUTH_TOKEN: ${{ inputs.openapi_doc_auth_token }}
     PR_CREATION_PAT: ${{ inputs.pr_creation_pat }}
+    INPUT_DEBUG: ${{ inputs.debug }}
   args:
     - ${{ inputs.speakeasy_version }}
     - ${{ inputs.github_access_token }}
