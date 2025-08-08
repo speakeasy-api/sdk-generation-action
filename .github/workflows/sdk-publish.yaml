@@ -29,6 +29,10 @@ on:
         description: "The version of poetry to use"
         required: false
         type: string
+      uv_version:
+        description: "The version of uv to use"
+        required: false
+        type: string
       target:
         description: "The specific target to publish"
         required: false
@@ -173,6 +177,8 @@ jobs:
           poetry --version
         env:
           POETRY_VERSION: ${{ inputs.poetry_version }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
       - name: Check for publish.sh
         id: check-publish
         run: |

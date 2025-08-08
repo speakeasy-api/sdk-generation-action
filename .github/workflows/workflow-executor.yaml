@@ -95,6 +95,10 @@ on:
         description: "Version of poetry to install. Not recommended for use without consulting Speakeasy support."
         required: false
         type: string
+      uv_version:
+        description: "Version of uv to install. Not recommended for use without consulting Speakeasy support."
+        required: false
+        type: string
       github_repository:
         description: "The GitHub repository path for the SDK. Eg: speakeasy-api/speakeasy-sdk-python"
         default: ""
@@ -236,6 +240,7 @@ jobs:
           cli_environment_variables: ${{ inputs.environment }}
           pnpm_version: ${{ inputs.pnpm_version }}
           poetry_version: ${{ inputs.poetry_version }}
+          uv_version: ${{ inputs.uv_version }}
           github_repository: ${{ inputs.github_repository }}
       - uses: ravsamhq/notify-slack-action@v2
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' && env.SLACK_WEBHOOK_URL != '' }}
@@ -293,6 +298,10 @@ jobs:
           poetry --version
         env:
           POETRY_VERSION: ${{ inputs.poetry_version }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ inputs.uv_version }}
       - name: Check for publish.sh
         id: check-publish
         run: |
