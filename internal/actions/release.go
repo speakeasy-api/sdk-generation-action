@@ -18,9 +18,18 @@ import (
 )
 
 func Release() error {
+	logging.Info("SDK_CHANGELOG_JULY_2025: %s", os.Getenv("SDK_CHANGELOG_JULY_2025"))
+	logging.Info("GITHUB_REPOSITORY: %s", os.Getenv("GITHUB_REPOSITORY"))
+	logging.Info("GITHUB_ACTION_REPOSITORY: %s", os.Getenv("GITHUB_ACTION_REPOSITORY"))
+	logging.Info("GITHUB_REPOSITORY_OWNER: %s", os.Getenv("GITHUB_REPOSITORY_OWNER"))
+
 	accessToken := environment.GetAccessToken()
 	if accessToken == "" {
 		return errors.New("github access token is required")
+	}
+	repoURL := os.Getenv("GITHUB_REPOSITORY")
+	if strings.Contains(strings.ToLower(repoURL), "speakeasy-api") || strings.Contains(strings.ToLower(repoURL), "speakeasy-sdks") || strings.Contains(strings.ToLower(repoURL), "ryan-timothy-albert") {
+		os.Setenv("SDK_CHANGELOG_JULY_2025", "true")
 	}
 
 	g, err := initAction()
@@ -31,21 +40,31 @@ func Release() error {
 	dir := "."
 	usingReleasesMd := false
 	var providesExplicitTarget bool
+	logging.Info("specificTarget: %s", environment.SpecifiedTarget())
 	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
+		logging.Info("inside if condition")
 		workflow, err := configuration.GetWorkflowAndValidateLanguages(true)
+		logging.Info("error: %v", err)
 		if err != nil {
 			return err
 		}
+		logging.Info("about to check target")
 		if target, ok := workflow.Targets[specificTarget]; ok {
+			logging.Info("inside if condition 2")
+			logging.Info("target: %v", target)
 			if target.Output != nil {
+				logging.Info("inside if condition 3")
 				dir = strings.TrimPrefix(*target.Output, "./")
 			}
 
+			logging.Info("dir: %v", dir)
 			dir = filepath.Join(environment.GetWorkingDirectory(), dir)
-
+			logging.Info("dir after join: %v", dir)
 			providesExplicitTarget = true
 		}
 	}
+
+	logging.Info("providesExplicitTarget: %v", providesExplicitTarget)
 
 	if !providesExplicitTarget {
 		// This searches for files that would be referenced in the GH Action trigger
@@ -60,24 +79,47 @@ func Release() error {
 			}
 		}
 
+		logging.Info("files: %v", files)
+		logging.Info("dir: %v", dir)
+		logging.Info("usingReleasesMd: %v", usingReleasesMd)
 		dir, usingReleasesMd = GetDirAndShouldUseReleasesMD(files, dir, usingReleasesMd)
+
 	}
 
+	logging.Info("usingReleasesMd outside if condition: %v", usingReleasesMd)
+	var languages map[string]releases.LanguageReleaseInfo
 	var latestRelease *releases.ReleasesInfo
+	var targetSpecificReleaseNotes releases.TargetReleaseNotes = nil
+	oldReleaseContent := ""
+
+	// Old way of getting release Info (uses RELEASES.md)
 	if usingReleasesMd {
+		logging.Info("Using RELEASES.md to get release info")
+		logging.Debug("Using RELEASES.md to get release info")
 		latestRelease, err = releases.GetLastReleaseInfo(dir)
-		if err != nil {
-			return err
-		}
 	} else {
+		logging.Info("Using gen lockfile to get release info")
+		logging.Debug("Using gen lockfile to get release info")
 		latestRelease, err = releases.GetReleaseInfoFromGenerationFiles(dir)
 		if err != nil {
+			fmt.Printf("Error getting release info from generation files: %v\n", err)
 			return err
 		}
+		// targetSpecificReleaseNotes variable is present only if SDK_CHANGELOG_JULY_2025 env is true
+		targetSpecificReleaseNotes, err = releases.GetTargetSpecificReleaseNotes(dir)
+		if err != nil {
+			fmt.Printf("Error getting target specific release notes: %v\n", err)
+		}
+
 	}
+	if err != nil {
+		return err
+	}
+	languages = latestRelease.Languages
+	oldReleaseContent = latestRelease.String()
 
 	outputs := map[string]string{}
-	for lang, info := range latestRelease.Languages {
+	for lang, info := range languages {
 		outputs[utils.OutputTargetRegenerated(lang)] = "true"
 		outputs[utils.OutputTargetDirectory(lang)] = info.Path
 	}
@@ -86,7 +128,7 @@ func Release() error {
 		return err
 	}
 
-	if err := g.CreateRelease(*latestRelease, outputs); err != nil {
+	if err := g.CreateRelease(oldReleaseContent, languages, outputs, targetSpecificReleaseNotes); err != nil {
 		return err
 	}
 
@@ -95,7 +137,7 @@ func Release() error {
 	}
 
 	if os.Getenv("SPEAKEASY_API_KEY") != "" {
-		if err = addCurrentBranchTagging(g, latestRelease.Languages); err != nil {
+		if err = addCurrentBranchTagging(g, languages); err != nil {
 			return errors.Wrap(err, "failed to tag registry images")
 		}
 	}
