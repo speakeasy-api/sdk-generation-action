@@ -279,7 +279,7 @@ func GetTargetSpecificReleaseNotes(path string) (TargetReleaseNotes, error) {
 			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
 		}
 
-		firstLine := fmt.Sprintf("[%s](%s)", partOfFirstLine, pkgURL)
+		firstLine := fmt.Sprintf("\n[%s](%s)", partOfFirstLine, pkgURL)
 		notes += firstLine
 		notes += "\n"
 		notes += lockFile.ReleaseNotes
