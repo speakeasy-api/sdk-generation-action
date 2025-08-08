@@ -35,7 +35,7 @@ jobs:
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: apply-tags
         name: Apply Tags
-        uses: speakeasy-api/sdk-generation-action@v15.48.1-pre3
+        uses: speakeasy-api/sdk-generation-action@v15
         with:
           action: "tag"
           sources: ${{ inputs.sources }}
