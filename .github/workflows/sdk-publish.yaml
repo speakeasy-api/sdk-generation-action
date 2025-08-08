@@ -179,6 +179,8 @@ jobs:
           POETRY_VERSION: ${{ inputs.poetry_version }}
       - name: Install uv
         uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ inputs.uv_version }}
       - name: Check for publish.sh
         id: check-publish
         run: |
