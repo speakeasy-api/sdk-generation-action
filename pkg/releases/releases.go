@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	version "github.com/aquasecurity/go-pep440-version"
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
@@ -35,6 +36,14 @@ type ReleasesInfo struct {
 	DocLocation        string
 	Languages          map[string]LanguageReleaseInfo
 	LanguagesGenerated map[string]GenerationInfo
+}
+
+func (l LanguageReleaseInfo) IsPrerelease() bool {
+	v, err := version.Parse(l.Version)
+	if err != nil {
+		return false
+	}
+	return v.IsPreRelease()
 }
 
 func (r ReleasesInfo) String() string {

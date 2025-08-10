@@ -440,3 +440,31 @@ Based on:
 		LanguagesGenerated: map[string]releases.GenerationInfo{},
 	}, *info)
 }
+
+func TestLanguageReleaseInfo_IsPrerelease(t *testing.T) {
+	cases := []struct {
+		version string
+		want    bool
+	}{
+		{"1.2.3", false},
+		{"v1.2.3", false},
+		{"v1.2", false},
+		{"1.2", false},
+		{"1.2.3-alpha", true},
+		{"1.2.3-alpha.1", true},
+		{"v1.2.3-beta", true},
+		{"2.0.0-BETA.2", true},
+		{"3.0.0-rc.1", true},
+		{"3.0.0-rc", true},
+		{"3.0.0-rc-1", true},
+		{"1.2.3a1", true},
+		{"1.2.4b1", true},
+		{"1.2.5rc1", true},
+	}
+
+	for _, c := range cases {
+		l := releases.LanguageReleaseInfo{Version: c.version}
+		got := l.IsPrerelease()
+		assert.Equal(t, c.want, got, "Version %s: expected %v, got %v", c.version, c.want, got)
+	}
+}
