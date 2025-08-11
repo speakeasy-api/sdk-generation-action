@@ -202,7 +202,6 @@ runs:
     OPENAI_API_KEY: ${{ inputs.openai_api_key }}
     OPENAPI_DOC_AUTH_TOKEN: ${{ inputs.openapi_doc_auth_token }}
     PR_CREATION_PAT: ${{ inputs.pr_creation_pat }}
-    INPUT_DEBUG: true
   args:
     - ${{ inputs.speakeasy_version }}
     - ${{ inputs.github_access_token }}

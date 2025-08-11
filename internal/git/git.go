@@ -355,9 +355,9 @@ func (g *Git) DeleteBranch(branchName string) error {
 
 func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, mergedVersionReport *versioning.MergedVersionReport) (string, error) {
 	if mergedVersionReport == nil {
-		logging.Debug("mergedVersionReport is nil")
+		logging.Info("mergedVersionReport is nil")
 	} else if mergedVersionReport.GetCommitMarkdownSection() == "" {
-		logging.Debug("mergedVersionReport.GetCommitMarkdownSection is empty ")
+		logging.Info("mergedVersionReport.GetCommitMarkdownSection is empty ")
 	}
 
 	if g.repo == nil {
@@ -379,7 +379,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
-	logging.Debug("SDK_CHANGELOG_JULY_2025 is %s", os.Getenv("SDK_CHANGELOG_JULY_2025"))
+	logging.Info("SDK_CHANGELOG_JULY_2025 is %s", os.Getenv("SDK_CHANGELOG_JULY_2025"))
 
 	var commitMessage string = ""
 	if action == environment.ActionRunWorkflow {
@@ -571,7 +571,7 @@ func (g *Git) getOwnerAndRepo(githubRepoLocation string) (string, string) {
 }
 
 func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
-	logging.Debug("Starting: Create or Update PR")
+	logging.Info("Starting: Create or Update PR")
 	labelTypes := g.UpsertLabelTypes(context.Background())
 	var changelog string
 	var err error
@@ -741,13 +741,13 @@ func (g *Git) generateGeneratorChangelogForOldCLIVersions(info PRInfo, previousG
 
 		cfg, err := genConfig.Load(genPath)
 		if err != nil {
-			logging.Debug("failed to load gen config for retrieving granular versions for changelog at path %s: %v", genPath, err)
+			logging.Error("failed to load gen config for retrieving granular versions for changelog at path %s: %v", genPath, err)
 			continue
 		} else {
 			ok := false
 			targetVersions, ok = cfg.LockFile.Features[language]
 			if !ok {
-				logging.Debug("failed to find language %s in gen config for retrieving granular versions for changelog at path %s", language, genPath)
+				logging.Error("failed to find language %s in gen config for retrieving granular versions for changelog at path %s", language, genPath)
 				continue
 			}
 		}

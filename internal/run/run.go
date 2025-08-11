@@ -75,7 +75,6 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 	repoURL := getRepoURL()
 	// Setting this environment variable to gate the enabling of sdkChangelogJul2025 changes to affect only limited number of repos
 	// Temporarily try out new changelog on internal repos only
-	// TODO: add filter for  organization and a specific repo to make this more narrow
 	fmt.Println("repoURL is this : ", repoURL)
 	if strings.Contains(strings.ToLower(repoURL), "speakeasy-api") || strings.Contains(strings.ToLower(repoURL), "speakeasy-sdks") || strings.Contains(strings.ToLower(repoURL), "ryan-timothy-albert") {
 		os.Setenv("SDK_CHANGELOG_JULY_2025", "true")

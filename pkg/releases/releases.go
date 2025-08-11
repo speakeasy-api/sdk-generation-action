@@ -140,7 +140,7 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
 
 	f, err := os.OpenFile(releasesPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
-		logging.Debug("error while opening file: %s", err.Error())
+		logging.Error("error while opening file: %s", err.Error())
 		return fmt.Errorf("error opening releases file: %w", err)
 	}
 	defer f.Close()
