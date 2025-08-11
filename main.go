@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 	"github.com/speakeasy-api/sdk-generation-action/internal/telemetry"
 	"github.com/speakeasy-api/speakeasy-client-sdk-go/v3/pkg/models/shared"
 
@@ -16,16 +15,6 @@ import (
 )
 
 func main() {
-	// Log action version and branch information
-	logging.Debug("=== SDK Generation Action Debug Info ===")
-	logging.Debug("Action Repository: %s", os.Getenv("GITHUB_ACTION_REPOSITORY"))
-	logging.Debug("Action Ref: %s", os.Getenv("GITHUB_ACTION_REF"))
-	logging.Debug("Action Path: %s", os.Getenv("GITHUB_ACTION_PATH"))
-	logging.Debug("Workflow Ref: %s", os.Getenv("GITHUB_REF"))
-	logging.Debug("Workflow SHA: %s", os.Getenv("GITHUB_SHA"))
-	logging.Debug("Repository: %s", os.Getenv("GITHUB_REPOSITORY"))
-	logging.Debug("Event Name: %s", os.Getenv("GITHUB_EVENT_NAME"))
-
 	if environment.IsDebugMode() {
 		envs := os.Environ()
 		slices.SortFunc(envs, func(i, j string) int {
