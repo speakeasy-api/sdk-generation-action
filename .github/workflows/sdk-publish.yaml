@@ -264,7 +264,19 @@ jobs:
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
-        run: npm publish --access public
+        run: |
+          VERSION=$(npm view . version)
+          echo "Detected version: $VERSION"
+
+          if [[ "$VERSION" == *"-"* ]]; then
+            PRERELEASE=${VERSION#*-}
+            TAG=${PRERELEASE%%.*}
+            echo "Prerelease detected; publishing under dist-tag: $TAG"
+            npm publish --tag "$TAG" --access public
+          else
+            echo "Official release detected; publishing under 'latest'"
+            npm publish --access public
+          fi
       - name: Build & Upload MCP Server Binaries
         if: ${{ needs.release.outputs.mcp_release_typescript != '' }}
         env:
@@ -357,7 +369,19 @@ jobs:
       - run: npm install
       - env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
-        run: npm publish --access public
+        run: |
+          VERSION=$(npm view . version)
+          echo "Detected version: $VERSION"
+
+          if [[ "$VERSION" == *"-"* ]]; then
+            PRERELEASE=${VERSION#*-}
+            TAG=${PRERELEASE%%.*}
+            echo "Prerelease detected; publishing under dist-tag: $TAG"
+            npm publish --tag "$TAG" --access public
+          else
+            echo "Official release detected; publishing under 'latest'"
+            npm publish --access public
+          fi
       - name: Build & Upload MCP Server Binaries
         if: ${{ needs.release.outputs.mcp_release_typescript != '' }}
         env:
