@@ -59,6 +59,7 @@ type ReleasesInfo struct {
 func (l LanguageReleaseInfo) IsPrerelease() bool {
 	v, err := version.Parse(l.Version)
 	if err != nil {
+		logging.Error("error parsing version when deciding if it is a prerelease. Therefore assuming it is not a prerelease. Version is %v. Error details: %v", l.Version, err)
 		return false
 	}
 	return v.IsPreRelease()
