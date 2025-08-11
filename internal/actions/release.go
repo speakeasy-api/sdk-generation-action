@@ -18,11 +18,6 @@ import (
 )
 
 func Release() error {
-	logging.Info("SDK_CHANGELOG_JULY_2025: %s", os.Getenv("SDK_CHANGELOG_JULY_2025"))
-	logging.Info("GITHUB_REPOSITORY: %s", os.Getenv("GITHUB_REPOSITORY"))
-	logging.Info("GITHUB_ACTION_REPOSITORY: %s", os.Getenv("GITHUB_ACTION_REPOSITORY"))
-	logging.Info("GITHUB_REPOSITORY_OWNER: %s", os.Getenv("GITHUB_REPOSITORY_OWNER"))
-
 	accessToken := environment.GetAccessToken()
 	if accessToken == "" {
 		return errors.New("github access token is required")
@@ -42,29 +37,22 @@ func Release() error {
 	var providesExplicitTarget bool
 	logging.Info("specificTarget: %s", environment.SpecifiedTarget())
 	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
-		logging.Info("inside if condition")
 		workflow, err := configuration.GetWorkflowAndValidateLanguages(true)
-		logging.Info("error: %v", err)
 		if err != nil {
+			logging.Error("error: %v", err)
 			return err
 		}
-		logging.Info("about to check target")
 		if target, ok := workflow.Targets[specificTarget]; ok {
-			logging.Info("inside if condition 2")
-			logging.Info("target: %v", target)
 			if target.Output != nil {
-				logging.Info("inside if condition 3")
 				dir = strings.TrimPrefix(*target.Output, "./")
 			}
 
-			logging.Info("dir: %v", dir)
 			dir = filepath.Join(environment.GetWorkingDirectory(), dir)
-			logging.Info("dir after join: %v", dir)
 			providesExplicitTarget = true
 		}
 	}
 
-	logging.Info("providesExplicitTarget: %v", providesExplicitTarget)
+	logging.Info("providesExplicitTarget is set as: %v", providesExplicitTarget)
 
 	if !providesExplicitTarget {
 		// This searches for files that would be referenced in the GH Action trigger
@@ -79,14 +67,10 @@ func Release() error {
 			}
 		}
 
-		logging.Info("files: %v", files)
-		logging.Info("dir: %v", dir)
-		logging.Info("usingReleasesMd: %v", usingReleasesMd)
 		dir, usingReleasesMd = GetDirAndShouldUseReleasesMD(files, dir, usingReleasesMd)
 
 	}
 
-	logging.Info("usingReleasesMd outside if condition: %v", usingReleasesMd)
 	var languages map[string]releases.LanguageReleaseInfo
 	var latestRelease *releases.ReleasesInfo
 	var targetSpecificReleaseNotes releases.TargetReleaseNotes = nil
@@ -95,11 +79,9 @@ func Release() error {
 	// Old way of getting release Info (uses RELEASES.md)
 	if usingReleasesMd {
 		logging.Info("Using RELEASES.md to get release info")
-		logging.Debug("Using RELEASES.md to get release info")
 		latestRelease, err = releases.GetLastReleaseInfo(dir)
 	} else {
 		logging.Info("Using gen lockfile to get release info")
-		logging.Debug("Using gen lockfile to get release info")
 		latestRelease, err = releases.GetReleaseInfoFromGenerationFiles(dir)
 		if err != nil {
 			fmt.Printf("Error getting release info from generation files: %v\n", err)
