@@ -57,11 +57,13 @@ type ReleasesInfo struct {
 }
 
 func (l LanguageReleaseInfo) IsPrerelease() bool {
+	logging.Info("version is %v ", l.Version)
 	v, err := version.NewVersion(l.Version)
 	if err != nil {
 		logging.Error("error parsing version when deciding if it is a prerelease. Therefore assuming it is not a prerelease. Version is %v. Error details: %v", l.Version, err)
 		return false
 	}
+	logging.Info("prerelease info from go lib %v", v.Prerelease())
 	if v.Prerelease() != "" {
 		// If a prerelease info was found it means its a prerelease
 		return true
