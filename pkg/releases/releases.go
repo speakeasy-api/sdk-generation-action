@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	version "github.com/aquasecurity/go-pep440-version"
+	version "github.com/hashicorp/go-version"
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
@@ -57,12 +57,16 @@ type ReleasesInfo struct {
 }
 
 func (l LanguageReleaseInfo) IsPrerelease() bool {
-	v, err := version.Parse(l.Version)
+	v, err := version.NewVersion(l.Version)
 	if err != nil {
 		logging.Error("error parsing version when deciding if it is a prerelease. Therefore assuming it is not a prerelease. Version is %v. Error details: %v", l.Version, err)
 		return false
 	}
-	return v.IsPreRelease()
+	if v.Prerelease() != "" {
+		// If a prerelease info was found it means its a prerelease
+		return true
+	}
+	return false
 }
 
 // This representation is used when adding body to Github releases
