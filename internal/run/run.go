@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -40,6 +41,8 @@ type RunResult struct {
 	ChangesReportURL     string
 	VersioningReport     *versioning.MergedVersionReport
 	VersioningInfo       versionbumps.VersioningInfo
+	// key is language, value is release notes
+	ReleaseNotes map[string]string
 }
 
 type Git interface {
@@ -49,6 +52,7 @@ type Git interface {
 func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
 	workspace := environment.GetWorkspace()
 	outputs := map[string]string{}
+	releaseNotes := map[string]string{}
 
 	executeSpeakeasyVersion, err := cli.GetSpeakeasyVersion()
 	if err != nil {
@@ -69,6 +73,13 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 
 	installationURLs := map[string]string{}
 	repoURL := getRepoURL()
+	// Setting this environment variable to gate the enabling of sdkChangelogJul2025 changes to affect only limited number of repos
+	// Temporarily try out new changelog on internal repos only
+	fmt.Println("repoURL is this : ", repoURL)
+	if strings.Contains(strings.ToLower(repoURL), "speakeasy-api") || strings.Contains(strings.ToLower(repoURL), "speakeasy-sdks") || strings.Contains(strings.ToLower(repoURL), "ryan-timothy-albert") {
+		os.Setenv("SDK_CHANGELOG_JULY_2025", "true")
+	}
+	fmt.Println("SDK_CHANGELOG_JULY_2025: ", os.Getenv("SDK_CHANGELOG_JULY_2025"))
 	repoSubdirectories := map[string]string{}
 	previousManagementInfos := map[string]config.Management{}
 
@@ -184,6 +195,9 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		currentManagementInfo := loadedCfg.LockFile.Management
 		langCfg := loadedCfg.Config.Languages[lang]
 		langConfigs[lang] = &langCfg
+		if loadedCfg.LockFile.ReleaseNotes != "" {
+			releaseNotes[lang] = loadedCfg.LockFile.ReleaseNotes
+		}
 
 		outputs[utils.OutputTargetDirectory(lang)] = dir
 
@@ -260,6 +274,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
 		LintingReportURL:     runRes.LintingReportURL,
 		ChangesReportURL:     runRes.ChangesReportURL,
+		ReleaseNotes:         releaseNotes,
 	}, outputs, nil
 }
 

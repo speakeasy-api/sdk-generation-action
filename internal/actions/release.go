@@ -22,6 +22,10 @@ func Release() error {
 	if accessToken == "" {
 		return errors.New("github access token is required")
 	}
+	repoURL := os.Getenv("GITHUB_REPOSITORY")
+	if strings.Contains(strings.ToLower(repoURL), "speakeasy-api") || strings.Contains(strings.ToLower(repoURL), "speakeasy-sdks") || strings.Contains(strings.ToLower(repoURL), "ryan-timothy-albert") {
+		os.Setenv("SDK_CHANGELOG_JULY_2025", "true")
+	}
 
 	g, err := initAction()
 	if err != nil {
@@ -31,9 +35,11 @@ func Release() error {
 	dir := "."
 	usingReleasesMd := false
 	var providesExplicitTarget bool
+	logging.Info("specificTarget: %s", environment.SpecifiedTarget())
 	if specificTarget := environment.SpecifiedTarget(); specificTarget != "" {
 		workflow, err := configuration.GetWorkflowAndValidateLanguages(true)
 		if err != nil {
+			logging.Error("error: %v", err)
 			return err
 		}
 		if target, ok := workflow.Targets[specificTarget]; ok {
@@ -42,10 +48,11 @@ func Release() error {
 			}
 
 			dir = filepath.Join(environment.GetWorkingDirectory(), dir)
-
 			providesExplicitTarget = true
 		}
 	}
+
+	logging.Info("providesExplicitTarget is set as: %v", providesExplicitTarget)
 
 	if !providesExplicitTarget {
 		// This searches for files that would be referenced in the GH Action trigger
@@ -61,23 +68,40 @@ func Release() error {
 		}
 
 		dir, usingReleasesMd = GetDirAndShouldUseReleasesMD(files, dir, usingReleasesMd)
+
 	}
 
+	var languages map[string]releases.LanguageReleaseInfo
 	var latestRelease *releases.ReleasesInfo
+	var targetSpecificReleaseNotes releases.TargetReleaseNotes = nil
+	oldReleaseContent := ""
+
+	// Old way of getting release Info (uses RELEASES.md)
 	if usingReleasesMd {
+		logging.Info("Using RELEASES.md to get release info")
 		latestRelease, err = releases.GetLastReleaseInfo(dir)
-		if err != nil {
-			return err
-		}
 	} else {
+		logging.Info("Using gen lockfile to get release info")
 		latestRelease, err = releases.GetReleaseInfoFromGenerationFiles(dir)
 		if err != nil {
+			fmt.Printf("Error getting release info from generation files: %v\n", err)
 			return err
 		}
+		// targetSpecificReleaseNotes variable is present only if SDK_CHANGELOG_JULY_2025 env is true
+		targetSpecificReleaseNotes, err = releases.GetTargetSpecificReleaseNotes(dir)
+		if err != nil {
+			fmt.Printf("Error getting target specific release notes: %v\n", err)
+		}
+
 	}
+	if err != nil {
+		return err
+	}
+	languages = latestRelease.Languages
+	oldReleaseContent = latestRelease.String()
 
 	outputs := map[string]string{}
-	for lang, info := range latestRelease.Languages {
+	for lang, info := range languages {
 		outputs[utils.OutputTargetRegenerated(lang)] = "true"
 		outputs[utils.OutputTargetDirectory(lang)] = info.Path
 	}
@@ -86,7 +110,7 @@ func Release() error {
 		return err
 	}
 
-	if err := g.CreateRelease(*latestRelease, outputs); err != nil {
+	if err := g.CreateRelease(oldReleaseContent, languages, outputs, targetSpecificReleaseNotes); err != nil {
 		return err
 	}
 
@@ -95,7 +119,7 @@ func Release() error {
 	}
 
 	if os.Getenv("SPEAKEASY_API_KEY") != "" {
-		if err = addCurrentBranchTagging(g, latestRelease.Languages); err != nil {
+		if err = addCurrentBranchTagging(g, languages); err != nil {
 			return errors.Wrap(err, "failed to tag registry images")
 		}
 	}

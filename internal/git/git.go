@@ -353,7 +353,13 @@ func (g *Git) DeleteBranch(branchName string) error {
 	return nil
 }
 
-func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool) (string, error) {
+func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, mergedVersionReport *versioning.MergedVersionReport) (string, error) {
+	if mergedVersionReport == nil {
+		logging.Info("mergedVersionReport is nil")
+	} else if mergedVersionReport.GetCommitMarkdownSection() == "" {
+		logging.Info("mergedVersionReport.GetCommitMarkdownSection is empty ")
+	}
+
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
@@ -373,15 +379,21 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
+	logging.Info("SDK_CHANGELOG_JULY_2025 is %s", os.Getenv("SDK_CHANGELOG_JULY_2025"))
 
-	var commitMessage string
+	var commitMessage string = ""
 	if action == environment.ActionRunWorkflow {
 		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 		if sourcesOnly {
 			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
+		} else if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && mergedVersionReport != nil && mergedVersionReport.GetCommitMarkdownSection() != "" {
+			// For clients using older cli with new sdk-action, GetCommitMarkdownSection would be empty so we will use the old commit message
+			commitMessage = mergedVersionReport.GetCommitMarkdownSection()
 		}
 	} else if action == environment.ActionSuggest {
 		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
+	} else {
+		return "", errors.New("invalid action")
 	}
 
 	// Create commit message
@@ -559,145 +571,31 @@ func (g *Git) getOwnerAndRepo(githubRepoLocation string) (string, string) {
 }
 
 func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
+	logging.Info("Starting: Create or Update PR")
+	labelTypes := g.UpsertLabelTypes(context.Background())
 	var changelog string
 	var err error
-
-	labelTypes := g.UpsertLabelTypes(context.Background())
-
+	body := ""
 	var previousGenVersions []string
-
+	var title string
 	if info.PreviousGenVersion != "" {
 		previousGenVersions = strings.Split(info.PreviousGenVersion, ";")
 	}
 
 	// Deprecated -- kept around for old CLI versions. VersioningReport is newer pathway
 	if info.ReleaseInfo != nil && info.VersioningInfo.VersionReport == nil {
-		for language, genInfo := range info.ReleaseInfo.LanguagesGenerated {
-			genPath := path.Join(environment.GetWorkspace(), "repo", genInfo.Path)
-
-			var targetVersions map[string]string
-
-			cfg, err := genConfig.Load(genPath)
-			if err != nil {
-				logging.Debug("failed to load gen config for retrieving granular versions for changelog at path %s: %v", genPath, err)
-				continue
-			} else {
-				ok := false
-				targetVersions, ok = cfg.LockFile.Features[language]
-				if !ok {
-					logging.Debug("failed to find language %s in gen config for retrieving granular versions for changelog at path %s", language, genPath)
-					continue
-				}
-			}
-
-			var previousVersions map[string]string
-
-			if len(previousGenVersions) > 0 {
-				for _, previous := range previousGenVersions {
-					langVersions := strings.Split(previous, ":")
-
-					if len(langVersions) == 2 && langVersions[0] == language {
-						previousVersions = map[string]string{}
-
-						pairs := strings.Split(langVersions[1], ",")
-						for i := 0; i < len(pairs); i += 2 {
-							previousVersions[pairs[i]] = pairs[i+1]
-						}
-					}
-				}
-			}
-
-			versionChangelog, err := cli.GetChangelog(language, info.ReleaseInfo.GenerationVersion, "", targetVersions, previousVersions)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get changelog for language %s: %w", language, err)
-			}
-
-			changelog += fmt.Sprintf("\n\n## %s CHANGELOG\n\n%s", strings.ToUpper(language), versionChangelog)
-		}
-
-		if changelog == "" {
-			// Not using granular version, grab old changelog
-			changelog, err = cli.GetChangelog("", info.ReleaseInfo.GenerationVersion, info.PreviousGenVersion, nil, nil)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get changelog: %w", err)
-			}
-			if strings.TrimSpace(changelog) != "" {
-				changelog = "\n\n\n## CHANGELOG\n\n" + changelog
-			}
-		} else {
-			changelog = "\n" + changelog
+		changelog, err = g.generateGeneratorChangelogForOldCLIVersions(info, previousGenVersions, changelog)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	title := getGenPRTitlePrefix()
-	if environment.IsDocsGeneration() {
-		title = getDocsPRTitlePrefix()
-	} else if info.SourceGeneration {
-		title = getGenSourcesTitlePrefix()
-	}
+	// We will use the old PR body if the SDK_CHANGELOG_JULY_2025 env is not set or set to false
+	// We will use the new PR body if SDK_CHANGELOG_JULY_2025 is set to true.
+	// Backwards compatible: If a client uses new sdk-action with old cli we will not get new changelog body
+	title, body = g.generatePRTitleAndBody(info, labelTypes, changelog)
 
-	suffix, labelBumpType, labels := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
-	title += suffix
-
-	body := ""
-
-	if info.LintingReportURL != "" || info.ChangesReportURL != "" {
-		body += fmt.Sprintf(`> [!IMPORTANT]
-`)
-	}
-
-	if info.LintingReportURL != "" {
-		body += fmt.Sprintf(`> Linting report available at: <%s>
-`, info.LintingReportURL)
-	}
-
-	if info.ChangesReportURL != "" {
-		body += fmt.Sprintf(`> OpenAPI Change report available at: <%s>
-`, info.ChangesReportURL)
-	}
-
-	if info.SourceGeneration {
-		body += "Update of compiled sources"
-	} else {
-		body += fmt.Sprintf(`# SDK update
-Based on:
-- OpenAPI Doc %s %s
-- Speakeasy CLI %s (%s) https://github.com/speakeasy-api/speakeasy
-`, info.ReleaseInfo.DocVersion, info.ReleaseInfo.DocLocation, info.ReleaseInfo.SpeakeasyVersion, info.ReleaseInfo.GenerationVersion)
-	}
-
-	if info.VersioningInfo.VersionReport != nil {
-
-		// We keep track of explicit bump types and whether that bump type is manual or automated in the PR body
-		if labelBumpType != nil && *labelBumpType != versioning.BumpCustom && *labelBumpType != versioning.BumpNone {
-			// be very careful if changing this it critically aligns with a regex in parseBumpFromPRBody
-			versionBumpMsg := "Version Bump Type: " + fmt.Sprintf("[%s]", string(*labelBumpType)) + " - "
-			if info.VersioningInfo.ManualBump {
-				versionBumpMsg += string(versionbumps.BumpMethodManual) + " (manual)"
-				// if manual we bold the message
-				versionBumpMsg = "**" + versionBumpMsg + "**"
-				versionBumpMsg += fmt.Sprintf("\n\nThis PR will stay on the current version until the %s label is removed and/or modified.", string(*labelBumpType))
-			} else {
-				versionBumpMsg += string(versionbumps.BumpMethodAutomated) + " (automated)"
-			}
-			body += fmt.Sprintf(`## Versioning
-
-%s
-`, versionBumpMsg)
-		}
-
-		body += stripCodes(info.VersioningInfo.VersionReport.GetMarkdownSection())
-
-	} else {
-		if len(info.OpenAPIChangeSummary) > 0 {
-			body += fmt.Sprintf(`## OpenAPI Change Summary
-
-%s
-`, stripCodes(info.OpenAPIChangeSummary))
-		}
-
-		body += changelog
-	}
+	_, _, labels := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
 
 	const maxBodyLength = 65536
 
@@ -754,6 +652,143 @@ Based on:
 	logging.Info("PR: %s", url)
 
 	return info.PR, nil
+}
+
+// --- Helper function for old PR title/body generation ---
+func (g *Git) generatePRTitleAndBody(info PRInfo, labelTypes map[string]github.Label, changelog string) (string, string) {
+	var body = ""
+	title := getGenPRTitlePrefix()
+	if environment.IsDocsGeneration() {
+		title = getDocsPRTitlePrefix()
+	} else if info.SourceGeneration {
+		title = getGenSourcesTitlePrefix()
+	}
+
+	suffix, labelBumpType, _ := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
+	title += suffix
+
+	if info.LintingReportURL != "" || info.ChangesReportURL != "" {
+		body += fmt.Sprintf(`> [!IMPORTANT]
+`)
+	}
+
+	if info.LintingReportURL != "" {
+		body += fmt.Sprintf(`> Linting report available at: <%s>
+`, info.LintingReportURL)
+	}
+
+	if info.ChangesReportURL != "" {
+		body += fmt.Sprintf(`> OpenAPI Change report available at: <%s>
+`, info.ChangesReportURL)
+	}
+
+	if info.SourceGeneration {
+		body += "Update of compiled sources"
+	} else {
+		body += "# SDK update\n"
+	}
+
+	if info.VersioningInfo.VersionReport != nil {
+		// We keep track of explicit bump types and whether that bump type is manual or automated in the PR body
+		if labelBumpType != nil && *labelBumpType != versioning.BumpCustom && *labelBumpType != versioning.BumpNone {
+			// be very careful if changing this it critically aligns with a regex in parseBumpFromPRBody
+			versionBumpMsg := "Version Bump Type: " + fmt.Sprintf("[%s]", string(*labelBumpType)) + " - "
+			if info.VersioningInfo.ManualBump {
+				versionBumpMsg += string(versionbumps.BumpMethodManual) + " (manual)"
+				// if manual we bold the message
+				versionBumpMsg = "**" + versionBumpMsg + "**"
+				versionBumpMsg += fmt.Sprintf("\n\nThis PR will stay on the current version until the %s label is removed and/or modified.", string(*labelBumpType))
+			} else {
+				versionBumpMsg += string(versionbumps.BumpMethodAutomated) + " (automated)"
+			}
+			body += fmt.Sprintf(`## Versioning
+
+%s
+`, versionBumpMsg)
+		}
+
+		// New changelog is added here if speakeasy cli added a PR report
+		// Text inserted here is controlled entirely by the speakeasy cli.
+		// We want to move in a direction where the speakeasy CLI controls the messaging entirely
+		body += stripCodes(info.VersioningInfo.VersionReport.GetMarkdownSection())
+
+	} else {
+		if len(info.OpenAPIChangeSummary) > 0 {
+			body += fmt.Sprintf(`## OpenAPI Change Summary
+
+%s
+`, stripCodes(info.OpenAPIChangeSummary))
+		}
+
+		body += changelog
+	}
+
+	if !info.SourceGeneration {
+		body += fmt.Sprintf(`
+Based on [Speakeasy CLI](https://github.com/speakeasy-api/speakeasy) %s
+`, info.ReleaseInfo.SpeakeasyVersion)
+	}
+
+	return title, body
+}
+
+// --- Helper function for changelog generation for old CLI versions ---
+func (g *Git) generateGeneratorChangelogForOldCLIVersions(info PRInfo, previousGenVersions []string, changelog string) (string, error) {
+	for language, genInfo := range info.ReleaseInfo.LanguagesGenerated {
+		genPath := path.Join(environment.GetWorkspace(), "repo", genInfo.Path)
+
+		var targetVersions map[string]string
+
+		cfg, err := genConfig.Load(genPath)
+		if err != nil {
+			logging.Error("failed to load gen config for retrieving granular versions for changelog at path %s: %v", genPath, err)
+			continue
+		} else {
+			ok := false
+			targetVersions, ok = cfg.LockFile.Features[language]
+			if !ok {
+				logging.Error("failed to find language %s in gen config for retrieving granular versions for changelog at path %s", language, genPath)
+				continue
+			}
+		}
+		var previousVersions map[string]string
+
+		if len(previousGenVersions) > 0 {
+			for _, previous := range previousGenVersions {
+				langVersions := strings.Split(previous, ":")
+
+				if len(langVersions) == 2 && langVersions[0] == language {
+					previousVersions = map[string]string{}
+
+					pairs := strings.Split(langVersions[1], ",")
+					for i := 0; i < len(pairs); i += 2 {
+						previousVersions[pairs[i]] = pairs[i+1]
+					}
+				}
+			}
+		}
+
+		versionChangelog, err := cli.GetChangelog(language, info.ReleaseInfo.GenerationVersion, "", targetVersions, previousVersions)
+		if err != nil {
+			return changelog, fmt.Errorf("failed to get changelog for language %s: %w", language, err)
+		}
+		changelog += fmt.Sprintf("\n\n## Generator Changelog\n\n%s", versionChangelog)
+	}
+
+	if changelog == "" {
+		// Not using granular version, grab old changelog
+		var err error
+		changelog, err = cli.GetChangelog("", info.ReleaseInfo.GenerationVersion, info.PreviousGenVersion, nil, nil)
+		if err != nil {
+			return changelog, fmt.Errorf("failed to get changelog: %w", err)
+		}
+		if strings.TrimSpace(changelog) != "" {
+			changelog = "\n\n\n## Changelog\n\n" + changelog
+		}
+	} else {
+		changelog = "\n" + changelog
+	}
+	return changelog, nil
 }
 
 func notEquivalent(desired []*github.Label, actual []*github.Label) bool {

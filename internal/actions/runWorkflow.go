@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -9,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
 	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
-	"github.com/speakeasy-api/versioning-reports/versioning"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
@@ -102,6 +102,12 @@ func RunWorkflow() error {
 	anythingRegenerated := false
 
 	var releaseInfo releases.ReleasesInfo
+	runResultInfo, err := json.MarshalIndent(runRes, "", "  ")
+	if err != nil {
+		logging.Debug("failed to marshal runRes : %s\n", err)
+	} else {
+		logging.Debug("Result of running the command is: %s\n", runResultInfo)
+	}
 	if runRes.GenInfo != nil {
 		docVersion := runRes.GenInfo.OpenAPIDocVersion
 		resolvedVersion = runRes.GenInfo.SpeakeasyVersion
@@ -150,18 +156,18 @@ func RunWorkflow() error {
 		}
 
 		if err := releases.UpdateReleasesFile(releaseInfo, releasesDir); err != nil {
+			logging.Error("error while updating releases file: %v", err.Error())
 			return err
 		}
 
-		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false); err != nil {
+		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, runRes.VersioningInfo.VersionReport); err != nil {
 			return err
 		}
 	}
 
 	outputs["resolved_speakeasy_version"] = resolvedVersion
-
 	if sourcesOnly {
-		if _, err := g.CommitAndPush("", resolvedVersion, "", environment.ActionRunWorkflow, sourcesOnly); err != nil {
+		if _, err := g.CommitAndPush("", resolvedVersion, "", environment.ActionRunWorkflow, sourcesOnly, nil); err != nil {
 			return err
 		}
 	}
@@ -184,6 +190,7 @@ func RunWorkflow() error {
 		OpenAPIChangeSummary: runRes.OpenAPIChangeSummary,
 		GenInfo:              runRes.GenInfo,
 		currentRelease:       &releaseInfo,
+		releaseNotes:         runRes.ReleaseNotes,
 	}); err != nil {
 		return err
 	}
@@ -207,10 +214,11 @@ type finalizeInputs struct {
 	LintingReportURL     string
 	ChangesReportURL     string
 	OpenAPIChangeSummary string
-	VersioningReport     *versioning.MergedVersionReport
 	VersioningInfo       versionbumps.VersioningInfo
 	GenInfo              *run.GenerationInfo
 	currentRelease       *releases.ReleasesInfo
+	// key is language target name, value is release notes
+	releaseNotes map[string]string
 }
 
 // Sets outputs and creates or adds releases info
@@ -233,13 +241,14 @@ func finalize(inputs finalizeInputs) error {
 		}
 	}()
 
+	logging.Info("getMode from the environment: %s\n", environment.GetMode())
+	logging.Info("SDK_CHANGELOG_JULY_2025: %s", os.Getenv("SDK_CHANGELOG_JULY_2025"))
 	switch environment.GetMode() {
 	case environment.ModePR:
 		branchName, pr, err := inputs.Git.FindExistingPR(branchName, environment.ActionFinalize, inputs.SourcesOnly)
 		if err != nil {
 			return err
 		}
-
 		pr, err = inputs.Git.CreateOrUpdatePR(git.PRInfo{
 			BranchName:           branchName,
 			ReleaseInfo:          inputs.currentRelease,
@@ -272,11 +281,25 @@ func finalize(inputs finalizeInputs) error {
 
 	case environment.ModeDirect:
 		var releaseInfo *releases.ReleasesInfo
+		var oldReleaseInfo string
+		var languages map[string]releases.LanguageReleaseInfo
+		var targetSpecificReleaseNotes releases.TargetReleaseNotes = nil
 		if !inputs.SourcesOnly {
 			releaseInfo = inputs.currentRelease
+			languages = releaseInfo.Languages
+			oldReleaseInfo = releaseInfo.String()
+			logging.Info("release Notes: %+v", inputs.releaseNotes)
+			if os.Getenv("SDK_CHANGELOG_JULY_2025") == "true" && inputs.releaseNotes != nil {
+				targetSpecificReleaseNotes = inputs.releaseNotes
+			}
+
 			// We still read from releases info for terraform generations since they use the goreleaser
+			// Read from Releases.md for terraform generations
 			if inputs.Outputs[utils.OutputTargetRegenerated("terraform")] == "true" {
 				releaseInfo, err = getReleasesInfo()
+				oldReleaseInfo = releaseInfo.String()
+				targetSpecificReleaseNotes = nil
+				languages = releaseInfo.Languages
 				if err != nil {
 					return err
 				}
@@ -289,7 +312,7 @@ func finalize(inputs finalizeInputs) error {
 		}
 
 		if !inputs.SourcesOnly {
-			if err := inputs.Git.CreateRelease(*releaseInfo, inputs.Outputs); err != nil {
+			if err := inputs.Git.CreateRelease(oldReleaseInfo, languages, inputs.Outputs, targetSpecificReleaseNotes); err != nil {
 				return err
 			}
 		}

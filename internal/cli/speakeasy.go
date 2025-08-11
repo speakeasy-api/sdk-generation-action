@@ -17,6 +17,7 @@ import (
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/download"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 )
 
 type Git interface {
@@ -78,9 +79,9 @@ func Download(pinnedVersion string, g Git) (string, error) {
 func runSpeakeasyCommand(args ...string) (string, error) {
 	baseDir := environment.GetBaseDir()
 	extraRunEnvVars := environment.SpeakeasyEnvVars()
-
 	cmdPath := filepath.Join(baseDir, "bin", "speakeasy")
-
+	logging.Info("The command path being executed: %s", cmdPath)
+	logging.Info("The command args: %s", args)
 	cmd := exec.Command(cmdPath, args...)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()

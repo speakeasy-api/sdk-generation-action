@@ -40,6 +40,17 @@ var defaultSupportedTargets = []string{
 	"typescript",
 }
 
+// Targets for the new changelog - JULY 2025
+var DefaultSupportedTargetsForChangelog = []string{
+	"typescript",
+	"python",
+	"go",
+	"java",
+	"csharp",
+	"php",
+	"ruby",
+}
+
 func GetSupportedTargetNames() []string {
 	out, err := runSpeakeasyCommand("generate", "supported-targets")
 	if err == nil && out != "" {

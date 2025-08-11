@@ -27,6 +27,24 @@ type GenerationInfo struct {
 	Path    string
 }
 
+// TargetReleaseNotes maps workflow target name to their specific release content
+type TargetReleaseNotes map[string]string
+
+func (t TargetReleaseNotes) GetReleaseNotesForTarget(target string) string {
+	if t == nil {
+		return ""
+	}
+	return t[target]
+}
+
+func (t TargetReleaseNotes) HasReleaseNotesForTarget(target string) bool {
+	if t == nil {
+		return false
+	}
+	notes, exists := t[target]
+	return exists && notes != ""
+}
+
 type ReleasesInfo struct {
 	ReleaseTitle       string
 	DocVersion         string
@@ -37,6 +55,7 @@ type ReleasesInfo struct {
 	LanguagesGenerated map[string]GenerationInfo
 }
 
+// This representation is used when adding body to Github releases
 func (r ReleasesInfo) String() string {
 	generationOutput := []string{}
 	releasesOutput := []string{}
@@ -52,12 +71,10 @@ func (r ReleasesInfo) String() string {
 	for lang, info := range r.Languages {
 		pkgID := ""
 		pkgURL := ""
-
 		switch lang {
 		case "go":
 			pkgID = "Go"
 			repoPath := os.Getenv("GITHUB_REPOSITORY")
-
 			tag := fmt.Sprintf("v%s", info.Version)
 			if info.Path != "." {
 				tag = fmt.Sprintf("%s/%s", info.Path, tag)
@@ -123,6 +140,7 @@ func UpdateReleasesFile(releaseInfo ReleasesInfo, dir string) error {
 
 	f, err := os.OpenFile(releasesPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
+		logging.Error("error while opening file: %s", err.Error())
 		return fmt.Errorf("error opening releases file: %w", err)
 	}
 	defer f.Close()
@@ -163,6 +181,7 @@ func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
 }
 
 func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, error) {
+
 	cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", path))
 	if err != nil {
 		return nil, err
@@ -170,6 +189,7 @@ func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, error) {
 
 	cfgFile := cfg.Config
 	lockFile := cfg.LockFile
+	logging.Info("lockfile release notes: %v", lockFile.ReleaseNotes)
 	if cfgFile == nil || lockFile == nil {
 		return nil, fmt.Errorf("config or lock file not found")
 	}
@@ -197,6 +217,84 @@ func GetReleaseInfoFromGenerationFiles(path string) (*ReleasesInfo, error) {
 	}
 
 	return &releaseInfo, nil
+}
+
+func GetTargetSpecificReleaseNotes(path string) (TargetReleaseNotes, error) {
+	releaseInfoFromLockFile := make(TargetReleaseNotes)
+	cfg, err := config.Load(filepath.Join(environment.GetWorkspace(), "repo", path))
+	if err != nil {
+		return nil, err
+	}
+
+	cfgFile := cfg.Config
+	lockFile := cfg.LockFile
+	logging.Info("lockfile release notes: %v", lockFile.ReleaseNotes)
+
+	if cfgFile == nil || lockFile == nil {
+		return nil, fmt.Errorf("config or lock file not found")
+	}
+
+	speakeasyVersion := lockFile.Management.SpeakeasyVersion
+	for lang, info := range cfgFile.Languages {
+		packageName := utils.GetPackageName(lang, &info)
+		version := lockFile.Management.ReleaseVersion
+		notes := ""
+		partOfFirstLine := fmt.Sprintf("%s %s", utils.GetPackageName(lang, &info), lockFile.Management.ReleaseVersion)
+
+		pkgURL := ""
+		switch lang {
+		case "go":
+			repoPath := os.Getenv("GITHUB_REPOSITORY")
+			tag := fmt.Sprintf("v%s", info.Version)
+			if path != "." {
+				tag = fmt.Sprintf("%s/%s", path, tag)
+			}
+
+			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
+		case "typescript":
+			pkgURL = fmt.Sprintf("https://www.npmjs.com/package/%s/v/%s", packageName, version)
+		case "python":
+			pkgURL = fmt.Sprintf("https://pypi.org/project/%s/%s", packageName, version)
+		case "php":
+			pkgURL = fmt.Sprintf("https://packagist.org/packages/%s#v%s", packageName, version)
+		case "terraform":
+			pkgURL = fmt.Sprintf("https://registry.terraform.io/providers/%s/%s", packageName, version)
+		case "java":
+			lastDotIndex := strings.LastIndex(packageName, ".")
+			groupID := packageName[:lastDotIndex]      // everything before last occurrence of '.'
+			artifactID := packageName[lastDotIndex+1:] // everything after last occurrence of '.'
+			pkgURL = fmt.Sprintf("https://central.sonatype.com/artifact/%s/%s/%s", groupID, artifactID, version)
+		case "ruby":
+			pkgURL = fmt.Sprintf("https://rubygems.org/gems/%s/versions/%s", packageName, version)
+		case "csharp":
+			pkgURL = fmt.Sprintf("https://www.nuget.org/packages/%s/%s", packageName, version)
+		case "swift":
+			repoPath := os.Getenv("GITHUB_REPOSITORY")
+
+			tag := fmt.Sprintf("v%s", info.Version)
+			if path != "." {
+				tag = fmt.Sprintf("%s/%s", path, tag)
+			}
+
+			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
+		}
+
+		firstLine := fmt.Sprintf("\n[%s](%s)", partOfFirstLine, pkgURL)
+		notes += firstLine
+		notes += "\n"
+		notes += lockFile.ReleaseNotes
+		notes += "\n"
+
+		notes += fmt.Sprintf("Generated with [Speakeasy CLI %s](https://github.com/speakeasy-api/speakeasy/releases)\n", speakeasyVersion)
+
+		if lockFile.ReleaseNotes == "" {
+			releaseInfoFromLockFile[lang] = ""
+		} else {
+			releaseInfoFromLockFile[lang] = notes
+		}
+	}
+
+	return releaseInfoFromLockFile, nil
 }
 
 func ParseReleases(data string) (*ReleasesInfo, error) {
