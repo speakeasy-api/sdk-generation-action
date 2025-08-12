@@ -72,4 +72,10 @@ WORKDIR /
 
 COPY --from=builder /action /action
 
+RUN ls
+RUN ls /home/runner/work
+RUN ls /home/runner/work/branchgen-pr-test
+RUN ls bin
+
+
 ENTRYPOINT ["/action"]
