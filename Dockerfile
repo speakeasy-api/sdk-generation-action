@@ -71,6 +71,7 @@ VOLUME /var/www
 WORKDIR /
 
 COPY --from=builder /action /action
+RUN printenv
 RUN echo $GITHUB_WORKSPACE
 RUN ls
 RUN ls /home
