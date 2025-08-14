@@ -40,13 +40,3 @@ func GetRegistryName(lang string) string {
 	}
 	return registryName
 }
-
-func OrganisationsAllowedForNewChangelog() []string {
-	return []string{
-		"speakeasy-api",
-		"speakeasy-sdks",
-		"ryan-timothy-albert",
-		"mistralai",
-		"vercel",
-	}
-}
