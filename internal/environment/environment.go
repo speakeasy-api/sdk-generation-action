@@ -232,8 +232,8 @@ func GetUvVersion() string {
 	return os.Getenv("INPUT_UV_VERSION")
 }
 
-func EnableNewSDKChangelog() bool {
-	return os.Getenv("INPUT_ENABLE_NEW_SDK_CHANGELOG") == "true"
+func EnableSDKChangelogJuly2025() bool {
+	return os.Getenv("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025") == "true"
 }
 
 func GetWorkflowName() string {

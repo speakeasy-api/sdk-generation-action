@@ -22,10 +22,7 @@ func Release() error {
 	if accessToken == "" {
 		return errors.New("github access token is required")
 	}
-	if environment.EnableNewSDKChangelog() {
-		os.Setenv("SDK_CHANGELOG_JULY_2025", "true")
-	}
-	fmt.Println("SDK_CHANGELOG_JULY_2025: ", os.Getenv("SDK_CHANGELOG_JULY_2025"))
+	fmt.Println("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025: ", os.Getenv("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025"))
 
 	g, err := initAction()
 	if err != nil {
@@ -87,7 +84,7 @@ func Release() error {
 			fmt.Printf("Error getting release info from generation files: %v\n", err)
 			return err
 		}
-		// targetSpecificReleaseNotes variable is present only if SDK_CHANGELOG_JULY_2025 env is true
+		// targetSpecificReleaseNotes variable is present only if INPUT_ENABLE_SDK_CHANGELOG_JULY_2025 env is true
 		targetSpecificReleaseNotes, err = releases.GetTargetSpecificReleaseNotes(dir)
 		if err != nil {
 			fmt.Printf("Error getting target specific release notes: %v\n", err)

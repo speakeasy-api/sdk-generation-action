@@ -73,10 +73,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 
 	installationURLs := map[string]string{}
 	repoURL := getRepoURL()
-	if environment.EnableNewSDKChangelog() {
-		os.Setenv("SDK_CHANGELOG_JULY_2025", "true")
-	}
-	fmt.Println("SDK_CHANGELOG_JULY_2025: ", os.Getenv("SDK_CHANGELOG_JULY_2025"))
+	fmt.Println("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025: ", os.Getenv("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025"))
 	repoSubdirectories := map[string]string{}
 	previousManagementInfos := map[string]config.Management{}
 
