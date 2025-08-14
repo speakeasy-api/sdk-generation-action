@@ -22,7 +22,7 @@ func Release() error {
 	if accessToken == "" {
 		return errors.New("github access token is required")
 	}
-	fmt.Println("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025: ", os.Getenv("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025"))
+	fmt.Println("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025: ", environment.GetSDKChangelogJuly2025())
 
 	g, err := initAction()
 	if err != nil {

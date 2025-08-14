@@ -98,10 +98,10 @@ func (g *Git) CreateRelease(oldReleaseContent string, languages map[string]relea
 		} else {
 			tagName := github.String(tag)
 			releaseBody := oldReleaseContent
-			logging.Info("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025: %s", os.Getenv("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025"))
+			logging.Info("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025: %s", environment.GetSDKChangelogJuly2025())
 			logging.Info("targetSpecificReleaseNotes: %v", targetSpecificReleaseNotes)
 			logging.Info("targetSpecificReleaseNotes.HasReleaseNotesForTarget(lang): %v", targetSpecificReleaseNotes.HasReleaseNotesForTarget(lang))
-			if os.Getenv("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025") == "true" && targetSpecificReleaseNotes.HasReleaseNotesForTarget(lang) {
+			if environment.GetSDKChangelogJuly2025() == "true" && targetSpecificReleaseNotes.HasReleaseNotesForTarget(lang) {
 				releaseBody = targetSpecificReleaseNotes.GetReleaseNotesForTarget(lang)
 				fmt.Println(fmt.Sprintf("Release Notes Body: \n%s\n", releaseBody))
 			}
