@@ -41,7 +41,7 @@ func GetRegistryName(lang string) string {
 	return registryName
 }
 
-func OrganisationsWhitelistedForNewChangelog() []string {
+func OrganisationsAllowedForNewChangelog() []string {
 	return []string{
 		"speakeasy-api",
 		"speakeasy-sdks",

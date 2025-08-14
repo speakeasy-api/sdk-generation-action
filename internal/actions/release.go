@@ -23,7 +23,7 @@ func Release() error {
 		return errors.New("github access token is required")
 	}
 	repoURL := os.Getenv("GITHUB_REPOSITORY")
-	for _, org := range utils.OrganisationsWhitelistedForNewChangelog() {
+	for _, org := range utils.OrganisationsAllowedForNewChangelog() {
 		if strings.Contains(strings.ToLower(repoURL), org) {
 			os.Setenv("SDK_CHANGELOG_JULY_2025", "true")
 			break
