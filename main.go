@@ -34,9 +34,6 @@ func main() {
 			fmt.Println(env)
 		}
 	}
-	if environment.GetSDKChangelogJuly2025() == "true" {
-		os.Setenv("SDK_CHANGELOG_JULY_2025", "true")
-	}
 
 	var err error
 	// Don't fire CI_Exec telemetry on actions where we are only sending specific telemetry back.
