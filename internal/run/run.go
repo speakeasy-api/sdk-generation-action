@@ -3,7 +3,6 @@ package run
 import (
 	"context"
 	"fmt"
-	"os"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -73,13 +72,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 
 	installationURLs := map[string]string{}
 	repoURL := getRepoURL()
-	// Setting this environment variable to gate the enabling of sdkChangelogJul2025 changes to affect only limited number of repos
-	// Temporarily try out new changelog on internal repos only
-	fmt.Println("repoURL is this : ", repoURL)
-	if strings.Contains(strings.ToLower(repoURL), "speakeasy-api") || strings.Contains(strings.ToLower(repoURL), "speakeasy-sdks") || strings.Contains(strings.ToLower(repoURL), "ryan-timothy-albert") {
-		os.Setenv("SDK_CHANGELOG_JULY_2025", "true")
-	}
-	fmt.Println("SDK_CHANGELOG_JULY_2025: ", os.Getenv("SDK_CHANGELOG_JULY_2025"))
+	fmt.Println("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025: ", environment.GetSDKChangelogJuly2025())
 	repoSubdirectories := map[string]string{}
 	previousManagementInfos := map[string]config.Management{}
 
