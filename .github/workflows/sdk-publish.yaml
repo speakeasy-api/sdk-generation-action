@@ -122,7 +122,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         with:
           github_access_token: ${{ secrets.github_access_token }}
           action: "release"
@@ -142,7 +142,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -152,7 +152,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-pypi:
@@ -204,7 +204,7 @@ jobs:
           python setup.py sdist bdist_wheel
           twine upload dist/*
       - id: publish-event
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -216,7 +216,7 @@ jobs:
           registry_name: "pypi"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -229,7 +229,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -239,7 +239,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-npm:
@@ -313,7 +313,7 @@ jobs:
           done
 
       - id: publish-event
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -325,7 +325,7 @@ jobs:
           registry_name: "npm"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -338,7 +338,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -348,7 +348,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-npm-mcp:
@@ -418,7 +418,7 @@ jobs:
           done
 
       - id: publish-event
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -430,7 +430,7 @@ jobs:
           registry_name: "npm"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2.5.0
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -443,7 +443,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -453,7 +453,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "mcp"
   publish-java:
@@ -495,7 +495,7 @@ jobs:
           SONATYPE_SIGNING_KEY: ${{ secrets.java_gpg_secret_key }}
           SIGNING_KEY_PASSPHRASE: ${{ secrets.java_gpg_passphrase }}
       - id: publish-event
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -507,7 +507,7 @@ jobs:
           registry_name: "sonatype"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -520,7 +520,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -530,7 +530,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-packagist:
@@ -553,7 +553,7 @@ jobs:
           repository_name: ${{ github.repository }}
           repository_base_url: ${{ github.server_url }}
       - id: publish-event
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -565,7 +565,7 @@ jobs:
           registry_name: "packagist"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -578,7 +578,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -588,7 +588,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-nuget:
@@ -610,7 +610,7 @@ jobs:
       - name: Publish
         run: dotnet pack -c Release -o . && dotnet nuget push *.nupkg --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
       - id: publish-event
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -622,7 +622,7 @@ jobs:
           registry_name: "nuget"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -635,7 +635,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -645,7 +645,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-terraform:
@@ -667,7 +667,7 @@ jobs:
           gpg_private_key: ${{ secrets.terraform_gpg_secret_key }}
           passphrase: ${{ secrets.terraform_gpg_passphrase }}
       - id: release
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         with:
           github_access_token: ${{ secrets.github_access_token }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
@@ -678,7 +678,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.github_access_token }}
       - id: publish-event
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -690,7 +690,7 @@ jobs:
           registry_name: "terraform"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -703,7 +703,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -713,7 +713,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-gems:
@@ -734,6 +734,11 @@ jobs:
           ruby-version: "3.2"
       - name: Install dependencies
         run: gem build && bundle install && rake rubocop
+      - name: List dependencies
+        run: |
+          bundle list
+          bundle info sorbet-static
+          bundle info tapioca
       - name: Publish
         env:
           GEM_HOST_API_KEY: ${{ secrets.rubygems_auth_token }}
@@ -745,7 +750,7 @@ jobs:
           gem build *.gemspec
           gem push *.gem
       - id: publish-event
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -757,7 +762,7 @@ jobs:
           registry_name: "gems"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -770,7 +775,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: speakeasy-api/sdk-generation-action@v15.49
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -780,6 +785,6 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: "v15"
+          GH_ACTION_VERSION: "v15.49"
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
