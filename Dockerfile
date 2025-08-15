@@ -32,7 +32,8 @@ RUN apk add --update --no-cache python3 py3-pip python3-dev pipx
 RUN apk add --update --no-cache openjdk11 gradle
 
 ### Install Ruby
-RUN apk add --update --no-cache build-base ruby ruby-bundler ruby-dev
+#### gcompat is required on Alpine linux to support gcc ruby packages like sorbet
+RUN apk add --update --no-cache build-base ruby ruby-bundler ruby-dev gcompat
 
 ### Install .NET
 ENV DOTNET_ROOT=/usr/lib/dotnet
