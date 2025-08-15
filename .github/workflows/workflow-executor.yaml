@@ -106,7 +106,7 @@ on:
         type: string
       enable_sdk_changelog_july_2025:
         description: "Enable the new SDK changelog feature"
-        default: false
+        default: true
         required: false
         type: boolean
     secrets:
