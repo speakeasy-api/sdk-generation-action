@@ -37,7 +37,7 @@ on:
         description: "The specific target to publish"
         required: false
         type: string
-      enable_sdk_changelog_july_2025:
+      enable_sdk_changelog:
         description: "Enable the new SDK changelog feature"
         default: true
         required: false
@@ -135,7 +135,7 @@ jobs:
           working_directory: ${{ inputs.working_directory }}
           target: ${{ inputs.target }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
-          enable_sdk_changelog_july_2025: ${{ inputs.enable_sdk_changelog_july_2025 }}
+          enable_sdk_changelog: ${{ inputs.enable_sdk_changelog }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:

@@ -379,14 +379,14 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
-	logging.Info("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025 is %s", environment.GetSDKChangelogJuly2025())
+	logging.Info("INPUT_ENABLE_SDK_CHANGELOG is %s", environment.GetSDKChangelog())
 
 	var commitMessage string = ""
 	if action == environment.ActionRunWorkflow {
 		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 		if sourcesOnly {
 			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
-		} else if environment.GetSDKChangelogJuly2025() == "true" && mergedVersionReport != nil && mergedVersionReport.GetCommitMarkdownSection() != "" {
+		} else if environment.GetSDKChangelog() == "true" && mergedVersionReport != nil && mergedVersionReport.GetCommitMarkdownSection() != "" {
 			// For clients using older cli with new sdk-action, GetCommitMarkdownSection would be empty so we will use the old commit message
 			commitMessage = mergedVersionReport.GetCommitMarkdownSection()
 		}
@@ -590,8 +590,8 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 		}
 	}
 
-	// We will use the old PR body if the INPUT_ENABLE_SDK_CHANGELOG_JULY_2025 env is not set or set to false
-	// We will use the new PR body if INPUT_ENABLE_SDK_CHANGELOG_JULY_2025 is set to true.
+	// We will use the old PR body if the INPUT_ENABLE_SDK_CHANGELOG env is not set or set to false
+	// We will use the new PR body if INPUT_ENABLE_SDK_CHANGELOG is set to true.
 	// Backwards compatible: If a client uses new sdk-action with old cli we will not get new changelog body
 	title, body = g.generatePRTitleAndBody(info, labelTypes, changelog)
 

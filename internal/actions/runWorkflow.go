@@ -242,7 +242,7 @@ func finalize(inputs finalizeInputs) error {
 	}()
 
 	logging.Info("getMode from the environment: %s\n", environment.GetMode())
-	logging.Info("INPUT_ENABLE_SDK_CHANGELOG_JULY_2025: %s", environment.GetSDKChangelogJuly2025())
+	logging.Info("INPUT_ENABLE_SDK_CHANGELOG: %s", environment.GetSDKChangelog())
 	switch environment.GetMode() {
 	case environment.ModePR:
 		branchName, pr, err := inputs.Git.FindExistingPR(branchName, environment.ActionFinalize, inputs.SourcesOnly)
@@ -289,7 +289,7 @@ func finalize(inputs finalizeInputs) error {
 			languages = releaseInfo.Languages
 			oldReleaseInfo = releaseInfo.String()
 			logging.Info("release Notes: %+v", inputs.releaseNotes)
-			if environment.GetSDKChangelogJuly2025() == "true" && inputs.releaseNotes != nil {
+			if environment.GetSDKChangelog() == "true" && inputs.releaseNotes != nil {
 				targetSpecificReleaseNotes = inputs.releaseNotes
 			}
 
