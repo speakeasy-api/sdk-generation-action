@@ -104,7 +104,7 @@ on:
         default: ""
         required: false
         type: string
-      enable_sdk_changelog_july_2025:
+      enable_sdk_changelog:
         description: "Enable the new SDK changelog feature"
         default: true
         required: false
@@ -247,7 +247,7 @@ jobs:
           poetry_version: ${{ inputs.poetry_version }}
           uv_version: ${{ inputs.uv_version }}
           github_repository: ${{ inputs.github_repository }}
-          enable_sdk_changelog_july_2025: ${{ inputs.enable_sdk_changelog_july_2025 }}
+          enable_sdk_changelog: ${{ inputs.enable_sdk_changelog }}
       - uses: ravsamhq/notify-slack-action@v2
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' && env.SLACK_WEBHOOK_URL != '' }}
         with:

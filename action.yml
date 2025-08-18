@@ -115,7 +115,7 @@ inputs:
     description: "The GitHub repository path for the SDK. Eg: speakeasy-api/speakeasy-sdk-python"
     default: ""
     required: false
-  enable_sdk_changelog_july_2025:
+  enable_sdk_changelog:
     description: "Enable the new SDK changelog feature"
     default: "false"
     required: false
@@ -235,4 +235,4 @@ runs:
     - ${{ inputs.cli_environment_variables }}
     - ${{ inputs.pnpm_version }}
     - ${{ inputs.poetry_version }}
-    - ${{ inputs.enable_sdk_changelog_july_2025 }}
+    - ${{ inputs.enable_sdk_changelog }}
