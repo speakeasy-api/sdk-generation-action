@@ -73,12 +73,7 @@ WORKDIR /
 COPY --from=builder /action /action
 RUN printenv
 RUN echo $GITHUB_WORKSPACE
-RUN ls
-RUN ls /home
-RUN ls /home/runner
-RUN ls /home/runner/work
-RUN ls /home/runner/work/branchgen-pr-test
-RUN ls bin
+
 
 
 ENTRYPOINT ["/action"]
