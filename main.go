@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/telemetry"
@@ -33,6 +34,13 @@ func main() {
 		for _, env := range envs {
 			fmt.Println(env)
 		}
+	}
+
+	// Log git location
+	if gitPath, err := exec.LookPath("git"); err != nil {
+		fmt.Printf("git not found: %v\n", err)
+	} else {
+		fmt.Printf("git: %s\n", gitPath)
 	}
 
 	var err error
