@@ -604,6 +604,7 @@ func (g *Git) Add(arg string) error {
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
+	fmt.Printf("combined output: %s\n", string(output))
 	if err != nil {
 		return fmt.Errorf("error running `git add %s`: %w %s", arg, err, string(output))
 	}
