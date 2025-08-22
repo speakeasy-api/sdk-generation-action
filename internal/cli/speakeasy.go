@@ -15,7 +15,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/speakeasy-api/sdk-generation-action/internal/download"
+	// "github.com/speakeasy-api/sdk-generation-action/internal/download"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
 	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 )
@@ -44,34 +44,34 @@ func GetVersion(pinnedVersion string) string {
 func Download(pinnedVersion string, g Git) (string, error) {
 	version := GetVersion(pinnedVersion)
 
-	link, version, err := g.GetDownloadLink(version)
-	if err != nil {
-		return version, err
-	}
+	// link, version, err := g.GetDownloadLink(version)
+	// if err != nil {
+	// 	return version, err
+	// }
 
-	if _, err := os.Stat(filepath.Join(environment.GetBaseDir(), "bin", "speakeasy")); err == nil {
-		return version, nil
-	}
+	// if _, err := os.Stat(filepath.Join(environment.GetBaseDir(), "bin", "speakeasy")); err == nil {
+	// 	return version, nil
+	// }
 
-	fmt.Println("Downloading speakeasy cli version: ", version)
+	// fmt.Println("Downloading speakeasy cli version: ", version)
 
-	downloadPath := filepath.Join(os.TempDir(), "speakeasy"+path.Ext(link))
-	if err := download.DownloadFile(link, downloadPath, "", ""); err != nil {
-		return version, fmt.Errorf("failed to download speakeasy cli: %w", err)
-	}
-	defer os.Remove(downloadPath)
+	// downloadPath := filepath.Join(os.TempDir(), "speakeasy"+path.Ext(link))
+	// if err := download.DownloadFile(link, downloadPath, "", ""); err != nil {
+	// 	return version, fmt.Errorf("failed to download speakeasy cli: %w", err)
+	// }
+	// defer os.Remove(downloadPath)
 
-	baseDir := environment.GetBaseDir()
+	// baseDir := environment.GetBaseDir()
 
-	if err := extract(downloadPath, filepath.Join(baseDir, "bin")); err != nil {
-		return version, fmt.Errorf("failed to extract speakeasy cli: %w", err)
-	}
+	// if err := extract(downloadPath, filepath.Join(baseDir, "bin")); err != nil {
+	// 	return version, fmt.Errorf("failed to extract speakeasy cli: %w", err)
+	// }
 
-	if err := os.Chmod(filepath.Join(baseDir, "bin", "speakeasy"), 0o755); err != nil {
-		return version, fmt.Errorf("failed to set permissions on speakeasy cli: %w", err)
-	}
+	// if err := os.Chmod(filepath.Join(baseDir, "bin", "speakeasy"), 0o755); err != nil {
+	// 	return version, fmt.Errorf("failed to set permissions on speakeasy cli: %w", err)
+	// }
 
-	fmt.Println("Extracted speakeasy cli to: ", filepath.Join(baseDir, "bin"))
+	// fmt.Println("Extracted speakeasy cli to: ", filepath.Join(baseDir, "bin"))
 
 	return version, nil
 }
@@ -79,7 +79,12 @@ func Download(pinnedVersion string, g Git) (string, error) {
 func runSpeakeasyCommand(args ...string) (string, error) {
 	baseDir := environment.GetBaseDir()
 	extraRunEnvVars := environment.SpeakeasyEnvVars()
-	cmdPath := filepath.Join(baseDir, "bin", "speakeasy")
+	
+	// Check for custom CLI location first
+	cmdPath := os.Getenv("SPEAKEASY_CLI_LOCATION")
+	if cmdPath == "" {
+		cmdPath = filepath.Join(baseDir, "bin", "speakeasy")
+	}
 	logging.Info("The command path being executed: %s", cmdPath)
 	logging.Info("The command args: %s", args)
 	cmd := exec.Command(cmdPath, args...)
