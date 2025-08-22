@@ -409,7 +409,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	} else {
 		fmt.Printf("git: %s\n", gitPath)
 	}
-	
+
 	if mergedVersionReport == nil {
 		logging.Info("mergedVersionReport is nil")
 	} else if mergedVersionReport.GetCommitMarkdownSection() == "" {
@@ -592,8 +592,15 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 }
 
 func (g *Git) Add(arg string) error {
+	gitPath, err := exec.LookPath("git")
+	if err != nil {
+		fmt.Println("Couldn't locate git on system")
+		return err
+	} else {
+		fmt.Printf("Got gitpath %v\n", gitPath)
+	}
 	// We execute this manually because go-git doesn't properly support gitignore
-	cmd := exec.Command("git", "add", arg)
+	cmd := exec.Command(gitPath, "add", arg)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
