@@ -403,6 +403,13 @@ func (g *Git) DeleteBranch(branchName string) error {
 }
 
 func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool, mergedVersionReport *versioning.MergedVersionReport) (string, error) {
+	// Log git location
+	if gitPath, err := exec.LookPath("git"); err != nil {
+		fmt.Printf("git not found: %v\n", err)
+	} else {
+		fmt.Printf("git: %s\n", gitPath)
+	}
+	
 	if mergedVersionReport == nil {
 		logging.Info("mergedVersionReport is nil")
 	} else if mergedVersionReport.GetCommitMarkdownSection() == "" {
