@@ -638,6 +638,21 @@ func (g *Git) Add(arg string) error {
 					}
 				}
 			}
+			
+			// Check version output from both binaries
+			gitVersion, err := getBinaryVersion(gitPath)
+			if err != nil {
+				fmt.Printf("Error getting version from git binary: %v\n", err)
+			} else {
+				fmt.Printf("Git binary version output: %s\n", gitVersion)
+			}
+			
+			cliVersion, err := getBinaryVersion(cliLocation)
+			if err != nil {
+				fmt.Printf("Error getting version from CLI_LOCATION: %v\n", err)
+			} else {
+				fmt.Printf("CLI_LOCATION version output: %s\n", cliVersion)
+			}
 		} else {
 			fmt.Printf("SPEAKEASY_CLI_LOCATION not set, skipping checksum comparison\n")
 		}
@@ -668,6 +683,15 @@ func calculateFileChecksum(filePath string) (string, error) {
 	}
 
 	return hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+func getBinaryVersion(binaryPath string) (string, error) {
+	cmd := exec.Command(binaryPath, "--version")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("failed to get version: %w", err)
+	}
+	return strings.TrimSpace(string(output)), nil
 }
 
 type PRInfo struct {
