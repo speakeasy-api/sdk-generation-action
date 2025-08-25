@@ -621,6 +621,14 @@ func (g *Git) Add(arg string) error {
 		// Compare checksums between CLI_LOCATION and gitPath
 		cliLocation := os.Getenv("SPEAKEASY_CLI_LOCATION")
 		if cliLocation != "" {
+			// Check if CLI_LOCATION file exists and get its info
+			cliInfo, err := os.Stat(cliLocation)
+			if err != nil {
+				fmt.Printf("Error getting CLI_LOCATION file info: %v\n", err)
+			} else {
+				fmt.Printf("CLI_LOCATION file exists, size: %d bytes\n", cliInfo.Size())
+			}
+			
 			gitChecksum, err := calculateFileChecksum(gitPath)
 			if err != nil {
 				fmt.Printf("Error calculating checksum for git binary: %v\n", err)
@@ -650,9 +658,39 @@ func (g *Git) Add(arg string) error {
 			cliVersion, err := getBinaryVersion(cliLocation)
 			if err != nil {
 				fmt.Printf("Error getting version from CLI_LOCATION: %v\n", err)
+				// Try to get more details about the failure
+				cmd := exec.Command(cliLocation, "--version")
+				output, cmdErr := cmd.CombinedOutput()
+				fmt.Printf("CLI_LOCATION command output: %s\n", string(output))
+				fmt.Printf("CLI_LOCATION command error: %v\n", cmdErr)
 			} else {
 				fmt.Printf("CLI_LOCATION version output: %s\n", cliVersion)
 			}
+			
+			// Check what 'which git' returns vs our gitPath
+			whichCmd := exec.Command("which", "git")
+			whichOutput, err := whichCmd.CombinedOutput()
+			if err != nil {
+				fmt.Printf("Error running 'which git': %v\n", err)
+			} else {
+				whichPath := strings.TrimSpace(string(whichOutput))
+				fmt.Printf("'which git' returns: %s\n", whichPath)
+				fmt.Printf("exec.LookPath found: %s\n", gitPath)
+				if whichPath == gitPath {
+					fmt.Printf("Paths match\n")
+				} else {
+					fmt.Printf("Paths differ!\n")
+				}
+			}
+			
+			// Check file permissions and ownership
+			gitInfo, err := os.Stat(gitPath)
+			if err != nil {
+				fmt.Printf("Error getting git binary file info: %v\n", err)
+			} else {
+				fmt.Printf("Git binary file size: %d bytes, mode: %v\n", gitInfo.Size(), gitInfo.Mode())
+			}
+			
 		} else {
 			fmt.Printf("SPEAKEASY_CLI_LOCATION not set, skipping checksum comparison\n")
 		}
