@@ -595,12 +595,23 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 }
 
 func (g *Git) Add(arg string) error {
+	fmt.Println("=== git.Add() FUNCTION START - GIT DEBUG ===")
 	gitPath, err := exec.LookPath("git")
 	if err != nil {
 		fmt.Println("Couldn't locate git on system")
 		return err
 	} else {
 		fmt.Printf("Got gitpath %v\n", gitPath)
+		
+		// Enhanced debugging at the start of Add function
+		if info, err := os.Stat(gitPath); err == nil {
+			fmt.Printf("git.Add() - git file size: %d bytes\n", info.Size())
+		}
+		if output, err := exec.Command(gitPath, "--version").CombinedOutput(); err == nil {
+			fmt.Printf("git.Add() - git version: %s\n", strings.TrimSpace(string(output)))
+		} else {
+			fmt.Printf("git.Add() - error getting git version: %v\n", err)
+		}
 		
 		// Check if gitPath is a file or symlink
 		fileInfo, err := os.Lstat(gitPath)

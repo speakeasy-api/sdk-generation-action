@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -36,12 +38,39 @@ func main() {
 		}
 	}
 
-	// Log git location
+	// Log git location with enhanced debugging
+	fmt.Println("=== MAIN.GO STARTUP - GIT DEBUG ===")
 	if gitPath, err := exec.LookPath("git"); err != nil {
 		fmt.Printf("git not found: %v\n", err)
 	} else {
-		fmt.Printf("git: %s\n", gitPath)
+		fmt.Printf("git found at: %s\n", gitPath)
+		
+		// Get file info
+		if info, err := os.Stat(gitPath); err == nil {
+			fmt.Printf("git file size: %d bytes\n", info.Size())
+			fmt.Printf("git file mode: %v\n", info.Mode())
+		} else {
+			fmt.Printf("error getting git file info: %v\n", err)
+		}
+		
+		// Get version
+		if output, err := exec.Command(gitPath, "--version").CombinedOutput(); err == nil {
+			fmt.Printf("git version output: %s\n", strings.TrimSpace(string(output)))
+		} else {
+			fmt.Printf("error getting git version: %v\n", err)
+		}
+		
+		// Get checksum
+		if file, err := os.Open(gitPath); err == nil {
+			defer file.Close()
+			hash := sha256.New()
+			if _, err := io.Copy(hash, file); err == nil {
+				fmt.Printf("git binary checksum: %x\n", hash.Sum(nil))
+			}
+		}
 	}
+	fmt.Println("=== END MAIN.GO GIT DEBUG ===")
+	fmt.Println()
 
 	var err error
 	// Don't fire CI_Exec telemetry on actions where we are only sending specific telemetry back.
