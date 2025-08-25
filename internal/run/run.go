@@ -3,6 +3,8 @@ package run
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -138,9 +140,44 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 	var runRes *cli.RunResults
 	var changereport *versioning.MergedVersionReport
 
+	// Debug git before cli.Run()
+	fmt.Println("=== BEFORE cli.Run() - GIT DEBUG ===")
+	if gitPath, err := exec.LookPath("git"); err != nil {
+		fmt.Printf("git not found: %v\n", err)
+	} else {
+		fmt.Printf("git found at: %s\n", gitPath)
+		if info, err := os.Stat(gitPath); err == nil {
+			fmt.Printf("git file size: %d bytes\n", info.Size())
+		}
+		if output, err := exec.Command(gitPath, "--version").CombinedOutput(); err == nil {
+			fmt.Printf("git version: %s\n", strings.TrimSpace(string(output)))
+		} else {
+			fmt.Printf("error getting git version: %v\n", err)
+		}
+	}
+	fmt.Println("=== END BEFORE cli.Run() GIT DEBUG ===")
+
 	changereport, runRes, err = versioning.WithVersionReportCapture[*cli.RunResults](context.Background(), func(ctx context.Context) (*cli.RunResults, error) {
 		return cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories, manualVersioningBump)
 	})
+
+	// Debug git after cli.Run()
+	fmt.Println("=== AFTER cli.Run() - GIT DEBUG ===")
+	if gitPath, err := exec.LookPath("git"); err != nil {
+		fmt.Printf("git not found: %v\n", err)
+	} else {
+		fmt.Printf("git found at: %s\n", gitPath)
+		if info, err := os.Stat(gitPath); err == nil {
+			fmt.Printf("git file size: %d bytes\n", info.Size())
+		}
+		if output, err := exec.Command(gitPath, "--version").CombinedOutput(); err == nil {
+			fmt.Printf("git version: %s\n", strings.TrimSpace(string(output)))
+		} else {
+			fmt.Printf("error getting git version: %v\n", err)
+		}
+	}
+	fmt.Println("=== END AFTER cli.Run() GIT DEBUG ===")
+	fmt.Println()
 	if err != nil {
 		return nil, outputs, err
 	}
