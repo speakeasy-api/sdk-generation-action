@@ -592,13 +592,28 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 }
 
 func (g *Git) Add(arg string) error {
-	fmt.Printf("SPEAKEASY_CLI_LOCATION: %v\n", os.Getenv("SPEAKEASY_CLI_LOCATION"))
 	gitPath, err := exec.LookPath("git")
 	if err != nil {
 		fmt.Println("Couldn't locate git on system")
 		return err
 	} else {
 		fmt.Printf("Got gitpath %v\n", gitPath)
+		
+		// Check if gitPath is a file or symlink
+		fileInfo, err := os.Lstat(gitPath)
+		if err != nil {
+			fmt.Printf("Error getting file info for git binary: %v\n", err)
+		} else if fileInfo.Mode()&os.ModeSymlink != 0 {
+			// It's a symlink, get the target
+			target, err := os.Readlink(gitPath)
+			if err != nil {
+				fmt.Printf("Git binary is a symlink but couldn't read target: %v\n", err)
+			} else {
+				fmt.Printf("Git binary is a symlink pointing to: %s\n", target)
+			}
+		} else {
+			fmt.Printf("Git binary is a regular file\n")
+		}
 	}
 	// We execute this manually because go-git doesn't properly support gitignore
 	cmd := exec.Command(gitPath, "--help")
