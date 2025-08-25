@@ -592,6 +592,7 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 }
 
 func (g *Git) Add(arg string) error {
+	fmt.Printf("SPEAKEASY_CLI_LOCATION: %v\n", os.Getenv("SPEAKEASY_CLI_LOCATION"))
 	gitPath, err := exec.LookPath("git")
 	if err != nil {
 		fmt.Println("Couldn't locate git on system")
