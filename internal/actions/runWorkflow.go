@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/google/go-github/v63/github"
@@ -91,7 +92,44 @@ func RunWorkflow() error {
 		os.Setenv("SPEAKEASY_ACTIVE_BRANCH", branchName)
 	}
 
+	// Debug git before run.Run()
+	fmt.Println("=== BEFORE run.Run() - GIT DEBUG ===")
+	if gitPath, err := exec.LookPath("git"); err != nil {
+		fmt.Printf("git not found: %v\n", err)
+	} else {
+		fmt.Printf("git found at: %s\n", gitPath)
+		if info, err := os.Stat(gitPath); err == nil {
+			fmt.Printf("git file size: %d bytes\n", info.Size())
+		}
+		if output, err := exec.Command(gitPath, "--version").CombinedOutput(); err == nil {
+			fmt.Printf("git version: %s\n", strings.TrimSpace(string(output)))
+		} else {
+			fmt.Printf("error getting git version: %v\n", err)
+		}
+	}
+	fmt.Println("=== END BEFORE run.Run() GIT DEBUG ===")
+	fmt.Println()
+
 	runRes, outputs, err := run.Run(g, pr, wf)
+
+	// Debug git after run.Run()
+	fmt.Println("=== AFTER run.Run() - GIT DEBUG ===")
+	if gitPath, err := exec.LookPath("git"); err != nil {
+		fmt.Printf("git not found: %v\n", err)
+	} else {
+		fmt.Printf("git found at: %s\n", gitPath)
+		if info, err := os.Stat(gitPath); err == nil {
+			fmt.Printf("git file size: %d bytes\n", info.Size())
+		}
+		if output, err := exec.Command(gitPath, "--version").CombinedOutput(); err == nil {
+			fmt.Printf("git version: %s\n", strings.TrimSpace(string(output)))
+		} else {
+			fmt.Printf("error getting git version: %v\n", err)
+		}
+	}
+	fmt.Println("=== END AFTER run.Run() GIT DEBUG ===")
+	fmt.Println()
+
 	if err != nil {
 		if err := setOutputs(outputs); err != nil {
 			logging.Debug("failed to set outputs: %v", err)
