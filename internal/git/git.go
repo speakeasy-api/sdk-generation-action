@@ -3,9 +3,12 @@ package git
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
@@ -614,6 +617,30 @@ func (g *Git) Add(arg string) error {
 		} else {
 			fmt.Printf("Git binary is a regular file\n")
 		}
+		
+		// Compare checksums between CLI_LOCATION and gitPath
+		cliLocation := os.Getenv("SPEAKEASY_CLI_LOCATION")
+		if cliLocation != "" {
+			gitChecksum, err := calculateFileChecksum(gitPath)
+			if err != nil {
+				fmt.Printf("Error calculating checksum for git binary: %v\n", err)
+			} else {
+				cliChecksum, err := calculateFileChecksum(cliLocation)
+				if err != nil {
+					fmt.Printf("Error calculating checksum for CLI_LOCATION: %v\n", err)
+				} else {
+					fmt.Printf("Git binary checksum: %s\n", gitChecksum)
+					fmt.Printf("CLI_LOCATION checksum: %s\n", cliChecksum)
+					if gitChecksum == cliChecksum {
+						fmt.Printf("Checksums match - same binary\n")
+					} else {
+						fmt.Printf("Checksums differ - different binaries\n")
+					}
+				}
+			}
+		} else {
+			fmt.Printf("SPEAKEASY_CLI_LOCATION not set, skipping checksum comparison\n")
+		}
 	}
 	// We execute this manually because go-git doesn't properly support gitignore
 	cmd := exec.Command(gitPath, "--help")
@@ -626,6 +653,21 @@ func (g *Git) Add(arg string) error {
 	}
 
 	return nil
+}
+
+func calculateFileChecksum(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 type PRInfo struct {
