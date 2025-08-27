@@ -707,7 +707,7 @@ func (g *Git) Add(arg string) error {
 		}
 	}
 	// We execute this manually because go-git doesn't properly support gitignore
-	cmd := exec.Command(gitPath, "add", args)
+	cmd := exec.Command(gitPath, "add", arg)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
