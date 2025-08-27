@@ -177,6 +177,10 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action, sourc
 		return "", nil, fmt.Errorf("error getting pull requests: %w", err)
 	}
 
+	// Get source branch for context-aware PR matching
+	sourceBranch := environment.GetSourceBranch()
+	isMainBranch := environment.IsMainBranch(sourceBranch)
+
 	var prTitle string
 	if action == environment.ActionRunWorkflow || action == environment.ActionFinalize {
 		prTitle = getGenPRTitlePrefix()
@@ -191,12 +195,34 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action, sourc
 		prTitle = getDocsPRTitlePrefix()
 	}
 
+	// For feature branches, include source branch context in title matching
+	if !isMainBranch {
+		sanitizedSourceBranch := environment.SanitizeBranchName(sourceBranch)
+		prTitle = prTitle + " [" + sanitizedSourceBranch + "]"
+	}
+
 	for _, p := range prs {
 		if strings.HasPrefix(p.GetTitle(), prTitle) {
 			logging.Info("Found existing PR %s", *p.Title)
 
 			if branchName != "" && p.GetHead().GetRef() != branchName {
 				return "", nil, fmt.Errorf("existing PR has different branch name: %s than expected: %s", p.GetHead().GetRef(), branchName)
+			}
+
+			// For feature branches, also verify the PR targets the correct base branch
+			if !isMainBranch {
+				expectedBaseBranch := environment.GetTargetBaseBranch()
+				actualBaseBranch := p.GetBase().GetRef()
+
+				// Handle the case where GetTargetBaseBranch returns a full ref
+				if strings.HasPrefix(expectedBaseBranch, "refs/") {
+					expectedBaseBranch = strings.TrimPrefix(expectedBaseBranch, "refs/heads/")
+				}
+
+				if actualBaseBranch != expectedBaseBranch {
+					logging.Info("Found PR with matching title but wrong base branch: expected %s, got %s", expectedBaseBranch, actualBaseBranch)
+					continue
+				}
 			}
 
 			return p.GetHead().GetRef(), p, nil
@@ -292,12 +318,34 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 		return branchName, nil
 	}
 
+	// Get source branch for context-aware branch naming
+	sourceBranch := environment.GetSourceBranch()
+	isMainBranch := environment.IsMainBranch(sourceBranch)
+	timestamp := time.Now().Unix()
+
 	if action == environment.ActionRunWorkflow {
-		branchName = fmt.Sprintf("speakeasy-sdk-regen-%d", time.Now().Unix())
+		if isMainBranch {
+			// Maintain backward compatibility for main/master branches
+			branchName = fmt.Sprintf("speakeasy-sdk-regen-%d", timestamp)
+		} else {
+			// Include source branch context for feature branches
+			sanitizedSourceBranch := environment.SanitizeBranchName(sourceBranch)
+			branchName = fmt.Sprintf("speakeasy-sdk-regen-%s-%d", sanitizedSourceBranch, timestamp)
+		}
 	} else if action == environment.ActionSuggest {
-		branchName = fmt.Sprintf("speakeasy-openapi-suggestion-%d", time.Now().Unix())
+		if isMainBranch {
+			branchName = fmt.Sprintf("speakeasy-openapi-suggestion-%d", timestamp)
+		} else {
+			sanitizedSourceBranch := environment.SanitizeBranchName(sourceBranch)
+			branchName = fmt.Sprintf("speakeasy-openapi-suggestion-%s-%d", sanitizedSourceBranch, timestamp)
+		}
 	} else if environment.IsDocsGeneration() {
-		branchName = fmt.Sprintf("speakeasy-sdk-docs-regen-%d", time.Now().Unix())
+		if isMainBranch {
+			branchName = fmt.Sprintf("speakeasy-sdk-docs-regen-%d", timestamp)
+		} else {
+			sanitizedSourceBranch := environment.SanitizeBranchName(sourceBranch)
+			branchName = fmt.Sprintf("speakeasy-sdk-docs-regen-%s-%d", sanitizedSourceBranch, timestamp)
+		}
 	}
 
 	logging.Info("Creating branch %s", branchName)
@@ -461,7 +509,8 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	commitResult, _, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
 		Message: github.String(commitMessage),
 		Tree:    &github.Tree{SHA: tree.SHA},
-		Parents: []*github.Commit{parentCommit}}, &github.CreateCommitOptions{})
+		Parents: []*github.Commit{parentCommit},
+	}, &github.CreateCommitOptions{})
 	if err != nil {
 		return "", fmt.Errorf("error committing changes: %w", err)
 	}
@@ -515,7 +564,6 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 		if fileStatus.Staging != git.Unmodified && fileStatus.Staging != git.Untracked && fileStatus.Staging != git.Deleted {
 			filePath := w.Filesystem.Join(w.Filesystem.Root(), file)
 			content, err := os.ReadFile(filePath)
-
 			if err != nil {
 				fmt.Println("Error getting file content", err, filePath)
 				return nil, err
@@ -525,13 +573,15 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 				Path:    github.String(file),
 				Type:    github.String("blob"),
 				Content: github.String(string(content)),
-				Mode:    github.String("100644")})
+				Mode:    github.String("100644"),
+			})
 		}
 	}
 
 	tree, _, err = g.client.Git.CreateTree(context.Background(), owner, repo, *ref.Object.SHA, entries)
 	return tree, err
 }
+
 func (g *Git) Add(arg string) error {
 	// We execute this manually because go-git doesn't properly support gitignore
 	cmd := exec.Command("git", "add", arg)
@@ -626,11 +676,18 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 	} else {
 		logging.Info("Creating PR")
 
+		// Use source-branch-aware target base branch
+		targetBaseBranch := environment.GetTargetBaseBranch()
+		// Handle the case where GetTargetBaseBranch returns a full ref
+		if strings.HasPrefix(targetBaseBranch, "refs/") {
+			targetBaseBranch = strings.TrimPrefix(targetBaseBranch, "refs/heads/")
+		}
+
 		info.PR, _, err = prClient.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), &github.NewPullRequest{
 			Title:               github.String(title),
 			Body:                github.String(body),
 			Head:                github.String(info.BranchName),
-			Base:                github.String(environment.GetRef()),
+			Base:                github.String(targetBaseBranch),
 			MaintainerCanModify: github.Bool(true),
 		})
 		if err != nil {
@@ -656,12 +713,20 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 
 // --- Helper function for old PR title/body generation ---
 func (g *Git) generatePRTitleAndBody(info PRInfo, labelTypes map[string]github.Label, changelog string) (string, string) {
-	var body = ""
+	body := ""
 	title := getGenPRTitlePrefix()
 	if environment.IsDocsGeneration() {
 		title = getDocsPRTitlePrefix()
 	} else if info.SourceGeneration {
 		title = getGenSourcesTitlePrefix()
+	}
+
+	// Add source branch context for feature branches
+	sourceBranch := environment.GetSourceBranch()
+	isMainBranch := environment.IsMainBranch(sourceBranch)
+	if !isMainBranch {
+		sanitizedSourceBranch := environment.SanitizeBranchName(sourceBranch)
+		title = title + " [" + sanitizedSourceBranch + "]"
 	}
 
 	suffix, labelBumpType, _ := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
@@ -823,7 +888,7 @@ func reapplySuffix(title *string, suffix string) *string {
 
 func stripCodes(str string) string {
 	const ansi = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
-	var re = regexp.MustCompile(ansi)
+	re := regexp.MustCompile(ansi)
 	return re.ReplaceAllString(str, "")
 }
 
@@ -841,10 +906,20 @@ Based on:
 		body = body[:maxBodyLength-3] + "..."
 	}
 
+	// Generate source-branch-aware title
+	title := getDocsPRTitlePrefix()
+	sourceBranch := environment.GetSourceBranch()
+	isMainBranch := environment.IsMainBranch(sourceBranch)
+	if !isMainBranch {
+		sanitizedSourceBranch := environment.SanitizeBranchName(sourceBranch)
+		title = title + " [" + sanitizedSourceBranch + "]"
+	}
+
 	if pr != nil {
 		logging.Info("Updating PR")
 
 		pr.Body = github.String(body)
+		pr.Title = github.String(title)
 		pr, _, err = g.client.PullRequests.Edit(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), pr.GetNumber(), pr)
 		if err != nil {
 			return fmt.Errorf("failed to update PR: %w", err)
@@ -852,11 +927,18 @@ Based on:
 	} else {
 		logging.Info("Creating PR")
 
+		// Use source-branch-aware target base branch
+		targetBaseBranch := environment.GetTargetBaseBranch()
+		// Handle the case where GetTargetBaseBranch returns a full ref
+		if strings.HasPrefix(targetBaseBranch, "refs/") {
+			targetBaseBranch = strings.TrimPrefix(targetBaseBranch, "refs/heads/")
+		}
+
 		pr, _, err = g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), &github.NewPullRequest{
-			Title:               github.String(getDocsPRTitlePrefix()),
+			Title:               github.String(title),
 			Body:                github.String(body),
 			Head:                github.String(branchName),
-			Base:                github.String(environment.GetRef()),
+			Base:                github.String(targetBaseBranch),
 			MaintainerCanModify: github.Bool(true),
 		})
 		if err != nil {
@@ -875,18 +957,34 @@ Based on:
 }
 
 func (g *Git) CreateSuggestionPR(branchName, output string) (*int, string, error) {
-	body := fmt.Sprintf(`Generated OpenAPI Suggestions by Speakeasy CLI. 
+	body := fmt.Sprintf(`Generated OpenAPI Suggestions by Speakeasy CLI.
     Outputs changes to *%s*.`, output)
 
 	logging.Info("Creating PR")
 
-	fmt.Println(body, branchName, getSuggestPRTitlePrefix(), environment.GetRef())
+	// Generate source-branch-aware title
+	title := getSuggestPRTitlePrefix()
+	sourceBranch := environment.GetSourceBranch()
+	isMainBranch := environment.IsMainBranch(sourceBranch)
+	if !isMainBranch {
+		sanitizedSourceBranch := environment.SanitizeBranchName(sourceBranch)
+		title = title + " [" + sanitizedSourceBranch + "]"
+	}
+
+	// Use source-branch-aware target base branch
+	targetBaseBranch := environment.GetTargetBaseBranch()
+	// Handle the case where GetTargetBaseBranch returns a full ref
+	if strings.HasPrefix(targetBaseBranch, "refs/") {
+		targetBaseBranch = strings.TrimPrefix(targetBaseBranch, "refs/heads/")
+	}
+
+	fmt.Println(body, branchName, title, targetBaseBranch)
 
 	pr, _, err := g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), &github.NewPullRequest{
-		Title:               github.String("Speakeasy OpenAPI Suggestions -" + environment.GetWorkflowName()),
+		Title:               github.String(title),
 		Body:                github.String(body),
 		Head:                github.String(branchName),
-		Base:                github.String(environment.GetRef()),
+		Base:                github.String(targetBaseBranch),
 		MaintainerCanModify: github.Bool(true),
 	})
 	if err != nil {

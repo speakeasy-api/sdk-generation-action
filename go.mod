@@ -15,7 +15,7 @@ require (
 	github.com/speakeasy-api/sdk-gen-config v1.31.3
 	github.com/speakeasy-api/speakeasy-client-sdk-go/v3 v3.15.4
 	github.com/speakeasy-api/versioning-reports v0.6.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a
 	golang.org/x/oauth2 v0.11.0
 	gopkg.in/yaml.v3 v3.0.1
