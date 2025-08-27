@@ -182,12 +182,13 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action, sourc
 	isMainBranch := environment.IsMainBranch(sourceBranch)
 
 	var prTitle string
-	if action == environment.ActionRunWorkflow || action == environment.ActionFinalize {
+	switch action {
+	case environment.ActionRunWorkflow, environment.ActionFinalize:
 		prTitle = getGenPRTitlePrefix()
 		if sourceGeneration {
 			prTitle = getGenSourcesTitlePrefix()
 		}
-	} else if action == environment.ActionFinalize || action == environment.ActionFinalizeSuggestion {
+	case environment.ActionFinalizeSuggestion:
 		prTitle = getSuggestPRTitlePrefix()
 	}
 
@@ -429,8 +430,9 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	}
 	logging.Info("INPUT_ENABLE_SDK_CHANGELOG is %s", environment.GetSDKChangelog())
 
-	var commitMessage string = ""
-	if action == environment.ActionRunWorkflow {
+	var commitMessage string
+	switch action {
+	case environment.ActionRunWorkflow:
 		commitMessage = fmt.Sprintf("ci: regenerated with OpenAPI Doc %s, Speakeasy CLI %s", openAPIDocVersion, speakeasyVersion)
 		if sourcesOnly {
 			commitMessage = fmt.Sprintf("ci: regenerated with Speakeasy CLI %s", speakeasyVersion)
@@ -438,9 +440,9 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 			// For clients using older cli with new sdk-action, GetCommitMarkdownSection would be empty so we will use the old commit message
 			commitMessage = mergedVersionReport.GetCommitMarkdownSection()
 		}
-	} else if action == environment.ActionSuggest {
+	case environment.ActionSuggest:
 		commitMessage = fmt.Sprintf("ci: suggestions for OpenAPI doc %s", doc)
-	} else {
+	default:
 		return "", errors.New("invalid action")
 	}
 
@@ -733,8 +735,8 @@ func (g *Git) generatePRTitleAndBody(info PRInfo, labelTypes map[string]github.L
 	title += suffix
 
 	if info.LintingReportURL != "" || info.ChangesReportURL != "" {
-		body += fmt.Sprintf(`> [!IMPORTANT]
-`)
+		body += `> [!IMPORTANT]
+`
 	}
 
 	if info.LintingReportURL != "" {
@@ -854,36 +856,6 @@ func (g *Git) generateGeneratorChangelogForOldCLIVersions(info PRInfo, previousG
 		changelog = "\n" + changelog
 	}
 	return changelog, nil
-}
-
-func notEquivalent(desired []*github.Label, actual []*github.Label) bool {
-	desiredByName := make(map[string]bool)
-	for _, label := range desired {
-		desiredByName[label.GetName()] = true
-	}
-	if len(desiredByName) != len(actual) {
-		return true
-	}
-	for _, label := range actual {
-		_, ok := desiredByName[label.GetName()]
-		if !ok {
-			return true
-		}
-	}
-	return false
-}
-
-func reapplySuffix(title *string, suffix string) *string {
-	if title == nil {
-		return nil
-	}
-	split := strings.Split(*title, "🐝")
-	if len(split) < 2 {
-		return title
-	}
-	// take first two sections
-	*title = strings.Join(split[:2], "🐝") + suffix
-	return title
 }
 
 func stripCodes(str string) string {
