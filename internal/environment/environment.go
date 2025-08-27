@@ -336,3 +336,47 @@ func parseArrayInput(input string) []string {
 
 	return strings.Split(input, ",")
 }
+
+// GetSourceBranch returns the source branch that triggered the generation
+func GetSourceBranch() string {
+	ref := GetRef()
+
+	// Handle PR-based triggers - use the head ref (source branch)
+	if strings.Contains(os.Getenv("GITHUB_REF"), "refs/pull") || strings.Contains(os.Getenv("GITHUB_REF"), "refs/pulls") {
+		return os.Getenv("GITHUB_HEAD_REF")
+	}
+
+	// For direct branch triggers, extract branch name from ref
+	return strings.TrimPrefix(ref, "refs/heads/")
+}
+
+// IsMainBranch returns true if the source branch is main or master
+func IsMainBranch(branch string) bool {
+	return branch == "main" || branch == "master"
+}
+
+// GetTargetBaseBranch returns the branch that PRs should target
+func GetTargetBaseBranch() string {
+	sourceBranch := GetSourceBranch()
+
+	// If triggered from main/master, target the original ref (main/master)
+	if IsMainBranch(sourceBranch) {
+		return GetRef()
+	}
+
+	// For feature branches, target the source branch itself
+	return "refs/heads/" + sourceBranch
+}
+
+// SanitizeBranchName sanitizes a branch name for use in generated branch names
+func SanitizeBranchName(branch string) string {
+	// Replace problematic characters with hyphens
+	sanitized := strings.ReplaceAll(branch, "/", "-")
+	sanitized = strings.ReplaceAll(sanitized, "_", "-")
+	sanitized = strings.ReplaceAll(sanitized, " ", "-")
+
+	// Remove any leading/trailing hyphens
+	sanitized = strings.Trim(sanitized, "-")
+
+	return sanitized
+}
