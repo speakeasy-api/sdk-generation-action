@@ -25,6 +25,8 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		"run",
 	}
 
+	os.Setenv("SPEAKEASY_LOG_LEVEL", "debug")
+
 	if sourcesOnly {
 		args = append(args, "-s", "all")
 	} else {
