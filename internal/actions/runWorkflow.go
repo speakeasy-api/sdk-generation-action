@@ -73,6 +73,15 @@ func RunWorkflow() error {
 
 	// We want to stay on main if we're pushing code samples because we want to tag the code samples with `main`
 	if !environment.PushCodeSamplesOnly() && !environment.IsTestMode() {
+		// if this is arbitrary code execution, change to speakeasy/main before creating the regen branch
+		// TODO: idb - add feature guard
+
+		_, err := g.FindAndCheckoutBranch("speakeasy/main")
+		if (err) {
+			logging.Error("Could not find speakeasy/main branch")
+			return err
+		}
+
 		branchName, err = g.FindOrCreateBranch(branchName, environment.ActionRunWorkflow)
 		if err != nil {
 			return err

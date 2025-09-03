@@ -337,8 +337,16 @@ func parseArrayInput(input string) []string {
 	return strings.Split(input, ",")
 }
 
+func OverrideSourceBranch(branchName string) error {
+	return os.Setenv("GITHUB_HEAD_OVERRIDE", branchName)
+}
+
 // GetSourceBranch returns the source branch that triggered the generation
 func GetSourceBranch() string {
+	if os.Getenv("GITHUB_HEAD_OVERRIDE") != ""
+		return os.Getenv("GITHUB_HEAD_OVERRIDE")
+	}
+
 	ref := GetRef()
 
 	// Handle PR-based triggers - use the head ref (source branch)
