@@ -323,10 +323,11 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action, s
 	}
 
 	// Get source branch for context-aware branch naming
+	var sourceBranch string
 	if sourceBranchOverride != "" {
 		sourceBranch = sourceBranchOverride
 	} else {
-		sourceBranch := environment.GetSourceBranch()
+		sourceBranch = environment.GetSourceBranch()
 	}
 	isMainBranch := environment.IsMainBranch(sourceBranch)
 	timestamp := time.Now().Unix()
