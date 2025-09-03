@@ -79,7 +79,7 @@ func Download(pinnedVersion string, g Git) (string, error) {
 func runSpeakeasyCommand(args ...string) (string, error) {
 	baseDir := environment.GetBaseDir()
 	extraRunEnvVars := environment.SpeakeasyEnvVars()
-	
+
 	// Check for custom CLI location first
 	cmdPath := os.Getenv("SPEAKEASY_CLI_LOCATION")
 	if cmdPath == "" {

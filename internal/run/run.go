@@ -3,8 +3,6 @@ package run
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"strconv"
