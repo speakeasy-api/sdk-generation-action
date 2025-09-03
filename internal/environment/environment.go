@@ -343,7 +343,7 @@ func OverrideSourceBranch(branchName string) error {
 
 // GetSourceBranch returns the source branch that triggered the generation
 func GetSourceBranch() string {
-	if os.Getenv("GITHUB_HEAD_OVERRIDE") != ""
+	if os.Getenv("GITHUB_HEAD_OVERRIDE") != "" {
 		return os.Getenv("GITHUB_HEAD_OVERRIDE")
 	}
 
