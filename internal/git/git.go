@@ -291,7 +291,7 @@ func (g *Git) Reset(args ...string) error {
 	return nil
 }
 
-func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (string, error) {
+func (g *Git) FindOrCreateBranch(branchName string, action environment.Action, sourceBranchOverride string) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
@@ -323,7 +323,11 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 	}
 
 	// Get source branch for context-aware branch naming
-	sourceBranch := environment.GetSourceBranch()
+	if sourceBranchOverride != "" {
+		sourceBranch = sourceBranchOverride
+	} else {
+		sourceBranch := environment.GetSourceBranch()
+	}
 	isMainBranch := environment.IsMainBranch(sourceBranch)
 	timestamp := time.Now().Unix()
 

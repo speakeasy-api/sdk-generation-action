@@ -74,14 +74,13 @@ func RunWorkflow() error {
 	if !environment.PushCodeSamplesOnly() && !environment.IsTestMode() {
 		// if this is arbitrary code execution, change to speakeasy/main before creating the regen branch
 		// TODO: idb - add feature guard
-		environment.OverrideSourceBranch("speakeasy/main")
 		// _, err := g.FindAndCheckoutBranch("speakeasy/main")
 		// if err {
 		// 	logging.Error("Could not find speakeasy/main branch")
 		// 	return err
 		// }
 
-		branchName, err = g.FindOrCreateBranch(branchName, environment.ActionRunWorkflow)
+		branchName, err = g.FindOrCreateBranch(branchName, environment.ActionRunWorkflow, "speakeasy/main")
 		if err != nil {
 			return err
 		}
