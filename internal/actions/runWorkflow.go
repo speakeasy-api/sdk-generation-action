@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/google/go-github/v63/github"
