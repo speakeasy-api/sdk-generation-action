@@ -134,6 +134,7 @@ func GetDirAndShouldUseReleasesMD(files []string, dir string, usingReleasesMd bo
 			}
 
 			logging.Info("Found gen.lock in %s\n", dir)
+			break
 		}
 		// Maintain Support for RELEASES.MD for backward compatibility with existing publishing actions
 		if strings.Contains(file, "RELEASES.md") {
