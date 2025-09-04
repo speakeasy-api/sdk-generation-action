@@ -126,16 +126,6 @@ func Release() error {
 
 func GetDirAndShouldUseReleasesMD(files []string, dir string, usingReleasesMd bool) (string, bool) {
 	for _, file := range files {
-		// Maintain Support for RELEASES.MD for backward compatibility with existing publishing actions
-		if strings.Contains(file, "RELEASES.md") {
-			// file = ./RELEASES.md
-			// dir = .
-			dir = filepath.Dir(file)
-			logging.Info("Found RELEASES.md in %s\n", dir)
-			usingReleasesMd = true
-			break
-		}
-
 		if strings.Contains(file, "gen.lock") {
 			// file = .speakeasy/gen.lock
 			dir = filepath.Dir(file)
@@ -144,6 +134,15 @@ func GetDirAndShouldUseReleasesMD(files []string, dir string, usingReleasesMd bo
 			}
 
 			logging.Info("Found gen.lock in %s\n", dir)
+		}
+		// Maintain Support for RELEASES.MD for backward compatibility with existing publishing actions
+		if strings.Contains(file, "RELEASES.md") {
+			// file = ./RELEASES.md
+			// dir = .
+			dir = filepath.Dir(file)
+			logging.Info("Found RELEASES.md in %s\n", dir)
+			usingReleasesMd = true
+			break
 		}
 	}
 	return dir, usingReleasesMd
