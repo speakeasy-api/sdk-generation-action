@@ -65,14 +65,14 @@ func TestGetDirAndShouldUseReleasesMD(t *testing.T) {
 			want1: false,
 		},
 		{
-			name: "RELEASES.md takes precedence over gen.lock",
+			name: "gen.lock takes precedence over RELEASES.md",
 			args: args{
 				files:           []string{".speakeasy/gen.lock", "RELEASES.md"},
 				dir:             ".",
 				usingReleasesMd: false,
 			},
 			want:  ".",
-			want1: true,
+			want1: false,
 		},
 	}
 	for _, tt := range tests {
