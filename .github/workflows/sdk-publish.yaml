@@ -266,7 +266,7 @@ jobs:
           node-version: "16.x"
           registry-url: "https://registry.npmjs.org"
       - name: Install dependencies
-        run: npm install
+        run: npm install --ignore-scripts
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
@@ -372,7 +372,7 @@ jobs:
         with:
           node-version: "22.x"
           registry-url: "https://registry.npmjs.org"
-      - run: npm install
+      - run: npm install --ignore-scripts
       - env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
         run: |
