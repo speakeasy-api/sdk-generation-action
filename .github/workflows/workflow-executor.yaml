@@ -396,6 +396,8 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - name: Install dependencies
         run: npm install --ignore-scripts
+      - name: Install bun
+        run: npm rebuild bun
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
