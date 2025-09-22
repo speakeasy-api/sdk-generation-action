@@ -6,6 +6,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: Show all commits
+        run: |
+          git log main --author='speakeasybot' --oneline
+          COMMIT_HASH=$(git log main --author='speakeasybot' --oneline -1)
+          echo "Hash: $COMMIT_HASH"
       - name: Find branch and commit
         run: |
           COMMIT_HASH=$(git log main --author='speakeasybot' --oneline -1)
