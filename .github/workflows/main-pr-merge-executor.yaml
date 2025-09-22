@@ -8,18 +8,17 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Show all commits
-        run: |
-          echo $(git log main --oneline)
-          COMMIT_HASH=$(git log main --author='speakeasybot' --oneline -1)
-          echo "Hash: $COMMIT_HASH"
       - name: Find branch and commit
         run: |
           COMMIT_HASH=$(git log main --author='speakeasybot' --oneline -1)
           if [[ -n "$COMMIT_HASH" ]]; then
             echo "Most recent speakeasybot hash: $COMMIT_HASH" 
-            git checkout speakeasy/main
-            git cherry-pick $COMMIT_HASH
+            if git show-ref --verify --quiet refs/heads/speakeasy/main; then
+              git checkout speakeasy/main 
+              git cherry-pick $COMMIT_HASH
+            else
+              git checkout -b speakeasy/main $COMMIT_HASH
+            fi
             git push origin speakeasy/main
           else
             echo "No previous generation commit found."
