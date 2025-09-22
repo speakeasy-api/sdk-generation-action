@@ -24,3 +24,6 @@ jobs:
           else
             echo "No previous generation commit found."
           fi
+      - name: Create code changes patch
+        run: |
+          echo $(git format-patch --stdout speakeasy/main..main)
