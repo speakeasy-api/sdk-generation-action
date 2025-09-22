@@ -10,7 +10,7 @@ jobs:
           fetch-depth: 0
       - name: Find branch and commit
         run: |
-          COMMIT_HASH=$(git log main --author='speakeasybot' --oneline -1)
+          COMMIT_HASH=$(git log main --author='speakeasybot' --format=%H -1)
           if [[ -n "$COMMIT_HASH" ]]; then
             git fetch origin
             echo "Most recent speakeasybot hash: $COMMIT_HASH" 
