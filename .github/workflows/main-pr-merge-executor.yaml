@@ -1,0 +1,15 @@
+on: workflow_call
+
+jobs:
+  update-speakeasy-branches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Find branch and commit
+        run: |
+          COMMIT_HASH=$(git log main --author='speakeasybot' --oneline -1)
+          echo "Most recent speakeasybot hash: $COMMIT_HASH" 
+          git checkout speakeasy/main
+          git cherry-pick $COMMIT_HASH
+          git push origin speakeasy/main
