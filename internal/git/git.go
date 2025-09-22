@@ -450,10 +450,10 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	// Create commit message
 	signedCommitsEnabled := environment.GetSignedCommits()
-	logging.Debug("Signed commits enabled: %t", signedCommitsEnabled)
+	logging.Info("Signed commits enabled: %t", signedCommitsEnabled)
 
 	if !signedCommitsEnabled {
-		logging.Debug("Using standard commit flow (unsigned commits)")
+		logging.Info("Using standard commit flow (unsigned commits)")
 		commitHash, err := w.Commit(commitMessage, &git.CommitOptions{
 			Author: &object.Signature{
 				Name:  "speakeasybot",
@@ -466,9 +466,9 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 			logging.Error("Failed to create unsigned commit: %v", err)
 			return "", fmt.Errorf("error committing changes: %w", err)
 		}
-		logging.Debug("Created unsigned commit with hash: %s", commitHash.String())
+		logging.Info("Created unsigned commit with hash: %s", commitHash.String())
 
-		logging.Debug("Pushing unsigned commit to remote")
+		logging.Info("Pushing unsigned commit to remote")
 		if err := g.repo.Push(&git.PushOptions{
 			Auth:  getGithubAuth(g.accessToken),
 			Force: true, // This is necessary because at the beginning of the workflow we reset the branch
@@ -476,40 +476,40 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 			logging.Error("Failed to push unsigned commit: %v", err)
 			return "", pushErr(err)
 		}
-		logging.Debug("Successfully pushed unsigned commit")
+		logging.Info("Successfully pushed unsigned commit")
 		return commitHash.String(), nil
 	}
 
-	logging.Debug("Using signed commit flow via GitHub API")
+	logging.Info("Using signed commit flow via GitHub API")
 
 	branch, err := g.GetCurrentBranch()
 	if err != nil {
 		return "", fmt.Errorf("error getting current branch: %w", err)
 	}
-	logging.Debug("Current branch: %s", branch)
+	logging.Info("Current branch: %s", branch)
 
 	// Get status of changed files
 	status, err := w.Status()
 	if err != nil {
 		return "", fmt.Errorf("error getting status for branch: %w", err)
 	}
-	logging.Debug("Git status contains %d files", len(status))
+	logging.Info("Git status contains %d files", len(status))
 
 	// Get repo head commit
 	head, err := g.repo.Head()
 	if err != nil {
 		return "", fmt.Errorf("error getting repo head commit: %w", err)
 	}
-	logging.Debug("Head reference: %s, Hash: %s", head.Name(), head.Hash().String())
+	logging.Info("Head reference: %s, Hash: %s", head.Name(), head.Hash().String())
 
 	// Create reference on remote if it doesn't exist
-	logging.Debug("Attempting to get or create reference for: %s", string(head.Name()))
+	logging.Info("Attempting to get or create reference for: %s", string(head.Name()))
 	ref, err := g.getOrCreateRef(string(head.Name()))
 	if err != nil {
 		logging.Error("Failed to get or create reference for %s: %v", string(head.Name()), err)
 		return "", fmt.Errorf("error getting reference: %w", err)
 	}
-	logging.Debug("Successfully got/created reference: %s with SHA: %s", ref.GetRef(), ref.GetObject().GetSHA())
+	logging.Info("Successfully got/created reference: %s with SHA: %s", ref.GetRef(), ref.GetObject().GetSHA())
 
 	// Create new tree with SHA of last commit
 	tree, err := g.createAndPushTree(ref, status)
@@ -519,20 +519,20 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	_, githubRepoLocation := g.getRepoMetadata()
 	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
-	logging.Debug("Repository metadata - Owner: %s, Repo: %s, Location: %s", owner, repo, githubRepoLocation)
+	logging.Info("Repository metadata - Owner: %s, Repo: %s, Location: %s", owner, repo, githubRepoLocation)
 
 	// Get parent commit
-	logging.Debug("Getting parent commit with SHA: %s", *ref.Object.SHA)
+	logging.Info("Getting parent commit with SHA: %s", *ref.Object.SHA)
 	parentCommit, _, err := g.client.Git.GetCommit(context.Background(), owner, repo, *ref.Object.SHA)
 	if err != nil {
 		logging.Error("Failed to get parent commit for SHA %s: %v", *ref.Object.SHA, err)
 		return "", fmt.Errorf("error getting parent commit: %w", err)
 	}
-	logging.Debug("Successfully retrieved parent commit: %s", parentCommit.GetSHA())
+	logging.Info("Successfully retrieved parent commit: %s", parentCommit.GetSHA())
 
 	// Commit changes
-	logging.Debug("Creating signed commit via GitHub API with message: %s", commitMessage)
-	logging.Debug("Tree SHA: %s, Parent commit SHA: %s", tree.GetSHA(), parentCommit.GetSHA())
+	logging.Info("Creating signed commit via GitHub API with message: %s", commitMessage)
+	logging.Info("Tree SHA: %s, Parent commit SHA: %s", tree.GetSHA(), parentCommit.GetSHA())
 	commitResult, _, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
 		Message: github.String(commitMessage),
 		Tree:    &github.Tree{SHA: tree.SHA},
@@ -542,20 +542,20 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		logging.Error("Failed to create signed commit via GitHub API: %v", err)
 		return "", fmt.Errorf("error committing changes: %w", err)
 	}
-	logging.Debug("Successfully created signed commit with SHA: %s", commitResult.GetSHA())
+	logging.Info("Successfully created signed commit with SHA: %s", commitResult.GetSHA())
 
 	// Update reference
 	newRef := &github.Reference{
 		Ref:    github.String("refs/heads/" + branch),
 		Object: &github.GitObject{SHA: commitResult.SHA},
 	}
-	logging.Debug("Updating reference %s to point to commit %s", "refs/heads/"+branch, commitResult.GetSHA())
+	logging.Info("Updating reference %s to point to commit %s", "refs/heads/"+branch, commitResult.GetSHA())
 	_, _, err = g.client.Git.UpdateRef(context.Background(), owner, repo, newRef, true)
 	if err != nil {
 		logging.Error("Failed to update reference %s to commit %s: %v", "refs/heads/"+branch, commitResult.GetSHA(), err)
 		return "", fmt.Errorf("error updating reference: %w", err)
 	}
-	logging.Debug("Successfully updated reference %s to commit %s", "refs/heads/"+branch, commitResult.GetSHA())
+	logging.Info("Successfully updated reference %s to commit %s", "refs/heads/"+branch, commitResult.GetSHA())
 
 	return *commitResult.SHA, nil
 }
@@ -567,16 +567,16 @@ func (g *Git) getOrCreateRef(commitRef string) (ref *github.Reference, err error
 	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
 	environmentRef := environment.GetRef()
 
-	logging.Debug("getOrCreateRef called with commitRef: %s", commitRef)
-	logging.Debug("Repository: %s/%s, Environment ref: %s", owner, repo, environmentRef)
+	logging.Info("getOrCreateRef called with commitRef: %s", commitRef)
+	logging.Info("Repository: %s/%s, Environment ref: %s", owner, repo, environmentRef)
 
 	// Try to get existing reference
-	logging.Debug("Attempting to get existing reference: %s", commitRef)
+	logging.Info("Attempting to get existing reference: %s", commitRef)
 	if ref, _, err = g.client.Git.GetRef(context.Background(), owner, repo, commitRef); err == nil {
-		logging.Debug("Found existing reference: %s with SHA: %s", ref.GetRef(), ref.GetObject().GetSHA())
+		logging.Info("Found existing reference: %s with SHA: %s", ref.GetRef(), ref.GetObject().GetSHA())
 		return ref, nil
 	}
-	logging.Debug("Reference %s not found, error: %v", commitRef, err)
+	logging.Info("Reference %s not found, error: %v", commitRef, err)
 
 	// We consider that an error means the branch has not been found and needs to
 	// be created.
@@ -585,22 +585,22 @@ func (g *Git) getOrCreateRef(commitRef string) (ref *github.Reference, err error
 		return nil, errors.New("the commit branch does not exist but `-base-branch` is the same as `-commit-branch`")
 	}
 
-	logging.Debug("Creating new reference from base ref: %s", environmentRef)
+	logging.Info("Creating new reference from base ref: %s", environmentRef)
 	var baseRef *github.Reference
 	if baseRef, _, err = g.client.Git.GetRef(context.Background(), owner, repo, environmentRef); err != nil {
 		logging.Error("Failed to get base reference %s: %v", environmentRef, err)
 		return nil, err
 	}
-	logging.Debug("Base reference found: %s with SHA: %s", baseRef.GetRef(), baseRef.GetObject().GetSHA())
+	logging.Info("Base reference found: %s with SHA: %s", baseRef.GetRef(), baseRef.GetObject().GetSHA())
 
 	newRef := &github.Reference{Ref: github.String(commitRef), Object: &github.GitObject{SHA: baseRef.Object.SHA}}
-	logging.Debug("Creating new reference: %s with SHA: %s", commitRef, baseRef.GetObject().GetSHA())
+	logging.Info("Creating new reference: %s with SHA: %s", commitRef, baseRef.GetObject().GetSHA())
 	ref, _, err = g.client.Git.CreateRef(context.Background(), owner, repo, newRef)
 	if err != nil {
 		logging.Error("Failed to create reference %s: %v", commitRef, err)
 		return nil, err
 	}
-	logging.Debug("Successfully created reference: %s", ref.GetRef())
+	logging.Info("Successfully created reference: %s", ref.GetRef())
 	return ref, err
 }
 
