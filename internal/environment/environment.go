@@ -278,6 +278,21 @@ func normalizeRef(ref string) string {
 	return "refs/heads/" + ref
 }
 
+// GetRef returns the Git reference for the current GitHub Actions context.
+// It always returns fully-formed refs (e.g., "refs/heads/main") for consistency.
+//
+// For pull request triggers:
+//   - Returns the normalized head ref (source branch) for most PR events
+//   - Returns the normalized base ref (target branch) for "labeled"/"unlabeled" events
+//     to support label-based versioning against the target branch
+//
+// For direct branch triggers:
+//   - Returns GITHUB_REF as-is (already fully-formed)
+//
+// Examples:
+//   - Direct push to main: "refs/heads/main"
+//   - PR from feature branch: "refs/heads/feature-branch"
+//   - PR label event: "refs/heads/main" (base branch)
 func GetRef() string {
 	// handle pr based action triggers
 	if strings.Contains(os.Getenv("GITHUB_REF"), "refs/pull") || strings.Contains(os.Getenv("GITHUB_REF"), "refs/pulls") {
