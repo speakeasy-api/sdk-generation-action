@@ -142,7 +142,7 @@ func TestGetTargetBaseBranch(t *testing.T) {
 			name:          "PR from main branch",
 			githubRef:     "refs/pull/456/merge",
 			githubHeadRef: "main",
-			expected:      "main",
+			expected:      "main", // Should return main since GetRef() returns the head ref for PRs
 		},
 	}
 
