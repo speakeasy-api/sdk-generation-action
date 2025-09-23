@@ -265,38 +265,10 @@ type gitHubEvent struct {
 	Action string `json:"action"`
 }
 
-// normalizeRef ensures a ref is in fully-formed format (refs/heads/branch-name)
-func normalizeRef(ref string) string {
-	if ref == "" {
-		return ref
-	}
-	// If already a fully-formed ref, return as-is
-	if strings.HasPrefix(ref, "refs/") {
-		return ref
-	}
-	// Convert branch name to fully-formed ref
-	return "refs/heads/" + ref
-}
-
-// GetRef returns the Git reference for the current GitHub Actions context.
-// It always returns fully-formed refs (e.g., "refs/heads/main") for consistency.
-//
-// For pull request triggers:
-//   - Returns the normalized head ref (source branch) for most PR events
-//   - Returns the normalized base ref (target branch) for "labeled"/"unlabeled" events
-//     to support label-based versioning against the target branch
-//
-// For direct branch triggers:
-//   - Returns GITHUB_REF as-is (already fully-formed)
-//
-// Examples:
-//   - Direct push to main: "refs/heads/main"
-//   - PR from feature branch: "refs/heads/feature-branch"
-//   - PR label event: "refs/heads/main" (base branch)
 func GetRef() string {
 	// handle pr based action triggers
 	if strings.Contains(os.Getenv("GITHUB_REF"), "refs/pull") || strings.Contains(os.Getenv("GITHUB_REF"), "refs/pulls") {
-		ref := normalizeRef(os.Getenv("GITHUB_HEAD_REF"))
+		ref := os.Getenv("GITHUB_HEAD_REF")
 		data, err := os.ReadFile(os.Getenv("GITHUB_EVENT_PATH"))
 		if err != nil {
 			return ref
@@ -310,7 +282,7 @@ func GetRef() string {
 
 		// "labeled" or "unlabeled" PR triggers need to use the base ref for label based versioning
 		if event.Action == "labeled" || event.Action == "unlabeled" {
-			return normalizeRef(os.Getenv("GITHUB_BASE_REF"))
+			return os.Getenv("GITHUB_BASE_REF")
 		}
 
 		return ref

@@ -560,12 +560,25 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	return *commitResult.SHA, nil
 }
 
+// normalizeRefForAPI ensures a ref is in fully-formed format (refs/heads/branch-name) for GitHub API calls
+func normalizeRefForAPI(ref string) string {
+	if ref == "" {
+		return ref
+	}
+	// If already a fully-formed ref, return as-is
+	if strings.HasPrefix(ref, "refs/") {
+		return ref
+	}
+	// Convert branch name to fully-formed ref
+	return "refs/heads/" + ref
+}
+
 // getOrCreateRef returns the commit branch reference object if it exists or creates it
 // from the base branch before returning it.
 func (g *Git) getOrCreateRef(commitRef string) (ref *github.Reference, err error) {
 	_, githubRepoLocation := g.getRepoMetadata()
 	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
-	environmentRef := environment.GetRef()
+	environmentRef := normalizeRefForAPI(environment.GetRef())
 
 	logging.Info("getOrCreateRef called with commitRef: %s", commitRef)
 	logging.Info("Repository: %s/%s, Environment ref: %s", owner, repo, environmentRef)
