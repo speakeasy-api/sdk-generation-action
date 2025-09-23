@@ -12,11 +12,13 @@ services:
     container_name: main_container
     environment:
       - INPUT_DEBUG=true
+      - INPUT_FORCE=true
+      - INPUT_SIGNED_COMMITS=true
       - INPUT_GITHUB_ACCESS_TOKEN=${GITHUB_TOKEN}
       - GITHUB_SERVER_URL=https://github.com
-      - GITHUB_REPOSITORY=speakeasy-api/sdk-generation-action-test-repo
-      - GITHUB_REPOSITORY_OWNER=speakeasy-api
-      - GITHUB_REF=refs/heads/main
+      - GITHUB_REPOSITORY_OWNER=vishalg0wda
+      - GITHUB_REPOSITORY=vishalg0wda/minimal-java
+      - GITHUB_REF=refs/heads/feat/custom-workflow
       - GITHUB_OUTPUT=./output.txt
       - GITHUB_WORKFLOW=test
       - GITHUB_WORKSPACE=${PWD}

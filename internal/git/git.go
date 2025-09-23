@@ -430,10 +430,6 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
-	// For signed commits, ensure all files are properly staged
-	if environment.GetSignedCommits() {
-		g.ensureFilesStaged(w)
-	}
 	logging.Info("INPUT_ENABLE_SDK_CHANGELOG is %s", environment.GetSDKChangelog())
 
 	var commitMessage string
@@ -654,82 +650,6 @@ func (g *Git) Add(arg string) error {
 	}
 
 	return nil
-}
-
-// forceStageRemainingFiles attempts to stage files that weren't staged by the initial git add
-func (g *Git) forceStageRemainingFiles(unstagedFiles []string) error {
-	if len(unstagedFiles) == 0 {
-		return nil
-	}
-
-	logging.Debug("Force staging %d remaining unstaged files", len(unstagedFiles))
-
-	// Try a final git add --all to catch any remaining files
-	cmd := exec.Command("git", "add", "--all")
-	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
-	cmd.Env = os.Environ()
-	output, err := cmd.CombinedOutput()
-	logging.Debug("Output of `git add --all`: %s", string(output))
-
-	if err != nil {
-		logging.Debug("git add --all failed: %v, trying individual files", err)
-
-		// If --all fails, try each file individually with --force
-		for _, file := range unstagedFiles {
-			cmd := exec.Command("git", "add", "--force", file)
-			cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
-			cmd.Env = os.Environ()
-			output, err := cmd.CombinedOutput()
-
-			if err != nil {
-				logging.Debug("Failed to force add file %s: %v, output: %s", file, err, string(output))
-			} else {
-				logging.Debug("Successfully force added file: %s", file)
-			}
-		}
-	}
-
-	return nil
-}
-
-// stashUnstagedChanges attempts to stash any unstaged changes to allow checkout
-func (g *Git) stashUnstagedChanges() error {
-	logging.Debug("Attempting to stash unstaged changes")
-
-	cmd := exec.Command("git", "stash", "push", "--include-untracked", "--message", "speakeasy-action-temp-stash")
-	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
-	cmd.Env = os.Environ()
-	output, err := cmd.CombinedOutput()
-
-	logging.Debug("Output of `git stash`: %s", string(output))
-
-	if err != nil {
-		return fmt.Errorf("failed to stash changes: %w, output: %s", err, string(output))
-	}
-
-	return nil
-}
-
-// ensureFilesStaged checks for unstaged files and attempts to stage them for signed commits
-func (g *Git) ensureFilesStaged(w *git.Worktree) {
-	status, err := w.Status()
-	if err != nil {
-		return
-	}
-
-	var unstagedFiles []string
-	for file, fileStatus := range status {
-		if fileStatus.Worktree != git.Unmodified {
-			unstagedFiles = append(unstagedFiles, file)
-		}
-	}
-
-	if len(unstagedFiles) > 0 {
-		logging.Debug("Warning: %d files still unstaged after git add, attempting final staging for signed commits", len(unstagedFiles))
-		if err := g.forceStageRemainingFiles(unstagedFiles); err != nil {
-			logging.Error("Failed to stage remaining files for signed commit: %v", err)
-		}
-	}
 }
 
 type PRInfo struct {
