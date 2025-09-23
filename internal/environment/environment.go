@@ -104,6 +104,10 @@ func SkipTesting() bool {
 	return os.Getenv("INPUT_SKIP_TESTING") == "true"
 }
 
+func SkipCompile() bool {
+	return os.Getenv("INPUT_SKIP_COMPILE") == "true"
+}
+
 func SpecifiedTarget() string {
 	return os.Getenv("INPUT_TARGET")
 }
@@ -254,6 +258,10 @@ func GetSignedCommits() bool {
 
 func GetBranchName() string {
 	return os.Getenv("INPUT_BRANCH_NAME")
+}
+
+func GetFeatureBranch() string {
+	return strings.TrimSpace(os.Getenv("INPUT_FEATURE_BRANCH"))
 }
 
 func GetCliOutput() string {

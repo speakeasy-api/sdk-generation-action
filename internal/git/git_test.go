@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -77,6 +78,40 @@ func newTestRepo(t *testing.T) (*git.Repository, billy.Filesystem) {
 	require.NoError(t, err, "expected to commit all files")
 
 	return repo, mfs
+}
+
+func runGitCLI(t *testing.T, dir string, args ...string) string {
+	return runGitCLIWithEnv(t, dir, nil, args...)
+}
+
+func runGitCLIWithEnv(t *testing.T, dir string, extraEnv map[string]string, args ...string) string {
+	t.Helper()
+	if len(args) > 0 && args[0] == "commit" {
+		args = append([]string{"-c", "commit.gpgsign=false"}, args...)
+	}
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	env := append([]string{}, os.Environ()...)
+	baseEnv := map[string]string{
+		"GIT_AUTHOR_NAME":     "Test User",
+		"GIT_AUTHOR_EMAIL":    "test@example.com",
+		"GIT_COMMITTER_NAME":  "Test User",
+		"GIT_COMMITTER_EMAIL": "test@example.com",
+	}
+	for k, v := range extraEnv {
+		baseEnv[k] = v
+	}
+	for k, v := range baseEnv {
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
+	}
+	cmd.Env = env
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("git %v failed: %s", args, output)
+	}
+
+	return string(output)
 }
 
 func TestGit_CheckDirDirty(t *testing.T) {
@@ -350,6 +385,196 @@ func TestGit_FindOrCreateBranch_SourceBranchAware(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGit_FindOrCreateBranch_FeatureBranchOverride(t *testing.T) {
+	repo, _ := newTestRepo(t)
+	g := Git{repo: repo}
+
+	t.Setenv("INPUT_FEATURE_BRANCH", "feature/manual-override")
+	t.Setenv("GITHUB_REF", "refs/heads/main")
+	t.Setenv("GITHUB_HEAD_REF", "")
+
+	branchName, err := g.FindOrCreateBranch("", environment.ActionRunWorkflow)
+	require.NoError(t, err)
+	assert.Equal(t, "feature/manual-override", branchName)
+
+	head, err := repo.Head()
+	require.NoError(t, err)
+	assert.Equal(t, "refs/heads/feature/manual-override", head.Name().String())
+}
+
+func TestGit_FindOrCreateBranch_NonCIPendingCommits(t *testing.T) {
+	workspace := t.TempDir()
+	repoPath := filepath.Join(workspace, "repo")
+	remotePath := filepath.Join(workspace, "remote.git")
+
+	if err := os.MkdirAll(repoPath, 0o755); err != nil {
+		t.Fatalf("failed to create repo dir: %v", err)
+	}
+
+	runGitCLI(t, workspace, "init", "--bare", remotePath)
+	runGitCLI(t, repoPath, "init")
+	runGitCLI(t, repoPath, "config", "user.name", "Test User")
+	runGitCLI(t, repoPath, "config", "user.email", "test@example.com")
+
+	if err := os.WriteFile(filepath.Join(repoPath, "README.md"), []byte("initial\n"), 0o644); err != nil {
+		t.Fatalf("failed to write README: %v", err)
+	}
+	runGitCLI(t, repoPath, "add", "README.md")
+	runGitCLI(t, repoPath, "commit", "-m", "initial commit")
+	runGitCLI(t, repoPath, "branch", "-M", "main")
+	runGitCLI(t, repoPath, "remote", "add", "origin", remotePath)
+	runGitCLI(t, repoPath, "push", "-u", "origin", "main")
+
+	runGitCLI(t, repoPath, "checkout", "-b", "regen")
+	if err := os.WriteFile(filepath.Join(repoPath, "generated.txt"), []byte("auto\n"), 0o644); err != nil {
+		t.Fatalf("failed to write generated.txt: %v", err)
+	}
+	runGitCLI(t, repoPath, "add", "generated.txt")
+	runGitCLI(t, repoPath, "commit", "-m", "ci: automated update")
+	runGitCLI(t, repoPath, "push", "-u", "origin", "regen")
+
+	if err := os.WriteFile(filepath.Join(repoPath, "generated.txt"), []byte("manual change\n"), 0o644); err != nil {
+		t.Fatalf("failed to update generated.txt: %v", err)
+	}
+	runGitCLI(t, repoPath, "add", "generated.txt")
+	runGitCLI(t, repoPath, "commit", "-m", "feat: manual tweak")
+	runGitCLI(t, repoPath, "push", "origin", "regen")
+
+	runGitCLI(t, repoPath, "checkout", "main")
+
+	repo, err := git.PlainOpen(repoPath)
+	require.NoError(t, err)
+
+	g := Git{repo: repo}
+	runGitCLI(t, repoPath, "config", "pull.rebase", "false")
+
+	t.Setenv("GITHUB_WORKSPACE", workspace)
+	t.Setenv("INPUT_WORKING_DIRECTORY", "")
+
+	_, err = g.FindOrCreateBranch("regen", environment.ActionRunWorkflow)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "non-ci commits")
+}
+
+func TestGit_FindOrCreateBranch_BotCommitAllowed(t *testing.T) {
+	workspace := t.TempDir()
+	repoPath := filepath.Join(workspace, "repo")
+	remotePath := filepath.Join(workspace, "remote.git")
+
+	if err := os.MkdirAll(repoPath, 0o755); err != nil {
+		t.Fatalf("failed to create repo dir: %v", err)
+	}
+
+	runGitCLI(t, workspace, "init", "--bare", remotePath)
+	runGitCLI(t, repoPath, "init")
+	runGitCLI(t, repoPath, "config", "user.name", "Test User")
+	runGitCLI(t, repoPath, "config", "user.email", "test@example.com")
+
+	if err := os.WriteFile(filepath.Join(repoPath, "README.md"), []byte("initial\n"), 0o644); err != nil {
+		t.Fatalf("failed to write README: %v", err)
+	}
+	runGitCLI(t, repoPath, "add", "README.md")
+	runGitCLI(t, repoPath, "commit", "-m", "initial commit")
+	runGitCLI(t, repoPath, "branch", "-M", "main")
+	runGitCLI(t, repoPath, "remote", "add", "origin", remotePath)
+	runGitCLI(t, repoPath, "push", "-u", "origin", "main")
+
+	runGitCLI(t, repoPath, "checkout", "-b", "regen")
+	if err := os.WriteFile(filepath.Join(repoPath, "generated.txt"), []byte("auto\n"), 0o644); err != nil {
+		t.Fatalf("failed to write generated.txt: %v", err)
+	}
+	runGitCLI(t, repoPath, "add", "generated.txt")
+	runGitCLI(t, repoPath, "commit", "-m", "ci: automated update")
+	runGitCLI(t, repoPath, "push", "-u", "origin", "regen")
+
+	if err := os.WriteFile(filepath.Join(repoPath, "generated.txt"), []byte("bot change\n"), 0o644); err != nil {
+		t.Fatalf("failed to update generated.txt: %v", err)
+	}
+	runGitCLI(t, repoPath, "add", "generated.txt")
+	runGitCLIWithEnv(t, repoPath, map[string]string{
+		"GIT_AUTHOR_NAME":     speakeasyBotName,
+		"GIT_AUTHOR_EMAIL":    "bot@speakeasyapi.dev",
+		"GIT_COMMITTER_NAME":  speakeasyBotName,
+		"GIT_COMMITTER_EMAIL": "bot@speakeasyapi.dev",
+	}, "commit", "-m", "docs: automated")
+	runGitCLI(t, repoPath, "push", "origin", "regen")
+
+	runGitCLI(t, repoPath, "checkout", "main")
+
+	repo, err := git.PlainOpen(repoPath)
+	require.NoError(t, err)
+
+	g := Git{repo: repo}
+	runGitCLI(t, repoPath, "config", "pull.rebase", "false")
+
+	t.Setenv("GITHUB_WORKSPACE", workspace)
+	t.Setenv("INPUT_WORKING_DIRECTORY", "")
+
+	branch, err := g.FindOrCreateBranch("regen", environment.ActionRunWorkflow)
+	require.NoError(t, err)
+	assert.Equal(t, "regen", branch)
+}
+
+func TestGit_FindOrCreateBranch_BotAliasCommitAllowed(t *testing.T) {
+	workspace := t.TempDir()
+	repoPath := filepath.Join(workspace, "repo")
+	remotePath := filepath.Join(workspace, "remote.git")
+
+	if err := os.MkdirAll(repoPath, 0o755); err != nil {
+		t.Fatalf("failed to create repo dir: %v", err)
+	}
+
+	runGitCLI(t, workspace, "init", "--bare", remotePath)
+	runGitCLI(t, repoPath, "init")
+	runGitCLI(t, repoPath, "config", "user.name", "Test User")
+	runGitCLI(t, repoPath, "config", "user.email", "test@example.com")
+
+	if err := os.WriteFile(filepath.Join(repoPath, "README.md"), []byte("initial\n"), 0o644); err != nil {
+		t.Fatalf("failed to write README: %v", err)
+	}
+	runGitCLI(t, repoPath, "add", "README.md")
+	runGitCLI(t, repoPath, "commit", "-m", "initial commit")
+	runGitCLI(t, repoPath, "branch", "-M", "main")
+	runGitCLI(t, repoPath, "remote", "add", "origin", remotePath)
+	runGitCLI(t, repoPath, "push", "-u", "origin", "main")
+
+	runGitCLI(t, repoPath, "checkout", "-b", "regen")
+	if err := os.WriteFile(filepath.Join(repoPath, "generated.txt"), []byte("auto\n"), 0o644); err != nil {
+		t.Fatalf("failed to write generated.txt: %v", err)
+	}
+	runGitCLI(t, repoPath, "add", "generated.txt")
+	runGitCLI(t, repoPath, "commit", "-m", "ci: automated update")
+	runGitCLI(t, repoPath, "push", "-u", "origin", "regen")
+
+	if err := os.WriteFile(filepath.Join(repoPath, "generated.txt"), []byte("alias bot change\n"), 0o644); err != nil {
+		t.Fatalf("failed to update generated.txt: %v", err)
+	}
+	runGitCLI(t, repoPath, "add", "generated.txt")
+	runGitCLIWithEnv(t, repoPath, map[string]string{
+		"GIT_AUTHOR_NAME":     speakeasyBotAlias,
+		"GIT_AUTHOR_EMAIL":    "speakeasybot@speakeasy.com",
+		"GIT_COMMITTER_NAME":  speakeasyBotAlias,
+		"GIT_COMMITTER_EMAIL": "speakeasybot@speakeasy.com",
+	}, "commit", "-m", "docs: automated alias")
+	runGitCLI(t, repoPath, "push", "origin", "regen")
+
+	runGitCLI(t, repoPath, "checkout", "main")
+
+	repo, err := git.PlainOpen(repoPath)
+	require.NoError(t, err)
+
+	g := Git{repo: repo}
+	runGitCLI(t, repoPath, "config", "pull.rebase", "false")
+
+	t.Setenv("GITHUB_WORKSPACE", workspace)
+	t.Setenv("INPUT_WORKING_DIRECTORY", "")
+	t.Setenv("INPUT_FEATURE_BRANCH", "")
+
+	branch, err := g.FindOrCreateBranch("regen", environment.ActionRunWorkflow)
+	require.NoError(t, err)
+	assert.Equal(t, "regen", branch)
 }
 
 // Test source-branch-aware PR title generation

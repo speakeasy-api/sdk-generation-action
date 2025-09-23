@@ -27,8 +27,12 @@ func RunWorkflow() error {
 		return err
 	}
 
-	if err := SetupEnvironment(); err != nil {
-		return fmt.Errorf("failed to setup environment: %w", err)
+	if !environment.SkipCompile() {
+		if err := SetupEnvironment(); err != nil {
+			return fmt.Errorf("failed to setup environment: %w", err)
+		}
+	} else {
+		logging.Info("Skipping environment setup due to skip_compile input")
 	}
 
 	// The top-level CLI can always use latest. The CLI itself manages pinned versions.
@@ -60,7 +64,7 @@ func RunWorkflow() error {
 	var pr *github.PullRequest
 	if mode == environment.ModePR {
 		var err error
-		branchName, pr, err = g.FindExistingPR("", environment.ActionRunWorkflow, sourcesOnly)
+		branchName, pr, err = g.FindExistingPR(environment.GetFeatureBranch(), environment.ActionRunWorkflow, sourcesOnly)
 		if err != nil {
 			return err
 		}

@@ -41,6 +41,13 @@ type Git struct {
 	client      *github.Client
 }
 
+const (
+	speakeasyBotName  = "speakeasybot"
+	speakeasyBotAlias = "speakeasy-bot"
+)
+
+var managedAutomationUsers = []string{speakeasyBotName, speakeasyBotAlias}
+
 func New(accessToken string) *Git {
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
@@ -196,8 +203,9 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action, sourc
 		prTitle = getDocsPRTitlePrefix()
 	}
 
-	// For feature branches, include source branch context in title matching
-	if !isMainBranch {
+	if environment.GetFeatureBranch() != "" {
+		prTitle = prTitle + " [" + environment.GetFeatureBranch() + "]"
+	} else if !isMainBranch {
 		sanitizedSourceBranch := environment.SanitizeBranchName(sourceBranch)
 		prTitle = prTitle + " [" + sanitizedSourceBranch + "]"
 	}
@@ -210,7 +218,7 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action, sourc
 				return "", nil, fmt.Errorf("existing PR has different branch name: %s than expected: %s", p.GetHead().GetRef(), branchName)
 			}
 
-			// For feature branches, also verify the PR targets the correct base branch
+			// For non-main targetting branches, also verify the PR targets the correct base branch
 			if !isMainBranch {
 				expectedBaseBranch := environment.GetTargetBaseBranch()
 				actualBaseBranch := p.GetBase().GetRef()
@@ -298,6 +306,12 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 		return "", fmt.Errorf("error getting worktree: %w", err)
 	}
 
+	if branchName == "" {
+		if featureBranch := environment.GetFeatureBranch(); featureBranch != "" {
+			branchName = featureBranch
+		}
+	}
+
 	if branchName != "" {
 		defaultBranch, err := g.GetCurrentBranch()
 		if err != nil {
@@ -305,15 +319,30 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 			logging.Info("failed to get default branch: %s", err.Error())
 		}
 
-		branchName, err := g.FindAndCheckoutBranch(branchName)
-		if err != nil {
-			return "", err
+		existingBranch, err := g.FindAndCheckoutBranch(branchName)
+		if err == nil {
+			if err := g.ensureCIOnlyCommits(branchName, defaultBranch); err != nil {
+				return "", err
+			}
+
+			origin := fmt.Sprintf("origin/%s", defaultBranch)
+			if err = g.Reset("--hard", origin); err != nil {
+				// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
+				logging.Info("failed to reset branch: %s", err.Error())
+			}
+
+			return existingBranch, nil
 		}
 
-		origin := fmt.Sprintf("origin/%s", defaultBranch)
-		if err = g.Reset("--hard", origin); err != nil {
-			// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
-			logging.Info("failed to reset branch: %s", err.Error())
+		logging.Info("failed to checkout existing branch %s: %s", branchName, err.Error())
+		logging.Info("creating branch %s", branchName)
+
+		branchRef := plumbing.NewBranchReferenceName(branchName)
+		if err := w.Checkout(&git.CheckoutOptions{
+			Branch: branchRef,
+			Create: true,
+		}); err != nil {
+			return "", fmt.Errorf("error checking out branch: %w", err)
 		}
 
 		return branchName, nil
@@ -361,6 +390,82 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 	}
 
 	return branchName, nil
+}
+
+func (g *Git) ensureCIOnlyCommits(branchName, defaultBranch string) error {
+	if branchName == "" || defaultBranch == "" {
+		return nil
+	}
+
+	revSpec := fmt.Sprintf("origin/%s..%s", defaultBranch, branchName)
+	cmd := exec.Command("git", "log", revSpec, "--pretty=format:%H%x09%an%x09%cn%x09%s")
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Env = os.Environ()
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error checking outstanding commits on %s: %w %s", branchName, err, string(output))
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	var offending []string
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		parts := strings.SplitN(line, "\t", 4)
+		message := line
+		author := ""
+		committer := ""
+		if len(parts) >= 4 {
+			author = parts[1]
+			committer = parts[2]
+			message = parts[3]
+		} else if len(parts) == 3 {
+			author = parts[1]
+			message = parts[2]
+		} else if len(parts) == 2 {
+			message = parts[1]
+		}
+
+		trimmed := strings.TrimSpace(message)
+		if trimmed == "" {
+			continue
+		}
+
+		if isManagedAutomationCommit(author, committer) {
+			continue
+		}
+
+		if !strings.HasPrefix(strings.ToLower(trimmed), "ci") {
+			offending = append(offending, line)
+		}
+	}
+
+	if len(offending) > 0 {
+		return fmt.Errorf("branch %s contains non-ci commits ahead of origin/%s: %s", branchName, defaultBranch, strings.Join(offending, "; "))
+	}
+
+	return nil
+}
+
+func isManagedAutomationCommit(author, committer string) bool {
+	author = strings.ToLower(strings.TrimSpace(author))
+	committer = strings.ToLower(strings.TrimSpace(committer))
+	if author == "" || committer == "" {
+		return false
+	}
+
+	for _, user := range managedAutomationUsers {
+		name := strings.ToLower(strings.TrimSpace(user))
+		if author == name || committer == name {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (g *Git) GetCurrentBranch() (string, error) {
@@ -450,7 +555,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	if !environment.GetSignedCommits() {
 		commitHash, err := w.Commit(commitMessage, &git.CommitOptions{
 			Author: &object.Signature{
-				Name:  "speakeasybot",
+				Name:  speakeasyBotName,
 				Email: "bot@speakeasyapi.dev",
 				When:  time.Now(),
 			},
@@ -726,7 +831,9 @@ func (g *Git) generatePRTitleAndBody(info PRInfo, labelTypes map[string]github.L
 	// Add source branch context for feature branches
 	sourceBranch := environment.GetSourceBranch()
 	isMainBranch := environment.IsMainBranch(sourceBranch)
-	if !isMainBranch {
+	if environment.GetFeatureBranch() != "" {
+		title = title + " [" + environment.GetFeatureBranch() + "]"
+	} else if !isMainBranch {
 		sanitizedSourceBranch := environment.SanitizeBranchName(sourceBranch)
 		title = title + " [" + sanitizedSourceBranch + "]"
 	}

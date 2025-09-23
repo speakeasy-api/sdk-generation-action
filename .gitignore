@@ -7,3 +7,4 @@ bin/
 output.txt
 openapi/
 *.iml
+.run
