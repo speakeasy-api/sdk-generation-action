@@ -66,6 +66,10 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		args = append(args, "--skip-testing")
 	}
 
+	if environment.SkipCompile() {
+		args = append(args, "--skip-compile")
+	}
+
 	if environment.ForceGeneration() {
 		fmt.Println("\nforce input enabled - setting SPEAKEASY_FORCE_GENERATION=true")
 		os.Setenv("SPEAKEASY_FORCE_GENERATION", "true")

@@ -91,6 +91,15 @@ on:
         default: false
         required: false
         type: boolean
+      skip_compile:
+        description: "Skip environment setup and Speakeasy compile steps when generating."
+        default: false
+        required: false
+        type: boolean
+      feature_branch:
+        description: "The branch that represents the SDK feature. Will be upserted when manually dispatching the workflow."
+        required: false
+        type: string
       poetry_version:
         description: "Version of poetry to install. Not recommended for use without consulting Speakeasy support."
         required: false
@@ -242,6 +251,8 @@ jobs:
           registry_tags: ${{ inputs.registry_tags }}
           push_code_samples_only: ${{ inputs.push_code_samples }}
           set_version: ${{ inputs.set_version }}
+          skip_compile: ${{ inputs.skip_compile }}
+          feature_branch: ${{ inputs.feature_branch }}
           cli_environment_variables: ${{ inputs.environment }}
           pnpm_version: ${{ inputs.pnpm_version }}
           poetry_version: ${{ inputs.poetry_version }}
