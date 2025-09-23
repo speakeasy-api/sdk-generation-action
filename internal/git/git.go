@@ -245,47 +245,6 @@ func (g *Git) FindAndCheckoutBranch(branchName string) (string, error) {
 		return "", fmt.Errorf("error getting worktree: %w", err)
 	}
 
-	// Debug: Check worktree status before checkout
-	status, err := w.Status()
-	if err != nil {
-		logging.Debug("Warning: Could not get worktree status: %v", err)
-	} else {
-		logging.Debug("Worktree status before checkout: %d files", len(status))
-		if len(status) > 0 {
-			var unstagedFiles []string
-			var stagedFiles []string
-
-			for file, fileStatus := range status {
-				logging.Debug("  %s: worktree=%v, staging=%v", file, fileStatus.Worktree, fileStatus.Staging)
-
-				// Check for unstaged changes (worktree status is not Unmodified)
-				if fileStatus.Worktree != git.Unmodified {
-					unstagedFiles = append(unstagedFiles, file)
-				}
-
-				// Check for staged changes (staging status is not Unmodified)
-				if fileStatus.Staging != git.Unmodified {
-					stagedFiles = append(stagedFiles, file)
-				}
-			}
-
-			if len(unstagedFiles) > 0 {
-				logging.Debug("Files with UNSTAGED changes: %v", unstagedFiles)
-			}
-			if len(stagedFiles) > 0 {
-				logging.Debug("Files with STAGED changes: %v", stagedFiles)
-			}
-		}
-	}
-
-	// Debug: Check current branch
-	head, err := g.repo.Head()
-	if err != nil {
-		logging.Debug("Warning: Could not get current HEAD: %v", err)
-	} else {
-		logging.Debug("Current HEAD: %s", head.Name().Short())
-	}
-
 	r, err := g.repo.Remote("origin")
 	if err != nil {
 		return "", fmt.Errorf("error getting remote: %w", err)
@@ -301,46 +260,9 @@ func (g *Git) FindAndCheckoutBranch(branchName string) (string, error) {
 
 	branchRef := plumbing.NewBranchReferenceName(branchName)
 
-	logging.Debug("Attempting to checkout branch: %s (ref: %s)", branchName, branchRef.String())
-
 	if err := w.Checkout(&git.CheckoutOptions{
 		Branch: branchRef,
 	}); err != nil {
-		// Additional debug info on checkout failure
-		logging.Error("Checkout failed for branch %s: %v", branchName, err)
-
-		// Try to get more detailed status
-		if status, statusErr := w.Status(); statusErr == nil && len(status) > 0 {
-			logging.Debug("Detailed worktree status on checkout failure:")
-			var unstagedFiles []string
-			for file, fileStatus := range status {
-				logging.Debug("  %s: worktree=%v, staging=%v", file, fileStatus.Worktree, fileStatus.Staging)
-				if fileStatus.Worktree != git.Unmodified {
-					unstagedFiles = append(unstagedFiles, file)
-				}
-			}
-
-			// If checkout failed due to unstaged changes, try to handle it
-			if len(unstagedFiles) > 0 && strings.Contains(err.Error(), "unstaged changes") {
-				logging.Debug("Checkout failed due to unstaged changes. Attempting to resolve...")
-
-				// Try to stash unstaged changes and then checkout
-				if stashErr := g.stashUnstagedChanges(); stashErr != nil {
-					logging.Error("Failed to stash unstaged changes: %v", stashErr)
-				} else {
-					logging.Debug("Stashed unstaged changes, retrying checkout...")
-					if retryErr := w.Checkout(&git.CheckoutOptions{
-						Branch: branchRef,
-					}); retryErr != nil {
-						logging.Error("Retry checkout still failed: %v", retryErr)
-					} else {
-						logging.Debug("Successfully checked out branch %s after stashing", branchName)
-						return branchName, nil
-					}
-				}
-			}
-		}
-
 		return "", fmt.Errorf("error checking out branch: %w", err)
 	}
 
@@ -504,60 +426,13 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	logging.Info("Commit and pushing changes to git")
 	logging.Debug("Starting CommitAndPush with action: %s, sourcesOnly: %t", action, sourcesOnly)
-
-	// Debug: Check worktree status before git add
-	statusBeforeAdd, err := w.Status()
-	if err != nil {
-		logging.Debug("Warning: Could not get worktree status before git add: %v", err)
-	} else {
-		logging.Debug("Worktree status BEFORE git add: %d files", len(statusBeforeAdd))
-		var unstagedFiles []string
-		for file, fileStatus := range statusBeforeAdd {
-			if fileStatus.Worktree != git.Unmodified {
-				unstagedFiles = append(unstagedFiles, file)
-			}
-		}
-		if len(unstagedFiles) > 0 {
-			logging.Debug("Files with UNSTAGED changes before git add: %v", unstagedFiles)
-		}
-	}
-
-	logging.Info("Running git add .")
 	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
-	// Debug: Check worktree status after git add
-	statusAfterAdd, err := w.Status()
-	if err != nil {
-		logging.Debug("Warning: Could not get worktree status after git add: %v", err)
-	} else {
-		logging.Debug("Worktree status AFTER git add: %d files", len(statusAfterAdd))
-		var unstagedFiles []string
-		var stagedFiles []string
-		for file, fileStatus := range statusAfterAdd {
-			if fileStatus.Worktree != git.Unmodified {
-				unstagedFiles = append(unstagedFiles, file)
-			}
-			if fileStatus.Staging != git.Unmodified {
-				stagedFiles = append(stagedFiles, file)
-			}
-		}
-		if len(unstagedFiles) > 0 {
-			logging.Debug("Files STILL UNSTAGED after git add: %v", unstagedFiles)
-
-			// For signed commits, we need to ensure all files are staged or the process will fail
-			if signedCommitsEnabled := environment.GetSignedCommits(); signedCommitsEnabled {
-				logging.Debug("Signed commits enabled - attempting final staging of unstaged files")
-				if err := g.forceStageRemainingFiles(unstagedFiles); err != nil {
-					logging.Error("Failed to stage remaining files for signed commit: %v", err)
-					// Continue anyway - the signed commit process will handle this
-				}
-			}
-		}
-		if len(stagedFiles) > 0 {
-			logging.Debug("Files STAGED after git add: %v", stagedFiles)
-		}
+	// For signed commits, ensure all files are properly staged
+	if environment.GetSignedCommits() {
+		g.ensureFilesStaged(w)
 	}
 	logging.Info("INPUT_ENABLE_SDK_CHANGELOG is %s", environment.GetSDKChangelog())
 
@@ -578,11 +453,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	}
 
 	// Create commit message
-	signedCommitsEnabled := environment.GetSignedCommits()
-	logging.Debug("Signed commits enabled: %t", signedCommitsEnabled)
-
-	if !signedCommitsEnabled {
-		logging.Debug("Using standard commit flow (unsigned commits)")
+	if !environment.GetSignedCommits() {
 		commitHash, err := w.Commit(commitMessage, &git.CommitOptions{
 			Author: &object.Signature{
 				Name:  "speakeasybot",
@@ -592,20 +463,15 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 			All: true,
 		})
 		if err != nil {
-			logging.Error("Failed to create unsigned commit: %v", err)
 			return "", fmt.Errorf("error committing changes: %w", err)
 		}
-		logging.Debug("Created unsigned commit with hash: %s", commitHash.String())
 
-		logging.Debug("Pushing unsigned commit to remote")
 		if err := g.repo.Push(&git.PushOptions{
 			Auth:  getGithubAuth(g.accessToken),
 			Force: true, // This is necessary because at the beginning of the workflow we reset the branch
 		}); err != nil {
-			logging.Error("Failed to push unsigned commit: %v", err)
 			return "", pushErr(err)
 		}
-		logging.Debug("Successfully pushed unsigned commit")
 		return commitHash.String(), nil
 	}
 
@@ -827,31 +693,27 @@ func (g *Git) verifyAndRetryStaging() error {
 
 	logging.Debug("Found %d unstaged files, attempting to stage them individually", len(unstagedFiles))
 
+	var successfullyStaged int
+	var failedToStage []string
+
 	// Try to stage each unstaged file individually
 	for _, file := range unstagedFiles {
-		logging.Debug("Attempting to stage file: %s", file)
-
 		// First, check if the file actually exists and get its info
 		filePath := filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory(), file)
-		fileInfo, err := os.Stat(filePath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				logging.Debug("File %s does not exist, attempting to stage as deletion", file)
-				// Try to stage as a deletion
-				cmd := exec.Command("git", "add", file)
-				cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
-				cmd.Env = os.Environ()
-				output, err := cmd.CombinedOutput()
-				if err != nil {
-					logging.Debug("Failed to stage deleted file %s: %v, output: %s", file, err, string(output))
-				} else {
-					logging.Debug("Successfully staged deleted file: %s", file)
-				}
-				continue
+		_, err := os.Stat(filePath)
+		if err != nil && os.IsNotExist(err) {
+			// Try to stage as a deletion
+			cmd := exec.Command("git", "add", file)
+			cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+			cmd.Env = os.Environ()
+			_, err := cmd.CombinedOutput()
+			if err != nil {
+				logging.Debug("Failed to stage deleted file %s: %v", file, err)
+				failedToStage = append(failedToStage, file)
+			} else {
+				successfullyStaged++
 			}
-			logging.Debug("Could not stat file %s: %v", file, err)
-		} else {
-			logging.Debug("File %s exists, size: %d bytes, mode: %s", file, fileInfo.Size(), fileInfo.Mode())
+			continue
 		}
 
 		// Try multiple staging strategies
@@ -866,48 +728,42 @@ func (g *Git) verifyAndRetryStaging() error {
 		}
 
 		staged := false
-		var lastError error
-		var lastOutput string
 
-		for i, strategy := range strategies {
-			logging.Debug("Trying strategy %d (%s) for file %s", i+1, strategy.name, file)
-
+		for _, strategy := range strategies {
 			cmd := exec.Command("git", strategy.args...)
 			cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 			cmd.Env = os.Environ()
-			output, err := cmd.CombinedOutput()
-
-			lastError = err
-			lastOutput = string(output)
+			_, err := cmd.CombinedOutput()
 
 			if err != nil {
-				logging.Debug("Strategy %d (%s) failed for file %s: %v, output: %s", i+1, strategy.name, file, err, string(output))
 				continue
 			}
 
 			// Check if the file is now staged
 			newStatus, err := w.Status()
 			if err != nil {
-				logging.Debug("Could not verify staging status for file %s: %v", file, err)
 				continue
 			}
 
 			if fileStatus, exists := newStatus[file]; !exists || fileStatus.Worktree == git.Unmodified {
-				logging.Debug("Successfully staged file %s using strategy %d (%s)", file, i+1, strategy.name)
 				staged = true
+				successfullyStaged++
 				break
-			} else {
-				logging.Debug("File %s still unstaged after strategy %d (%s): worktree=%v, staging=%v",
-					file, i+1, strategy.name, fileStatus.Worktree, fileStatus.Staging)
 			}
 		}
 
 		if !staged {
-			logging.Debug("Warning: Could not stage file %s with any strategy. Last error: %v, output: %s", file, lastError, lastOutput)
-
+			failedToStage = append(failedToStage, file)
 			// Try to get more information about why this file can't be staged
 			g.debugUnstageableFile(file)
 		}
+	}
+
+	if successfullyStaged > 0 {
+		logging.Debug("Successfully staged %d files individually", successfullyStaged)
+	}
+	if len(failedToStage) > 0 {
+		logging.Debug("Failed to stage %d files: %v", len(failedToStage), failedToStage)
 	}
 
 	return nil
@@ -1011,6 +867,28 @@ func (g *Git) stashUnstagedChanges() error {
 	}
 
 	return nil
+}
+
+// ensureFilesStaged checks for unstaged files and attempts to stage them for signed commits
+func (g *Git) ensureFilesStaged(w *git.Worktree) {
+	status, err := w.Status()
+	if err != nil {
+		return
+	}
+
+	var unstagedFiles []string
+	for file, fileStatus := range status {
+		if fileStatus.Worktree != git.Unmodified {
+			unstagedFiles = append(unstagedFiles, file)
+		}
+	}
+
+	if len(unstagedFiles) > 0 {
+		logging.Debug("Warning: %d files still unstaged after git add, attempting final staging for signed commits", len(unstagedFiles))
+		if err := g.forceStageRemainingFiles(unstagedFiles); err != nil {
+			logging.Error("Failed to stage remaining files for signed commit: %v", err)
+		}
+	}
 }
 
 type PRInfo struct {
@@ -1466,28 +1344,6 @@ func (g *Git) MergeBranch(branchName string) (string, error) {
 
 	logging.Info("Merging branch %s", branchName)
 
-	// Debug: Check worktree status before checkout
-	status, err := w.Status()
-	if err != nil {
-		logging.Debug("Warning: Could not get worktree status before merge checkout: %v", err)
-	} else {
-		logging.Debug("Worktree status before merge checkout: %d files", len(status))
-		if len(status) > 0 {
-			logging.Info("Worktree has changes before merge checkout:")
-			for file, fileStatus := range status {
-				logging.Debug("  %s: worktree=%v, staging=%v", file, fileStatus.Worktree, fileStatus.Staging)
-			}
-		}
-	}
-
-	// Debug: Check current branch
-	head, err := g.repo.Head()
-	if err != nil {
-		logging.Debug("Warning: Could not get current HEAD before merge checkout: %v", err)
-	} else {
-		logging.Debug("Current HEAD before merge checkout: %s", head.Name().Short())
-	}
-
 	targetRef := environment.GetRef()
 	logging.Debug("Attempting to checkout target branch for merge: %s", targetRef)
 
@@ -1501,10 +1357,7 @@ func (g *Git) MergeBranch(branchName string) (string, error) {
 
 		// Additional debug info on checkout failure
 		if status, statusErr := w.Status(); statusErr == nil && len(status) > 0 {
-			logging.Debug("Detailed worktree status on merge checkout failure:")
-			for file, fileStatus := range status {
-				logging.Debug("  %s: worktree=%v, staging=%v", file, fileStatus.Worktree, fileStatus.Staging)
-			}
+			logging.Debug("Merge checkout failure: %d files with changes", len(status))
 		}
 
 		return "", fmt.Errorf("error checking out branch: %w", err)
