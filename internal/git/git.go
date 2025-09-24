@@ -531,7 +531,7 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	logging.Info("Commit and pushing changes to git")
 	logging.Debug("Starting CommitAndPush with action: %s, sourcesOnly: %t", action, sourcesOnly)
-	if err := g.Add("."); err != nil {
+	if err := g.Add("-A"); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
