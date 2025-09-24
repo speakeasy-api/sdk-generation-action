@@ -274,7 +274,7 @@ func (g *Git) FindAndCheckoutBranch(branchName string) (string, error) {
 		return "", fmt.Errorf("error checking out branch: %w", err)
 	}
 
-	logging.Debug("Successfully checked out branch %s", branchName)
+	logging.Info("Found existing branch %s", branchName)
 
 	return branchName, nil
 }
@@ -520,7 +520,6 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	// In test mode do not commit and push, just move forward
 	if environment.IsTestMode() {
-		logging.Debug("Test mode enabled, skipping commit and push")
 		return "", nil
 	}
 
@@ -530,11 +529,10 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	}
 
 	logging.Info("Commit and pushing changes to git")
-	logging.Debug("Starting CommitAndPush with action: %s, sourcesOnly: %t", action, sourcesOnly)
-	if err := g.Add("-A"); err != nil {
+
+	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
-
 	logging.Info("INPUT_ENABLE_SDK_CHANGELOG is %s", environment.GetSDKChangelog())
 
 	var commitMessage string
@@ -576,36 +574,28 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return commitHash.String(), nil
 	}
 
-	logging.Debug("Using signed commit flow via GitHub API")
-
 	branch, err := g.GetCurrentBranch()
 	if err != nil {
 		return "", fmt.Errorf("error getting current branch: %w", err)
 	}
-	logging.Debug("Current branch: %s", branch)
 
 	// Get status of changed files
 	status, err := w.Status()
 	if err != nil {
 		return "", fmt.Errorf("error getting status for branch: %w", err)
 	}
-	logging.Debug("Git status contains %d files", len(status))
 
 	// Get repo head commit
 	head, err := g.repo.Head()
 	if err != nil {
 		return "", fmt.Errorf("error getting repo head commit: %w", err)
 	}
-	logging.Debug("Head reference: %s, Hash: %s", head.Name(), head.Hash().String())
 
 	// Create reference on remote if it doesn't exist
-	logging.Debug("Attempting to get or create reference for: %s", string(head.Name()))
 	ref, err := g.getOrCreateRef(string(head.Name()))
 	if err != nil {
-		logging.Error("Failed to get or create reference for %s: %v", string(head.Name()), err)
 		return "", fmt.Errorf("error getting reference: %w", err)
 	}
-	logging.Debug("Successfully got/created reference: %s with SHA: %s", ref.GetRef(), ref.GetObject().GetSHA())
 
 	// Create new tree with SHA of last commit
 	tree, err := g.createAndPushTree(ref, status)
@@ -615,58 +605,31 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 
 	_, githubRepoLocation := g.getRepoMetadata()
 	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
-	logging.Debug("Repository metadata - Owner: %s, Repo: %s, Location: %s", owner, repo, githubRepoLocation)
 
 	// Get parent commit
-	logging.Debug("Getting parent commit with SHA: %s", *ref.Object.SHA)
 	parentCommit, _, err := g.client.Git.GetCommit(context.Background(), owner, repo, *ref.Object.SHA)
 	if err != nil {
-		logging.Error("Failed to get parent commit for SHA %s: %v", *ref.Object.SHA, err)
 		return "", fmt.Errorf("error getting parent commit: %w", err)
 	}
-	logging.Debug("Successfully retrieved parent commit: %s", parentCommit.GetSHA())
 
 	// Commit changes
-	logging.Debug("Creating signed commit via GitHub API with message: %s", commitMessage)
-	logging.Debug("Tree SHA: %s, Parent commit SHA: %s", tree.GetSHA(), parentCommit.GetSHA())
 	commitResult, _, err := g.client.Git.CreateCommit(context.Background(), owner, repo, &github.Commit{
 		Message: github.String(commitMessage),
 		Tree:    &github.Tree{SHA: tree.SHA},
 		Parents: []*github.Commit{parentCommit},
 	}, &github.CreateCommitOptions{})
 	if err != nil {
-		logging.Error("Failed to create signed commit via GitHub API: %v", err)
 		return "", fmt.Errorf("error committing changes: %w", err)
 	}
-	logging.Debug("Successfully created signed commit with SHA: %s", commitResult.GetSHA())
 
 	// Update reference
 	newRef := &github.Reference{
 		Ref:    github.String("refs/heads/" + branch),
 		Object: &github.GitObject{SHA: commitResult.SHA},
 	}
-	logging.Debug("Updating reference %s to point to commit %s", "refs/heads/"+branch, commitResult.GetSHA())
-	_, _, err = g.client.Git.UpdateRef(context.Background(), owner, repo, newRef, true)
-	if err != nil {
-		logging.Error("Failed to update reference %s to commit %s: %v", "refs/heads/"+branch, commitResult.GetSHA(), err)
-		return "", fmt.Errorf("error updating reference: %w", err)
-	}
-	logging.Debug("Successfully updated reference %s to commit %s", "refs/heads/"+branch, commitResult.GetSHA())
+	g.client.Git.UpdateRef(context.Background(), owner, repo, newRef, true)
 
 	return *commitResult.SHA, nil
-}
-
-// normalizeRefForAPI ensures a ref is in fully-formed format (refs/heads/branch-name) for GitHub API calls
-func normalizeRefForAPI(ref string) string {
-	if ref == "" {
-		return ref
-	}
-	// If already a fully-formed ref, return as-is
-	if strings.HasPrefix(ref, "refs/") {
-		return ref
-	}
-	// Convert branch name to fully-formed ref
-	return "refs/heads/" + ref
 }
 
 // getOrCreateRef returns the commit branch reference object if it exists or creates it
@@ -674,42 +637,25 @@ func normalizeRefForAPI(ref string) string {
 func (g *Git) getOrCreateRef(commitRef string) (ref *github.Reference, err error) {
 	_, githubRepoLocation := g.getRepoMetadata()
 	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
-	environmentRef := normalizeRefForAPI(environment.GetRef())
+	environmentRef := environment.GetRef()
 
-	logging.Debug("getOrCreateRef called with commitRef: %s", commitRef)
-	logging.Debug("Repository: %s/%s, Environment ref: %s", owner, repo, environmentRef)
-
-	// Try to get existing reference
-	logging.Debug("Attempting to get existing reference: %s", commitRef)
 	if ref, _, err = g.client.Git.GetRef(context.Background(), owner, repo, commitRef); err == nil {
-		logging.Debug("Found existing reference: %s with SHA: %s", ref.GetRef(), ref.GetObject().GetSHA())
 		return ref, nil
 	}
-	logging.Debug("Reference %s not found, error: %v", commitRef, err)
 
 	// We consider that an error means the branch has not been found and needs to
 	// be created.
 	if commitRef == environmentRef {
-		logging.Error("Commit branch does not exist but base-branch (%s) is the same as commit-branch (%s)", environmentRef, commitRef)
 		return nil, errors.New("the commit branch does not exist but `-base-branch` is the same as `-commit-branch`")
 	}
 
-	logging.Debug("Creating new reference from base ref: %s", environmentRef)
 	var baseRef *github.Reference
 	if baseRef, _, err = g.client.Git.GetRef(context.Background(), owner, repo, environmentRef); err != nil {
-		logging.Error("Failed to get base reference %s: %v", environmentRef, err)
 		return nil, err
 	}
-	logging.Debug("Base reference found: %s with SHA: %s", baseRef.GetRef(), baseRef.GetObject().GetSHA())
 
 	newRef := &github.Reference{Ref: github.String(commitRef), Object: &github.GitObject{SHA: baseRef.Object.SHA}}
-	logging.Debug("Creating new reference: %s with SHA: %s", commitRef, baseRef.GetObject().GetSHA())
 	ref, _, err = g.client.Git.CreateRef(context.Background(), owner, repo, newRef)
-	if err != nil {
-		logging.Error("Failed to create reference %s: %v", commitRef, err)
-		return nil, err
-	}
-	logging.Debug("Successfully created reference: %s", ref.GetRef())
 	return ref, err
 }
 
@@ -745,11 +691,10 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 
 func (g *Git) Add(arg string) error {
 	// We execute this manually because go-git doesn't properly support gitignore
-	cmd := exec.Command("git", "add", "--renormalize", arg)
+	cmd := exec.Command("git", "add", arg)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
-	logging.Debug("Output of `git add`: %s", string(output))
 	if err != nil {
 		return fmt.Errorf("error running `git add %s`: %w %s", arg, err, string(output))
 	}
@@ -1212,26 +1157,13 @@ func (g *Git) MergeBranch(branchName string) (string, error) {
 
 	logging.Info("Merging branch %s", branchName)
 
-	targetRef := environment.GetRef()
-	logging.Debug("Attempting to checkout target branch for merge: %s", targetRef)
-
-	// Checkout target branch - strip refs/heads/ prefix since plumbing.ReferenceName will add it back
-	targetBranch := strings.TrimPrefix(targetRef, "refs/heads/")
+	// Checkout target branch
 	if err := w.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.ReferenceName("refs/heads/" + targetBranch),
+		Branch: plumbing.ReferenceName(environment.GetRef()),
 		Create: false,
 	}); err != nil {
-		logging.Error("Failed to checkout target branch %s: %v", targetRef, err)
-
-		// Additional debug info on checkout failure
-		if status, statusErr := w.Status(); statusErr == nil && len(status) > 0 {
-			logging.Debug("Merge checkout failure: %d files with changes", len(status))
-		}
-
 		return "", fmt.Errorf("error checking out branch: %w", err)
 	}
-
-	logging.Debug("Successfully checked out target branch %s for merge", targetRef)
 
 	output, err := runGitCommand("merge", branchName)
 	if err != nil {
