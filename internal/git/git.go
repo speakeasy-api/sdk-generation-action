@@ -744,6 +744,14 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 }
 
 func (g *Git) Add(arg string) error {
+	// Ensure we remove deleted files from index first
+	cleanup := exec.Command("bash", "-c", "git ls-files --deleted -z | xargs -0 git rm --cached --ignore-unmatch")
+	cleanup.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cleanup.Env = os.Environ()
+	if out, err := cleanup.CombinedOutput(); err != nil {
+		logging.Debug("Cleanup of deleted files failed (non-fatal): %s", string(out))
+	}
+
 	// We execute this manually because go-git doesn't properly support gitignore
 	cmd := exec.Command("git", "add", "--renormalize", arg)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
