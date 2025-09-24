@@ -535,6 +535,10 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", fmt.Errorf("error adding changes: %w", err)
 	}
 
+	// For signed commits, ensure all files are properly staged
+	if environment.GetSignedCommits() {
+		g.ensureFilesStaged(w)
+	}
 	logging.Info("INPUT_ENABLE_SDK_CHANGELOG is %s", environment.GetSDKChangelog())
 
 	var commitMessage string
@@ -754,7 +758,242 @@ func (g *Git) Add(arg string) error {
 		return fmt.Errorf("error running `git add %s`: %w %s", arg, err, string(output))
 	}
 
+	// Verify all files are staged and retry individual files if needed
+	if err := g.verifyAndRetryStaging(); err != nil {
+		logging.Debug("Warning: Some files may not have been staged properly: %v", err)
+		// Continue execution - don't fail the entire process for staging issues
+	}
+
 	return nil
+}
+
+// verifyAndRetryStaging checks if all modified files are staged and retries staging for unstaged files
+func (g *Git) verifyAndRetryStaging() error {
+	if g.repo == nil {
+		return fmt.Errorf("repo not initialized")
+	}
+
+	w, err := g.repo.Worktree()
+	if err != nil {
+		return fmt.Errorf("error getting worktree: %w", err)
+	}
+
+	status, err := w.Status()
+	if err != nil {
+		return fmt.Errorf("error getting status: %w", err)
+	}
+
+	var unstagedFiles []string
+	for file, fileStatus := range status {
+		// Check if file has unstaged changes (worktree is not Unmodified)
+		if fileStatus.Worktree != git.Unmodified {
+			unstagedFiles = append(unstagedFiles, file)
+		}
+	}
+
+	if len(unstagedFiles) == 0 {
+		logging.Debug("All files are properly staged")
+		return nil
+	}
+
+	logging.Debug("Found %d unstaged files, attempting to stage them individually", len(unstagedFiles))
+
+	var successfullyStaged int
+	var failedToStage []string
+
+	// Try to stage each unstaged file individually
+	for _, file := range unstagedFiles {
+		// First, check if the file actually exists and get its info
+		filePath := filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory(), file)
+		_, err := os.Stat(filePath)
+		if err != nil && os.IsNotExist(err) {
+			// Try to stage as a deletion
+			cmd := exec.Command("git", "add", file)
+			cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+			cmd.Env = os.Environ()
+			_, err := cmd.CombinedOutput()
+			if err != nil {
+				logging.Debug("Failed to stage deleted file %s: %v", file, err)
+				failedToStage = append(failedToStage, file)
+			} else {
+				successfullyStaged++
+			}
+			continue
+		}
+
+		// Try multiple staging strategies
+		strategies := []struct {
+			name string
+			args []string
+		}{
+			{"force-add", []string{"add", "--force", file}},
+			{"simple-add", []string{"add", file}},
+			{"add-all-file", []string{"add", "--all", file}},
+			{"add-intent", []string{"add", "--intent-to-add", file}},
+		}
+
+		staged := false
+
+		for _, strategy := range strategies {
+			cmd := exec.Command("git", strategy.args...)
+			cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+			cmd.Env = os.Environ()
+			_, err := cmd.CombinedOutput()
+
+			if err != nil {
+				continue
+			}
+
+			// Check if the file is now staged
+			newStatus, err := w.Status()
+			if err != nil {
+				continue
+			}
+
+			if fileStatus, exists := newStatus[file]; !exists || fileStatus.Worktree == git.Unmodified {
+				staged = true
+				successfullyStaged++
+				break
+			}
+		}
+
+		if !staged {
+			failedToStage = append(failedToStage, file)
+			// Try to get more information about why this file can't be staged
+			g.debugUnstageableFile(file)
+		}
+	}
+
+	if successfullyStaged > 0 {
+		logging.Debug("Successfully staged %d files individually", successfullyStaged)
+	}
+	if len(failedToStage) > 0 {
+		logging.Debug("Failed to stage %d files: %v", len(failedToStage), failedToStage)
+	}
+
+	return nil
+}
+
+// debugUnstageableFile provides additional debugging information for files that can't be staged
+func (g *Git) debugUnstageableFile(file string) {
+	logging.Debug("Debugging unstageable file: %s", file)
+
+	workingDir := filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+
+	// Check git status for this specific file
+	cmd := exec.Command("git", "status", "--porcelain", file)
+	cmd.Dir = workingDir
+	cmd.Env = os.Environ()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logging.Debug("git status failed for %s: %v", file, err)
+	} else {
+		logging.Debug("git status for %s: %s", file, strings.TrimSpace(string(output)))
+	}
+
+	// Check if file is in .gitignore
+	cmd = exec.Command("git", "check-ignore", file)
+	cmd.Dir = workingDir
+	cmd.Env = os.Environ()
+	output, err = cmd.CombinedOutput()
+	if err == nil {
+		logging.Debug("File %s is ignored by .gitignore: %s", file, strings.TrimSpace(string(output)))
+	}
+
+	// Check file permissions
+	filePath := filepath.Join(workingDir, file)
+	if fileInfo, err := os.Stat(filePath); err == nil {
+		logging.Debug("File %s permissions: %s", file, fileInfo.Mode())
+	}
+
+	// Try git ls-files to see if it's tracked
+	cmd = exec.Command("git", "ls-files", file)
+	cmd.Dir = workingDir
+	cmd.Env = os.Environ()
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		logging.Debug("git ls-files failed for %s: %v", file, err)
+	} else if len(strings.TrimSpace(string(output))) == 0 {
+		logging.Debug("File %s is not tracked by git", file)
+	} else {
+		logging.Debug("File %s is tracked: %s", file, strings.TrimSpace(string(output)))
+	}
+}
+
+// forceStageRemainingFiles attempts to stage files that weren't staged by the initial git add
+func (g *Git) forceStageRemainingFiles(unstagedFiles []string) error {
+	if len(unstagedFiles) == 0 {
+		return nil
+	}
+
+	logging.Debug("Force staging %d remaining unstaged files", len(unstagedFiles))
+
+	// Try a final git add --all to catch any remaining files
+	cmd := exec.Command("git", "add", "--all")
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Env = os.Environ()
+	output, err := cmd.CombinedOutput()
+	logging.Debug("Output of `git add --all`: %s", string(output))
+
+	if err != nil {
+		logging.Debug("git add --all failed: %v, trying individual files", err)
+
+		// If --all fails, try each file individually with --force
+		for _, file := range unstagedFiles {
+			cmd := exec.Command("git", "add", "--force", file)
+			cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+			cmd.Env = os.Environ()
+			output, err := cmd.CombinedOutput()
+
+			if err != nil {
+				logging.Debug("Failed to force add file %s: %v, output: %s", file, err, string(output))
+			} else {
+				logging.Debug("Successfully force added file: %s", file)
+			}
+		}
+	}
+
+	return nil
+}
+
+// stashUnstagedChanges attempts to stash any unstaged changes to allow checkout
+func (g *Git) stashUnstagedChanges() error {
+	logging.Debug("Attempting to stash unstaged changes")
+
+	cmd := exec.Command("git", "stash", "push", "--include-untracked", "--message", "speakeasy-action-temp-stash")
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Env = os.Environ()
+	output, err := cmd.CombinedOutput()
+
+	logging.Debug("Output of `git stash`: %s", string(output))
+
+	if err != nil {
+		return fmt.Errorf("failed to stash changes: %w, output: %s", err, string(output))
+	}
+
+	return nil
+}
+
+// ensureFilesStaged checks for unstaged files and attempts to stage them for signed commits
+func (g *Git) ensureFilesStaged(w *git.Worktree) {
+	status, err := w.Status()
+	if err != nil {
+		return
+	}
+
+	var unstagedFiles []string
+	for file, fileStatus := range status {
+		if fileStatus.Worktree != git.Unmodified {
+			unstagedFiles = append(unstagedFiles, file)
+		}
+	}
+
+	if len(unstagedFiles) > 0 {
+		logging.Debug("Warning: %d files still unstaged after git add, attempting final staging for signed commits", len(unstagedFiles))
+		if err := g.forceStageRemainingFiles(unstagedFiles); err != nil {
+			logging.Error("Failed to stage remaining files for signed commit: %v", err)
+		}
+	}
 }
 
 type PRInfo struct {
