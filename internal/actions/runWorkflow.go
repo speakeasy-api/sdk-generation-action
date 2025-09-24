@@ -204,9 +204,19 @@ func RunWorkflow() error {
 	return nil
 }
 
-func shouldDeleteBranch(isSuccess bool) bool {
-	isDirectMode := environment.GetMode() == environment.ModeDirect
-	return !environment.IsDebugMode() && !environment.IsTestMode() && (isDirectMode || !isSuccess)
+func shouldDeleteBranch(success bool) bool {
+	// Never delete when operating on a user-provided feature branch
+	if environment.GetFeatureBranch() != "" {
+		return false
+	}
+
+	// Keep branches during debug or test runs
+	if environment.IsDebugMode() || environment.IsTestMode() {
+		return false
+	}
+
+	// Delete in direct mode or when the run was unsuccessful
+	return environment.GetMode() == environment.ModeDirect || !success
 }
 
 type finalizeInputs struct {
