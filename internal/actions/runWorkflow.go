@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
 	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
+	"github.com/speakeasy-api/versioning-reports/versioning"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
@@ -100,6 +101,24 @@ func RunWorkflow() error {
 		if err := setOutputs(outputs); err != nil {
 			logging.Debug("failed to set outputs: %v", err)
 		}
+
+		if environment.GetFeatureBranch() != "" {
+			fmt.Println(runRes)
+			docVersion := ""
+			var versionReport *versioning.MergedVersionReport
+			if runRes != nil && runRes.GenInfo != nil {
+				docVersion = runRes.GenInfo.OpenAPIDocVersion
+			}
+			if runRes != nil {
+				versionReport = runRes.VersioningInfo.VersionReport
+			}
+			// we may not have doc version here what happens
+			if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, versionReport); err != nil {
+				logging.Debug("failed to commit and push: %v", err)
+				return err
+			}
+		}
+
 		return err
 	}
 

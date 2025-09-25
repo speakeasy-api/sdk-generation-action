@@ -296,6 +296,20 @@ func (g *Git) Reset(args ...string) error {
 	return nil
 }
 
+func (g *Git) cherryPick(commitHash string) error {
+	logging.Info("Cherry-picking commit %s", commitHash)
+
+	cmd := exec.Command("git", "cherry-pick", commitHash)
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Env = os.Environ()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error cherry-picking commit %s: %w %s", commitHash, err, string(output))
+	}
+
+	return nil
+}
+
 func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
@@ -321,14 +335,28 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 
 		existingBranch, err := g.FindAndCheckoutBranch(branchName)
 		if err == nil {
-			if err := g.ensureCIOnlyCommits(branchName, defaultBranch); err != nil {
+			// Find non-CI commits that should be preserved
+			nonCICommits, err := g.findNonCICommits(branchName, defaultBranch)
+			if err != nil {
 				return "", err
 			}
 
+			// Reset to clean baseline from main
 			origin := fmt.Sprintf("origin/%s", defaultBranch)
 			if err = g.Reset("--hard", origin); err != nil {
 				// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
 				logging.Info("failed to reset branch: %s", err.Error())
+			}
+
+			// Cherry-pick non-CI commits onto the fresh branch
+			if len(nonCICommits) > 0 {
+				logging.Info("Cherry-picking %d non-CI commits onto fresh branch", len(nonCICommits))
+				// Reverse the order since git log returns newest first, but we want to apply oldest first
+				for i := len(nonCICommits) - 1; i >= 0; i-- {
+					if err := g.cherryPick(nonCICommits[i]); err != nil {
+						return "", fmt.Errorf("failed to cherry-pick commit %s: %w", nonCICommits[i], err)
+					}
+				}
 			}
 
 			return existingBranch, nil
@@ -392,9 +420,9 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 	return branchName, nil
 }
 
-func (g *Git) ensureCIOnlyCommits(branchName, defaultBranch string) error {
+func (g *Git) findNonCICommits(branchName, defaultBranch string) ([]string, error) {
 	if branchName == "" || defaultBranch == "" {
-		return nil
+		return nil, nil
 	}
 
 	revSpec := fmt.Sprintf("origin/%s..%s", defaultBranch, branchName)
@@ -404,11 +432,11 @@ func (g *Git) ensureCIOnlyCommits(branchName, defaultBranch string) error {
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("error checking outstanding commits on %s: %w %s", branchName, err, string(output))
+		return nil, fmt.Errorf("error checking outstanding commits on %s: %w %s", branchName, err, string(output))
 	}
 
 	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-	var offending []string
+	var nonCICommits []string
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -416,18 +444,24 @@ func (g *Git) ensureCIOnlyCommits(branchName, defaultBranch string) error {
 		}
 
 		parts := strings.SplitN(line, "\t", 4)
+		hash := ""
 		message := line
 		author := ""
 		committer := ""
 		if len(parts) >= 4 {
+			hash = parts[0]
 			author = parts[1]
 			committer = parts[2]
 			message = parts[3]
 		} else if len(parts) == 3 {
+			hash = parts[0]
 			author = parts[1]
 			message = parts[2]
 		} else if len(parts) == 2 {
+			hash = parts[0]
 			message = parts[1]
+		} else {
+			hash = parts[0]
 		}
 
 		trimmed := strings.TrimSpace(message)
@@ -440,16 +474,13 @@ func (g *Git) ensureCIOnlyCommits(branchName, defaultBranch string) error {
 		}
 
 		if !strings.HasPrefix(strings.ToLower(trimmed), "ci") {
-			offending = append(offending, line)
+			nonCICommits = append(nonCICommits, hash)
 		}
 	}
 
-	if len(offending) > 0 {
-		return fmt.Errorf("branch %s contains non-ci commits ahead of origin/%s: %s", branchName, defaultBranch, strings.Join(offending, "; "))
-	}
-
-	return nil
+	return nonCICommits, nil
 }
+
 
 func isManagedAutomationCommit(author, committer string) bool {
 	author = strings.ToLower(strings.TrimSpace(author))
