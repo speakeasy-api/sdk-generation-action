@@ -299,9 +299,15 @@ func (g *Git) Reset(args ...string) error {
 func (g *Git) cherryPick(commitHash string) error {
 	logging.Info("Cherry-picking commit %s", commitHash)
 
+	// Set git author identity for cherry-pick (same as used in CommitAndPush)
+	workDir := filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	env := os.Environ()
+	env = append(env, "GIT_AUTHOR_NAME="+speakeasyBotName)
+	env = append(env, "GIT_AUTHOR_EMAIL=bot@speakeasyapi.dev")
+
 	cmd := exec.Command("git", "cherry-pick", commitHash)
-	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
-	cmd.Env = os.Environ()
+	cmd.Dir = workDir
+	cmd.Env = env
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error cherry-picking commit %s: %w %s", commitHash, err, string(output))
@@ -348,13 +354,13 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 				logging.Info("failed to reset branch: %s", err.Error())
 			}
 
-			// Cherry-pick non-CI commits onto the fresh branch
+			// We will attempt to cherry-pick non Speakeasy generated commits onto the fresh branch
 			if len(nonCICommits) > 0 {
 				logging.Info("Cherry-picking %d non-CI commits onto fresh branch", len(nonCICommits))
 				// Reverse the order since git log returns newest first, but we want to apply oldest first
 				for i := len(nonCICommits) - 1; i >= 0; i-- {
 					if err := g.cherryPick(nonCICommits[i]); err != nil {
-						return "", fmt.Errorf("failed to cherry-pick commit %s: %w", nonCICommits[i], err)
+						return "", fmt.Errorf("failed to cherry-pick commit %s: %w\n\nThis likely means your manual changes conflict with updates from the main branch.\nTo resolve this:\n1. Manually merge or rebase your branch with the latest main branch\n2. Or create a new branch from main and re-apply your changes", nonCICommits[i][:8], err)
 					}
 				}
 			}
@@ -480,7 +486,6 @@ func (g *Git) findNonCICommits(branchName, defaultBranch string) ([]string, erro
 
 	return nonCICommits, nil
 }
-
 
 func isManagedAutomationCommit(author, committer string) bool {
 	author = strings.ToLower(strings.TrimSpace(author))

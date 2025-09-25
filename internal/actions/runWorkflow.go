@@ -103,7 +103,6 @@ func RunWorkflow() error {
 		}
 
 		if environment.GetFeatureBranch() != "" {
-			fmt.Println(runRes)
 			docVersion := ""
 			var versionReport *versioning.MergedVersionReport
 			if runRes != nil && runRes.GenInfo != nil {
@@ -112,7 +111,10 @@ func RunWorkflow() error {
 			if runRes != nil {
 				versionReport = runRes.VersioningInfo.VersionReport
 			}
-			// we may not have doc version here what happens
+			// Doc version and version report will typically be empty here.
+			// For feature branches, we always commit to the branch so PRs can be manually resolved.
+			// For generation failures, the commit may be empty which is ok - it will be overwritten on future generations.
+			// For compilation failures or other failures, the generated code will be available in the failed feature branch.
 			if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, versionReport); err != nil {
 				logging.Debug("failed to commit and push: %v", err)
 				return err
