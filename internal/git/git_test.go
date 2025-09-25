@@ -423,6 +423,14 @@ func TestGit_FindOrCreateBranch_NonCIPendingCommits(t *testing.T) {
 	}
 	runGitCLI(t, repoPath, "add", "README.md")
 	runGitCLI(t, repoPath, "commit", "-m", "initial commit")
+
+	// Create the generated.txt file on main to avoid cherry-pick conflicts
+	if err := os.WriteFile(filepath.Join(repoPath, "generated.txt"), []byte("original\n"), 0o644); err != nil {
+		t.Fatalf("failed to write generated.txt on main: %v", err)
+	}
+	runGitCLI(t, repoPath, "add", "generated.txt")
+	runGitCLI(t, repoPath, "commit", "-m", "add generated file")
+
 	runGitCLI(t, repoPath, "branch", "-M", "main")
 	runGitCLI(t, repoPath, "remote", "add", "origin", remotePath)
 	runGitCLI(t, repoPath, "push", "-u", "origin", "main")
@@ -435,10 +443,11 @@ func TestGit_FindOrCreateBranch_NonCIPendingCommits(t *testing.T) {
 	runGitCLI(t, repoPath, "commit", "-m", "ci: automated update")
 	runGitCLI(t, repoPath, "push", "-u", "origin", "regen")
 
-	if err := os.WriteFile(filepath.Join(repoPath, "generated.txt"), []byte("manual change\n"), 0o644); err != nil {
-		t.Fatalf("failed to update generated.txt: %v", err)
+	// Add a different file for the manual commit to avoid conflicts
+	if err := os.WriteFile(filepath.Join(repoPath, "manual.txt"), []byte("manual change\n"), 0o644); err != nil {
+		t.Fatalf("failed to write manual.txt: %v", err)
 	}
-	runGitCLI(t, repoPath, "add", "generated.txt")
+	runGitCLI(t, repoPath, "add", "manual.txt")
 	runGitCLI(t, repoPath, "commit", "-m", "feat: manual tweak")
 	runGitCLI(t, repoPath, "push", "origin", "regen")
 
@@ -453,9 +462,20 @@ func TestGit_FindOrCreateBranch_NonCIPendingCommits(t *testing.T) {
 	t.Setenv("GITHUB_WORKSPACE", workspace)
 	t.Setenv("INPUT_WORKING_DIRECTORY", "")
 
-	_, err = g.FindOrCreateBranch("regen", environment.ActionRunWorkflow)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "non-ci commits")
+	branchName, err := g.FindOrCreateBranch("regen", environment.ActionRunWorkflow)
+	require.NoError(t, err)
+	assert.Equal(t, "regen", branchName)
+
+	// Verify the manual commit was cherry-picked onto the fresh branch
+	runGitCLI(t, repoPath, "checkout", "regen")
+	content, err := os.ReadFile(filepath.Join(repoPath, "manual.txt"))
+	require.NoError(t, err)
+	assert.Equal(t, "manual change\n", string(content), "manual commit should be preserved via cherry-pick")
+
+	// Verify CI commit was discarded (generated.txt should be back to main's version)
+	generatedContent, err := os.ReadFile(filepath.Join(repoPath, "generated.txt"))
+	require.NoError(t, err)
+	assert.Equal(t, "original\n", string(generatedContent), "CI commit should be discarded, file should match main")
 }
 
 func TestGit_FindOrCreateBranch_BotCommitAllowed(t *testing.T) {

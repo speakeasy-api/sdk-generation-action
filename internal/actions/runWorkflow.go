@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
 	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
+	"github.com/speakeasy-api/versioning-reports/versioning"
 
 	"github.com/speakeasy-api/sdk-generation-action/internal/configuration"
 	"github.com/speakeasy-api/sdk-generation-action/internal/git"
@@ -100,6 +101,26 @@ func RunWorkflow() error {
 		if err := setOutputs(outputs); err != nil {
 			logging.Debug("failed to set outputs: %v", err)
 		}
+
+		if environment.GetFeatureBranch() != "" {
+			docVersion := ""
+			var versionReport *versioning.MergedVersionReport
+			if runRes != nil && runRes.GenInfo != nil {
+				docVersion = runRes.GenInfo.OpenAPIDocVersion
+			}
+			if runRes != nil {
+				versionReport = runRes.VersioningInfo.VersionReport
+			}
+			// Doc version and version report will typically be empty here.
+			// For feature branches, we always commit to the branch so PRs can be manually resolved.
+			// For generation failures, the commit may be empty which is ok - it will be overwritten on future generations.
+			// For compilation failures or other failures, the generated code will be available in the failed feature branch.
+			if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, versionReport); err != nil {
+				logging.Debug("failed to commit and push: %v", err)
+				return err
+			}
+		}
+
 		return err
 	}
 
