@@ -299,15 +299,15 @@ func (g *Git) Reset(args ...string) error {
 func (g *Git) cherryPick(commitHash string) error {
 	logging.Info("Cherry-picking commit %s", commitHash)
 
-	// Set git author identity for cherry-pick (same as used in CommitAndPush)
 	workDir := filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
-	env := os.Environ()
-	env = append(env, "GIT_AUTHOR_NAME="+speakeasyBotName)
-	env = append(env, "GIT_AUTHOR_EMAIL=bot@speakeasyapi.dev")
 
-	cmd := exec.Command("git", "cherry-pick", commitHash)
+	// Use -c flags to set identity temporarily for just this command
+	cmd := exec.Command("git",
+		"-c", "user.name="+speakeasyBotName,
+		"-c", "user.email=bot@speakeasyapi.dev",
+		"cherry-pick", commitHash)
 	cmd.Dir = workDir
-	cmd.Env = env
+	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error cherry-picking commit %s: %w %s", commitHash, err, string(output))
@@ -360,7 +360,7 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 				// Reverse the order since git log returns newest first, but we want to apply oldest first
 				for i := len(nonCICommits) - 1; i >= 0; i-- {
 					if err := g.cherryPick(nonCICommits[i]); err != nil {
-						return "", fmt.Errorf("failed to cherry-pick commit %s: %w\n\nThis likely means your manual changes conflict with updates from the main branch.\nTo resolve this:\n1. Manually merge or rebase your branch with the latest main branch\n2. Or create a new branch from main and re-apply your changes", nonCICommits[i][:8], err)
+						return "", fmt.Errorf("failed to cherry-pick commit %s: %w\n\nThis likely means manual changes are modifying a generated portion of the SDK.", nonCICommits[i][:8], err)
 					}
 				}
 			}
