@@ -342,6 +342,7 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 
 		existingBranch, err := g.FindAndCheckoutBranch(branchName)
 		if err == nil {
+			logging.Info("Found existing branch %s", branchName)
 			// Find non-CI commits that should be preserved
 			nonCICommits, err := g.findNonCICommits(branchName, defaultBranch)
 			if err != nil {
@@ -446,6 +447,7 @@ func (g *Git) findNonCICommits(branchName, defaultBranch string) ([]string, erro
 	var nonCICommits []string
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
+		logging.Info("Checking line: %s", line)
 		if line == "" {
 			continue
 		}
@@ -472,6 +474,9 @@ func (g *Git) findNonCICommits(branchName, defaultBranch string) ([]string, erro
 		}
 
 		trimmed := strings.TrimSpace(message)
+		logging.Info("Trimmed message: %s", trimmed)
+		logging.Info("author: %s", author)
+		logging.Info("committer: %s", committer)
 		if trimmed == "" {
 			continue
 		}
