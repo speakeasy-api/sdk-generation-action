@@ -42,11 +42,12 @@ type Git struct {
 }
 
 const (
-	speakeasyBotName  = "speakeasybot"
-	speakeasyBotAlias = "speakeasy-bot"
+	speakeasyBotName       = "speakeasybot"
+	speakeasyBotAlias      = "speakeasy-bot"
+	speakeasyGithubBotName = "speakeasy-github[bot]"
 )
 
-var managedAutomationUsers = []string{speakeasyBotName, speakeasyBotAlias}
+var managedAutomationUsers = []string{speakeasyGithubBotName, speakeasyBotName, speakeasyBotAlias}
 
 func New(accessToken string) *Git {
 	ctx := context.Background()
@@ -496,7 +497,7 @@ func isManagedAutomationCommit(author, committer string) bool {
 
 	for _, user := range managedAutomationUsers {
 		name := strings.ToLower(strings.TrimSpace(user))
-		if author == name || committer == name {
+		if author == name {
 			return true
 		}
 	}
