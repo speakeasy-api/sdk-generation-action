@@ -306,7 +306,7 @@ func (g *Git) cherryPick(commitHash string) error {
 	cmd := exec.Command("git",
 		"-c", "user.name="+speakeasyBotName,
 		"-c", "user.email=bot@speakeasyapi.dev",
-		"cherry-pick", commitHash)
+		"cherry-pick", "--allow-empty", commitHash)
 	cmd.Dir = workDir
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
