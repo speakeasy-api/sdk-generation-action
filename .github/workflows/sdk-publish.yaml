@@ -617,6 +617,10 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ inputs.dotnet_version }}
+      - name: Setup dotnet 6.0
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.x
       - name: Publish
         run: dotnet pack -c Release -o . && dotnet nuget push *.nupkg --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
       - id: publish-event
