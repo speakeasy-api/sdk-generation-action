@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/google/go-github/v63/github"
 	"github.com/pkg/errors"
+	"github.com/speakeasy-api/sdk-gen-config/workflow"
 	"github.com/speakeasy-api/sdk-generation-action/internal/utils"
 	"github.com/speakeasy-api/sdk-generation-action/internal/versionbumps"
 
@@ -93,13 +93,12 @@ func RunWorkflow() error {
 		os.Setenv("SPEAKEASY_ACTIVE_BRANCH", branchName)
 	}
 
-	runRes, outputs, err := run.Run(g, pr, wf)
+	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeNo)
 	if err != nil {
 		fmt.Println("error received: %v", err)
 		// Check if this is a custom code clean apply failure
 		if strings.HasPrefix(err.Error(), "Generation failed as a result of custom code application conflict") {
-			fmt.Println("Inside")
-			if conflictErr := handleCustomCodeConflict(g, err.Error()); conflictErr != nil {
+			if conflictErr := handleCustomCodeConflict(g, pr, wf); conflictErr != nil {
 				logging.Error("Failed to handle custom code conflict: %v", conflictErr)
 				// Fall through to original error handling
 			}
@@ -211,115 +210,109 @@ func RunWorkflow() error {
 	return nil
 }
 
-func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
-	logging.Info("Handling custom code conflict: %s", errorMsg)
+func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.Workflow) error {
+	logging.Info("Handling custom code conflict with new workflow")
 	
-	// 1. Capture the current diff into a patchfile
 	timestamp := time.Now().Unix()
-	patchFile := fmt.Sprintf("conflict-patch-%d.patch", timestamp)
-	// Write patch to tmp directory to avoid it being removed by git reset
-	tmpDir := os.TempDir()
-	patchPath := filepath.Join(tmpDir, patchFile)
 	
-	logging.Info("Capturing diff to patchfile: %s", patchPath)
-	diffOutput, err := g.GetDiff("HEAD")
-	if err != nil {
-		return fmt.Errorf("failed to capture diff: %w", err)
-	}
-
-	logging.Info("Diff Output ---")
-	logging.Info(diffOutput)
-	
-	if err := os.WriteFile(patchPath, []byte(diffOutput), 0644); err != nil {
-		return fmt.Errorf("failed to write patch file: %w", err)
-	}
-	
-	// 2. Reset the github worktree
+	// 1. Reset worktree and change to speakeasy/clean-generation-{ts} branch
 	logging.Info("Resetting worktree")
 	if err := g.Reset("--hard", "HEAD"); err != nil {
 		return fmt.Errorf("failed to reset worktree: %w", err)
 	}
 	
-	// 3. Create a new branch: speakeasy/resolve-{ts}
-	branchName := fmt.Sprintf("speakeasy/resolve-%d", timestamp)
-	logging.Info("Creating conflict resolution branch: %s", branchName)
-	
-	if err := g.CreateAndCheckoutBranch(branchName); err != nil {
-		return fmt.Errorf("failed to create branch %s: %w", branchName, err)
+	cleanGenBranch := fmt.Sprintf("speakeasy/clean-generation-%d", timestamp)
+	logging.Info("Creating clean generation branch: %s", cleanGenBranch)
+	if err := g.CreateAndCheckoutBranch(cleanGenBranch); err != nil {
+		return fmt.Errorf("failed to create branch %s: %w", cleanGenBranch, err)
 	}
-		
-	// 4.1. Emit the full contents of the patch
-	logging.Info("=== PATCH CONTENTS START ===")
-	patchContents, err := os.ReadFile(patchPath)
+	
+	// 2. Run generation with CustomCodeYes to get clean generation
+	logging.Info("Running clean generation with custom code enabled")
+	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeYes)
 	if err != nil {
-		logging.Error("Failed to read patch file for logging: %v", err)
-	} else {
-		logging.Info("%s", string(patchContents))
+		return fmt.Errorf("failed to run clean generation: %w", err)
 	}
-	logging.Info("=== PATCH CONTENTS END ===")
-
-	// 4. Apply the patchfile using --3way
-	logging.Info("Applying patch with 3-way merge")
-	if err := g.ApplyPatch(patchPath, true); err != nil {
-		// This is expected to fail with conflicts - we continue
-		logging.Info("Patch application failed as expected (conflicts): %v", err)
-	}
-
+	_ = runRes  // Use the variable
+	_ = outputs // Use the variable
 	
-	// 4.2. Emit the diff after applying the patch
-	logging.Info("=== DIFF AFTER PATCH APPLICATION START ===")
-	diffAfterPatch, err := g.GetDiff("HEAD")
-	if err != nil {
-		logging.Error("Failed to get diff after patch application: %v", err)
-	} else {
-		logging.Info("%s", diffAfterPatch)
-	}
-	logging.Info("=== DIFF AFTER PATCH APPLICATION END ===")
-	
-	// 5. Stage all changes
-	logging.Info("Staging all changes")
+	// 3. Add and commit generation
+	logging.Info("Adding and committing clean generation")
 	if err := g.Add("."); err != nil {
-		return fmt.Errorf("failed to stage changes: %w", err)
+		return fmt.Errorf("failed to stage clean generation: %w", err)
 	}
 	
-	// 6. Commit with the specified message
-	commitMsg := `Apply patch with conflicts - requires manual resolution
+	cleanGenCommitMsg := "Clean generation with custom code applied"
+	if err := g.CommitAsSpeakeasyBot(cleanGenCommitMsg); err != nil {
+		return fmt.Errorf("failed to commit clean generation: %w", err)
+	}
+	
+	// 4. Change to speakeasy/resolve-{ts} branch
+	resolveBranch := fmt.Sprintf("speakeasy/resolve-%d", timestamp)
+	logging.Info("Creating resolve branch: %s", resolveBranch)
+	if err := g.CreateAndCheckoutBranch(resolveBranch); err != nil {
+		return fmt.Errorf("failed to create branch %s: %w", resolveBranch, err)
+	}
+	
+	// 5. Run.Run CustomCodeOnly
+	logging.Info("Running with CustomCodeOnly to apply just custom code")
+	runRes2, outputs2, err := run.Run(g, pr, wf, cli.CustomCodeOnly)
+	if err != nil {
+		return fmt.Errorf("failed to run custom code only: %w", err)
+	}
+	_ = runRes2  // Use the variable
+	_ = outputs2 // Use the variable
+	
+	// 6. Add and commit code
+	logging.Info("Adding and committing custom code changes")
+	if err := g.Add("."); err != nil {
+		return fmt.Errorf("failed to stage custom code changes: %w", err)
+	}
+	
+	customCodeCommitMsg := `Apply custom code changes with conflicts
+	
+- Custom code applied separately from generation
+- May contain conflict markers that need manual resolution
+- Review conflicts and merge when ready`
+	
+	if err := g.CommitAsSpeakeasyBot(customCodeCommitMsg); err != nil {
+		return fmt.Errorf("failed to commit custom code changes: %w", err)
+	}
+	
+	// Push both branches
+	logging.Info("Pushing clean generation branch: %s", cleanGenBranch)
+	if err := g.PushBranch(cleanGenBranch); err != nil {
+		return fmt.Errorf("failed to push clean generation branch: %w", err)
+	}
+	
+	logging.Info("Pushing resolve branch: %s", resolveBranch)
+	if err := g.PushBranch(resolveBranch); err != nil {
+		return fmt.Errorf("failed to push resolve branch: %w", err)
+	}
+	
+	// 7. Create PR from speakeasy/resolve-{ts} to speakeasy/clean-generation-{ts}
+	logging.Info("Creating PR from resolve branch to clean generation branch")
+	
+	prTitle := fmt.Sprintf("🔧 Resolve custom code conflicts: %s → %s", resolveBranch, cleanGenBranch)
+	prBody := fmt.Sprintf(`This PR applies custom code changes that conflicted during generation.
 
-- Patch could not be applied cleanly
-- Conflict markers indicate areas needing attention
-- Review and resolve conflicts, then merge this PR`
+**Branches:**
+- Base: %s (clean generation)
+- Head: %s (custom code changes)
+
+**Next Steps:**
+1. Review the conflicts in this PR
+2. Resolve any merge conflicts manually
+3. Merge this PR to combine clean generation with custom code
+4. The combined result can then be merged to your target branch
+
+Generated automatically due to custom code application conflicts.`, cleanGenBranch, resolveBranch)
 	
-	logging.Info("Committing changes")
-	if err := g.CommitAsSpeakeasyBot(commitMsg); err != nil {
-		return fmt.Errorf("failed to commit changes: %w", err)
+	if err := g.CreateConflictResolutionPRWithBase(resolveBranch, cleanGenBranch, prTitle, prBody); err != nil {
+		return fmt.Errorf("failed to create conflict resolution PR: %w", err)
 	}
 	
-	// Push the branch
-	logging.Info("Pushing branch %s", branchName)
-	if err := g.PushBranch(branchName); err != nil {
-		return fmt.Errorf("failed to push branch: %w", err)
-	}
-	
-	// 7. Create the conflict resolution PR
-	logging.Info("Creating conflict resolution PR")
-	
-	// Get current user for assignee
-	currentUser := os.Getenv("GITHUB_ACTOR")
-	if currentUser == "" {
-		currentUser = "self"
-	}
-	
-	prTitle := fmt.Sprintf("🔧 Resolve conflicts: %s", extractPatchDescription(errorMsg))
-	prBody := `This patch could not be applied cleanly. Please resolve the conflicts and merge.`
-	
-	if err := g.CreateConflictResolutionPR(branchName, prTitle, prBody, currentUser); err != nil {
-		return fmt.Errorf("failed to create PR: %w", err)
-	}
-	
-	// Clean up patch file
-	os.Remove(patchPath)
-	
-	logging.Info("Successfully created conflict resolution workflow")
+	logging.Info("Successfully created conflict resolution workflow with separate branches")
 	return nil
 }
 

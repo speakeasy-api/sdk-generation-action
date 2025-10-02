@@ -48,7 +48,7 @@ type Git interface {
 	CheckDirDirty(dir string, ignoreMap map[string]string) (bool, string, error)
 }
 
-func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[string]string, error) {
+func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow, customCode cli.CustomCodeMode) (*RunResult, map[string]string, error) {
 	workspace := environment.GetWorkspace()
 	outputs := map[string]string{}
 	releaseNotes := map[string]string{}
@@ -139,7 +139,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 	var changereport *versioning.MergedVersionReport
 
 	changereport, runRes, err = versioning.WithVersionReportCapture[*cli.RunResults](context.Background(), func(ctx context.Context) (*cli.RunResults, error) {
-		runRes, err = cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories, manualVersioningBump)
+		runRes, err = cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories, manualVersioningBump, customCode)
 		return runRes, err
 	})
 	if err != nil {

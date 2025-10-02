@@ -14,6 +14,14 @@ import (
 
 const BumpOverrideEnvVar = "SPEAKEASY_BUMP_OVERRIDE"
 
+type CustomCodeMode string
+
+const (
+	CustomCodeNo   CustomCodeMode = "no"
+	CustomCodeYes  CustomCodeMode = "yes"
+	CustomCodeOnly CustomCodeMode = "only"
+)
+
 type RunResults struct {
 	LintingReportURL      string
 	ChangesReportURL      string
@@ -21,10 +29,26 @@ type RunResults struct {
 	CustomCodeApplied bool
 }
 
-func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, repoSubdirectories map[string]string, manualVersionBump *versioning.BumpType) (*RunResults, error) {
+func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, repoSubdirectories map[string]string, manualVersionBump *versioning.BumpType, customCode CustomCodeMode) (*RunResults, error) {
 	args := []string{
 		"run",
 	}
+	if customCode == CustomCodeOnly {
+		args = []string{"customcode", "--apply-only"}
+		if out, err := runSpeakeasyCommand(args...); err != nil {
+			return nil, err
+		} else {
+			fmt.Println("Custom Code Only")
+			fmt.Println(out)
+		}
+		return &RunResults{
+			LintingReportURL: "",
+			ChangesReportURL: "",
+			OpenAPIChangeSummary: "",
+			CustomCodeApplied: true,
+		}, nil
+	}
+
 
 	if sourcesOnly {
 		args = append(args, "-s", "all")
@@ -65,6 +89,13 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	// If we are in PR mode we skip testing on generation, this should run as a PR check
 	if environment.SkipTesting() || (environment.GetMode() == environment.ModePR && !sourcesOnly) {
 		args = append(args, "--skip-testing")
+	}
+
+	switch customCode {
+	case CustomCodeNo:
+		args = append(args, "--skip-custom-code")
+	case CustomCodeYes:
+		// Default behavior - apply custom code
 	}
 
 	if environment.ForceGeneration() {

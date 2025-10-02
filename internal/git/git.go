@@ -1539,3 +1539,15 @@ func (g *Git) CreateConflictResolutionPR(branchName, title, body, assignee strin
 	
 	return err
 }
+
+func (g *Git) CreateConflictResolutionPRWithBase(headBranch, baseBranch, title, body string) error {
+	_, _, err := g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), &github.NewPullRequest{
+		Title:               github.String(title),
+		Body:                github.String(body),
+		Head:                github.String(headBranch),
+		Base:                github.String(baseBranch),
+		MaintainerCanModify: github.Bool(true),
+	})
+	
+	return err
+}
