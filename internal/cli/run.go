@@ -35,7 +35,7 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		"run",
 	}
 	if customCode == CustomCodeOnly {
-		args = []string{"customcode", "--show"}
+		args = []string{"customcode", "--apply-only"}
 		out, err := runSpeakeasyCommand(args...)
 		if err != nil {
 			return nil, err
