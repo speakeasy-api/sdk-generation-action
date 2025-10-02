@@ -264,7 +264,8 @@ jobs:
           uv_version: ${{ inputs.uv_version }}
           github_repository: ${{ inputs.github_repository }}
           enable_sdk_changelog: ${{ inputs.enable_sdk_changelog }}
-          node_options: ${{ inputs.node_options }}
+        env:
+          NODE_OPTIONS: ${{ inputs.node_options }}
       - uses: ravsamhq/notify-slack-action@v2
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' && env.SLACK_WEBHOOK_URL != '' }}
         with:

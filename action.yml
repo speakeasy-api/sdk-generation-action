@@ -126,6 +126,11 @@ inputs:
     description: "Enable the new SDK changelog feature"
     default: "false"
     required: false
+  node_options:
+    description: "Additional Node.js options to pass when publishing the Typescript SDK"
+    required: false
+    type: string
+    default: "--max-old-space-size=4096"
 outputs:
   publish_python:
     description: "Whether the Python SDK will be published to PyPi"
@@ -216,6 +221,7 @@ runs:
     OPENAI_API_KEY: ${{ inputs.openai_api_key }}
     OPENAPI_DOC_AUTH_TOKEN: ${{ inputs.openapi_doc_auth_token }}
     PR_CREATION_PAT: ${{ inputs.pr_creation_pat }}
+    NODE_OPTIONS: ${{ inputs.node_options }}
   args:
     - ${{ inputs.speakeasy_version }}
     - ${{ inputs.github_access_token }}
@@ -243,3 +249,4 @@ runs:
     - ${{ inputs.pnpm_version }}
     - ${{ inputs.poetry_version }}
     - ${{ inputs.enable_sdk_changelog }}
+    - ${{ inputs.node_options }}
