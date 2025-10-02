@@ -260,11 +260,14 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	logging.Info("Running with CustomCodeOnly to apply just custom code")
 	runRes2, outputs2, err := run.Run(g, pr, wf, cli.CustomCodeOnly)
 	if err != nil {
-		return fmt.Errorf("failed to run custom code only: %w", err)
+		logging.Error("failed to run custom code only: %w", err)
 	}
 	_ = runRes2  // Use the variable
 	_ = outputs2 // Use the variable
-	
+	logging.Info(runRes2)
+	logging.Info(outputs2)
+	logging.Info("-------------")
+
 	// 6. Add and commit code
 	logging.Info("Adding and committing custom code changes")
 	if err := g.Add("."); err != nil {
