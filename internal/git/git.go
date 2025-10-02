@@ -1450,3 +1450,23 @@ func pushErr(err error) error {
 	}
 	return nil
 }
+
+func (g *Git) CommitAsSpeakeasyBot(message string) error {
+	if g.repo == nil {
+		return fmt.Errorf("repo not cloned")
+	}
+	
+	w, err := g.repo.Worktree()
+	if err != nil {
+		return fmt.Errorf("failed to get worktree: %w", err)
+	}
+	
+	_, err = w.Commit(message, &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  "speakeasybot",
+			Email: "bot@speakeasyapi.dev",
+			When:  time.Now(),
+		},
+	})
+	return err
+}

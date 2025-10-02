@@ -273,10 +273,8 @@ func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
 - Review and resolve conflicts, then merge this PR`
 	
 	logging.Info("Committing changes")
-	commitCmd := exec.Command("git", "commit", "-m", commitMsg)
-	commitCmd.Dir = workspaceDir
-	if output, err := commitCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to commit changes: %w, output: %s", err, string(output))
+	if err := g.CommitAsSpeakeasyBot(commitMsg); err != nil {
+		return fmt.Errorf("failed to commit changes: %w", err)
 	}
 	
 	// Push the branch
