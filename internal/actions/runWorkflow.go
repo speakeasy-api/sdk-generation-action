@@ -93,7 +93,7 @@ func RunWorkflow() error {
 		os.Setenv("SPEAKEASY_ACTIVE_BRANCH", branchName)
 	}
 
-	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeNo)
+	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeYes)
 	if err != nil {
 		fmt.Println("error received: %v", err)
 		// Check if this is a custom code clean apply failure
@@ -229,7 +229,7 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	
 	// 2. Run generation with CustomCodeYes to get clean generation
 	logging.Info("Running clean generation with custom code enabled")
-	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeYes)
+	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeNo)
 	if err != nil {
 		return fmt.Errorf("failed to run clean generation: %w", err)
 	}
