@@ -214,12 +214,12 @@ func RunWorkflow() error {
 func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
 	logging.Info("Handling custom code conflict: %s", errorMsg)
 	
-	workspaceDir := filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
-	
 	// 1. Capture the current diff into a patchfile
 	timestamp := time.Now().Unix()
 	patchFile := fmt.Sprintf("conflict-patch-%d.patch", timestamp)
-	patchPath := filepath.Join(workspaceDir, patchFile)
+	// Write patch to tmp directory to avoid it being removed by git reset
+	tmpDir := os.TempDir()
+	patchPath := filepath.Join(tmpDir, patchFile)
 	
 	logging.Info("Capturing diff to patchfile: %s", patchPath)
 	diffOutput, err := g.GetDiff("--binary")
@@ -247,7 +247,7 @@ func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
 	
 	// 4. Apply the patchfile using --3way
 	logging.Info("Applying patch with 3-way merge")
-	if err := g.ApplyPatch(patchFile, true); err != nil {
+	if err := g.ApplyPatch(patchPath, true); err != nil {
 		// This is expected to fail with conflicts - we continue
 		logging.Info("Patch application failed as expected (conflicts): %v", err)
 	}
