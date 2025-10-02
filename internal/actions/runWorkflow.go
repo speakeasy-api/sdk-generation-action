@@ -251,35 +251,7 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 		return fmt.Errorf("failed to stage clean generation: %w", err)
 	}
 	// Comment block implementation completed
-	/**
 
-# 1) Find the merge-base between main and clean-generation
-MB=$(git merge-base origin/main origin/speakeasy/clean-generation)
-echo "merge-base = $MB"
-
-# 2) Start your patch branch from *before* the merge-base
-#    (so the merge-base for the PR will be A, not B)
-BASE_BEFORE_MB=$(git rev-parse "${MB}^")   # parent of MB
-git switch -c speakeasy/resolve-{ts} "$BASE_BEFORE_MB"
-
-# 3) Turn your raw diff into a real commit on this branch
-#    First try a smart 3-way apply (works best if patch has --full-index/--binary)
-echo "3-way apply failed; approximating using files the patch touches..."
-
-# Fallback: lift only the files touched by the patch from main
-awk '/^\+\+\+ b\// { sub("^\+\+\+ b/",""); print }' /path/to/my.patch \
-| sort -u > /tmp/patch_files.txt
-
-# Bring those files from main (which already has the patch) into this branch
-if [ -s /tmp/patch_files.txt ]; then
-xargs -a /tmp/patch_files.txt git checkout origin/main --
-git add -A
-git commit -m "Approximate patch: sync patched files from main"
-else
-echo "No paths detected in patch; aborting."
-exit 1
-fi
-	*/
 	cleanGenCommitMsg := "Clean generation with custom code disabled"
 	if err := g.CommitAsSpeakeasyBot(cleanGenCommitMsg); err != nil {
 		return fmt.Errorf("failed to commit clean generation: %w", err)
@@ -288,44 +260,22 @@ fi
 	// 4. Create resolve branch using sophisticated merge-base logic
 	resolveBranch := fmt.Sprintf("speakeasy/resolve-%d", timestamp)
 	logging.Info("Creating resolve branch using merge-base strategy: %s", resolveBranch)
+		
+	if err := g.CreateAndCheckoutBranch(resolveBranch); err != nil {
+		return fmt.Errorf("failed to create branch %s: %w", resolveBranch, err)
+	}
 	
-	// 4.1. Find the merge-base between main and clean-generation
-	mergeBase, err := g.FindMergeBase("origin/main", cleanGenBranch)
+	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeOnly)
 	if err != nil {
-		return fmt.Errorf("failed to find merge-base: %w", err)
+		return fmt.Errorf("failed to apply custom code: %w", err)
 	}
-	
-	// 4.2. Find the parent of the merge-base
-	baseBeforeMB, err := g.GetParentCommit(mergeBase)
-	if err != nil {
-		return fmt.Errorf("failed to get parent of merge-base: %w", err)
-	}
-	
-	// 4.3. Create resolve branch from parent of merge-base
-	if err := g.CreateBranchFromCommit(resolveBranch, baseBeforeMB); err != nil {
-		return fmt.Errorf("failed to create resolve branch from commit %s: %w", baseBeforeMB, err)
-	}
-	
-	// 4.4. Extract files touched by the original diff and checkout from main
-	logging.Info("Extracting files touched by original diff")
-	touchedFiles := extractFilesFromDiff(originalDiff)
-	if len(touchedFiles) == 0 {
-		return fmt.Errorf("no files detected in original diff")
-	}
-	
-	logging.Info("Found %d files touched by diff: %v", len(touchedFiles), touchedFiles)
-	
-	// 4.5. Checkout the touched files from main (which has the patch)
-	if err := g.CheckoutFilesFromBranch("origin/main", touchedFiles); err != nil {
-		return fmt.Errorf("failed to checkout files from main: %w", err)
-	}
-	
+		
 	// 4.6. Stage and commit the patched files
 	if err := g.Add("."); err != nil {
 		return fmt.Errorf("failed to stage patched files: %w", err)
 	}
 	
-	patchCommitMsg := "Approximate patch: sync patched files from main"
+	patchCommitMsg := "patch: apply custom code"
 	if err := g.CommitAsSpeakeasyBot(patchCommitMsg); err != nil {
 		return fmt.Errorf("failed to commit patched files: %w", err)
 	}
