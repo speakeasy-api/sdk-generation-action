@@ -264,7 +264,7 @@ func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
 	
 	// 4.2. Emit the diff after applying the patch
 	logging.Info("=== DIFF AFTER PATCH APPLICATION START ===")
-	diffAfterPatch, err := g.GetDiff()
+	diffAfterPatch, err := g.GetDiff("HEAD")
 	if err != nil {
 		logging.Error("Failed to get diff after patch application: %v", err)
 	} else {
