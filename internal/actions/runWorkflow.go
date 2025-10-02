@@ -273,6 +273,9 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 
 	// Apply the patch with -R --index --3way flags
 	logging.Info("Applying patch with reverse, index, and 3-way flags")
+	logging.Info("PATCH============================================================")
+	logging.Info(originalDiff)
+	logging.Info("END PATCH============================================================")
 	if err := g.ApplyPatchFromString(originalDiff, true, true, true); err != nil {
 		logging.Info("Patch application failed (this may be expected with conflicts): %v", err)
 		// Continue even if patch fails - this is expected for conflicts
