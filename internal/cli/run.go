@@ -15,9 +15,10 @@ import (
 const BumpOverrideEnvVar = "SPEAKEASY_BUMP_OVERRIDE"
 
 type RunResults struct {
-	LintingReportURL     string
-	ChangesReportURL     string
-	OpenAPIChangeSummary string
+	LintingReportURL      string
+	ChangesReportURL      string
+	OpenAPIChangeSummary  string
+	CustomCodeApplied bool
 }
 
 func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, repoSubdirectories map[string]string, manualVersionBump *versioning.BumpType) (*RunResults, error) {
@@ -97,6 +98,7 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 
 	lintingReportURL := getLintingReportURL(out)
 	changesReportURL := getChangesReportURL(out)
+	customCodeApplied := !strings.Contains(out, "failed to apply custom code cleanly")
 	// read from file
 	// ignore errors: the change summary is optional
 	// and won't be available first run
@@ -107,6 +109,7 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		LintingReportURL:     lintingReportURL,
 		ChangesReportURL:     changesReportURL,
 		OpenAPIChangeSummary: string(changeSummary),
+		CustomCodeApplied: customCodeApplied,
 	}, nil
 }
 

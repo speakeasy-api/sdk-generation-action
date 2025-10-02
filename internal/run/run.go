@@ -144,7 +144,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		fmt.Println("After after=====================================================================: %v", err)
 		return runRes, err
 	})
-	if strings.Contains(runRes, "failed to apply custom code cleanly") {
+	if runRes.CustomCodeApplied == false {
 		fmt.Println("Error detected")
 	}
 	if err != nil {
