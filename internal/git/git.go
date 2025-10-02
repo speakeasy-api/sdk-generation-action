@@ -1597,14 +1597,27 @@ func (g *Git) CheckoutFilesFromBranch(branch string, filePaths []string) error {
 		return nil
 	}
 	
-	args := []string{"checkout", branch, "--"}
-	args = append(args, filePaths...)
+	// Check out files one by one to handle missing files gracefully
+	var successfulCheckouts []string
+	var failedCheckouts []string
 	
-	_, err := runGitCommand(args...)
-	if err != nil {
-		return fmt.Errorf("failed to checkout files from branch %s: %w", branch, err)
+	for _, filePath := range filePaths {
+		args := []string{"checkout", branch, "--", filePath}
+		_, err := runGitCommand(args...)
+		if err != nil {
+			logging.Info("File %s not found in branch %s, skipping: %v", filePath, branch, err)
+			failedCheckouts = append(failedCheckouts, filePath)
+		} else {
+			successfulCheckouts = append(successfulCheckouts, filePath)
+		}
 	}
 	
-	logging.Info("Checked out %d files from branch %s", len(filePaths), branch)
+	logging.Info("Checked out %d files from branch %s, skipped %d missing files", 
+		len(successfulCheckouts), branch, len(failedCheckouts))
+	
+	if len(failedCheckouts) > 0 {
+		logging.Info("Files not found in %s: %v", branch, failedCheckouts)
+	}
+	
 	return nil
 }
