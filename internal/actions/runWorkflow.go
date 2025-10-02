@@ -252,6 +252,26 @@ func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
 		logging.Info("Patch application failed as expected (conflicts): %v", err)
 	}
 	
+	// 4.1. Emit the full contents of the patch
+	logging.Info("=== PATCH CONTENTS START ===")
+	patchContents, err := os.ReadFile(patchPath)
+	if err != nil {
+		logging.Error("Failed to read patch file for logging: %v", err)
+	} else {
+		logging.Info("%s", string(patchContents))
+	}
+	logging.Info("=== PATCH CONTENTS END ===")
+	
+	// 4.2. Emit the diff after applying the patch
+	logging.Info("=== DIFF AFTER PATCH APPLICATION START ===")
+	diffAfterPatch, err := g.GetDiff()
+	if err != nil {
+		logging.Error("Failed to get diff after patch application: %v", err)
+	} else {
+		logging.Info("%s", diffAfterPatch)
+	}
+	logging.Info("=== DIFF AFTER PATCH APPLICATION END ===")
+	
 	// 5. Stage all changes
 	logging.Info("Staging all changes")
 	if err := g.Add("."); err != nil {
