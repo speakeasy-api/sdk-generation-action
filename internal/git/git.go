@@ -1551,3 +1551,37 @@ func (g *Git) CreateConflictResolutionPRWithBase(headBranch, baseBranch, title, 
 	
 	return err
 }
+
+func (g *Git) FindLastCommitWithFileChanges(filePatterns ...string) (string, error) {
+	if g.repo == nil {
+		return "", fmt.Errorf("repo not cloned")
+	}
+
+	// Use git log to find the most recent commit that changed any of the specified files
+	args := []string{"log", "--oneline", "-1", "--"}
+	args = append(args, filePatterns...)
+	
+	output, err := runGitCommand(args...)
+	if err != nil {
+		return "", fmt.Errorf("failed to find commits with file changes: %w", err)
+	}
+	
+	if strings.TrimSpace(output) == "" {
+		return "", fmt.Errorf("no commits found with changes to specified files")
+	}
+	
+	// Extract the commit hash from the first line (format: "abc1234 commit message")
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	if len(lines) == 0 {
+		return "", fmt.Errorf("no commit hash found")
+	}
+	
+	parts := strings.Fields(lines[0])
+	if len(parts) == 0 {
+		return "", fmt.Errorf("invalid git log output format")
+	}
+	
+	commitHash := parts[0]
+	logging.Info("Found most recent commit with file changes: %s", commitHash)
+	return commitHash, nil
+}

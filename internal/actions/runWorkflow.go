@@ -225,8 +225,24 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	
 	cleanGenBranch := fmt.Sprintf("speakeasy/clean-generation-%d", timestamp)
 	logging.Info("Creating clean generation branch: %s", cleanGenBranch)
+	
+	// Find the most recent commit that changed gen.yaml or workflow.yaml
+	lastConfigCommit, err := g.FindLastCommitWithFileChanges("gen.yaml", "workflow.yaml")
+	if err != nil {
+		logging.Info("Could not find commits with config file changes, using current HEAD: %v", err)
+		// Continue with current HEAD if no config changes found
+	}
+	
 	if err := g.CreateAndCheckoutBranch(cleanGenBranch); err != nil {
 		return fmt.Errorf("failed to create branch %s: %w", cleanGenBranch, err)
+	}
+	
+	// Reset to the last config commit if found
+	if lastConfigCommit != "" {
+		logging.Info("Resetting clean generation branch to last config commit: %s", lastConfigCommit)
+		if err := g.Reset("--hard", lastConfigCommit); err != nil {
+			logging.Error("Failed to reset to config commit %s, continuing with current HEAD: %v", lastConfigCommit, err)
+		}
 	}
 	
 	// 2. Run generation with CustomCodeNo to get clean generation
