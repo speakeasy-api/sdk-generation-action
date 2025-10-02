@@ -1508,6 +1508,58 @@ func (g *Git) ApplyPatch(patchFile string, threeWay bool) error {
 	return err
 }
 
+func (g *Git) ApplyPatchFromString(patchContent string, reverse bool, index bool, threeWay bool) error {
+	args := []string{"apply"}
+	
+	if reverse {
+		args = append(args, "-R")
+	}
+	if index {
+		args = append(args, "--index")
+	}
+	if threeWay {
+		args = append(args, "--3way")
+	}
+	
+	// Use stdin to pass the patch content
+	args = append(args, "-")
+	
+	// Create a command that can accept stdin
+	cmd := exec.Command("git", args...)
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Env = os.Environ()
+	
+	// Set up stdin with the patch content
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return fmt.Errorf("failed to create stdin pipe: %w", err)
+	}
+	
+	// Start the command
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start git apply command: %w", err)
+	}
+	
+	// Write patch content to stdin
+	_, err = stdin.Write([]byte(patchContent))
+	if err != nil {
+		stdin.Close()
+		return fmt.Errorf("failed to write patch to stdin: %w", err)
+	}
+	
+	// Close stdin and wait for command to complete
+	if err := stdin.Close(); err != nil {
+		return fmt.Errorf("failed to close stdin: %w", err)
+	}
+	
+	if err := cmd.Wait(); err != nil {
+		return fmt.Errorf("git apply failed: %w", err)
+	}
+	
+	logging.Info("Successfully applied patch with flags: reverse=%v, index=%v, 3way=%v", reverse, index, threeWay)
+	return nil
+}
+
 func (g *Git) PushBranch(branchName string) error {
 	if g.repo == nil {
 		return fmt.Errorf("repo not cloned")

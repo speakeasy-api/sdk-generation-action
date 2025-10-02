@@ -27,6 +27,7 @@ type RunResults struct {
 	ChangesReportURL      string
 	OpenAPIChangeSummary  string
 	CustomCodeApplied bool
+	FullOutput string
 }
 
 func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, repoSubdirectories map[string]string, manualVersionBump *versioning.BumpType, customCode CustomCodeMode) (*RunResults, error) {
@@ -34,18 +35,20 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		"run",
 	}
 	if customCode == CustomCodeOnly {
-		args = []string{"customcode", "--apply-only"}
-		if out, err := runSpeakeasyCommand(args...); err != nil {
+		args = []string{"customcode", "--show"}
+		out, err := runSpeakeasyCommand(args...)
+		if err != nil {
 			return nil, err
-		} else {
-			fmt.Println("Custom Code Only")
-			fmt.Println(out)
 		}
+		fmt.Println("Custom Code Only")
+		fmt.Println(out)
+
 		return &RunResults{
 			LintingReportURL: "",
 			ChangesReportURL: "",
 			OpenAPIChangeSummary: "",
 			CustomCodeApplied: true,
+			FullOutput: out,
 		}, nil
 	}
 
@@ -139,6 +142,7 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		ChangesReportURL:     changesReportURL,
 		OpenAPIChangeSummary: string(changeSummary),
 		CustomCodeApplied: customCodeApplied,
+		FullOutput: out,
 	}, nil
 }
 
