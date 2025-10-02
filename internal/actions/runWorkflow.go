@@ -96,6 +96,7 @@ func RunWorkflow() error {
 
 	runRes, outputs, err := run.Run(g, pr, wf)
 	if err != nil {
+		fmt.Println("error received: %v", err)
 		// Check if this is a custom code clean apply failure
 		if strings.HasPrefix(err.Error(), "failed to apply custom code cleanly") {
 			if conflictErr := handleCustomCodeConflict(g, err.Error()); conflictErr != nil {
