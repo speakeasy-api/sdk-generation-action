@@ -264,8 +264,6 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	}
 	_ = runRes2  // Use the variable
 	_ = outputs2 // Use the variable
-	logging.Info(runRes2)
-	logging.Info(outputs2)
 	logging.Info("-------------")
 
 	// 6. Add and commit code
