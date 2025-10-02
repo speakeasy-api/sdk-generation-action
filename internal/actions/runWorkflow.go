@@ -217,12 +217,12 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	
 	timestamp := time.Now().Unix()
 	
-	// First, capture the diff that failed to apply cleanly
-	logging.Info("Capturing original diff before reset")
-	originalDiff, err := g.GetDiff("HEAD", "--binary", "--full-index")
-	if err != nil {
-		return fmt.Errorf("failed to capture original diff: %w", err)
-	}
+	// // First, capture the diff that failed to apply cleanly
+	// logging.Info("Capturing original diff before reset")
+	// originalDiff, err := g.GetDiff("HEAD", "--binary", "--full-index")
+	// if err != nil {
+	// 	return fmt.Errorf("failed to capture original diff: %w", err)
+	// }
 	
 	// 1. Reset worktree and change to speakeasy/clean-generation-{ts} branch
 	logging.Info("Resetting worktree")
@@ -265,21 +265,21 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 		return fmt.Errorf("failed to create branch %s: %w", resolveBranch, err)
 	}
 	
-	// runRes, outputs, err = run.Run(g, pr, wf, cli.CustomCodeOnly)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to apply custom code: %w", err)
-	// }
-
-
-	// Apply the patch with -R --index --3way flags
-	logging.Info("Applying patch with reverse, index, and 3-way flags")
-	logging.Info("PATCH============================================================")
-	logging.Info(originalDiff)
-	logging.Info("END PATCH============================================================")
-	if err := g.ApplyPatchFromString(originalDiff, true, true, true); err != nil {
-		logging.Info("Patch application failed (this may be expected with conflicts): %v", err)
-		// Continue even if patch fails - this is expected for conflicts
+	runRes, outputs, err = run.Run(g, pr, wf, cli.CustomCodeOnly)
+	if err != nil {
+		return fmt.Errorf("failed to apply custom code: %w", err)
 	}
+
+
+	// // Apply the patch with -R --index --3way flags
+	// logging.Info("Applying patch with reverse, index, and 3-way flags")
+	// logging.Info("PATCH============================================================")
+	// logging.Info(originalDiff)
+	// logging.Info("END PATCH============================================================")
+	// if err := g.ApplyPatchFromString(originalDiff, true, true, true); err != nil {
+	// 	logging.Info("Patch application failed (this may be expected with conflicts): %v", err)
+	// 	// Continue even if patch fails - this is expected for conflicts
+	// }
 		
 	// 4.6. Stage and commit the patched files
 	if err := g.Add("."); err != nil {
