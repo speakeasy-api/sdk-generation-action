@@ -98,7 +98,8 @@ func RunWorkflow() error {
 	if err != nil {
 		fmt.Println("error received: %v", err)
 		// Check if this is a custom code clean apply failure
-		if strings.HasPrefix(err.Error(), "failed to apply custom code cleanly") {
+		if strings.HasPrefix(err.Error(), "Generation failed as a result of custom code application conflict") {
+			fmt.Println("Inside")
 			if conflictErr := handleCustomCodeConflict(g, err.Error()); conflictErr != nil {
 				logging.Error("Failed to handle custom code conflict: %v", conflictErr)
 				// Fall through to original error handling
