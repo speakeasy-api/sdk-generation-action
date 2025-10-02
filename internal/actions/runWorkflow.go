@@ -260,7 +260,7 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	// 4. Create resolve branch using sophisticated merge-base logic
 	resolveBranch := fmt.Sprintf("speakeasy/resolve-%d", timestamp)
 	logging.Info("Creating resolve branch using merge-base strategy: %s", resolveBranch)
-		
+	g.FindAndCheckoutBranch("main")
 	if err := g.CreateAndCheckoutBranch(resolveBranch); err != nil {
 		return fmt.Errorf("failed to create branch %s: %w", resolveBranch, err)
 	}
