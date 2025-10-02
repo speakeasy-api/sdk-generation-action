@@ -88,9 +88,9 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		return nil, fmt.Errorf("error closing change summary file: %w", err)
 	}
 
-	fmt.Println("Before")
+	fmt.Println("Before=====================================================================")
 	out, err := runSpeakeasyCommand(args...)
-	fmt.Println("After")
+	fmt.Println("After=====================================================================")
 	if err != nil {
 		return nil, fmt.Errorf("error running workflow: %w - %s", err, out)
 	}

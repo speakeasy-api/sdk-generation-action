@@ -139,7 +139,10 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 	var changereport *versioning.MergedVersionReport
 
 	changereport, runRes, err = versioning.WithVersionReportCapture[*cli.RunResults](context.Background(), func(ctx context.Context) (*cli.RunResults, error) {
-		return cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories, manualVersioningBump)
+		fmt.Println("Before before=====================================================================")
+		runRes, err = cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories, manualVersioningBump)
+		fmt.Println("After after=====================================================================")
+		return runRes, err
 	})
 	if err != nil {
 		return nil, outputs, err
