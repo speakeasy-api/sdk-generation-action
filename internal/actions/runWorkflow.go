@@ -229,8 +229,8 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 		return fmt.Errorf("failed to create branch %s: %w", cleanGenBranch, err)
 	}
 	
-	// 2. Run generation with CustomCodeYes to get clean generation
-	logging.Info("Running clean generation with custom code enabled")
+	// 2. Run generation with CustomCodeNo to get clean generation
+	logging.Info("Running clean generation with custom code disabled")
 	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeNo)
 	if err != nil {
 		return fmt.Errorf("failed to run clean generation: %w", err)
@@ -249,9 +249,15 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 		return fmt.Errorf("failed to commit clean generation: %w", err)
 	}
 	
-	// 4. Change to speakeasy/resolve-{ts} branch
+	// 4. Change to speakeasy/resolve-{ts} branch (based off main)
 	resolveBranch := fmt.Sprintf("speakeasy/resolve-%d", timestamp)
-	logging.Info("Creating resolve branch: %s", resolveBranch)
+	logging.Info("Creating resolve branch based off main: %s", resolveBranch)
+	
+	// First checkout main to base the new branch off it
+	if _, err := g.FindAndCheckoutBranch("main"); err != nil {
+		return fmt.Errorf("failed to checkout main: %w", err)
+	}
+	
 	if err := g.CreateAndCheckoutBranch(resolveBranch); err != nil {
 		return fmt.Errorf("failed to create branch %s: %w", resolveBranch, err)
 	}
