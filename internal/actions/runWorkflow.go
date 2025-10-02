@@ -217,6 +217,13 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	
 	timestamp := time.Now().Unix()
 	
+	// First, capture the diff that failed to apply cleanly
+	logging.Info("Capturing original diff before reset")
+	originalDiff, err := g.GetDiff("HEAD")
+	if err != nil {
+		return fmt.Errorf("failed to capture original diff: %w", err)
+	}
+	
 	// 1. Reset worktree and change to speakeasy/clean-generation-{ts} branch
 	logging.Info("Resetting worktree")
 	if err := g.Reset("--hard", "HEAD"); err != nil {
@@ -225,24 +232,8 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	
 	cleanGenBranch := fmt.Sprintf("speakeasy/clean-generation-%d", timestamp)
 	logging.Info("Creating clean generation branch: %s", cleanGenBranch)
-	
-	// Find the most recent commit that changed gen.yaml or workflow.yaml
-	lastConfigCommit, err := g.FindLastCommitWithFileChanges("gen.yaml", "workflow.yaml")
-	if err != nil {
-		logging.Info("Could not find commits with config file changes, using current HEAD: %v", err)
-		// Continue with current HEAD if no config changes found
-	}
-	
 	if err := g.CreateAndCheckoutBranch(cleanGenBranch); err != nil {
 		return fmt.Errorf("failed to create branch %s: %w", cleanGenBranch, err)
-	}
-	
-	// Reset to the last config commit if found
-	if lastConfigCommit != "" {
-		logging.Info("Resetting clean generation branch to last config commit: %s", lastConfigCommit)
-		if err := g.Reset("--hard", lastConfigCommit); err != nil {
-			logging.Error("Failed to reset to config commit %s, continuing with current HEAD: %v", lastConfigCommit, err)
-		}
 	}
 	
 	// 2. Run generation with CustomCodeNo to get clean generation
@@ -259,49 +250,84 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	if err := g.Add("."); err != nil {
 		return fmt.Errorf("failed to stage clean generation: %w", err)
 	}
-	
-	cleanGenCommitMsg := "Clean generation with custom code applied"
+	// Comment block implementation completed
+	/**
+
+# 1) Find the merge-base between main and clean-generation
+MB=$(git merge-base origin/main origin/speakeasy/clean-generation)
+echo "merge-base = $MB"
+
+# 2) Start your patch branch from *before* the merge-base
+#    (so the merge-base for the PR will be A, not B)
+BASE_BEFORE_MB=$(git rev-parse "${MB}^")   # parent of MB
+git switch -c speakeasy/resolve-{ts} "$BASE_BEFORE_MB"
+
+# 3) Turn your raw diff into a real commit on this branch
+#    First try a smart 3-way apply (works best if patch has --full-index/--binary)
+echo "3-way apply failed; approximating using files the patch touches..."
+
+# Fallback: lift only the files touched by the patch from main
+awk '/^\+\+\+ b\// { sub("^\+\+\+ b/",""); print }' /path/to/my.patch \
+| sort -u > /tmp/patch_files.txt
+
+# Bring those files from main (which already has the patch) into this branch
+if [ -s /tmp/patch_files.txt ]; then
+xargs -a /tmp/patch_files.txt git checkout origin/main --
+git add -A
+git commit -m "Approximate patch: sync patched files from main"
+else
+echo "No paths detected in patch; aborting."
+exit 1
+fi
+	*/
+	cleanGenCommitMsg := "Clean generation with custom code disabled"
 	if err := g.CommitAsSpeakeasyBot(cleanGenCommitMsg); err != nil {
 		return fmt.Errorf("failed to commit clean generation: %w", err)
 	}
 	
-	// 4. Change to speakeasy/resolve-{ts} branch (based off main)
+	// 4. Create resolve branch using sophisticated merge-base logic
 	resolveBranch := fmt.Sprintf("speakeasy/resolve-%d", timestamp)
-	logging.Info("Creating resolve branch based off main: %s", resolveBranch)
+	logging.Info("Creating resolve branch using merge-base strategy: %s", resolveBranch)
 	
-	// First checkout main to base the new branch off it
-	if _, err := g.FindAndCheckoutBranch("main"); err != nil {
-		return fmt.Errorf("failed to checkout main: %w", err)
-	}
-	
-	if err := g.CreateAndCheckoutBranch(resolveBranch); err != nil {
-		return fmt.Errorf("failed to create branch %s: %w", resolveBranch, err)
-	}
-	
-	// 5. Run.Run CustomCodeOnly
-	logging.Info("Running with CustomCodeOnly to apply just custom code")
-	runRes2, outputs2, err := run.Run(g, pr, wf, cli.CustomCodeOnly)
+	// 4.1. Find the merge-base between main and clean-generation
+	mergeBase, err := g.FindMergeBase("origin/main", cleanGenBranch)
 	if err != nil {
-		logging.Error("failed to run custom code only: %w", err)
+		return fmt.Errorf("failed to find merge-base: %w", err)
 	}
-	_ = runRes2  // Use the variable
-	_ = outputs2 // Use the variable
-	logging.Info("-------------")
-
-	// 6. Add and commit code
-	logging.Info("Adding and committing custom code changes")
+	
+	// 4.2. Find the parent of the merge-base
+	baseBeforeMB, err := g.GetParentCommit(mergeBase)
+	if err != nil {
+		return fmt.Errorf("failed to get parent of merge-base: %w", err)
+	}
+	
+	// 4.3. Create resolve branch from parent of merge-base
+	if err := g.CreateBranchFromCommit(resolveBranch, baseBeforeMB); err != nil {
+		return fmt.Errorf("failed to create resolve branch from commit %s: %w", baseBeforeMB, err)
+	}
+	
+	// 4.4. Extract files touched by the original diff and checkout from main
+	logging.Info("Extracting files touched by original diff")
+	touchedFiles := extractFilesFromDiff(originalDiff)
+	if len(touchedFiles) == 0 {
+		return fmt.Errorf("no files detected in original diff")
+	}
+	
+	logging.Info("Found %d files touched by diff: %v", len(touchedFiles), touchedFiles)
+	
+	// 4.5. Checkout the touched files from main (which has the patch)
+	if err := g.CheckoutFilesFromBranch("origin/main", touchedFiles); err != nil {
+		return fmt.Errorf("failed to checkout files from main: %w", err)
+	}
+	
+	// 4.6. Stage and commit the patched files
 	if err := g.Add("."); err != nil {
-		return fmt.Errorf("failed to stage custom code changes: %w", err)
+		return fmt.Errorf("failed to stage patched files: %w", err)
 	}
 	
-	customCodeCommitMsg := `Apply custom code changes with conflicts
-	
-- Custom code applied separately from generation
-- May contain conflict markers that need manual resolution
-- Review conflicts and merge when ready`
-	
-	if err := g.CommitAsSpeakeasyBot(customCodeCommitMsg); err != nil {
-		return fmt.Errorf("failed to commit custom code changes: %w", err)
+	patchCommitMsg := "Approximate patch: sync patched files from main"
+	if err := g.CommitAsSpeakeasyBot(patchCommitMsg); err != nil {
+		return fmt.Errorf("failed to commit patched files: %w", err)
 	}
 	
 	// Push both branches
@@ -348,6 +374,34 @@ func extractPatchDescription(errorMsg string) string {
 		return errorMsg[:47] + "..."
 	}
 	return errorMsg
+}
+
+func extractFilesFromDiff(diff string) []string {
+	var files []string
+	lines := strings.Split(diff, "\n")
+	
+	for _, line := range lines {
+		// Look for lines like: "+++ b/path/to/file.ext"
+		if strings.HasPrefix(line, "+++ b/") {
+			filePath := strings.TrimPrefix(line, "+++ b/")
+			filePath = strings.TrimSpace(filePath)
+			if filePath != "" && filePath != "/dev/null" {
+				files = append(files, filePath)
+			}
+		}
+	}
+	
+	// Remove duplicates
+	seen := make(map[string]bool)
+	var uniqueFiles []string
+	for _, file := range files {
+		if !seen[file] {
+			seen[file] = true
+			uniqueFiles = append(uniqueFiles, file)
+		}
+	}
+	
+	return uniqueFiles
 }
 
 func shouldDeleteBranch(isSuccess bool) bool {

@@ -1552,36 +1552,59 @@ func (g *Git) CreateConflictResolutionPRWithBase(headBranch, baseBranch, title, 
 	return err
 }
 
-func (g *Git) FindLastCommitWithFileChanges(filePatterns ...string) (string, error) {
-	if g.repo == nil {
-		return "", fmt.Errorf("repo not cloned")
-	}
-
-	// Use git log to find the most recent commit that changed any of the specified files
-	args := []string{"log", "--oneline", "-1", "--"}
-	args = append(args, filePatterns...)
-	
-	output, err := runGitCommand(args...)
+func (g *Git) FindMergeBase(branch1, branch2 string) (string, error) {
+	output, err := runGitCommand("merge-base", branch1, branch2)
 	if err != nil {
-		return "", fmt.Errorf("failed to find commits with file changes: %w", err)
+		return "", fmt.Errorf("failed to find merge-base between %s and %s: %w", branch1, branch2, err)
 	}
 	
-	if strings.TrimSpace(output) == "" {
-		return "", fmt.Errorf("no commits found with changes to specified files")
+	mergeBase := strings.TrimSpace(output)
+	if mergeBase == "" {
+		return "", fmt.Errorf("empty merge-base result")
 	}
 	
-	// Extract the commit hash from the first line (format: "abc1234 commit message")
-	lines := strings.Split(strings.TrimSpace(output), "\n")
-	if len(lines) == 0 {
-		return "", fmt.Errorf("no commit hash found")
+	logging.Info("Found merge-base between %s and %s: %s", branch1, branch2, mergeBase)
+	return mergeBase, nil
+}
+
+func (g *Git) GetParentCommit(commitHash string) (string, error) {
+	output, err := runGitCommand("rev-parse", commitHash+"^")
+	if err != nil {
+		return "", fmt.Errorf("failed to get parent of commit %s: %w", commitHash, err)
 	}
 	
-	parts := strings.Fields(lines[0])
-	if len(parts) == 0 {
-		return "", fmt.Errorf("invalid git log output format")
+	parentCommit := strings.TrimSpace(output)
+	if parentCommit == "" {
+		return "", fmt.Errorf("empty parent commit result")
 	}
 	
-	commitHash := parts[0]
-	logging.Info("Found most recent commit with file changes: %s", commitHash)
-	return commitHash, nil
+	logging.Info("Found parent of %s: %s", commitHash, parentCommit)
+	return parentCommit, nil
+}
+
+func (g *Git) CreateBranchFromCommit(branchName, commitHash string) error {
+	_, err := runGitCommand("switch", "-c", branchName, commitHash)
+	if err != nil {
+		return fmt.Errorf("failed to create branch %s from commit %s: %w", branchName, commitHash, err)
+	}
+	
+	logging.Info("Created branch %s from commit %s", branchName, commitHash)
+	return nil
+}
+
+func (g *Git) CheckoutFilesFromBranch(branch string, filePaths []string) error {
+	if len(filePaths) == 0 {
+		return nil
+	}
+	
+	args := []string{"checkout", branch, "--"}
+	args = append(args, filePaths...)
+	
+	_, err := runGitCommand(args...)
+	if err != nil {
+		return fmt.Errorf("failed to checkout files from branch %s: %w", branch, err)
+	}
+	
+	logging.Info("Checked out %d files from branch %s", len(filePaths), branch)
+	return nil
 }
