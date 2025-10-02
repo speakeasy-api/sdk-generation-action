@@ -142,11 +142,11 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		runRes, err = cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories, manualVersioningBump)
 		return runRes, err
 	})
-	if runRes.CustomCodeApplied == false {
-		return nil, outputs, fmt.Errorf("Generation failed as a result of custom code application conflict")
-	}
 	if err != nil {
 		return nil, outputs, err
+	}
+	if runRes != nil && runRes.CustomCodeApplied == false {
+		return nil, outputs, fmt.Errorf("Generation failed as a result of custom code application conflict")
 	}
 	if len(changereport.Reports) == 0 {
 		// Assume it's not yet enabled (e.g. CLI version too old)
