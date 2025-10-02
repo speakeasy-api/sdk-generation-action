@@ -145,7 +145,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		return runRes, err
 	})
 	if runRes.CustomCodeApplied == false {
-		fmt.Println("Error detected")
+		return nil, outputs, fmt.Errorf("Generation failed as a result of custom code application conflict")
 	}
 	if err != nil {
 		return nil, outputs, err
