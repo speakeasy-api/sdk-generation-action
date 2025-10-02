@@ -222,7 +222,7 @@ func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
 	patchPath := filepath.Join(tmpDir, patchFile)
 	
 	logging.Info("Capturing diff to patchfile: %s", patchPath)
-	diffOutput, err := g.GetDiff("--binary")
+	diffOutput, err := g.GetDiff("HEAD")
 	if err != nil {
 		return fmt.Errorf("failed to capture diff: %w", err)
 	}
