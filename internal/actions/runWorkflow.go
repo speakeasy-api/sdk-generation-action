@@ -226,6 +226,9 @@ func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
 	if err != nil {
 		return fmt.Errorf("failed to capture diff: %w", err)
 	}
+
+	logging.Info("Diff Output ---")
+	logging.Info(diffOutput)
 	
 	if err := os.WriteFile(patchPath, []byte(diffOutput), 0644); err != nil {
 		return fmt.Errorf("failed to write patch file: %w", err)
@@ -244,14 +247,7 @@ func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
 	if err := g.CreateAndCheckoutBranch(branchName); err != nil {
 		return fmt.Errorf("failed to create branch %s: %w", branchName, err)
 	}
-	
-	// 4. Apply the patchfile using --3way
-	logging.Info("Applying patch with 3-way merge")
-	if err := g.ApplyPatch(patchPath, true); err != nil {
-		// This is expected to fail with conflicts - we continue
-		logging.Info("Patch application failed as expected (conflicts): %v", err)
-	}
-	
+		
 	// 4.1. Emit the full contents of the patch
 	logging.Info("=== PATCH CONTENTS START ===")
 	patchContents, err := os.ReadFile(patchPath)
@@ -261,6 +257,14 @@ func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
 		logging.Info("%s", string(patchContents))
 	}
 	logging.Info("=== PATCH CONTENTS END ===")
+
+	// 4. Apply the patchfile using --3way
+	logging.Info("Applying patch with 3-way merge")
+	if err := g.ApplyPatch(patchPath, true); err != nil {
+		// This is expected to fail with conflicts - we continue
+		logging.Info("Patch application failed as expected (conflicts): %v", err)
+	}
+
 	
 	// 4.2. Emit the diff after applying the patch
 	logging.Info("=== DIFF AFTER PATCH APPLICATION START ===")
