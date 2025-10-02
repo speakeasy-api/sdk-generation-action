@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -223,14 +222,12 @@ func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
 	patchPath := filepath.Join(workspaceDir, patchFile)
 	
 	logging.Info("Capturing diff to patchfile: %s", patchPath)
-	diffCmd := exec.Command("git", "diff", "--binary")
-	diffCmd.Dir = workspaceDir
-	diffOutput, err := diffCmd.Output()
+	diffOutput, err := g.GetDiff("--binary")
 	if err != nil {
 		return fmt.Errorf("failed to capture diff: %w", err)
 	}
 	
-	if err := os.WriteFile(patchPath, diffOutput, 0644); err != nil {
+	if err := os.WriteFile(patchPath, []byte(diffOutput), 0644); err != nil {
 		return fmt.Errorf("failed to write patch file: %w", err)
 	}
 	
@@ -244,17 +241,13 @@ func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
 	branchName := fmt.Sprintf("speakeasy/resolve-%d", timestamp)
 	logging.Info("Creating conflict resolution branch: %s", branchName)
 	
-	checkoutCmd := exec.Command("git", "checkout", "-b", branchName)
-	checkoutCmd.Dir = workspaceDir
-	if err := checkoutCmd.Run(); err != nil {
+	if err := g.CreateAndCheckoutBranch(branchName); err != nil {
 		return fmt.Errorf("failed to create branch %s: %w", branchName, err)
 	}
 	
 	// 4. Apply the patchfile using --3way
 	logging.Info("Applying patch with 3-way merge")
-	applyCmd := exec.Command("git", "apply", "--3way", patchFile)
-	applyCmd.Dir = workspaceDir
-	if err := applyCmd.Run(); err != nil {
+	if err := g.ApplyPatch(patchFile, true); err != nil {
 		// This is expected to fail with conflicts - we continue
 		logging.Info("Patch application failed as expected (conflicts): %v", err)
 	}
@@ -279,9 +272,7 @@ func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
 	
 	// Push the branch
 	logging.Info("Pushing branch %s", branchName)
-	pushCmd := exec.Command("git", "push", "origin", branchName)
-	pushCmd.Dir = workspaceDir
-	if err := pushCmd.Run(); err != nil {
+	if err := g.PushBranch(branchName); err != nil {
 		return fmt.Errorf("failed to push branch: %w", err)
 	}
 	
@@ -297,16 +288,8 @@ func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
 	prTitle := fmt.Sprintf("🔧 Resolve conflicts: %s", extractPatchDescription(errorMsg))
 	prBody := `This patch could not be applied cleanly. Please resolve the conflicts and merge.`
 	
-	// Use gh CLI to create PR
-	ghCmd := exec.Command("gh", "pr", "create",
-		"--title", prTitle,
-		"--body", prBody,
-		"--assignee", currentUser)
-	ghCmd.Dir = workspaceDir
-	ghCmd.Env = append(os.Environ(), "GH_TOKEN="+os.Getenv("GITHUB_TOKEN"))
-	
-	if output, err := ghCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to create PR: %w, output: %s", err, string(output))
+	if err := g.CreateConflictResolutionPR(branchName, prTitle, prBody, currentUser); err != nil {
+		return fmt.Errorf("failed to create PR: %w", err)
 	}
 	
 	// Clean up patch file

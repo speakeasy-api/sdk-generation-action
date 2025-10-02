@@ -1470,3 +1470,72 @@ func (g *Git) CommitAsSpeakeasyBot(message string) error {
 	})
 	return err
 }
+
+func (g *Git) GetDiff(args ...string) (string, error) {
+	args = append([]string{"diff"}, args...)
+	return runGitCommand(args...)
+}
+
+func (g *Git) CreateAndCheckoutBranch(branchName string) error {
+	if g.repo == nil {
+		return fmt.Errorf("repo not cloned")
+	}
+
+	w, err := g.repo.Worktree()
+	if err != nil {
+		return fmt.Errorf("error getting worktree: %w", err)
+	}
+
+	localRef := plumbing.NewBranchReferenceName(branchName)
+	if err := w.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.ReferenceName(localRef.String()),
+		Create: true,
+	}); err != nil {
+		return fmt.Errorf("error creating and checking out branch: %w", err)
+	}
+
+	return nil
+}
+
+func (g *Git) ApplyPatch(patchFile string, threeWay bool) error {
+	args := []string{"apply"}
+	if threeWay {
+		args = append(args, "--3way")
+	}
+	args = append(args, patchFile)
+	
+	_, err := runGitCommand(args...)
+	return err
+}
+
+func (g *Git) PushBranch(branchName string) error {
+	if g.repo == nil {
+		return fmt.Errorf("repo not cloned")
+	}
+
+	return g.repo.Push(&git.PushOptions{
+		Auth: getGithubAuth(g.accessToken),
+		RefSpecs: []config.RefSpec{
+			config.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", branchName, branchName)),
+		},
+	})
+}
+
+func (g *Git) CreateConflictResolutionPR(branchName, title, body, assignee string) error {
+	// Use source-branch-aware target base branch
+	targetBaseBranch := environment.GetTargetBaseBranch()
+	// Handle the case where GetTargetBaseBranch returns a full ref
+	if strings.HasPrefix(targetBaseBranch, "refs/") {
+		targetBaseBranch = strings.TrimPrefix(targetBaseBranch, "refs/heads/")
+	}
+
+	_, _, err := g.client.PullRequests.Create(context.Background(), os.Getenv("GITHUB_REPOSITORY_OWNER"), GetRepo(), &github.NewPullRequest{
+		Title:               github.String(title),
+		Body:                github.String(body),
+		Head:                github.String(branchName),
+		Base:                github.String(targetBaseBranch),
+		MaintainerCanModify: github.Bool(true),
+	})
+	
+	return err
+}
