@@ -90,7 +90,7 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 
 	fmt.Println("Before=====================================================================")
 	out, err := runSpeakeasyCommand(args...)
-	fmt.Println("After=====================================================================")
+	fmt.Println("After===================================================================== %v", err)
 	if err != nil {
 		return nil, fmt.Errorf("error running workflow: %w - %s", err, out)
 	}
