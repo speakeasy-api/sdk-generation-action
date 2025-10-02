@@ -118,6 +118,11 @@ on:
         default: true
         required: false
         type: boolean
+      node_options:
+        description: "Additional Node.js options to pass when publishing the Typescript SDK"
+        required: false
+        type: string
+        default: "--max-old-space-size=4096"
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -259,6 +264,7 @@ jobs:
           uv_version: ${{ inputs.uv_version }}
           github_repository: ${{ inputs.github_repository }}
           enable_sdk_changelog: ${{ inputs.enable_sdk_changelog }}
+          node_options: ${{ inputs.node_options }}
       - uses: ravsamhq/notify-slack-action@v2
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' && env.SLACK_WEBHOOK_URL != '' }}
         with:
