@@ -275,8 +275,8 @@ func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
 	logging.Info("Committing changes")
 	commitCmd := exec.Command("git", "commit", "-m", commitMsg)
 	commitCmd.Dir = workspaceDir
-	if err := commitCmd.Run(); err != nil {
-		return fmt.Errorf("failed to commit changes: %w", err)
+	if output, err := commitCmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to commit changes: %w, output: %s", err, string(output))
 	}
 	
 	// Push the branch
