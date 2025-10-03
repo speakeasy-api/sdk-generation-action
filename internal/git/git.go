@@ -249,6 +249,9 @@ func (g *Git) FindAndCheckoutBranch(branchName string) (string, error) {
 		return "", fmt.Errorf("repo not cloned")
 	}
 
+	// Debug git state before checkout attempt
+	logGitStateBeforeOperation("FindAndCheckoutBranch", branchName)
+
 	w, err := g.repo.Worktree()
 	if err != nil {
 		return "", fmt.Errorf("error getting worktree: %w", err)
@@ -269,13 +272,18 @@ func (g *Git) FindAndCheckoutBranch(branchName string) (string, error) {
 
 	branchRef := plumbing.NewBranchReferenceName(branchName)
 
+	logging.Info("Attempting to checkout branch %s", branchName)
 	if err := w.Checkout(&git.CheckoutOptions{
 		Branch: branchRef,
 	}); err != nil {
-		return "", fmt.Errorf("error checking out branch: %w", err)
+		// Enhanced error reporting with git state
+		logging.Error("Checkout failed for branch %s", branchName)
+		logGitStatus("after checkout failure")
+		logWorkingDirectoryState("after checkout failure")
+		return "", fmt.Errorf("error checking out branch %s: %w\n\nThis error typically occurs when there are unstaged changes in the working directory. Check the logs above for details about what files have changes.", branchName, err)
 	}
 
-	logging.Info("Found existing branch %s", branchName)
+	logging.Info("Successfully found and checked out existing branch %s", branchName)
 
 	return branchName, nil
 }
@@ -311,9 +319,20 @@ func (g *Git) cherryPick(commitHash string) error {
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("error cherry-picking commit %s: %w %s", commitHash, err, string(output))
+		// Enhanced error reporting for cherry-pick failures
+		logging.Error("Cherry-pick failed for commit %s", commitHash)
+		logging.Error("Cherry-pick command output: %s", string(output))
+		logGitStatus("after cherry-pick failure")
+		logWorkingDirectoryState("after cherry-pick failure")
+
+		// Check if it's a conflict or other issue
+		if strings.Contains(string(output), "conflict") {
+			return fmt.Errorf("error cherry-picking commit %s (merge conflict): %w\nCommand output: %s\n\nThis indicates there are conflicting changes between the commit being cherry-picked and the current working directory state.", commitHash, err, string(output))
+		}
+		return fmt.Errorf("error cherry-picking commit %s: %w\nCommand output: %s\n\nCheck the git status logs above for details about the working directory state.", commitHash, err, string(output))
 	}
 
+	logging.Info("Successfully cherry-picked commit %s", commitHash)
 	return nil
 }
 
@@ -321,6 +340,9 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
+
+	// Debug git state at the start of branch operations
+	logGitStateBeforeOperation("FindOrCreateBranch", branchName)
 
 	w, err := g.repo.Worktree()
 	if err != nil {
@@ -340,19 +362,29 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 			logging.Info("failed to get default branch: %s", err.Error())
 		}
 
+		logging.Info("Attempting to find and checkout existing branch: %s", branchName)
 		existingBranch, err := g.FindAndCheckoutBranch(branchName)
 		if err == nil {
+			logging.Info("Successfully checked out existing branch: %s", branchName)
+
 			// Find non-CI commits that should be preserved
 			nonCICommits, err := g.findNonCICommits(branchName, defaultBranch)
 			if err != nil {
 				return "", err
 			}
 
+			// Debug state before reset
+			logGitStateBeforeOperation("reset to clean baseline", fmt.Sprintf("origin/%s", defaultBranch))
+
 			// Reset to clean baseline from main
 			origin := fmt.Sprintf("origin/%s", defaultBranch)
 			if err = g.Reset("--hard", origin); err != nil {
-				// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
-				logging.Info("failed to reset branch: %s", err.Error())
+				// Enhanced error reporting for reset failures
+				logging.Error("Failed to reset branch to %s: %s", origin, err.Error())
+				logGitStatus("after reset failure")
+				logWorkingDirectoryState("after reset failure")
+			} else {
+				logging.Info("Successfully reset branch to %s", origin)
 			}
 
 			// We will attempt to cherry-pick non Speakeasy generated commits onto the fresh branch
@@ -360,9 +392,16 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 				logging.Info("Cherry-picking %d non-CI commits onto fresh branch", len(nonCICommits))
 				// Reverse the order since git log returns newest first, but we want to apply oldest first
 				for i := len(nonCICommits) - 1; i >= 0; i-- {
+					// Debug state before each cherry-pick
+					logGitStateBeforeOperation(fmt.Sprintf("cherry-pick commit %s", nonCICommits[i][:8]), branchName)
+
 					if err := g.cherryPick(nonCICommits[i]); err != nil {
+						logging.Error("Failed to cherry-pick commit %s", nonCICommits[i][:8])
+						logGitStatus("after cherry-pick failure")
+						logWorkingDirectoryState("after cherry-pick failure")
 						return "", fmt.Errorf("failed to cherry-pick commit %s: %w\n\nThis likely means manual changes are modifying a generated portion of the SDK.", nonCICommits[i][:8], err)
 					}
+					logging.Info("Successfully cherry-picked commit %s", nonCICommits[i][:8])
 				}
 			}
 
@@ -370,16 +409,24 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 		}
 
 		logging.Info("failed to checkout existing branch %s: %s", branchName, err.Error())
-		logging.Info("creating branch %s", branchName)
+		logging.Info("creating new branch %s", branchName)
+
+		// Debug state before creating new branch
+		logGitStateBeforeOperation("create new branch", branchName)
 
 		branchRef := plumbing.NewBranchReferenceName(branchName)
 		if err := w.Checkout(&git.CheckoutOptions{
 			Branch: branchRef,
 			Create: true,
 		}); err != nil {
-			return "", fmt.Errorf("error checking out branch: %w", err)
+			// Enhanced error reporting for new branch creation
+			logging.Error("Failed to create new branch %s", branchName)
+			logGitStatus("after new branch creation failure")
+			logWorkingDirectoryState("after new branch creation failure")
+			return "", fmt.Errorf("error checking out new branch %s: %w\n\nThis error typically occurs when there are unstaged changes in the working directory. Check the logs above for details about what files have changes.", branchName, err)
 		}
 
+		logging.Info("Successfully created new branch %s", branchName)
 		return branchName, nil
 	}
 
@@ -1187,6 +1234,9 @@ func (g *Git) MergeBranch(branchName string) (string, error) {
 		return "", fmt.Errorf("repo not cloned")
 	}
 
+	// Debug git state before merge operations
+	logGitStateBeforeOperation("MergeBranch", branchName)
+
 	w, err := g.repo.Worktree()
 	if err != nil {
 		return "", fmt.Errorf("error getting worktree: %w", err)
@@ -1194,28 +1244,40 @@ func (g *Git) MergeBranch(branchName string) (string, error) {
 
 	logging.Info("Merging branch %s", branchName)
 
+	// Debug state before checkout to target branch
+	targetRef := environment.GetRef()
+	logGitStateBeforeOperation(fmt.Sprintf("checkout target branch %s", targetRef), branchName)
+
 	// Checkout target branch
 	if err := w.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.ReferenceName(environment.GetRef()),
+		Branch: plumbing.ReferenceName(targetRef),
 		Create: false,
 	}); err != nil {
-		return "", fmt.Errorf("error checking out branch: %w", err)
+		logging.Error("Failed to checkout target branch %s for merge", targetRef)
+		logGitStatus("after target branch checkout failure")
+		logWorkingDirectoryState("after target branch checkout failure")
+		return "", fmt.Errorf("error checking out target branch %s for merge: %w\n\nThis error typically occurs when there are unstaged changes in the working directory. Check the logs above for details.", targetRef, err)
 	}
+
+	logging.Info("Successfully checked out target branch %s", targetRef)
+
+	// Debug state before merge
+	logGitStateBeforeOperation(fmt.Sprintf("merge %s into %s", branchName, targetRef), branchName)
 
 	output, err := runGitCommand("merge", branchName)
 	if err != nil {
-		// This can happen if a "compile" has changed something unexpectedly. Add a "git status --porcelain" into the action output
-		debugOutput, _ := runGitCommand("status", "--porcelain")
-		if len(debugOutput) > 0 {
-			logging.Info("git status\n%s", debugOutput)
-		}
-		debugOutput, _ = runGitCommand("diff")
-		if len(debugOutput) > 0 {
-			logging.Info("git diff\n%s", debugOutput)
-		}
-		return "", fmt.Errorf("error merging branch: %w", err)
+		// Enhanced error reporting for merge failures
+		logging.Error("Merge failed for branch %s into %s", branchName, targetRef)
+		logging.Error("Merge command output: %s", output)
+
+		// This can happen if a "compile" has changed something unexpectedly
+		logGitStatus("after merge failure")
+		logWorkingDirectoryState("after merge failure")
+
+		return "", fmt.Errorf("error merging branch %s into %s: %w\n\nMerge command output: %s\n\nCheck the git status logs above for details about the working directory state.", branchName, targetRef, err, output)
 	}
 
+	logging.Info("Successfully merged branch %s", branchName)
 	logging.Debug("Merge output: %s", output)
 
 	headRef, err := g.repo.Head()
@@ -1223,12 +1285,14 @@ func (g *Git) MergeBranch(branchName string) (string, error) {
 		return "", fmt.Errorf("error getting head ref: %w", err)
 	}
 
+	logging.Info("Pushing merged changes to remote")
 	if err := g.repo.Push(&git.PushOptions{
 		Auth: getGithubAuth(g.accessToken),
 	}); err != nil {
 		return "", pushErr(err)
 	}
 
+	logging.Info("Successfully pushed merged changes")
 	return headRef.Hash().String(), nil
 }
 
@@ -1583,6 +1647,92 @@ func runGitCommand(args ...string) (string, error) {
 	}
 
 	return outb.String(), nil
+}
+
+// logGitStatus logs detailed git status information for debugging
+func logGitStatus(context string) {
+	logging.Info("=== Git Status Debug - %s ===", context)
+
+	// Get porcelain status
+	if status, err := runGitCommand("status", "--porcelain"); err != nil {
+		logging.Info("Failed to get git status: %v", err)
+	} else if status != "" {
+		logging.Info("Git status (porcelain):\n%s", status)
+	} else {
+		logging.Info("Working directory is clean")
+	}
+
+	// Get verbose status
+	if verboseStatus, err := runGitCommand("status"); err != nil {
+		logging.Info("Failed to get verbose git status: %v", err)
+	} else {
+		logging.Info("Git status (verbose):\n%s", verboseStatus)
+	}
+}
+
+// logWorkingDirectoryState logs comprehensive working directory state for debugging
+func logWorkingDirectoryState(context string) {
+	logging.Info("=== Working Directory State Debug - %s ===", context)
+
+	// Log unstaged changes
+	if diff, err := runGitCommand("diff"); err != nil {
+		logging.Info("Failed to get unstaged diff: %v", err)
+	} else if diff != "" {
+		logging.Info("Unstaged changes (git diff):\n%s", diff)
+	} else {
+		logging.Info("No unstaged changes")
+	}
+
+	// Log staged changes
+	if stagedDiff, err := runGitCommand("diff", "--cached"); err != nil {
+		logging.Info("Failed to get staged diff: %v", err)
+	} else if stagedDiff != "" {
+		logging.Info("Staged changes (git diff --cached):\n%s", stagedDiff)
+	} else {
+		logging.Info("No staged changes")
+	}
+
+	// Log all changes since HEAD
+	if headDiff, err := runGitCommand("diff", "HEAD"); err != nil {
+		logging.Info("Failed to get HEAD diff: %v", err)
+	} else if headDiff != "" {
+		logging.Info("All changes since HEAD (git diff HEAD):\n%s", headDiff)
+	} else {
+		logging.Info("No changes since HEAD")
+	}
+
+	// Log untracked files
+	if untracked, err := runGitCommand("ls-files", "--others", "--exclude-standard"); err != nil {
+		logging.Info("Failed to get untracked files: %v", err)
+	} else if untracked != "" {
+		logging.Info("Untracked files:\n%s", untracked)
+	} else {
+		logging.Info("No untracked files")
+	}
+}
+
+// logGitStateBeforeOperation logs comprehensive git state before critical operations
+func logGitStateBeforeOperation(operation, branchName string) {
+	logging.Info("=== Pre-Operation Git State Debug ===")
+	logging.Info("Operation: %s", operation)
+	logging.Info("Target branch: %s", branchName)
+
+	// Current branch
+	if currentBranch, err := runGitCommand("branch", "--show-current"); err != nil {
+		logging.Info("Failed to get current branch: %v", err)
+	} else {
+		logging.Info("Current branch: %s", strings.TrimSpace(currentBranch))
+	}
+
+	// Current HEAD
+	if head, err := runGitCommand("rev-parse", "HEAD"); err != nil {
+		logging.Info("Failed to get HEAD: %v", err)
+	} else {
+		logging.Info("Current HEAD: %s", strings.TrimSpace(head))
+	}
+
+	logGitStatus(fmt.Sprintf("before %s", operation))
+	logWorkingDirectoryState(fmt.Sprintf("before %s", operation))
 }
 
 func pushErr(err error) error {
