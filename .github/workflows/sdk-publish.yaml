@@ -42,6 +42,11 @@ on:
         default: true
         required: false
         type: boolean
+      node_options:
+        description: "Options to pass to Node.js when running npm commands"
+        required: false
+        type: string
+
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -272,6 +277,7 @@ jobs:
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+          NODE_OPTIONS: ${{ inputs.node_options }}
         run: |
           VERSION=$(npm pkg get version | tr -d '"')
           echo "Detected version: $VERSION"
