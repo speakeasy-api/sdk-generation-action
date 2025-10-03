@@ -42,17 +42,11 @@ on:
         default: true
         required: false
         type: boolean
-      environment:
-        description: |
-          Any required environment variables to set for the execution. Set as a string with each entry of the form "key=value".
-
-          Example: 
-            environment: |
-              NODE_OPTIONS="--max-old-space-size=4096"
-
-          Note: This should not be used for secrets as inputs will *not* be masked. Something akin to $npm_token should be explicitly passed as a secret.
+      node_options:
+        description: "Options to pass to Node.js when running npm commands"
         required: false
         type: string
+
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -270,16 +264,6 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
-      - name: Set environment variables
-        shell: bash
-        run: |
-          if [ -n "${{ inputs.environment }}" ]; then
-            echo "${{ inputs.environment }}" | while IFS= read -r line; do
-              if [ -n "$line" ] && [[ "$line" == *"="* ]]; then
-                echo "$line" >> $GITHUB_ENV
-              fi
-            done
-          fi
       - uses: actions/checkout@v3
       - name: Set up Node
         uses: actions/setup-node@v3
@@ -293,6 +277,7 @@ jobs:
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+          NODE_OPTIONS: ${{ inputs.node_options }}
         run: |
           VERSION=$(npm pkg get version | tr -d '"')
           echo "Detected version: $VERSION"
