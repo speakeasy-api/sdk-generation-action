@@ -751,22 +751,70 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 	w, _ := g.repo.Worktree()
 
 	entries := []*github.TreeEntry{}
-	for file, fileStatus := range sourceFiles {
-		if fileStatus.Staging != git.Unmodified && fileStatus.Staging != git.Untracked && fileStatus.Staging != git.Deleted {
-			filePath := w.Filesystem.Join(w.Filesystem.Root(), file)
-			content, err := os.ReadFile(filePath)
-			if err != nil {
-				fmt.Println("Error getting file content", err, filePath)
-				return nil, err
-			}
+	var skippedFiles []string
+	var includedFiles []string
 
-			entries = append(entries, &github.TreeEntry{
-				Path:    github.String(file),
-				Type:    github.String("blob"),
-				Content: github.String(string(content)),
-				Mode:    github.String("100644"),
-			})
+	for file, fileStatus := range sourceFiles {
+		// Include all staged files except unmodified ones
+		// Note: git.Untracked in staging means the file was added to staging via `git add`
+		if fileStatus.Staging != git.Unmodified {
+			switch fileStatus.Staging {
+			case git.Added, git.Modified, git.Renamed, git.Copied, git.Untracked:
+				// These require file content to be read and included in the tree
+				filePath := w.Filesystem.Join(w.Filesystem.Root(), file)
+				content, err := os.ReadFile(filePath)
+				if err != nil {
+					logging.Error("Error reading file content for %s: %v", file, err)
+					return nil, fmt.Errorf("failed to read file %s: %w", file, err)
+				}
+
+				entries = append(entries, &github.TreeEntry{
+					Path:    github.String(file),
+					Type:    github.String("blob"),
+					Content: github.String(string(content)),
+					Mode:    github.String("100644"),
+				})
+				includedFiles = append(includedFiles, file)
+
+			case git.Deleted:
+				// Deleted files should not be included in the new tree (they're removed by omission)
+				// This is the correct behavior - GitHub API creates tree without deleted files
+				logging.Debug("Excluding deleted file from tree: %s", file)
+				skippedFiles = append(skippedFiles, fmt.Sprintf("%s (deleted)", file))
+
+			case git.UpdatedButUnmerged:
+				// Handle merge conflicts - include the current content
+				filePath := w.Filesystem.Join(w.Filesystem.Root(), file)
+				content, err := os.ReadFile(filePath)
+				if err != nil {
+					logging.Error("Error reading conflicted file content for %s: %v", file, err)
+					return nil, fmt.Errorf("failed to read conflicted file %s: %w", file, err)
+				}
+
+				entries = append(entries, &github.TreeEntry{
+					Path:    github.String(file),
+					Type:    github.String("blob"),
+					Content: github.String(string(content)),
+					Mode:    github.String("100644"),
+				})
+				includedFiles = append(includedFiles, fmt.Sprintf("%s (conflicted)", file))
+
+			default:
+				// Log unknown staging states for visibility
+				logging.Error("Unknown staging state '%c' for file %s - skipping", fileStatus.Staging, file)
+				skippedFiles = append(skippedFiles, fmt.Sprintf("%s (unknown state: %c)", file, fileStatus.Staging))
+			}
+		} else {
+			skippedFiles = append(skippedFiles, fmt.Sprintf("%s (unmodified)", file))
 		}
+	}
+
+	// Log visibility into what files were processed
+	if len(includedFiles) > 0 {
+		logging.Info("Including %d staged files in tree: %v", len(includedFiles), includedFiles)
+	}
+	if len(skippedFiles) > 0 {
+		logging.Debug("Skipped %d files from tree: %v", len(skippedFiles), skippedFiles)
 	}
 
 	tree, _, err = g.client.Git.CreateTree(context.Background(), owner, repo, *ref.Object.SHA, entries)
