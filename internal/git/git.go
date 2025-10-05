@@ -297,6 +297,35 @@ func (g *Git) Reset(args ...string) error {
 	return nil
 }
 
+// syncWorktree synchronizes the local repository state with a remote commit
+// This is used after creating commits via GitHub API to ensure local/remote consistency
+func (g *Git) syncWorktree(worktree *git.Worktree, branchName string) error {
+	logging.Debug("Synchronizing local repository with remote branch %s", branchName)
+
+	// Hard reset the worktree to the current HEAD to ensure a clean state
+	head, _ := g.repo.Head()
+	logging.Debug("Resetting worktree to HEAD at hash %s", head.Hash())
+	if err := worktree.Reset(&git.ResetOptions{
+		Mode:   git.HardReset,
+		Commit: head.Hash(),
+	}); err != nil {
+		return fmt.Errorf("error resetting to HEAD %s: %w", head.Hash(), err)
+	}
+
+	// Update the local branch reference to point to the latest remote commit
+	if err := worktree.Pull(&git.PullOptions{
+		Auth: getGithubAuth(g.accessToken),
+	}); err != nil && err != git.NoErrAlreadyUpToDate {
+		return fmt.Errorf("error pulling latest changes: %w", err)
+	}
+	headAfter, _ := g.repo.Head()
+	if head.Hash() != headAfter.Hash() {
+		logging.Debug("Updated local HEAD to hash %s", headAfter.Hash())
+	}
+
+	return nil
+}
+
 func (g *Git) cherryPick(commitHash string) error {
 	logging.Info("Cherry-picking commit %s", commitHash)
 
@@ -665,6 +694,13 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		Object: &github.GitObject{SHA: commitResult.SHA},
 	}
 	g.client.Git.UpdateRef(context.Background(), owner, repo, newRef, true)
+
+	// Synchronize local repository state with the remote commit we just created
+	// This prevents subsequent checkout operations from failing due to local/remote mismatch
+	if err := g.syncWorktree(w, branch); err != nil {
+		return "", fmt.Errorf("error syncing worktree: %w", err)
+	}
+	logging.Debug("Successfully synchronized local repository with remote commit %s", *commitResult.SHA)
 
 	return *commitResult.SHA, nil
 }
@@ -1586,9 +1622,9 @@ func runGitCommand(args ...string) (string, error) {
 }
 
 func pushErr(err error) error {
-	if err != nil {
+	if err != nil && err != git.NoErrAlreadyUpToDate {
 		if strings.Contains(err.Error(), "protected branch hook declined") {
-			return fmt.Errorf("error pushing changes: %w\nThis is likely due to a branch protection rule. Please ensure that the branch is not protected (repo > settings > branches).", err)
+			return fmt.Errorf("error pushing changes: %w\nThis is likely due to a branch protection rule. Please ensure that the branch is not protected (repo > settings > branches)", err)
 		}
 		return fmt.Errorf("error pushing changes: %w", err)
 	}
