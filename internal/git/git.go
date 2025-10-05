@@ -1609,7 +1609,7 @@ func runGitCommand(args ...string) (string, error) {
 }
 
 func pushErr(err error) error {
-	if err != nil {
+	if err != nil && err != git.NoErrAlreadyUpToDate {
 		if strings.Contains(err.Error(), "protected branch hook declined") {
 			return fmt.Errorf("error pushing changes: %w\nThis is likely due to a branch protection rule. Please ensure that the branch is not protected (repo > settings > branches)", err)
 		}
