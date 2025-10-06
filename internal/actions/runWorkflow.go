@@ -248,24 +248,13 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 		return fmt.Errorf("custom code commit hash is empty")
 	}
 	
-	logging.Info("Found custom code commit hash: %s", customCodeCommitHash)
-	logging.Info("Cherry-picking custom code commit: %s", customCodeCommitHash)
-	
-	if err := g.CherryPick(customCodeCommitHash); err != nil {
-		return fmt.Errorf("failed to cherry-pick custom code commit %s: %w", customCodeCommitHash, err)
+	// Reset to the custom code commit instead of cherry-picking
+	logging.Info("Resetting resolve branch to custom code commit: %s", customCodeCommitHash)
+	if err := g.Reset("--hard", customCodeCommitHash); err != nil {
+		return fmt.Errorf("failed to reset to custom code commit %s: %w", customCodeCommitHash, err)
 	}
 	
-	logging.Info("Successfully cherry-picked custom code commit")
-
-	// 4.6. Stage and commit the patched files
-	if err := g.Add("."); err != nil {
-		return fmt.Errorf("failed to stage patched files: %w", err)
-	}
-	
-	patchCommitMsg := "patch: apply custom code"
-	if err := g.CommitAsSpeakeasyBot(patchCommitMsg); err != nil {
-		return fmt.Errorf("failed to commit patched files: %w", err)
-	}
+	logging.Info("Successfully reset to custom code commit")
 	
 	logging.Info("Pushing resolve branch: %s", resolveBranch)
 	if err := g.PushBranch(resolveBranch); err != nil {
