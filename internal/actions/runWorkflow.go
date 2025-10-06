@@ -183,6 +183,9 @@ func RunWorkflow() error {
 	// Attempt to apply custom code
 
 	runRes, outputs, err = run.Run(g, pr, wf, cli.CustomCodeOnly)
+	if err != nil {
+		return err
+	}
 
 	// If test mode is successful to this point, exit here
 	if environment.IsTestMode() {
