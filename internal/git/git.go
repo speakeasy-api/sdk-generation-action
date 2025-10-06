@@ -1452,13 +1452,21 @@ func pushErr(err error) error {
 }
 
 func (g *Git) CherryPick(commitHash string) error {
-	// Execute git cherry-pick manually
+	// Execute git cherry-pick manually with committer identity
 	args := []string{"cherry-pick", commitHash}
 	logging.Info("Running git  %s", strings.Join(args, " "))
 	
 	cmd := exec.Command("git", args...)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
-	cmd.Env = os.Environ()
+	
+	// Set environment variables for git identity
+	env := os.Environ()
+	env = append(env, "GIT_COMMITTER_NAME=speakeasybot")
+	env = append(env, "GIT_COMMITTER_EMAIL=bot@speakeasyapi.dev")
+	env = append(env, "GIT_AUTHOR_NAME=speakeasybot")
+	env = append(env, "GIT_AUTHOR_EMAIL=bot@speakeasyapi.dev")
+	cmd.Env = env
+	
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error running `git cherry-pick %s`: %w %s", commitHash, err, string(output))
