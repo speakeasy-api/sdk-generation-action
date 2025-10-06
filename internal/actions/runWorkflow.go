@@ -235,10 +235,27 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 		return fmt.Errorf("failed to create branch %s: %w", resolveBranch, err)
 	}
 	
-	_, err := cli.Run(false, nil, "", nil, nil, cli.CustomCodeReverse)
+
+	// Get the latest custom code commit hash using CLI
+	logging.Info("Getting latest custom code commit hash...")
+	hashResult, err := cli.Run(false, nil, "", nil, nil, cli.CustomCodeHash)
 	if err != nil {
-		return fmt.Errorf("failed to apply custom code (reverse) %w", err)
+		return fmt.Errorf("failed to get latest custom code hash: %w", err)
 	}
+	
+	customCodeCommitHash := strings.TrimSpace(hashResult.FullOutput)
+	if customCodeCommitHash == "" {
+		return fmt.Errorf("custom code commit hash is empty")
+	}
+	
+	logging.Info("Found custom code commit hash: %s", customCodeCommitHash)
+	logging.Info("Cherry-picking custom code commit: %s", customCodeCommitHash)
+	
+	if err := g.CherryPick(customCodeCommitHash); err != nil {
+		return fmt.Errorf("failed to cherry-pick custom code commit %s: %w", customCodeCommitHash, err)
+	}
+	
+	logging.Info("Successfully cherry-picked custom code commit")
 
 	// 4.6. Stage and commit the patched files
 	if err := g.Add("."); err != nil {

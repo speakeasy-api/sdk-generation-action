@@ -21,6 +21,7 @@ const (
 	CustomCodeYes		CustomCodeMode = "yes"
 	CustomCodeOnly 		CustomCodeMode = "only"
 	CustomCodeReverse	CustomCodeMode = "reverse"
+	CustomCodeHash		CustomCodeMode = "hash"
 )
 
 type RunResults struct {
@@ -67,6 +68,23 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 			ChangesReportURL: "",
 			OpenAPIChangeSummary: "",
 			CustomCodeApplied: true,
+			FullOutput: out,
+		}, nil
+	}
+	if customCode == CustomCodeHash {
+		args = []string{"customcode", "--latest-hash"}
+		out, err := runSpeakeasyCommand(args...)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Println("Custom Code Hash")
+		fmt.Println(out)
+
+		return &RunResults{
+			LintingReportURL: "",
+			ChangesReportURL: "",
+			OpenAPIChangeSummary: "",
+			CustomCodeApplied: false,
 			FullOutput: out,
 		}, nil
 	}

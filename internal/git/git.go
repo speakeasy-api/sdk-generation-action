@@ -1451,6 +1451,22 @@ func pushErr(err error) error {
 	return nil
 }
 
+func (g *Git) CherryPick(commitHash string) error {
+	// Execute git cherry-pick manually
+	args := []string{"cherry-pick", commitHash}
+	logging.Info("Running git  %s", strings.Join(args, " "))
+	
+	cmd := exec.Command("git", args...)
+	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Env = os.Environ()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error running `git cherry-pick %s`: %w %s", commitHash, err, string(output))
+	}
+
+	return nil
+}
+
 func (g *Git) CommitAsSpeakeasyBot(message string) error {
 	if g.repo == nil {
 		return fmt.Errorf("repo not cloned")
