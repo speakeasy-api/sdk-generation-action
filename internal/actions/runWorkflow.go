@@ -93,22 +93,16 @@ func RunWorkflow() error {
 		os.Setenv("SPEAKEASY_ACTIVE_BRANCH", branchName)
 	}
 
-	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeYes)
+	cleanGenBranch := fmt.Sprintf("speakeasy/clean-generation-%d", timestamp)
+	logging.Info("Creating clean generation branch: %s", cleanGenBranch)
+	if err := g.CreateAndCheckoutBranch(cleanGenBranch); err != nil {
+		return fmt.Errorf("failed to create branch %s: %w", cleanGenBranch, err)
+	}
+
+	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeOnly)
 	if err != nil {
-		fmt.Println("error received: %v", err)
-		// Check if this is a custom code clean apply failure
-		if strings.HasPrefix(err.Error(), "Generation failed as a result of custom code application conflict") {
-			logging.Info("===================================================================================")
-			if conflictErr := handleCustomCodeConflict(g, pr, wf); conflictErr != nil {
-				logging.Error("Failed to handle custom code conflict: %v", conflictErr)
-				// Fall through to original error handling
-			}
-			logging.Info("===================================================================================")
-		}
-		if err := setOutputs(outputs); err != nil {
-			logging.Debug("failed to set outputs: %v", err)
-		}
-		return err
+		fmt.Println("Couldn't apply custom code regtions %v", err)
+		handleCustomCodeConflict(g, pr, wf)
 	}
 
 	anythingRegenerated := false
@@ -184,6 +178,11 @@ func RunWorkflow() error {
 		}
 	}
 
+
+	// Attempt to apply custom code
+
+	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeOnly)
+
 	// If test mode is successful to this point, exit here
 	if environment.IsTestMode() {
 		success = true
@@ -216,71 +215,27 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	logging.Info("Handling custom code conflict with new workflow")
 	
 	timestamp := time.Now().Unix()
-	
-	// // First, capture the diff that failed to apply cleanly
-	// logging.Info("Capturing original diff before reset")
-	// originalDiff, err := g.GetDiff("HEAD", "--binary", "--full-index")
-	// if err != nil {
-	// 	return fmt.Errorf("failed to capture original diff: %w", err)
-	// }
-	
-	// 1. Reset worktree and change to speakeasy/clean-generation-{ts} branch
+		
+	// 1. Reset worktree
 	logging.Info("Resetting worktree")
 	if err := g.Reset("--hard", "HEAD"); err != nil {
 		return fmt.Errorf("failed to reset worktree: %w", err)
 	}
-	
-	cleanGenBranch := fmt.Sprintf("speakeasy/clean-generation-%d", timestamp)
-	logging.Info("Creating clean generation branch: %s", cleanGenBranch)
-	if err := g.CreateAndCheckoutBranch(cleanGenBranch); err != nil {
-		return fmt.Errorf("failed to create branch %s: %w", cleanGenBranch, err)
-	}
-	
-	// 2. Run generation with CustomCodeNo to get clean generation
-	logging.Info("Running clean generation with custom code disabled")
-	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeNo)
-	if err != nil {
-		return fmt.Errorf("failed to run clean generation: %w", err)
-	}
-	_ = runRes  // Use the variable
-	_ = outputs // Use the variable
-	
-	// 3. Add and commit generation
-	logging.Info("Adding and committing clean generation")
-	if err := g.Add("."); err != nil {
-		return fmt.Errorf("failed to stage clean generation: %w", err)
-	}
-	// Comment block implementation completed
-
-	cleanGenCommitMsg := "Clean generation with custom code disabled"
-	if err := g.CommitAsSpeakeasyBot(cleanGenCommitMsg); err != nil {
-		return fmt.Errorf("failed to commit clean generation: %w", err)
-	}
-	
-	// 4. Create resolve branch using sophisticated merge-base logic
+			
+	// 4. Create resolve branch
 	resolveBranch := fmt.Sprintf("speakeasy/resolve-%d", timestamp)
 	logging.Info("Creating resolve branch using merge-base strategy: %s", resolveBranch)
+	// checkout main to avoid clean-generation commit
 	g.FindAndCheckoutBranch("main")
 	if err := g.CreateAndCheckoutBranch(resolveBranch); err != nil {
 		return fmt.Errorf("failed to create branch %s: %w", resolveBranch, err)
 	}
 	
-	runRes, outputs, err = run.Run(g, pr, wf, cli.CustomCodeOnly)
+	runRes, outputs, err = run.Run(g, pr, wf, cli.CustomCodeReverse)
 	if err != nil {
-		return fmt.Errorf("failed to apply custom code: %w", err)
+		return fmt.Errorf("failed to apply custom code (reverse) %w", err)
 	}
 
-
-	// // Apply the patch with -R --index --3way flags
-	// logging.Info("Applying patch with reverse, index, and 3-way flags")
-	// logging.Info("PATCH============================================================")
-	// logging.Info(originalDiff)
-	// logging.Info("END PATCH============================================================")
-	// if err := g.ApplyPatchFromString(originalDiff, true, true, true); err != nil {
-	// 	logging.Info("Patch application failed (this may be expected with conflicts): %v", err)
-	// 	// Continue even if patch fails - this is expected for conflicts
-	// }
-		
 	// 4.6. Stage and commit the patched files
 	if err := g.Add("."); err != nil {
 		return fmt.Errorf("failed to stage patched files: %w", err)
@@ -289,12 +244,6 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	patchCommitMsg := "patch: apply custom code"
 	if err := g.CommitAsSpeakeasyBot(patchCommitMsg); err != nil {
 		return fmt.Errorf("failed to commit patched files: %w", err)
-	}
-	
-	// Push both branches
-	logging.Info("Pushing clean generation branch: %s", cleanGenBranch)
-	if err := g.PushBranch(cleanGenBranch); err != nil {
-		return fmt.Errorf("failed to push clean generation branch: %w", err)
 	}
 	
 	logging.Info("Pushing resolve branch: %s", resolveBranch)
