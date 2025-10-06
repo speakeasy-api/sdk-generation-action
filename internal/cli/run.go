@@ -56,6 +56,7 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 		args = []string{"customcode", "--apply-reverse"}
 		out, err := runSpeakeasyCommand(args...)
 		if err != nil {
+			fmt.Println("Received Err: ", err)
 			return nil, err
 		}
 		fmt.Println("Custom Code Reverse")
