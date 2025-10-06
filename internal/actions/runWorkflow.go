@@ -99,10 +99,9 @@ func RunWorkflow() error {
 		return fmt.Errorf("failed to create branch %s: %w", cleanGenBranch, err)
 	}
 
-	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeOnly)
+	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomNo)
 	if err != nil {
-		fmt.Println("Couldn't apply custom code regtions %v", err)
-		handleCustomCodeConflict(g, pr, wf)
+		return err
 	}
 
 	anythingRegenerated := false
