@@ -93,13 +93,15 @@ func RunWorkflow() error {
 		os.Setenv("SPEAKEASY_ACTIVE_BRANCH", branchName)
 	}
 
+	timestamp := time.Now().Unix()
 	cleanGenBranch := fmt.Sprintf("speakeasy/clean-generation-%d", timestamp)
 	logging.Info("Creating clean generation branch: %s", cleanGenBranch)
 	if err := g.CreateAndCheckoutBranch(cleanGenBranch); err != nil {
 		return fmt.Errorf("failed to create branch %s: %w", cleanGenBranch, err)
 	}
 
-	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomNo)
+	// run generation without any custom code application
+	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeNo)
 	if err != nil {
 		return err
 	}
@@ -180,7 +182,7 @@ func RunWorkflow() error {
 
 	// Attempt to apply custom code
 
-	runRes, outputs, err := run.Run(g, pr, wf, cli.CustomCodeOnly)
+	runRes, outputs, err = run.Run(g, pr, wf, cli.CustomCodeOnly)
 
 	// If test mode is successful to this point, exit here
 	if environment.IsTestMode() {
@@ -210,7 +212,7 @@ func RunWorkflow() error {
 	return nil
 }
 
-func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.Workflow) error {
+func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.Workflow, cleanGenBranch string) error {
 	logging.Info("Handling custom code conflict with new workflow")
 	
 	timestamp := time.Now().Unix()
@@ -230,7 +232,7 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 		return fmt.Errorf("failed to create branch %s: %w", resolveBranch, err)
 	}
 	
-	runRes, outputs, err = run.Run(g, pr, wf, cli.CustomCodeReverse)
+	_, _, err := run.Run(g, pr, wf, cli.CustomCodeReverse)
 	if err != nil {
 		return fmt.Errorf("failed to apply custom code (reverse) %w", err)
 	}
