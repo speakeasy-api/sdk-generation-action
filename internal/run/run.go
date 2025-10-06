@@ -140,9 +140,12 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow, customCode cli.Cu
 
 	changereport, runRes, err = versioning.WithVersionReportCapture[*cli.RunResults](context.Background(), func(ctx context.Context) (*cli.RunResults, error) {
 		runRes, err = cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories, manualVersioningBump, customCode)
+		fmt.Println("Ran CLI got: ", runRes)
+		fmt.Println("Err,", err)
 		return runRes, err
 	})
 	if err != nil {
+		fmt.Println("Found error: ", err)
 		return nil, outputs, err
 	}
 	// if runRes != nil && runRes.CustomCodeApplied == false {
