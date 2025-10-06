@@ -238,6 +238,7 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	res1, out1, err := run.Run(g, pr, wf, cli.CustomCodeReverse)
 	fmt.Println("Res1", res1)
 	fmt.Println("Out1", out1)
+	fmt.Println("Err", err)
 	if err != nil {
 		return fmt.Errorf("failed to apply custom code (reverse) %w", err)
 	}

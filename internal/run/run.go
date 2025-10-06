@@ -145,9 +145,9 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow, customCode cli.Cu
 	if err != nil {
 		return nil, outputs, err
 	}
-	if runRes != nil && runRes.CustomCodeApplied == false {
-		return nil, outputs, fmt.Errorf("Generation failed as a result of custom code application conflict")
-	}
+	// if runRes != nil && runRes.CustomCodeApplied == false {
+	// 	return nil, outputs, fmt.Errorf("Generation failed as a result of custom code application conflict")
+	// }
 	if len(changereport.Reports) == 0 {
 		// Assume it's not yet enabled (e.g. CLI version too old)
 		changereport = nil
