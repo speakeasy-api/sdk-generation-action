@@ -182,7 +182,7 @@ func RunWorkflow() error {
 
 	// Attempt to apply custom code
 
-	runRes, outputs, err = run.Run(g, pr, wf, cli.CustomCodeOnly)
+	runRes, outputs, err = cli.Run(false, nil, "", nil, nil, cli.CustomCodeOnly)
 	if err != nil {
 		return handleCustomCodeConflict(g, pr, wf, cleanGenBranch)
 	}
