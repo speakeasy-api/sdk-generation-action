@@ -236,25 +236,25 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	}
 	
 
-	// Get the latest custom code commit hash using CLI
-	logging.Info("Getting latest custom code commit hash...")
-	hashResult, err := cli.Run(false, nil, "", nil, nil, cli.CustomCodeHash)
-	if err != nil {
-		return fmt.Errorf("failed to get latest custom code hash: %w", err)
-	}
+	// // Get the latest custom code commit hash using CLI
+	// logging.Info("Getting latest custom code commit hash...")
+	// hashResult, err := cli.Run(false, nil, "", nil, nil, cli.CustomCodeHash)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to get latest custom code hash: %w", err)
+	// }
 	
-	customCodeCommitHash := strings.TrimSpace(hashResult.FullOutput)
-	if customCodeCommitHash == "" {
-		return fmt.Errorf("custom code commit hash is empty")
-	}
+	// customCodeCommitHash := strings.TrimSpace(hashResult.FullOutput)
+	// if customCodeCommitHash == "" {
+	// 	return fmt.Errorf("custom code commit hash is empty")
+	// }
 	
-	// Reset to the custom code commit instead of cherry-picking
-	logging.Info("Resetting resolve branch to custom code commit: %s", customCodeCommitHash)
-	if err := g.Reset("--hard", customCodeCommitHash); err != nil {
-		return fmt.Errorf("failed to reset to custom code commit %s: %w", customCodeCommitHash, err)
-	}
+	// // Reset to the custom code commit instead of cherry-picking
+	// logging.Info("Resetting resolve branch to custom code commit: %s", customCodeCommitHash)
+	// if err := g.Reset("--hard", customCodeCommitHash); err != nil {
+	// 	return fmt.Errorf("failed to reset to custom code commit %s: %w", customCodeCommitHash, err)
+	// }
 	
-	logging.Info("Successfully reset to custom code commit")
+	// logging.Info("Successfully reset to custom code commit")
 	
 	logging.Info("Pushing resolve branch: %s", resolveBranch)
 	if err := g.PushBranch(resolveBranch); err != nil {
