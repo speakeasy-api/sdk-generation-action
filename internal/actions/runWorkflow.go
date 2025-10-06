@@ -235,7 +235,7 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 		return fmt.Errorf("failed to create branch %s: %w", resolveBranch, err)
 	}
 	
-	res1, err := cli.Run(false, nil, '', nil, nil, cli.CustomCodeReverse)
+	_, err := cli.Run(false, nil, "", nil, nil, cli.CustomCodeReverse)
 	if err != nil {
 		return fmt.Errorf("failed to apply custom code (reverse) %w", err)
 	}
