@@ -184,7 +184,7 @@ func RunWorkflow() error {
 
 	runRes, outputs, err = run.Run(g, pr, wf, cli.CustomCodeOnly)
 	if err != nil {
-		return err
+		return handleCustomCodeConflict(g, pr, wf, cleanGenBranch)
 	}
 
 	// If test mode is successful to this point, exit here
