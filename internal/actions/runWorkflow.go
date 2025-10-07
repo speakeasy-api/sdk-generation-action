@@ -244,6 +244,23 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 
 	// Discover default branch
 	logging.Info("Discovering default branch...")
+	
+	// First, set up the remote HEAD reference in case it's not configured
+	logging.Info("Setting up remote HEAD reference...")
+	setHeadCmd := exec.Command("git", "remote", "set-head", "origin", "--auto")
+	setHeadCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	setHeadCmd.Env = os.Environ()
+	logging.Info("Running command: %s in directory: %s", setHeadCmd.String(), setHeadCmd.Dir)
+	
+	setHeadOut, setHeadErr := setHeadCmd.CombinedOutput()
+	if setHeadErr != nil {
+		logging.Info("Setting remote HEAD failed (continuing anyway): %v", setHeadErr)
+		logging.Info("Set-head stdout/stderr: %s", string(setHeadOut))
+	} else {
+		logging.Info("Successfully set remote HEAD: %s", string(setHeadOut))
+	}
+	
+	// Now try to get the default branch
 	defaultBranchCmd := exec.Command("git", "symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD")
 	defaultBranchCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	defaultBranchCmd.Env = os.Environ()
