@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -220,6 +222,17 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	
 	timestamp := time.Now().Unix()
 		
+	// Record git hash of parent commit
+	parentCommitCmd := exec.Command("git", "rev-parse", "HEAD~1")
+	parentCommitCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	parentCommitCmd.Env = os.Environ()
+	parentCommitOut, err := parentCommitCmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to get parent commit hash: %w", err)
+	}
+	parentCommitHash := strings.TrimSpace(string(parentCommitOut))
+	logging.Info("Recorded parent commit hash: %s", parentCommitHash)
+
 	// 1. Reset worktree
 	logging.Info("Resetting worktree")
 	if err := g.Reset("--hard", "HEAD"); err != nil {
@@ -229,32 +242,13 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	// 4. Create resolve branch
 	resolveBranch := fmt.Sprintf("speakeasy/resolve-%d", timestamp)
 	logging.Info("Creating resolve branch using merge-base strategy: %s", resolveBranch)
-	// checkout main to avoid clean-generation commit
-	g.FindAndCheckoutBranch("main")
-	if err := g.CreateAndCheckoutBranch(resolveBranch); err != nil {
-		return fmt.Errorf("failed to create branch %s: %w", resolveBranch, err)
+	
+	// Checkout branch at parent commit recorded before
+	logging.Info("Creating resolve branch %s from parent commit %s", resolveBranch, parentCommitHash)
+	if err := g.CreateBranchFromCommit(resolveBranch, parentCommitHash); err != nil {
+		return fmt.Errorf("failed to create branch %s from commit %s: %w", resolveBranch, parentCommitHash, err)
 	}
 	
-
-	// // Get the latest custom code commit hash using CLI
-	// logging.Info("Getting latest custom code commit hash...")
-	// hashResult, err := cli.Run(false, nil, "", nil, nil, cli.CustomCodeHash)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to get latest custom code hash: %w", err)
-	// }
-	
-	// customCodeCommitHash := strings.TrimSpace(hashResult.FullOutput)
-	// if customCodeCommitHash == "" {
-	// 	return fmt.Errorf("custom code commit hash is empty")
-	// }
-	
-	// // Reset to the custom code commit instead of cherry-picking
-	// logging.Info("Resetting resolve branch to custom code commit: %s", customCodeCommitHash)
-	// if err := g.Reset("--hard", customCodeCommitHash); err != nil {
-	// 	return fmt.Errorf("failed to reset to custom code commit %s: %w", customCodeCommitHash, err)
-	// }
-	
-	// logging.Info("Successfully reset to custom code commit")
 	
 	logging.Info("Pushing resolve branch: %s", resolveBranch)
 	if err := g.PushBranch(resolveBranch); err != nil {
