@@ -247,11 +247,20 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	defaultBranchCmd := exec.Command("git", "symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD")
 	defaultBranchCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	defaultBranchCmd.Env = os.Environ()
-	defaultBranchOut, err := defaultBranchCmd.Output()
+	logging.Info("Running command: %s in directory: %s", defaultBranchCmd.String(), defaultBranchCmd.Dir)
+	
+	defaultBranchOut, err := defaultBranchCmd.CombinedOutput()
 	if err != nil {
+		logging.Error("Git symbolic-ref command failed with error: %v", err)
+		logging.Error("Command stdout/stderr: %s", string(defaultBranchOut))
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			logging.Error("Exit code: %d", exitErr.ExitCode())
+		}
 		return fmt.Errorf("failed to get default branch: %w", err)
 	}
+	
 	defaultBranch := strings.TrimSpace(string(defaultBranchOut))
+	logging.Info("Raw symbolic-ref output: '%s'", defaultBranch)
 	defaultBranch = strings.TrimPrefix(defaultBranch, "origin/")
 	logging.Info("Found default branch: %s", defaultBranch)
 
