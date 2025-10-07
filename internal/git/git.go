@@ -751,7 +751,7 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 
 func (g *Git) Add(arg string) error {
 	// We execute this manually because go-git doesn't properly support gitignore
-	cmd := exec.Command("git", "add", arg)
+	cmd := exec.Command("git", "add", "--renormalize", arg)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
