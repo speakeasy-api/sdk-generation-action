@@ -751,12 +751,71 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 
 func (g *Git) Add(arg string) error {
 	// We execute this manually because go-git doesn't properly support gitignore
-	cmd := exec.Command("git", "add", "--renormalize", arg)
+	cmd := exec.Command("git", "add", arg)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error running `git add %s`: %w %s", arg, err, string(output))
+	}
+
+	// Run git add --renormalize . after the initial add
+	renormalizeCmd := exec.Command("git", "add", "--renormalize", ".")
+	renormalizeCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	renormalizeCmd.Env = os.Environ()
+	renormalizeOutput, err := renormalizeCmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error running `git add --renormalize .`: %w %s", err, string(renormalizeOutput))
+	}
+
+	// Check for files that remained unstaged
+	if err := g.logUnstagedFiles(); err != nil {
+		logging.Info("Warning: failed to check unstaged files: %v", err)
+	}
+
+	return nil
+}
+
+// logUnstagedFiles logs any files that remain unstaged after git add
+func (g *Git) logUnstagedFiles() error {
+	if g.repo == nil {
+		return fmt.Errorf("repo not cloned")
+	}
+
+	w, err := g.repo.Worktree()
+	if err != nil {
+		return fmt.Errorf("error getting worktree: %w", err)
+	}
+
+	status, err := w.Status()
+	if err != nil {
+		return fmt.Errorf("error getting status: %w", err)
+	}
+
+	var unstagedFiles []string
+	var untrackedFiles []string
+
+	for file, fileStatus := range status {
+		// Check for files that are modified but not staged
+		if fileStatus.Worktree == git.Modified && fileStatus.Staging == git.Unmodified {
+			unstagedFiles = append(unstagedFiles, file)
+		}
+		// Check for untracked files
+		if fileStatus.Worktree == git.Untracked {
+			untrackedFiles = append(untrackedFiles, file)
+		}
+	}
+
+	if len(unstagedFiles) > 0 {
+		logging.Info("Files that remained unstaged after git add: %v", unstagedFiles)
+	}
+
+	if len(untrackedFiles) > 0 {
+		logging.Info("Untracked files that were not added: %v", untrackedFiles)
+	}
+
+	if len(unstagedFiles) == 0 && len(untrackedFiles) == 0 {
+		logging.Debug("All modified files were successfully staged")
 	}
 
 	return nil
