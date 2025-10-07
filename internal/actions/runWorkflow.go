@@ -233,9 +233,24 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 		}
 	}
 	
+	// Show what branches exist before fetch
+	logging.Info("Checking what branches exist before fetch...")
+	branchListCmd := exec.Command("git", "branch", "-r")
+	branchListCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	branchListCmd.Env = os.Environ()
+	branchListOut, _ := branchListCmd.CombinedOutput()
+	logging.Info("Remote branches before fetch:\n%s", string(branchListOut))
+	
+	// Show what local branches exist
+	localBranchCmd := exec.Command("git", "branch", "-a")
+	localBranchCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	localBranchCmd.Env = os.Environ()
+	localBranchOut, _ := localBranchCmd.CombinedOutput()
+	logging.Info("All branches before fetch:\n%s", string(localBranchOut))
+	
 	// Fetch from remote to update remote tracking branches
 	logging.Info("Fetching from origin to update remote tracking branches...")
-	fetchCmd := exec.Command("git", "fetch", "origin")
+	fetchCmd := exec.Command("git", "fetch", "origin", "--verbose")
 	fetchCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	fetchCmd.Env = os.Environ()
 	fetchOut, err := fetchCmd.CombinedOutput()
@@ -243,6 +258,26 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 		logging.Info("Fetch failed: %v, output: %s (continuing)", err, string(fetchOut))
 	} else {
 		logging.Info("Fetch succeeded: %s", string(fetchOut))
+	}
+	
+	// Show what branches exist after fetch
+	logging.Info("Checking what branches exist after fetch...")
+	branchListCmd2 := exec.Command("git", "branch", "-r")
+	branchListCmd2.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	branchListCmd2.Env = os.Environ()
+	branchListOut2, _ := branchListCmd2.CombinedOutput()
+	logging.Info("Remote branches after fetch:\n%s", string(branchListOut2))
+	
+	// Check if the specific branch exists on remote
+	logging.Info("Checking if clean generation branch exists on remote...")
+	lsRemoteCmd := exec.Command("git", "ls-remote", "origin", cleanGenBranch)
+	lsRemoteCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	lsRemoteCmd.Env = os.Environ()
+	lsRemoteOut, lsRemoteErr := lsRemoteCmd.CombinedOutput()
+	if lsRemoteErr != nil {
+		logging.Info("ls-remote failed: %v, output: %s", lsRemoteErr, string(lsRemoteOut))
+	} else {
+		logging.Info("ls-remote result for %s:\n%s", cleanGenBranch, string(lsRemoteOut))
 	}
 		
 	// 1. Reset worktree
