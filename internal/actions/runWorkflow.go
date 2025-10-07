@@ -222,48 +222,78 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	
 	timestamp := time.Now().Unix()
 		
-	// Record git hash of parent commit
-	parentCommitCmd := exec.Command("git", "rev-parse", "HEAD~1")
-	parentCommitCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
-	parentCommitCmd.Env = os.Environ()
-	parentCommitOut, err := parentCommitCmd.Output()
-	if err != nil {
-		return fmt.Errorf("failed to get parent commit hash: %w", err)
-	}
-	parentCommitHash := strings.TrimSpace(string(parentCommitOut))
-	logging.Info("Recorded parent commit hash: %s", parentCommitHash)
-
 	// 1. Reset worktree
 	logging.Info("Resetting worktree")
 	if err := g.Reset("--hard", "HEAD"); err != nil {
 		return fmt.Errorf("failed to reset worktree: %w", err)
 	}
-			
-	// 4. Create resolve branch
-	resolveBranch := fmt.Sprintf("speakeasy/resolve-%d", timestamp)
-	logging.Info("Creating resolve branch using merge-base strategy: %s", resolveBranch)
+
 	
-	// Checkout branch at parent commit recorded before
-	logging.Info("Creating resolve branch %s from parent commit %s", resolveBranch, parentCommitHash)
-	if err := g.CreateBranchFromCommit(resolveBranch, parentCommitHash); err != nil {
-		return fmt.Errorf("failed to create branch %s from commit %s: %w", resolveBranch, parentCommitHash, err)
-	}
 	
-	// Get the latest custom code commit hash using CLI
-	logging.Info("Getting latest custom code commit hash...")
+	// Get the manual/custom code commit hash
+	logging.Info("Getting custom code commit hash for merge-base calculation...")
 	hashResult, err := cli.Run(false, nil, "", nil, nil, cli.CustomCodeHash)
 	if err != nil {
-		return fmt.Errorf("failed to get latest custom code hash: %w", err)
+		return fmt.Errorf("failed to get custom code hash: %w", err)
 	}
-	
 	customCodeCommitHash := strings.TrimSpace(hashResult.FullOutput)
 	if customCodeCommitHash == "" {
 		return fmt.Errorf("custom code commit hash is empty")
 	}
+	logging.Info("Found manual commit hash: %s", customCodeCommitHash)
+
+	// Discover default branch
+	logging.Info("Discovering default branch...")
+	defaultBranchCmd := exec.Command("git", "symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD")
+	defaultBranchCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	defaultBranchCmd.Env = os.Environ()
+	defaultBranchOut, err := defaultBranchCmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to get default branch: %w", err)
+	}
+	defaultBranch := strings.TrimSpace(string(defaultBranchOut))
+	defaultBranch = strings.TrimPrefix(defaultBranch, "origin/")
+	logging.Info("Found default branch: %s", defaultBranch)
+
+	// Set up branch references
+	regenRef := fmt.Sprintf("origin/%s", strings.TrimPrefix(cleanGenBranch, "origin/"))
+	baseRef := fmt.Sprintf("origin/%s", strings.TrimPrefix(defaultBranch, "origin/"))
+	logging.Info("Using REGEN_REF: %s, BASE_REF: %s, MANUAL: %s", regenRef, baseRef, customCodeCommitHash)
+
+	// Find merge base with octopus strategy
+	logging.Info("Finding merge base using octopus strategy...")
+	mergeBaseCmd := exec.Command("git", "merge-base", "--octopus", baseRef, regenRef, customCodeCommitHash)
+	mergeBaseCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	mergeBaseCmd.Env = os.Environ()
+	mergeBaseOut, err := mergeBaseCmd.Output()
+	var mergeBase string
+	if err != nil {
+		logging.Info("Octopus merge-base failed, using fallback strategy: %v", err)
+		// Fallback to simple merge-base between default and regen
+		fallbackCmd := exec.Command("git", "merge-base", baseRef, regenRef)
+		fallbackCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+		fallbackCmd.Env = os.Environ()
+		fallbackOut, err := fallbackCmd.Output()
+		if err != nil {
+			return fmt.Errorf("failed to find merge base: %w", err)
+		}
+		mergeBase = strings.TrimSpace(string(fallbackOut))
+	} else {
+		mergeBase = strings.TrimSpace(string(mergeBaseOut))
+	}
 	
-	logging.Info("Found custom code commit hash: %s", customCodeCommitHash)
-	logging.Info("Cherry-picking custom code commit: %s", customCodeCommitHash)
+	logging.Info("Found merge base: %s", mergeBase)
+
+	// 4. Create resolve branch
+	resolveBranch := fmt.Sprintf("speakeasy/resolve-%d", timestamp)
+	logging.Info("Creating resolve branch using merge-base strategy: %s", resolveBranch)
 	
+	// Create resolve branch from calculated merge base
+	logging.Info("Creating resolve branch %s from merge base %s", resolveBranch, mergeBase)
+	if err := g.CreateBranchFromCommit(resolveBranch, mergeBase); err != nil {
+		return fmt.Errorf("failed to create branch %s from commit %s: %w", resolveBranch, mergeBase, err)
+	}
+
 	if err := g.CherryPick(customCodeCommitHash); err != nil {
 		return fmt.Errorf("failed to cherry-pick custom code commit %s: %w", customCodeCommitHash, err)
 	}
