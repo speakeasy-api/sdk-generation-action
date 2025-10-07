@@ -225,7 +225,12 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	// Push the clean generation branch first so it's available as a remote reference
 	logging.Info("Pushing clean generation branch: %s", cleanGenBranch)
 	if err := g.PushBranch(cleanGenBranch); err != nil {
-		return fmt.Errorf("failed to push clean generation branch: %w", err)
+		// Don't fail if it's already up-to-date or already exists
+		if strings.Contains(err.Error(), "already up-to-date") || strings.Contains(err.Error(), "already exists") {
+			logging.Info("Clean generation branch push result: %v (continuing)", err)
+		} else {
+			return fmt.Errorf("failed to push clean generation branch: %w", err)
+		}
 	}
 		
 	// 1. Reset worktree
