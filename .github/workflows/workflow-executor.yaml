@@ -260,7 +260,7 @@ jobs:
           github_repository: ${{ inputs.github_repository }}
           enable_sdk_changelog: ${{ inputs.enable_sdk_changelog }}
       - uses: ravsamhq/notify-slack-action@v2
-        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' && env.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ always() && steps.check-label.outputs.short_circuit_label_trigger != 'true' && env.SLACK_WEBHOOK_URL != '' }}
         with:
           status: ${{ job.status }}
           token: ${{ secrets.github_access_token }}
