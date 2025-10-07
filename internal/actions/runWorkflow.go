@@ -232,6 +232,18 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 			return fmt.Errorf("failed to push clean generation branch: %w", err)
 		}
 	}
+	
+	// Fetch from remote to update remote tracking branches
+	logging.Info("Fetching from origin to update remote tracking branches...")
+	fetchCmd := exec.Command("git", "fetch", "origin")
+	fetchCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	fetchCmd.Env = os.Environ()
+	fetchOut, err := fetchCmd.CombinedOutput()
+	if err != nil {
+		logging.Info("Fetch failed: %v, output: %s (continuing)", err, string(fetchOut))
+	} else {
+		logging.Info("Fetch succeeded: %s", string(fetchOut))
+	}
 		
 	// 1. Reset worktree
 	logging.Info("Resetting worktree")
