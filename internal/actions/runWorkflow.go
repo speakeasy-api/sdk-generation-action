@@ -320,8 +320,8 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	// Check if all references exist before attempting merge-base
 	logging.Info("Checking if all references exist...")
 	refs := map[string]string{
-		"baseRef ("+baseRef+")": "refs/remotes/" + strings.TrimPrefix(baseRef, "origin/"),
-		"regenRef ("+regenRef+")": "refs/remotes/" + strings.TrimPrefix(regenRef, "origin/"),
+		"baseRef ("+baseRef+")": "refs/remotes/" + baseRef,
+		"regenRef ("+regenRef+")": "refs/remotes/" + regenRef,
 		"customCodeCommitHash": customCodeCommitHash,
 	}
 	
