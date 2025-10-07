@@ -356,52 +356,22 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	baseRef := fmt.Sprintf("origin/%s", strings.TrimPrefix(defaultBranch, "origin/"))
 	logging.Info("Using REGEN_REF: %s, BASE_REF: %s, MANUAL: %s", regenRef, baseRef, customCodeCommitHash)
 
-	// Find merge base with octopus strategy
-	logging.Info("Finding merge base using octopus strategy...")
-	mergeBaseCmd := exec.Command("git", "merge-base", "--octopus", baseRef, regenRef, customCodeCommitHash)
-	mergeBaseCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
-	mergeBaseCmd.Env = os.Environ()
-	logging.Info("Running octopus command: %s in directory: %s", mergeBaseCmd.String(), mergeBaseCmd.Dir)
-	logging.Info("Command args: %v", mergeBaseCmd.Args)
+	// Use the custom code commit's parent as the merge base
+	logging.Info("Using custom code commit's parent as merge base...")
+	parentCmd := exec.Command("git", "rev-parse", customCodeCommitHash+"^")
+	parentCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	parentCmd.Env = os.Environ()
+	logging.Info("Running command: %s in directory: %s", parentCmd.String(), parentCmd.Dir)
 	
-	// Check if all references exist before attempting merge-base
-	logging.Info("Checking if all references exist...")
-	refs := map[string]string{
-		"baseRef ("+baseRef+")": "refs/remotes/" + baseRef,
-		"regenRef ("+regenRef+")": "refs/remotes/" + regenRef,
-		"customCodeCommitHash": customCodeCommitHash,
-	}
-	
-	for name, ref := range refs {
-		var checkCmd *exec.Cmd
-		if strings.Contains(ref, "refs/remotes/") {
-			checkCmd = exec.Command("git", "show-ref", "--verify", "--quiet", ref)
-		} else {
-			// For commit hashes, use git cat-file
-			checkCmd = exec.Command("git", "cat-file", "-e", ref)
-		}
-		checkCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
-		checkCmd.Env = os.Environ()
-		
-		if err := checkCmd.Run(); err != nil {
-			logging.Error("Reference %s does NOT exist or is invalid: %v", name, err)
-		} else {
-			logging.Info("Reference %s exists and is valid", name)
-		}
-	}
-	
-	mergeBaseOut, err := mergeBaseCmd.CombinedOutput()
+	parentOut, err := parentCmd.CombinedOutput()
 	if err != nil {
-		logging.Error("Octopus merge-base failed with error: %v", err)
-		logging.Error("Command stdout/stderr: %s", string(mergeBaseOut))
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			logging.Error("Exit code: %d", exitErr.ExitCode())
-		}
-		return fmt.Errorf("octopus merge-base failed: %w", err)
+		logging.Error("Failed to get parent of custom code commit: %v", err)
+		logging.Error("Command stdout/stderr: %s", string(parentOut))
+		return fmt.Errorf("failed to get parent of custom code commit %s: %w", customCodeCommitHash, err)
 	}
 	
-	mergeBase := strings.TrimSpace(string(mergeBaseOut))
-	logging.Info("Octopus merge-base succeeded: %s", mergeBase)
+	mergeBase := strings.TrimSpace(string(parentOut))
+	logging.Info("Using parent commit as merge base: %s", mergeBase)
 
 	// 4. Create resolve branch
 	resolveBranch := fmt.Sprintf("speakeasy/resolve-%d", timestamp)
