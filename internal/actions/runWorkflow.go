@@ -221,6 +221,12 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 	logging.Info("Handling custom code conflict with new workflow")
 	
 	timestamp := time.Now().Unix()
+	
+	// Push the clean generation branch first so it's available as a remote reference
+	logging.Info("Pushing clean generation branch: %s", cleanGenBranch)
+	if err := g.PushBranch(cleanGenBranch); err != nil {
+		return fmt.Errorf("failed to push clean generation branch: %w", err)
+	}
 		
 	// 1. Reset worktree
 	logging.Info("Resetting worktree")
