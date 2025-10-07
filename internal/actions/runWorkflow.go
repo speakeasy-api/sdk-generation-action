@@ -260,6 +260,18 @@ func handleCustomCodeConflict(g *git.Git, pr *github.PullRequest, wf *workflow.W
 		logging.Info("Fetch succeeded: %s", string(fetchOut))
 	}
 	
+	// Explicitly fetch the clean generation branch to create remote tracking branch
+	logging.Info("Explicitly fetching clean generation branch: %s", cleanGenBranch)
+	fetchSpecificCmd := exec.Command("git", "fetch", "origin", cleanGenBranch+":remotes/origin/"+cleanGenBranch)
+	fetchSpecificCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	fetchSpecificCmd.Env = os.Environ()
+	fetchSpecificOut, fetchSpecificErr := fetchSpecificCmd.CombinedOutput()
+	if fetchSpecificErr != nil {
+		logging.Info("Specific fetch failed: %v, output: %s (continuing)", fetchSpecificErr, string(fetchSpecificOut))
+	} else {
+		logging.Info("Specific fetch succeeded: %s", string(fetchSpecificOut))
+	}
+	
 	// Show what branches exist after fetch
 	logging.Info("Checking what branches exist after fetch...")
 	branchListCmd2 := exec.Command("git", "branch", "-r")
