@@ -290,3 +290,96 @@ func TestGetSourceBranchIntegration(t *testing.T) {
 		})
 	}
 }
+
+func TestIsPRTriggered(t *testing.T) {
+	tests := []struct {
+		name      string
+		githubRef string
+		expected  bool
+	}{
+		{
+			name:      "PR trigger with refs/pull",
+			githubRef: "refs/pull/123/merge",
+			expected:  true,
+		},
+		{
+			name:      "PR trigger with refs/pulls",
+			githubRef: "refs/pulls/456/merge",
+			expected:  true,
+		},
+		{
+			name:      "Direct branch trigger",
+			githubRef: "refs/heads/main",
+			expected:  false,
+		},
+		{
+			name:      "Feature branch trigger",
+			githubRef: "refs/heads/feature/new-api",
+			expected:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup
+			os.Setenv("GITHUB_REF", tt.githubRef)
+
+			// Test
+			result := IsPRTriggered()
+			assert.Equal(t, tt.expected, result)
+
+			// Cleanup
+			os.Unsetenv("GITHUB_REF")
+		})
+	}
+}
+
+func TestShouldSkipReleasing(t *testing.T) {
+	tests := []struct {
+		name      string
+		mode      string
+		githubRef string
+		expected  bool
+	}{
+		{
+			name:      "Direct mode with PR trigger - should skip",
+			mode:      "direct",
+			githubRef: "refs/pull/123/merge",
+			expected:  true,
+		},
+		{
+			name:      "Direct mode with branch trigger - should not skip",
+			mode:      "direct",
+			githubRef: "refs/heads/main",
+			expected:  false,
+		},
+		{
+			name:      "PR mode with PR trigger - should not skip",
+			mode:      "pr",
+			githubRef: "refs/pull/123/merge",
+			expected:  false,
+		},
+		{
+			name:      "Test mode with PR trigger - should not skip",
+			mode:      "test",
+			githubRef: "refs/pull/123/merge",
+			expected:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup
+			os.Setenv("INPUT_MODE", tt.mode)
+			os.Setenv("GITHUB_REF", tt.githubRef)
+
+			// Test
+			result := ShouldSkipReleasing()
+			assert.Equal(t, tt.expected, result)
+
+			// Cleanup
+			os.Unsetenv("INPUT_MODE")
+			os.Unsetenv("GITHUB_REF")
+		})
+	}
+}

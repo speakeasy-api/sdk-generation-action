@@ -388,3 +388,15 @@ func SanitizeBranchName(branch string) string {
 
 	return sanitized
 }
+
+// IsPRTriggered returns true if the action was triggered by a PR event
+func IsPRTriggered() bool {
+	githubRef := os.Getenv("GITHUB_REF")
+	return strings.Contains(githubRef, "refs/pull") || strings.Contains(githubRef, "refs/pulls")
+}
+
+// ShouldSkipReleasing returns true if we should skip releasing/tagging
+// This happens when we're in direct mode but triggered by a PR event
+func ShouldSkipReleasing() bool {
+	return GetMode() == ModeDirect && IsPRTriggered()
+}
