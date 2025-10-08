@@ -240,6 +240,22 @@ func GetSDKChangelog() string {
 	return os.Getenv("INPUT_ENABLE_SDK_CHANGELOG")
 }
 
+func SkipRelease() bool {
+	return os.Getenv("INPUT_SKIP_RELEASE") == "true"
+}
+
+// IsPRTriggered returns true if the action was triggered by a PR event
+func IsPRTriggered() bool {
+	githubRef := os.Getenv("GITHUB_REF")
+	return strings.Contains(githubRef, "refs/pull") || strings.Contains(githubRef, "refs/pulls")
+}
+
+// ShouldSkipReleasing returns true if we should skip releasing/tagging
+// This happens when we're in direct mode and either skip_release is set or triggered by a PR event
+func ShouldSkipReleasing() bool {
+	return GetMode() == ModeDirect && (SkipRelease() || IsPRTriggered())
+}
+
 func GetWorkflowName() string {
 	return os.Getenv("GITHUB_WORKFLOW")
 }
@@ -387,16 +403,4 @@ func SanitizeBranchName(branch string) string {
 	sanitized = strings.Trim(sanitized, "-")
 
 	return sanitized
-}
-
-// IsPRTriggered returns true if the action was triggered by a PR event
-func IsPRTriggered() bool {
-	githubRef := os.Getenv("GITHUB_REF")
-	return strings.Contains(githubRef, "refs/pull") || strings.Contains(githubRef, "refs/pulls")
-}
-
-// ShouldSkipReleasing returns true if we should skip releasing/tagging
-// This happens when we're in direct mode but triggered by a PR event
-func ShouldSkipReleasing() bool {
-	return GetMode() == ModeDirect && IsPRTriggered()
 }
