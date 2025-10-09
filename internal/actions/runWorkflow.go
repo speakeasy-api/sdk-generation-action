@@ -4,10 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/google/go-github/v63/github"
 	"github.com/pkg/errors"
@@ -98,10 +95,7 @@ func RunWorkflow() error {
 	if err != nil {
 		// Check if this is a custom code clean apply failure
 		if strings.HasPrefix(err.Error(), "failed to apply custom code cleanly") {
-			if conflictErr := handleCustomCodeConflict(g, err.Error()); conflictErr != nil {
-				logging.Error("Failed to handle custom code conflict: %v", conflictErr)
-				// Fall through to original error handling
-			}
+			return fmt.Errorf("Could not cleanly apply custom code patch.  Please follow these instructions ... to resolve in your local environment.")
 		}
 		if err := setOutputs(outputs); err != nil {
 			logging.Debug("failed to set outputs: %v", err)
@@ -210,111 +204,6 @@ func RunWorkflow() error {
 	return nil
 }
 
-func handleCustomCodeConflict(g *git.Git, errorMsg string) error {
-	logging.Info("Handling custom code conflict: %s", errorMsg)
-	
-	workspaceDir := filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
-	
-	// 1. Capture the current diff into a patchfile
-	timestamp := time.Now().Unix()
-	patchFile := fmt.Sprintf("conflict-patch-%d.patch", timestamp)
-	patchPath := filepath.Join(workspaceDir, patchFile)
-	
-	logging.Info("Capturing diff to patchfile: %s", patchPath)
-	diffCmd := exec.Command("git", "diff", "--binary")
-	diffCmd.Dir = workspaceDir
-	diffOutput, err := diffCmd.Output()
-	if err != nil {
-		return fmt.Errorf("failed to capture diff: %w", err)
-	}
-	
-	if err := os.WriteFile(patchPath, diffOutput, 0644); err != nil {
-		return fmt.Errorf("failed to write patch file: %w", err)
-	}
-	
-	// 2. Reset the github worktree
-	logging.Info("Resetting worktree")
-	if err := g.Reset("--hard", "HEAD"); err != nil {
-		return fmt.Errorf("failed to reset worktree: %w", err)
-	}
-	
-	// 3. Create a new branch: speakeasy/resolve-{ts}
-	branchName := fmt.Sprintf("speakeasy/resolve-%d", timestamp)
-	logging.Info("Creating conflict resolution branch: %s", branchName)
-	
-	checkoutCmd := exec.Command("git", "checkout", "-b", branchName)
-	checkoutCmd.Dir = workspaceDir
-	if err := checkoutCmd.Run(); err != nil {
-		return fmt.Errorf("failed to create branch %s: %w", branchName, err)
-	}
-	
-	// 4. Apply the patchfile using --3way
-	logging.Info("Applying patch with 3-way merge")
-	applyCmd := exec.Command("git", "apply", "--3way", patchFile)
-	applyCmd.Dir = workspaceDir
-	if err := applyCmd.Run(); err != nil {
-		// This is expected to fail with conflicts - we continue
-		logging.Info("Patch application failed as expected (conflicts): %v", err)
-	}
-	
-	// 5. Stage all changes
-	logging.Info("Staging all changes")
-	if err := g.Add("."); err != nil {
-		return fmt.Errorf("failed to stage changes: %w", err)
-	}
-	
-	// 6. Commit with the specified message
-	commitMsg := `Apply patch with conflicts - requires manual resolution
-
-- Patch could not be applied cleanly
-- Conflict markers indicate areas needing attention
-- Review and resolve conflicts, then merge this PR`
-	
-	logging.Info("Committing changes")
-	commitCmd := exec.Command("git", "commit", "-m", commitMsg)
-	commitCmd.Dir = workspaceDir
-	if err := commitCmd.Run(); err != nil {
-		return fmt.Errorf("failed to commit changes: %w", err)
-	}
-	
-	// Push the branch
-	logging.Info("Pushing branch %s", branchName)
-	pushCmd := exec.Command("git", "push", "origin", branchName)
-	pushCmd.Dir = workspaceDir
-	if err := pushCmd.Run(); err != nil {
-		return fmt.Errorf("failed to push branch: %w", err)
-	}
-	
-	// 7. Create the conflict resolution PR
-	logging.Info("Creating conflict resolution PR")
-	
-	// Get current user for assignee
-	currentUser := os.Getenv("GITHUB_ACTOR")
-	if currentUser == "" {
-		currentUser = "self"
-	}
-	
-	prTitle := fmt.Sprintf("🔧 Resolve conflicts: %s", extractPatchDescription(errorMsg))
-	prBody := `This patch could not be applied cleanly. Please resolve the conflicts and merge.`
-	
-	// Use gh CLI to create PR
-	ghCmd := exec.Command("gh", "pr", "create",
-		"--title", prTitle,
-		"--body", prBody,
-		"--assignee", currentUser)
-	ghCmd.Dir = workspaceDir
-	ghCmd.Env = append(os.Environ(), "GH_TOKEN="+os.Getenv("GITHUB_TOKEN"))
-	
-	if output, err := ghCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to create PR: %w, output: %s", err, string(output))
-	}
-	
-	// Clean up patch file
-	os.Remove(patchPath)
-	
-	logging.Info("Successfully created conflict resolution workflow")
-	return nil
-}
 
 func extractPatchDescription(errorMsg string) string {
 	// Try to extract meaningful description from error message
