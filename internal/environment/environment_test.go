@@ -290,3 +290,72 @@ func TestGetSourceBranchIntegration(t *testing.T) {
 		})
 	}
 }
+
+func TestShouldSkipReleasing(t *testing.T) {
+	tests := []struct {
+		name           string
+		mode           string
+		githubRef      string
+		skipRelease    string
+		expectedResult bool
+	}{
+		{
+			name:           "Direct mode with PR trigger should skip",
+			mode:           "direct",
+			githubRef:      "refs/pull/123/merge",
+			skipRelease:    "",
+			expectedResult: true,
+		},
+		{
+			name:           "Direct mode with skip_release flag should skip",
+			mode:           "direct",
+			githubRef:      "refs/heads/main",
+			skipRelease:    "true",
+			expectedResult: true,
+		},
+		{
+			name:           "Direct mode with normal branch should not skip",
+			mode:           "direct",
+			githubRef:      "refs/heads/main",
+			skipRelease:    "",
+			expectedResult: false,
+		},
+		{
+			name:           "PR mode should not skip (handled differently)",
+			mode:           "pr",
+			githubRef:      "refs/pull/123/merge",
+			skipRelease:    "",
+			expectedResult: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set up environment
+			if tt.mode != "" {
+				os.Setenv("INPUT_MODE", tt.mode)
+			} else {
+				os.Unsetenv("INPUT_MODE")
+			}
+			if tt.githubRef != "" {
+				os.Setenv("GITHUB_REF", tt.githubRef)
+			} else {
+				os.Unsetenv("GITHUB_REF")
+			}
+			if tt.skipRelease != "" {
+				os.Setenv("INPUT_SKIP_RELEASE", tt.skipRelease)
+			} else {
+				os.Unsetenv("INPUT_SKIP_RELEASE")
+			}
+
+			// Test
+			result := ShouldSkipReleasing()
+			assert.Equal(t, tt.expectedResult, result)
+
+			// Cleanup
+			os.Unsetenv("INPUT_MODE")
+			os.Unsetenv("GITHUB_REF")
+			os.Unsetenv("INPUT_SKIP_RELEASE")
+		})
+	}
+}
