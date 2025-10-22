@@ -346,6 +346,13 @@ func finalize(inputs finalizeInputs) error {
 			return err
 		}
 
+		// Skip releasing and tagging when configured to do so or when triggered by PR events
+		if environment.ShouldSkipReleasing() {
+			logging.Info("Skipping release creation and registry tagging - skip_release flag set or triggered by PR event")
+			inputs.Outputs["commit_hash"] = commitHash
+			return nil
+		}
+
 		if !inputs.SourcesOnly {
 			if err := inputs.Git.CreateRelease(oldReleaseInfo, languages, inputs.Outputs, targetSpecificReleaseNotes); err != nil {
 				return err
