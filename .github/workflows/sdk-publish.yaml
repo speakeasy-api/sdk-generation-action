@@ -264,16 +264,42 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: "16.x"
+          node-version: "24.x"
           registry-url: "https://registry.npmjs.org"
       - name: Install dependencies
         run: npm install --ignore-scripts
       - name: Install bun
         run: npm rebuild bun
+      - name: Debug OIDC environment
+        env:
+          NPM_TOKEN: ${{ secrets.npm_token }}
+        run: |
+          echo "=== npm/node versions ==="
+          npm --version
+          node --version
+          echo ""
+          echo "=== OIDC environment variables ==="
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
+            echo "ACTIONS_ID_TOKEN_REQUEST_URL: $ACTIONS_ID_TOKEN_REQUEST_URL"
+          else
+            echo "ACTIONS_ID_TOKEN_REQUEST_URL: NOT SET"
+          fi
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+            echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN: SET (length: ${#ACTIONS_ID_TOKEN_REQUEST_TOKEN})"
+          else
+            echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN: NOT SET"
+          fi
+          echo ""
+          echo "=== npm authentication config ==="
+          if [ -n "$NPM_TOKEN" ]; then
+            echo "NPM_TOKEN: SET (length: ${#NPM_TOKEN})"
+          else
+            echo "NPM_TOKEN: NOT SET"
+          fi
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
@@ -378,7 +404,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: "22.x"
+          node-version: "24.x"
           registry-url: "https://registry.npmjs.org"
       - run: npm install --ignore-scripts
       - run: npm rebuild bun
