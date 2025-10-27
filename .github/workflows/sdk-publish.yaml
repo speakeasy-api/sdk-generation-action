@@ -254,6 +254,9 @@ jobs:
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-npm:
+    permissions:
+      id-token: write  # Required for Trusted publishing (OIDC)
+      contents: read
     if: ${{ needs.release.outputs.typescript_regenerated == 'true' && needs.release.outputs.publish_typescript == 'true' }}
     name: Publish Typescript SDK
     runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
@@ -268,7 +271,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
-          node-version: "16.x"
+          node-version: "22.x"
           registry-url: "https://registry.npmjs.org"
       - name: Install dependencies
         run: npm install --ignore-scripts
