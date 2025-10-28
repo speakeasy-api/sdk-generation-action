@@ -277,42 +277,17 @@ jobs:
         run: npm install --ignore-scripts
       - name: Install bun
         run: npm rebuild bun
-      - name: Debug OIDC environment
-        run: |
-          echo "=== npm/node versions ==="
-          npm --version
-          node --version
-          echo ""
-          echo "=== OIDC environment variables ==="
-          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
-            echo "ACTIONS_ID_TOKEN_REQUEST_URL: $ACTIONS_ID_TOKEN_REQUEST_URL"
-          else
-            echo "ACTIONS_ID_TOKEN_REQUEST_URL: NOT SET"
-          fi
-          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
-            echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN: SET (length: ${#ACTIONS_ID_TOKEN_REQUEST_TOKEN})"
-          else
-            echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN: NOT SET"
-          fi
-          echo ""
-          echo "=== npm authentication config ==="
-          if [ -n "$NODE_AUTH_TOKEN" ]; then
-            echo "NODE_AUTH_TOKEN: SET (length: ${#NODE_AUTH_TOKEN})"
-          else
-            echo "NODE_AUTH_TOKEN: NOT SET"
-          fi
       - name: Publish
         env:
           NPM_TOKEN: ${{ secrets.npm_token }}
           NODE_OPTIONS: ${{ inputs.node_options }}
         run: |
-          # If OIDC is available, use it. Otherwise fall back to token auth
           # Check if OIDC is set up (`id-token: write`)
           if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
-            echo "Using OIDC Trusted Publishing"
+            echo "::notice::Using NPM Trusted Publishing (OIDC)"
           else
+            echo "::warning::OIDC is not configured: falling back to token-based authentication"
             export NODE_AUTH_TOKEN="$NPM_TOKEN"
-            echo "Using token-based authentication"
           fi
           VERSION=$(npm pkg get version | tr -d '"')
           echo "Detected version: $VERSION"
