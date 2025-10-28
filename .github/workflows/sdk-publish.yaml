@@ -267,9 +267,9 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "24.x"
           registry-url: "https://registry.npmjs.org"
@@ -303,7 +303,7 @@ jobs:
           fi
       - name: Publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+          # NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
           NODE_OPTIONS: ${{ inputs.node_options }}
         run: |
           VERSION=$(npm pkg get version | tr -d '"')
