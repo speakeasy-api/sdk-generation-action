@@ -303,7 +303,7 @@ jobs:
           fi
       - name: Publish
         env:
-          # NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
           NODE_OPTIONS: ${{ inputs.node_options }}
         run: |
           VERSION=$(npm pkg get version | tr -d '"')
