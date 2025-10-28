@@ -277,6 +277,30 @@ jobs:
         run: npm install --ignore-scripts
       - name: Install bun
         run: npm rebuild bun
+      - name: Debug OIDC environment
+        run: |
+          echo "=== npm/node versions ==="
+          npm --version
+          node --version
+          echo ""
+          echo "=== OIDC environment variables ==="
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
+            echo "ACTIONS_ID_TOKEN_REQUEST_URL: $ACTIONS_ID_TOKEN_REQUEST_URL"
+          else
+            echo "ACTIONS_ID_TOKEN_REQUEST_URL: NOT SET"
+          fi
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+            echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN: SET (length: ${#ACTIONS_ID_TOKEN_REQUEST_TOKEN})"
+          else
+            echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN: NOT SET"
+          fi
+          echo ""
+          echo "=== npm authentication config ==="
+          if [ -n "$NODE_AUTH_TOKEN" ]; then
+            echo "NODE_AUTH_TOKEN: SET (length: ${#NODE_AUTH_TOKEN})"
+          else
+            echo "NODE_AUTH_TOKEN: NOT SET"
+          fi
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
