@@ -303,9 +303,17 @@ jobs:
           fi
       - name: Publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+          NPM_TOKEN: ${{ secrets.npm_token }}
           NODE_OPTIONS: ${{ inputs.node_options }}
         run: |
+          # If OIDC is available, use it. Otherwise fall back to token auth
+          # Check if OIDC is set up (`id-token: write`)
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
+            echo "Using OIDC Trusted Publishing"
+          else
+            export NODE_AUTH_TOKEN="$NPM_TOKEN"
+            echo "Using token-based authentication"
+          fi
           VERSION=$(npm pkg get version | tr -d '"')
           echo "Detected version: $VERSION"
 
