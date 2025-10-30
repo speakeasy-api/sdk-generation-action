@@ -279,8 +279,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.npm_token }}
           NODE_OPTIONS: ${{ inputs.node_options }}
         run: |
-          # Check if OIDC is set up (`id-token: write`)
-          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
+          if [ -z "$NPM_TOKEN" ]; then
             echo "::notice::Using NPM Trusted Publishing (OIDC)"
           else
             echo "::warning::OIDC is not configured: falling back to token-based authentication"
