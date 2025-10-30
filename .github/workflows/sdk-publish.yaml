@@ -302,15 +302,9 @@ jobs:
           fi
       - name: Publish
         env:
-          NPM_TOKEN: ${{ secrets.npm_token }}
+          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
           NODE_OPTIONS: ${{ inputs.node_options }}
         run: |
-          if [ -z "$NPM_TOKEN" ]; then
-            echo "::notice::Using NPM Trusted Publishing (OIDC)"
-          else
-            echo "::warning::OIDC is not configured: falling back to token-based authentication"
-            export NODE_AUTH_TOKEN="$NPM_TOKEN"
-          fi
           VERSION=$(npm pkg get version | tr -d '"')
           echo "Detected version: $VERSION"
 
