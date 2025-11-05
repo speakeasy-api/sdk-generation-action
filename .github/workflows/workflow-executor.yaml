@@ -170,6 +170,9 @@ on:
       nuget_api_key:
         description: The api key for publishing to the Nuget registry
         required: false
+
+permissions: inherit
+
 jobs:
   run-workflow:
     name: Generate Target
