@@ -93,9 +93,6 @@ on:
       nuget_api_key:
         description: The api key for publishing to Nuget
         required: false
-
-permissions: inherit
-
 jobs:
   release:
     name: Create Github Release
