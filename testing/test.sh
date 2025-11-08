@@ -4,7 +4,7 @@ ENV_FILE=$1
 
 function run_action() {
     rm -rf ./repo || true
-    rm ./bin/speakeasy || true
+    rm -f ./bin/speakeasy || true
     go run main.go
 }
 
@@ -20,6 +20,6 @@ fi
 
 set -o allexport && source ${ENV_FILE} && set +o allexport
 
-rm output.txt || true
+rm -f output.txt
 INPUT_ACTION="run-workflow"
 run_action
