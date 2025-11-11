@@ -139,11 +139,12 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 	var changereport *versioning.MergedVersionReport
 
 	changereport, runRes, err = versioning.WithVersionReportCapture[*cli.RunResults](context.Background(), func(ctx context.Context) (*cli.RunResults, error) {
-		fmt.Println("Before before=====================================================================")
 		runRes, err = cli.Run(wf.Targets == nil || len(wf.Targets) == 0, installationURLs, repoURL, repoSubdirectories, manualVersioningBump)
-		fmt.Println("After after=====================================================================: %v", err)
 		return runRes, err
 	})
+	if err != nil {
+		return error.New(err)
+	}
 	if runRes.CustomCodeApplied == false {
 		return nil, outputs, fmt.Errorf("Generation failed as a result of custom code application conflict")
 	}
