@@ -3,7 +3,6 @@ package run
 import (
 	"context"
 	"fmt"
-	"errors"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -144,7 +143,7 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		return runRes, err
 	})
 	if err != nil {
-		return errors.New(err)
+		return nil, outputs, err
 	}
 	if runRes.CustomCodeApplied == false {
 		return nil, outputs, fmt.Errorf("Generation failed as a result of custom code application conflict")
