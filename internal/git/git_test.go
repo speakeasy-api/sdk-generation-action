@@ -333,7 +333,7 @@ func TestGit_FindOrCreateBranch_SourceBranchAware(t *testing.T) {
 			repo, _ := newTestRepo(t)
 			g := Git{repo: repo}
 
-			branchName, err := g.FindOrCreateBranch("", tt.action)
+			branchName, err := g.FindOrCreateBranch("", "", tt.action)
 			require.NoError(t, err)
 
 			assert.True(t, len(branchName) > len(tt.expectedPrefix), "Branch name should be longer than prefix")
@@ -493,7 +493,7 @@ func TestGit_BackwardCompatibility_MainBranches(t *testing.T) {
 			g := Git{repo: repo}
 
 			// Test branch naming - should NOT include source branch context
-			branchName, err := g.FindOrCreateBranch("", environment.ActionRunWorkflow)
+			branchName, err := g.FindOrCreateBranch("", "", environment.ActionRunWorkflow)
 			require.NoError(t, err)
 
 			// Should follow old naming pattern without source branch context

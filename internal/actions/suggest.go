@@ -39,7 +39,7 @@ func Suggest() error {
 		return err
 	}
 
-	branchName, err = g.FindOrCreateBranch(branchName, environment.ActionSuggest)
+	branchName, err = g.FindOrCreateBranch(branchName, "", environment.ActionSuggest)
 	if err != nil {
 		return err
 	}

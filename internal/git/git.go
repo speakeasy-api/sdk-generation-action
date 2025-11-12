@@ -288,7 +288,7 @@ func (g *Git) Reset(args ...string) error {
 	return nil
 }
 
-func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (string, error) {
+func (g *Git) FindOrCreateBranch(branchName string, targetBaseBranch string, action environment.Action) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
 	}
@@ -346,6 +346,37 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 		} else {
 			sanitizedSourceBranch := environment.SanitizeBranchName(sourceBranch)
 			branchName = fmt.Sprintf("speakeasy-sdk-docs-regen-%s-%d", sanitizedSourceBranch, timestamp)
+		}
+	}
+
+	// If targetBaseBranch is specified, checkout that branch first
+	if targetBaseBranch != "" {
+		logging.Info("Checking out target base branch %s before creating branch %s", targetBaseBranch, branchName)
+		
+		// Fetch the target base branch from remote if needed
+		r, err := g.repo.Remote("origin")
+		if err != nil {
+			return "", fmt.Errorf("error getting remote: %w", err)
+		}
+		
+		// Clean the branch name (remove refs/heads/ prefix if present)
+		cleanTargetBranch := strings.TrimPrefix(targetBaseBranch, "refs/heads/")
+		
+		if err := r.Fetch(&git.FetchOptions{
+			Auth: getGithubAuth(g.accessToken),
+			RefSpecs: []config.RefSpec{
+				config.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", cleanTargetBranch, cleanTargetBranch)),
+			},
+		}); err != nil && err != git.NoErrAlreadyUpToDate {
+			logging.Info("Could not fetch target base branch %s: %v", cleanTargetBranch, err)
+		}
+		
+		// Checkout the target base branch
+		targetBranchRef := plumbing.NewBranchReferenceName(cleanTargetBranch)
+		if err := w.Checkout(&git.CheckoutOptions{
+			Branch: targetBranchRef,
+		}); err != nil {
+			return "", fmt.Errorf("error checking out target base branch %s: %w", cleanTargetBranch, err)
 		}
 	}
 
