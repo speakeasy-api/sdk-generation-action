@@ -56,7 +56,9 @@ func RunWorkflow() error {
 
 	sourcesOnly := wf.Targets == nil || len(wf.Targets) == 0
 
-	branchName := environment.GetTargetBaseBranch()
+	tagretBastBranch := environment.GetTargetBaseBranch()
+	
+	branchName := ""
 	var pr *github.PullRequest
 	if mode == environment.ModePR {
 		var err error
@@ -72,7 +74,7 @@ func RunWorkflow() error {
 
 	// We want to stay on main if we're pushing code samples because we want to tag the code samples with `main`
 	if !environment.PushCodeSamplesOnly() && !environment.IsTestMode() {
-		branchName, err = g.FindOrCreateBranch(branchName, environment.ActionRunWorkflow)
+		branchName, err = g.FindOrCreateBranch(branchName, targetBaseBranch, environment.ActionRunWorkflow)
 		if err != nil {
 			return err
 		}
