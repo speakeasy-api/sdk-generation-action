@@ -407,6 +407,19 @@ func (g *Git) GetCurrentBranch() (string, error) {
 	return head.Name().Short(), nil
 }
 
+func (g *Git) GetCurrentCommit() (string, error) {
+	if g.repo == nil {
+		return "", fmt.Errorf("repo not cloned")
+	}
+
+	head, err := g.repo.Head()
+	if err != nil {
+		return "", fmt.Errorf("error getting head: %w", err)
+	}
+
+	return head.Hash().String(), nil
+}
+
 func (g *Git) DeleteBranch(branchName string) error {
 	if g.repo == nil {
 		return fmt.Errorf("repo not cloned")

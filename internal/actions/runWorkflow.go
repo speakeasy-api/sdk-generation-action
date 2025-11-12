@@ -97,7 +97,13 @@ func RunWorkflow() error {
 	if currentBranch, err := g.GetCurrentBranch(); err != nil {
 		logging.Info("Failed to get current branch: %v", err)
 	} else {
-		logging.Info("Current checked out branch before Run: %s", currentBranch)
+		currentCommit := "unknown"
+		if head, err := g.GetCurrentCommit(); err != nil {
+			logging.Info("Failed to get current commit: %v", err)
+		} else {
+			currentCommit = head[:8] // Show first 8 characters of commit hash
+		}
+		logging.Info("Current checked out branch before Run: %s - target: %s - commit: %s", currentBranch, targetBaseBranch, currentCommit)
 	}
 
 	runRes, outputs, err := run.Run(g, pr, wf)
