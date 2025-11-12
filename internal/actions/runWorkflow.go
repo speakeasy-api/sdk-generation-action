@@ -56,7 +56,7 @@ func RunWorkflow() error {
 
 	sourcesOnly := wf.Targets == nil || len(wf.Targets) == 0
 
-	tagretBastBranch := environment.GetTargetBaseBranch()
+	targetBaseBranch := environment.GetTargetBaseBranch()
 	
 	branchName := ""
 	var pr *github.PullRequest
