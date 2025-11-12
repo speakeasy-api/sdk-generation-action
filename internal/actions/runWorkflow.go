@@ -56,7 +56,7 @@ func RunWorkflow() error {
 
 	sourcesOnly := wf.Targets == nil || len(wf.Targets) == 0
 
-	branchName := ""
+	branchName := environment.GetTargetBaseBranch()
 	var pr *github.PullRequest
 	if mode == environment.ModePR {
 		var err error
