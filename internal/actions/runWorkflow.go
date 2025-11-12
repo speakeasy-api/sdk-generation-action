@@ -93,6 +93,13 @@ func RunWorkflow() error {
 		os.Setenv("SPEAKEASY_ACTIVE_BRANCH", branchName)
 	}
 
+	// Log current branch before running the workflow
+	if currentBranch, err := g.GetCurrentBranch(); err != nil {
+		logging.Info("Failed to get current branch: %v", err)
+	} else {
+		logging.Info("Current checked out branch before Run: %s", currentBranch)
+	}
+
 	runRes, outputs, err := run.Run(g, pr, wf)
 	if err != nil {
 		// Check if this is a custom code clean apply failure
