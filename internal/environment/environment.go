@@ -244,6 +244,10 @@ func SkipRelease() bool {
 	return os.Getenv("INPUT_SKIP_RELEASE") == "true"
 }
 
+func SkipVersioning() bool {
+	return os.Getenv("INPUT_SKIP_VERSIONING") == "true"
+}
+
 // IsPRTriggered returns true if the action was triggered by a PR event
 func IsPRTriggered() bool {
 	githubRef := os.Getenv("GITHUB_REF")

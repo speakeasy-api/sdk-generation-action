@@ -130,6 +130,10 @@ inputs:
     description: "Skip creating releases and registry tagging in direct mode"
     default: "false"
     required: false
+  skip_versioning:
+    description: "Skip versioning during SDK generation, preventing version bumps"
+    default: "false"
+    required: false
 outputs:
   publish_python:
     description: "Whether the Python SDK will be published to PyPi"
