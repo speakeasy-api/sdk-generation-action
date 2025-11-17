@@ -61,6 +61,10 @@ on:
         description: "Version to manually set for SDK generation"
         required: false
         type: string
+      skip_versioning:
+        description: Skip versioning during SDK generation, preventing version bumps
+        required: false
+        type: boolean
       environment:
         description: |
           Any required environment variables to set for the speakeasy run execution. Set as a string with each entry of the form "key=value".
@@ -251,6 +255,7 @@ jobs:
           registry_tags: ${{ inputs.registry_tags }}
           push_code_samples_only: ${{ inputs.push_code_samples }}
           set_version: ${{ inputs.set_version }}
+          skip_versioning: ${{ inputs.skip_versioning }}
           skip_compile: ${{ inputs.skip_compile }}
           feature_branch: ${{ inputs.feature_branch }}
           cli_environment_variables: ${{ inputs.environment }}
