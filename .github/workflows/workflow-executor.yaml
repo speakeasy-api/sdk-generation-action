@@ -63,8 +63,9 @@ on:
         type: string
       skip_versioning:
         description: Skip versioning during SDK generation, preventing version bumps
+        default: "false"
         required: false
-        type: boolean
+        type: string
       environment:
         description: |
           Any required environment variables to set for the speakeasy run execution. Set as a string with each entry of the form "key=value".
