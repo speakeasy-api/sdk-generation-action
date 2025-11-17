@@ -357,15 +357,6 @@ func IsMainBranch(branch string) bool {
 
 // GetTargetBaseBranch returns the branch that PRs should target
 func GetTargetBaseBranch() string {
-	// Check for explicit base branch override
-	if baseBranch := os.Getenv("INPUT_BASE_BRANCH"); baseBranch != "" {
-		// Handle both "main" and "refs/heads/main" formats
-		if !strings.HasPrefix(baseBranch, "refs/") {
-			return "refs/heads/" + baseBranch
-		}
-		return baseBranch
-	}
-
 	sourceBranch := GetSourceBranch()
 
 	// If triggered from main/master, target the original ref (main/master)
