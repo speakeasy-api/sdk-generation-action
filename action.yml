@@ -252,3 +252,4 @@ runs:
     - ${{ inputs.poetry_version }}
     - ${{ inputs.enable_sdk_changelog }}
     - ${{ inputs.skip_release }}
+    - ${{ inputs.skip_versioning }}
