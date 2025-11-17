@@ -368,6 +368,29 @@ func GetTargetBaseBranch() string {
 	return "refs/heads/" + sourceBranch
 }
 
+// GetGenerationBranch returns the branch that the PR should generate against.
+func GetGenerationBranch() string {
+	// Check for explicit base branch override
+	if baseBranch := os.Getenv("INPUT_BASE_BRANCH"); baseBranch != "" {
+		// Handle both "main" and "refs/heads/main" formats
+		if !strings.HasPrefix(baseBranch, "refs/") {
+			return "refs/heads/" + baseBranch
+		}
+		return baseBranch
+	}
+
+	sourceBranch := GetSourceBranch()
+
+	// If triggered from main/master, target the original ref (main/master)
+	if IsMainBranch(sourceBranch) {
+		return GetRef()
+	}
+
+	// For feature branches, target the source branch itself
+	return "refs/heads/" + sourceBranch
+}
+}
+
 // SanitizeBranchName sanitizes a branch name for use in generated branch names
 func SanitizeBranchName(branch string) string {
 	// Replace problematic characters with hyphens

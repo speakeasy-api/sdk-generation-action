@@ -56,7 +56,7 @@ func RunWorkflow() error {
 
 	sourcesOnly := wf.Targets == nil || len(wf.Targets) == 0
 
-	targetBaseBranch := environment.GetTargetBaseBranch()
+	targetBaseBranch := environment.GetGenerationBranch()
 	logging.Info("Target base branch: %s", targetBaseBranch)
 	
 	branchName := ""
