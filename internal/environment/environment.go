@@ -389,7 +389,6 @@ func GetGenerationBranch() string {
 	// For feature branches, target the source branch itself
 	return "refs/heads/" + sourceBranch
 }
-}
 
 // SanitizeBranchName sanitizes a branch name for use in generated branch names
 func SanitizeBranchName(branch string) string {
