@@ -456,26 +456,17 @@ func TestGit_FindOrCreateBranch_NonCIPendingCommits(t *testing.T) {
 	repo, err := git.PlainOpen(repoPath)
 	require.NoError(t, err)
 
-	g := Git{repo: repo}
+	g := New("test-token")
+	g.repo = repo
 	runGitCLI(t, repoPath, "config", "pull.rebase", "false")
 
 	t.Setenv("GITHUB_WORKSPACE", workspace)
 	t.Setenv("INPUT_WORKING_DIRECTORY", "")
 
-	branchName, err := g.FindOrCreateBranch("regen", environment.ActionRunWorkflow)
-	require.NoError(t, err)
-	assert.Equal(t, "regen", branchName)
-
-	// Verify the manual commit was cherry-picked onto the fresh branch
-	runGitCLI(t, repoPath, "checkout", "regen")
-	content, err := os.ReadFile(filepath.Join(repoPath, "manual.txt"))
-	require.NoError(t, err)
-	assert.Equal(t, "manual change\n", string(content), "manual commit should be preserved via cherry-pick")
-
-	// Verify CI commit was discarded (generated.txt should be back to main's version)
-	generatedContent, err := os.ReadFile(filepath.Join(repoPath, "generated.txt"))
-	require.NoError(t, err)
-	assert.Equal(t, "original\n", string(generatedContent), "CI commit should be discarded, file should match main")
+	_, err = g.FindOrCreateBranch("regen", environment.ActionRunWorkflow)
+	require.Error(t, err)
+	expectedError := "external changes detected on branch regen. The action cannot proceed because non-automated commits were pushed to this branch.\n\nPlease either:\n- Merge the associated PR for this branch\n- Close the PR and delete the branch\n\nAfter merging or closing, the action will create a new branch on the next run"
+	assert.Equal(t, expectedError, err.Error())
 }
 
 func TestGit_FindOrCreateBranch_BotCommitAllowed(t *testing.T) {

@@ -315,26 +315,6 @@ func (g *Git) resetWorktree(worktree *git.Worktree, branchName string) error {
 	return nil
 }
 
-func (g *Git) cherryPick(commitHash string) error {
-	logging.Info("Cherry-picking commit %s", commitHash)
-
-	workDir := filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
-
-	// Use -c flags to set identity temporarily for just this command
-	cmd := exec.Command("git",
-		"-c", "user.name="+speakeasyBotName,
-		"-c", "user.email=bot@speakeasyapi.dev",
-		"cherry-pick", "--allow-empty", commitHash)
-	cmd.Dir = workDir
-	cmd.Env = os.Environ()
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("error cherry-picking commit %s: %w %s", commitHash, err, string(output))
-	}
-
-	return nil
-}
-
 func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
@@ -366,22 +346,26 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 				return "", err
 			}
 
+			// If there are non-CI commits, fail immediately with an error
+			if len(nonCICommits) > 0 {
+				logging.Info("Found %d non-CI commits on branch %s", len(nonCICommits), branchName)
+
+				// Try to find the associated PR to provide a direct link
+				_, pr, prErr := g.FindExistingPR(branchName, action, false)
+				if prErr == nil && pr != nil {
+					prURL := pr.GetHTMLURL()
+					return "", fmt.Errorf("external changes detected on branch %s. The action cannot proceed because non-automated commits were pushed to this branch.\n\nPlease either:\n- Merge the PR: %s\n- Close the PR and delete the branch\n\nAfter merging or closing, the action will create a new branch on the next run", branchName, prURL)
+				}
+
+				// Fallback error if PR not found
+				return "", fmt.Errorf("external changes detected on branch %s. The action cannot proceed because non-automated commits were pushed to this branch.\n\nPlease either:\n- Merge the associated PR for this branch\n- Close the PR and delete the branch\n\nAfter merging or closing, the action will create a new branch on the next run", branchName)
+			}
+
 			// Reset to clean baseline from main
 			origin := fmt.Sprintf("origin/%s", defaultBranch)
 			if err = g.Reset("--hard", origin); err != nil {
 				// Swallow this error for now. Functionality will be unchanged from previous behavior if it fails
 				logging.Info("failed to reset branch: %s", err.Error())
-			}
-
-			// We will attempt to cherry-pick non Speakeasy generated commits onto the fresh branch
-			if len(nonCICommits) > 0 {
-				logging.Info("Cherry-picking %d non-CI commits onto fresh branch", len(nonCICommits))
-				// Reverse the order since git log returns newest first, but we want to apply oldest first
-				for i := len(nonCICommits) - 1; i >= 0; i-- {
-					if err := g.cherryPick(nonCICommits[i]); err != nil {
-						return "", fmt.Errorf("failed to cherry-pick commit %s: %w\n\nThis likely means manual changes are modifying a generated portion of the SDK.", nonCICommits[i][:8], err)
-					}
-				}
 			}
 
 			return existingBranch, nil
