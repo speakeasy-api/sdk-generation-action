@@ -292,25 +292,127 @@ jobs:
           RESOLVED_SPEAKEASY_VERSION: ${{ steps.run-workflow.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: "v15"
           GH_ACTION_STEP: ${{ github.job }}
+
+  run-workflow-fallback:
+    name: Retry Generation with Last Known Working Version
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
+    # Only run this job if the run-workflow job failed
+    if: ${{ failure() && needs.run-workflow.result == 'failure' }}
+    needs: [run-workflow]
+    outputs:
+      commit_hash: ${{ steps.run-workflow-retry.outputs.commit_hash }}
+      publish_python: ${{ steps.run-workflow-retry.outputs.publish_python }}
+      publish_typescript: ${{ steps.run-workflow-retry.outputs.publish_typescript }}
+      publish_terraform: ${{ steps.run-workflow-retry.outputs.publish_terraform }}
+      publish_java: ${{ steps.run-workflow-retry.outputs.publish_java }}
+      publish_php: ${{ steps.run-workflow-retry.outputs.publish_php }}
+      publish_ruby: ${{ steps.run-workflow-retry.outputs.publish_ruby }}
+      publish_csharp: ${{ steps.run-workflow-retry.outputs.publish_csharp }}
+      python_regenerated: ${{ steps.run-workflow-retry.outputs.python_regenerated }}
+      python_directory: ${{ steps.run-workflow-retry.outputs.python_directory }}
+      typescript_regenerated: ${{ steps.run-workflow-retry.outputs.typescript_regenerated }}
+      typescript_directory: ${{ steps.run-workflow-retry.outputs.typescript_directory }}
+      go_regenerated: ${{ steps.run-workflow-retry.outputs.go_regenerated }}
+      go_directory: ${{ steps.run-workflow-retry.outputs.go_directory }}
+      terraform_regenerated: ${{ steps.run-workflow-retry.outputs.terraform_regenerated }}
+      terraform_directory: ${{ steps.run-workflow-retry.outputs.terraform_directory }}
+      java_regenerated: ${{ steps.run-workflow-retry.outputs.java_regenerated }}
+      java_directory: ${{ steps.run-workflow-retry.outputs.java_directory }}
+      php_regenerated: ${{ steps.run-workflow-retry.outputs.php_regenerated }}
+      php_directory: ${{ steps.run-workflow-retry.outputs.php_directory }}
+      ruby_regenerated: ${{ steps.run-workflow-retry.outputs.ruby_regenerated }}
+      ruby_directory: ${{ steps.run-workflow-retry.outputs.ruby_directory }}
+      csharp_regenerated: ${{ steps.run-workflow-retry.outputs.csharp_regenerated }}
+      csharp_directory: ${{ steps.run-workflow-retry.outputs.csharp_directory }}
+      swift_regenerated: ${{ steps.run-workflow-retry.outputs.swift_regenerated }}
+      swift_directory: ${{ steps.run-workflow-retry.outputs.swift_directory }}
+      unity_regenerated: ${{ steps.run-workflow-retry.outputs.unity_regenerated }}
+      unity_directory: ${{ steps.run-workflow-retry.outputs.unity_directory }}
+      docs_regenerated: ${{ steps.run-workflow-retry.outputs.docs_regenerated }}
+      docs_directory: ${{ steps.run-workflow-retry.outputs.docs_directory }}
+      branch_name: ${{ steps.run-workflow-retry.outputs.branch_name }}
+      resolved_speakeasy_version: ${{ steps.run-workflow-retry.outputs.resolved_speakeasy_version }}
+      use_sonatype_legacy: ${{ steps.run-workflow-retry.outputs.use_sonatype_legacy }}
+    steps:
+      - name: Tune GitHub-hosted runner network
+        uses: smorimoto/tune-github-hosted-runner-network@v1
+      - id: run-workflow-retry
+        name: Retry Generation Workflow with Last Known Working Version
+        uses: speakeasy-api/sdk-generation-action@v15
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          mode: ${{ inputs.mode }}
+          force: ${{ inputs.force }}
+          signed_commits: ${{ inputs.signed_commits }}
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          pr_creation_pat: ${{ secrets.pr_creation_pat }}
+          output_tests: ${{ inputs.output_tests }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          working_directory: ${{ inputs.working_directory }}
+          openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
+          target: ${{ inputs.target }}
+          registry_tags: ${{ inputs.registry_tags }}
+          push_code_samples_only: ${{ inputs.push_code_samples }}
+          set_version: ${{ inputs.set_version }}
+          skip_versioning: ${{ inputs.skip_versioning }}
+          skip_compile: ${{ inputs.skip_compile }}
+          feature_branch: ${{ inputs.feature_branch }}
+          cli_environment_variables: |
+            SPEAKEASY_DISABLE_AUTO_UPDATE=true
+            ${{ inputs.environment }}
+          pnpm_version: ${{ inputs.pnpm_version }}
+          poetry_version: ${{ inputs.poetry_version }}
+          uv_version: ${{ inputs.uv_version }}
+          github_repository: ${{ inputs.github_repository }}
+          enable_sdk_changelog: ${{ inputs.enable_sdk_changelog }}
+      - uses: ravsamhq/notify-slack-action@v2
+        if: ${{ always() && env.SLACK_WEBHOOK_URL != '' }}
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "SDK Generation Retry with Last Known Working Version Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log-result-retry
+        name: Log Generation Retry Output
+        uses: speakeasy-api/sdk-generation-action@v15
+        if: always()
+        with:
+          speakeasy_version: ${{ inputs.speakeasy_version }}
+          github_access_token: ${{ secrets.github_access_token }}
+          working_directory: ${{ inputs.working_directory }}
+          action: log-result
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          RESOLVED_SPEAKEASY_VERSION: ${{ steps.run-workflow-retry.outputs.resolved_speakeasy_version }}
+          GH_ACTION_VERSION: "v15"
+          GH_ACTION_STEP: ${{ github.job }}
+
   publish-pypi:
     if: ${{ always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-      needs.run-workflow.outputs.python_regenerated == 'true' &&
-      needs.run-workflow.outputs.publish_python == 'true'
+      ((needs.run-workflow.outputs.python_regenerated == 'true' && needs.run-workflow.outputs.publish_python == 'true') ||
+       (needs.run-workflow-fallback.outputs.python_regenerated == 'true' && needs.run-workflow-fallback.outputs.publish_python == 'true'))
       && inputs.mode != 'pr' }}
     name: Publish Python SDK
     runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
-    needs: [run-workflow]
+    needs: [run-workflow, run-workflow-fallback]
     defaults:
       run:
-        working-directory: ${{ needs.run-workflow.outputs.python_directory }}
+        working-directory: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.python_directory || needs.run-workflow-fallback.outputs.python_directory }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - uses: actions/checkout@v3
         with:
-          ref: ${{ needs.run-workflow.outputs.commit_hash }}
+          ref: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.commit_hash || needs.run-workflow-fallback.outputs.commit_hash }}
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -356,7 +458,7 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
-          target_directory: ${{ needs.run-workflow.outputs.python_directory }}
+          target_directory: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.python_directory || needs.run-workflow-fallback.outputs.python_directory }}
           registry_name: "pypi"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
@@ -391,21 +493,21 @@ jobs:
     if: ${{ always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-      needs.run-workflow.outputs.typescript_regenerated == 'true' &&
-      needs.run-workflow.outputs.publish_typescript == 'true'
+      ((needs.run-workflow.outputs.typescript_regenerated == 'true' && needs.run-workflow.outputs.publish_typescript == 'true') ||
+       (needs.run-workflow-fallback.outputs.typescript_regenerated == 'true' && needs.run-workflow-fallback.outputs.publish_typescript == 'true'))
       && inputs.mode != 'pr' }}
     name: Publish Typescript SDK
     runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
-    needs: [run-workflow]
+    needs: [run-workflow, run-workflow-fallback]
     defaults:
       run:
-        working-directory: ${{ needs.run-workflow.outputs.typescript_directory }}
+        working-directory: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.typescript_directory || needs.run-workflow-fallback.outputs.typescript_directory }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - uses: actions/checkout@v3
         with:
-          ref: ${{ needs.run-workflow.outputs.commit_hash }}
+          ref: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.commit_hash || needs.run-workflow-fallback.outputs.commit_hash }}
       - name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -440,7 +542,7 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
-          target_directory: ${{ needs.run-workflow.outputs.typescript_directory }}
+          target_directory: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.typescript_directory || needs.run-workflow-fallback.outputs.typescript_directory }}
           registry_name: "npm"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
@@ -475,21 +577,21 @@ jobs:
     if: ${{ always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-      needs.run-workflow.outputs.java_regenerated == 'true' &&
-      needs.run-workflow.outputs.publish_java == 'true'
+      ((needs.run-workflow.outputs.java_regenerated == 'true' && needs.run-workflow.outputs.publish_java == 'true') ||
+       (needs.run-workflow-fallback.outputs.java_regenerated == 'true' && needs.run-workflow-fallback.outputs.publish_java == 'true'))
       && inputs.mode != 'pr' }}
     name: Publish Java SDK
     runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
-    needs: [run-workflow]
+    needs: [run-workflow, run-workflow-fallback]
     defaults:
       run:
-        working-directory: ${{ needs.run-workflow.outputs.java_directory }}
+        working-directory: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.java_directory || needs.run-workflow-fallback.outputs.java_directory }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
-          ref: ${{ needs.run-workflow.outputs.commit_hash }}
+          ref: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.commit_hash || needs.run-workflow-fallback.outputs.commit_hash }}
       - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
           distribution: "corretto"
@@ -526,7 +628,7 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
-          target_directory: ${{ needs.run-workflow.outputs.java_directory }}
+          target_directory: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.java_directory || needs.run-workflow-fallback.outputs.java_directory }}
           registry_name: "sonatype"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
@@ -561,21 +663,21 @@ jobs:
     if: ${{ always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-      needs.run-workflow.outputs.ruby_regenerated == 'true' &&
-      needs.run-workflow.outputs.publish_ruby == 'true'
+      ((needs.run-workflow.outputs.ruby_regenerated == 'true' && needs.run-workflow.outputs.publish_ruby == 'true') ||
+       (needs.run-workflow-fallback.outputs.ruby_regenerated == 'true' && needs.run-workflow-fallback.outputs.publish_ruby == 'true'))
       && inputs.mode != 'pr' }}
     name: Publish Ruby SDK
     runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
-    needs: [run-workflow]
+    needs: [run-workflow, run-workflow-fallback]
     defaults:
       run:
-        working-directory: ${{ needs.run-workflow.outputs.ruby_directory }}
+        working-directory: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.ruby_directory || needs.run-workflow-fallback.outputs.ruby_directory }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - uses: actions/checkout@v3
         with:
-          ref: ${{ needs.run-workflow.outputs.commit_hash }}
+          ref: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.commit_hash || needs.run-workflow-fallback.outputs.commit_hash }}
       - name: Set up Ruby
         uses: ruby/setup-ruby@d8d83c3960843afb664e821fed6be52f37da5267 # v1.231.0
         with:
@@ -601,7 +703,7 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
-          target_directory: ${{ needs.run-workflow.outputs.ruby_directory }}
+          target_directory: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.ruby_directory || needs.run-workflow-fallback.outputs.ruby_directory }}
           registry_name: "gems"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
@@ -636,21 +738,21 @@ jobs:
     if: ${{ always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-      needs.run-workflow.outputs.csharp_regenerated == 'true' &&
-      needs.run-workflow.outputs.publish_csharp == 'true'
+      ((needs.run-workflow.outputs.csharp_regenerated == 'true' && needs.run-workflow.outputs.publish_csharp == 'true') ||
+       (needs.run-workflow-fallback.outputs.csharp_regenerated == 'true' && needs.run-workflow-fallback.outputs.publish_csharp == 'true'))
       && inputs.mode != 'pr' }}
     name: Publish C# SDK
     runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
-    needs: [run-workflow]
+    needs: [run-workflow, run-workflow-fallback]
     defaults:
       run:
-        working-directory: ${{ needs.run-workflow.outputs.csharp_directory }}
+        working-directory: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.csharp_directory || needs.run-workflow-fallback.outputs.csharp_directory }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - uses: actions/checkout@v3
         with:
-          ref: ${{ needs.run-workflow.outputs.commit_hash }}
+          ref: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.commit_hash || needs.run-workflow-fallback.outputs.commit_hash }}
       - name: Setup dotnet
         uses: actions/setup-dotnet@v3
         with:
@@ -666,7 +768,7 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
-          target_directory: ${{ needs.run-workflow.outputs.csharp_directory }}
+          target_directory: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.csharp_directory || needs.run-workflow-fallback.outputs.csharp_directory }}
           registry_name: "nuget"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
@@ -701,21 +803,21 @@ jobs:
     if: ${{ always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled') &&
-      needs.run-workflow.outputs.php_regenerated == 'true' &&
-      needs.run-workflow.outputs.publish_php == 'true'
+      ((needs.run-workflow.outputs.php_regenerated == 'true' && needs.run-workflow.outputs.publish_php == 'true') ||
+       (needs.run-workflow-fallback.outputs.php_regenerated == 'true' && needs.run-workflow-fallback.outputs.publish_php == 'true'))
       && inputs.mode != 'pr' }}
     name: Publish PHP SDK
     runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
-    needs: [run-workflow]
+    needs: [run-workflow, run-workflow-fallback]
     defaults:
       run:
-        working-directory: ${{ needs.run-workflow.outputs.php_directory }}
+        working-directory: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.php_directory || needs.run-workflow-fallback.outputs.php_directory }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: ${{ needs.run-workflow.outputs.commit_hash }}
+          ref: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.commit_hash || needs.run-workflow-fallback.outputs.commit_hash }}
       - name: Publish
         uses: speakeasy-api/packagist-update@support-github-creation
         with:
@@ -732,7 +834,7 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           working_directory: ${{ inputs.working_directory }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
-          target_directory: ${{ needs.run-workflow.outputs.php_directory }}
+          target_directory: ${{ needs.run-workflow.result == 'success' && needs.run-workflow.outputs.php_directory || needs.run-workflow-fallback.outputs.php_directory }}
           registry_name: "packagist"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
