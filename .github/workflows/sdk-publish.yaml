@@ -405,6 +405,9 @@ jobs:
         run: |
           PLATFORMS=("bun-darwin-arm64" "bun-windows-x64-modern" "bun-linux-x64-modern")
 
+          # Fetch the upload URL for the release associated with the specific tag
+          UPLOAD_URL=$(gh api repos/${{ github.repository }}/releases/tags/${{ needs.release.outputs.mcp_release_typescript }} --jq .upload_url | sed "s/{?name,label}//")
+
           for TARGET in "${PLATFORMS[@]}"; do
             # Set the correct binary path
             if [[ "$TARGET" == "bun-windows-x64-modern" ]]; then
@@ -421,9 +424,6 @@ jobs:
               chmod +x $BINARY_PATH
             fi
 
-            # Fetch the upload URL for the release associated with the specific tag
-            UPLOAD_URL=$(gh api repos/${{ github.repository }}/releases/tags/${{ needs.release.outputs.mcp_release_typescript }} --jq .upload_url | sed "s/{?name,label}//")
-
             # Upload the binary to the GitHub Release
             curl -X POST \
               -H "Authorization: token $GITHUB_TOKEN" \
@@ -431,6 +431,19 @@ jobs:
               --data-binary @"$BINARY_PATH" \
               "$UPLOAD_URL?name=$(basename "$BINARY_PATH")"
           done
+
+          // build and publish mcp bundle.
+          npx bun mcpb:build
+          
+          # MCP Bundle Path
+          MCP_BUNDLE_PATH="./mcp-server.mcpb"
+
+          # Upload the MCP Bundle to the GitHub Release
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @"$MCP_BUNDLE_PATH" \
+            "$UPLOAD_URL?name=$(basename "$MCP_BUNDLE_PATH")"  
 
       - id: publish-event
         uses: speakeasy-api/sdk-generation-action@v15
