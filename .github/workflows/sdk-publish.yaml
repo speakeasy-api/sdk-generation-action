@@ -131,14 +131,8 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
-      - name: Checkout sdk-generation-action repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.workflow_sha }}
-          path: _speakeasy
       - id: release
-        uses: ./_speakeasy
+        uses: .
         with:
           github_access_token: ${{ secrets.github_access_token }}
           action: "release"
@@ -159,7 +153,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -183,12 +177,6 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
-      - name: Checkout sdk-generation-action repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.workflow_sha }}
-          path: _speakeasy
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
       - name: Set up Python
         uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
@@ -227,7 +215,7 @@ jobs:
           python setup.py sdist bdist_wheel
           twine upload dist/*
       - id: publish-event
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -252,7 +240,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -276,12 +264,6 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
-      - name: Checkout sdk-generation-action repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.workflow_sha }}
-          path: _speakeasy
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -345,7 +327,7 @@ jobs:
           done
 
       - id: publish-event
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -370,7 +352,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -393,12 +375,6 @@ jobs:
         working-directory: ${{ needs.release.outputs.mcp_typescript_directory }}
     steps:
       - uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1.0.0
-      - name: Checkout sdk-generation-action repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.workflow_sha }}
-          path: _speakeasy
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -470,7 +446,7 @@ jobs:
             "$UPLOAD_URL?name=$(basename "$MCP_BUNDLE_PATH")"
 
       - id: publish-event
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -495,7 +471,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -548,7 +524,7 @@ jobs:
           SONATYPE_SIGNING_KEY: ${{ secrets.java_gpg_secret_key }}
           SIGNING_KEY_PASSPHRASE: ${{ secrets.java_gpg_passphrase }}
       - id: publish-event
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -573,7 +549,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -606,7 +582,7 @@ jobs:
           repository_name: ${{ github.repository }}
           repository_base_url: ${{ github.server_url }}
       - id: publish-event
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -631,7 +607,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -663,7 +639,7 @@ jobs:
       - name: Publish
         run: dotnet pack -c Release -o . && dotnet nuget push *.nupkg --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
       - id: publish-event
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -688,7 +664,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -709,12 +685,6 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
-      - name: Checkout sdk-generation-action repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.workflow_sha }}
-          path: _speakeasy
       - name: Install GoReleaser
         uses: goreleaser/goreleaser-action@5fdedb94abba051217030cc86d4523cf3f02243d # v4
         with:
@@ -726,7 +696,7 @@ jobs:
           gpg_private_key: ${{ secrets.terraform_gpg_secret_key }}
           passphrase: ${{ secrets.terraform_gpg_passphrase }}
       - id: release
-        uses: ./_speakeasy
+        uses: .
         with:
           github_access_token: ${{ secrets.github_access_token }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
@@ -737,7 +707,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.github_access_token }}
       - id: publish-event
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -762,7 +732,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -804,7 +774,7 @@ jobs:
           gem build *.gemspec
           gem push *.gem
       - id: publish-event
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -829,7 +799,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}

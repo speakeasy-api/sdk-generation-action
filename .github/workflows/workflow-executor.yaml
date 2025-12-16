@@ -236,17 +236,10 @@ jobs:
       - name: Tune GitHub-hosted runner network
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
-      - name: Checkout sdk-generation-action repository
-        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.workflow_sha }}
-          path: _speakeasy
       - id: run-workflow
         name: Run Generation Workflow
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
-        uses: ./_speakeasy
+        uses: .
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           github_access_token: ${{ secrets.github_access_token }}
@@ -285,7 +278,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
         name: Log Generation Output
-        uses: ./_speakeasy
+        uses: .
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true'}}
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -315,12 +308,6 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
-      - name: Checkout sdk-generation-action repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.workflow_sha }}
-          path: _speakeasy
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           ref: ${{ needs.run-workflow.outputs.commit_hash }}
@@ -361,7 +348,7 @@ jobs:
           python setup.py sdist bdist_wheel
           twine upload dist/*
       - id: publish-event
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -386,7 +373,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -416,12 +403,6 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
-      - name: Checkout sdk-generation-action repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.workflow_sha }}
-          path: _speakeasy
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           ref: ${{ needs.run-workflow.outputs.commit_hash }}
@@ -451,7 +432,7 @@ jobs:
             npm publish --access public
           fi
       - id: publish-event
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -476,7 +457,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -506,12 +487,6 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
-      - name: Checkout sdk-generation-action repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.workflow_sha }}
-          path: _speakeasy
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
           ref: ${{ needs.run-workflow.outputs.commit_hash }}
@@ -543,7 +518,7 @@ jobs:
           SONATYPE_SIGNING_KEY: ${{ secrets.java_gpg_secret_key }}
           SIGNING_KEY_PASSPHRASE: ${{ secrets.java_gpg_passphrase }}
       - id: publish-event
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -568,7 +543,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -598,12 +573,6 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
-      - name: Checkout sdk-generation-action repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.workflow_sha }}
-          path: _speakeasy
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           ref: ${{ needs.run-workflow.outputs.commit_hash }}
@@ -624,7 +593,7 @@ jobs:
           gem build *.gemspec
           gem push *.gem
       - id: publish-event
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -649,7 +618,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -679,12 +648,6 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
-      - name: Checkout sdk-generation-action repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.workflow_sha }}
-          path: _speakeasy
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           ref: ${{ needs.run-workflow.outputs.commit_hash }}
@@ -695,7 +658,7 @@ jobs:
       - name: Publish
         run: dotnet pack -c Release -o . && dotnet nuget push *.nupkg --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
       - id: publish-event
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -720,7 +683,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
@@ -750,12 +713,6 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
-      - name: Checkout sdk-generation-action repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.workflow_sha }}
-          path: _speakeasy
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ needs.run-workflow.outputs.commit_hash }}
@@ -767,7 +724,7 @@ jobs:
           repository_name: ${{ github.repository }}
           repository_base_url: ${{ github.server_url }}
       - id: publish-event
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -792,7 +749,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: ./_speakeasy
+        uses: .
         if: always()
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
