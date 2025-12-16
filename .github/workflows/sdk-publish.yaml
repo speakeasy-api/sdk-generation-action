@@ -132,7 +132,7 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - id: release
-        uses: .
+        uses: ./
         with:
           github_access_token: ${{ secrets.github_access_token }}
           action: "release"
@@ -153,7 +153,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -215,7 +215,7 @@ jobs:
           python setup.py sdist bdist_wheel
           twine upload dist/*
       - id: publish-event
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -240,7 +240,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -327,7 +327,7 @@ jobs:
           done
 
       - id: publish-event
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -352,7 +352,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -446,7 +446,7 @@ jobs:
             "$UPLOAD_URL?name=$(basename "$MCP_BUNDLE_PATH")"
 
       - id: publish-event
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -471,7 +471,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -524,7 +524,7 @@ jobs:
           SONATYPE_SIGNING_KEY: ${{ secrets.java_gpg_secret_key }}
           SIGNING_KEY_PASSPHRASE: ${{ secrets.java_gpg_passphrase }}
       - id: publish-event
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -549,7 +549,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -582,7 +582,7 @@ jobs:
           repository_name: ${{ github.repository }}
           repository_base_url: ${{ github.server_url }}
       - id: publish-event
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -607,7 +607,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -639,7 +639,7 @@ jobs:
       - name: Publish
         run: dotnet pack -c Release -o . && dotnet nuget push *.nupkg --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
       - id: publish-event
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -664,7 +664,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -696,7 +696,7 @@ jobs:
           gpg_private_key: ${{ secrets.terraform_gpg_secret_key }}
           passphrase: ${{ secrets.terraform_gpg_passphrase }}
       - id: release
-        uses: .
+        uses: ./
         with:
           github_access_token: ${{ secrets.github_access_token }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
@@ -707,7 +707,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.github_access_token }}
       - id: publish-event
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -732,7 +732,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -774,7 +774,7 @@ jobs:
           gem build *.gemspec
           gem push *.gem
       - id: publish-event
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}
@@ -799,7 +799,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
-        uses: .
+        uses: ./
         if: always()
         with:
           github_access_token: ${{ secrets.github_access_token }}

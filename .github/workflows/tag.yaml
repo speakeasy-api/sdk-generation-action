@@ -35,7 +35,7 @@ jobs:
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - id: apply-tags
         name: Apply Tags
-        uses: .
+        uses: ./
         with:
           action: "tag"
           sources: ${{ inputs.sources }}
