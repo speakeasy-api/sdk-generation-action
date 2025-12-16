@@ -33,9 +33,15 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
+      - name: Checkout sdk-generation-action repository
+        uses: actions/checkout@v4
+        with:
+          repository: speakeasy-api/sdk-generation-action
+          ref: ${{ github.workflow_sha }}
+          path: _speakeasy
       - id: apply-tags
         name: Apply Tags
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: ./_speakeasy
         with:
           action: "tag"
           sources: ${{ inputs.sources }}
@@ -44,3 +50,5 @@ jobs:
           registry_tags: ${{ inputs.registry_tags }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           github_access_token: ${{ secrets.github_access_token }}
+        env:
+          GH_ACTION_VERSION: ${{ github.workflow_sha }}

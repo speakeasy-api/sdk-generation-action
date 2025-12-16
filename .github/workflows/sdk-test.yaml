@@ -29,6 +29,13 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@v1
 
+      - name: Checkout sdk-generation-action repository
+        uses: actions/checkout@v4
+        with:
+          repository: speakeasy-api/sdk-generation-action
+          ref: ${{ github.workflow_sha }}
+          path: _speakeasy
+
       - name: Set dynamic environment variables
         if: inputs.env_vars != ''
         run: echo "${{ inputs.env_vars }}" >> $GITHUB_ENV
@@ -58,10 +65,12 @@ jobs:
       - id: test
         name: Run Tests
         if: steps.check_commit.outputs.run_tests == 'true'
-        uses: speakeasy-api/sdk-generation-action@v15
+        uses: ./_speakeasy
         with:
           action: "test"
           working_directory: ${{ inputs.working_directory }}
           target: ${{ inputs.target }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           github_access_token: ${{ secrets.github_access_token }}
+        env:
+          GH_ACTION_VERSION: ${{ github.workflow_sha }}
