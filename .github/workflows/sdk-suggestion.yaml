@@ -64,9 +64,9 @@ jobs:
       cli_output: ${{ steps.suggest.outputs.cli_output }}
     steps:
       - name: Tune GitHub-hosted runner network
-        uses: smorimoto/tune-github-hosted-runner-network@v1
+        uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - id: suggest
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action@5da5280471a9f29218e177d357653e2ec94ce87a # v14
         with:
           speakeasy_version: ${{ inputs.speakeasy_version }}
           openapi_doc_auth_header: ${{ inputs.openapi_doc_auth_header }}
@@ -78,7 +78,7 @@ jobs:
           action: suggest
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           openai_api_key: ${{ secrets.openai_api_key }}
-      - uses: ravsamhq/notify-slack-action@v2
+      - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
@@ -100,15 +100,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Tune GitHub-hosted runner network
-        uses: smorimoto/tune-github-hosted-runner-network@v1
+        uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - id: Finalize
-        uses: speakeasy-api/sdk-generation-action@v14
+        uses: speakeasy-api/sdk-generation-action@5da5280471a9f29218e177d357653e2ec94ce87a # v14
         with:
           github_access_token: ${{ secrets.github_access_token }}
           action: finalize-suggestion
           branch_name: ${{ needs.suggest.outputs.branch_name }}
           cli_output: ${{ needs.suggest.outputs.cli_output }}
-      - uses: ravsamhq/notify-slack-action@v2
+      - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
           status: ${{ job.status }}
