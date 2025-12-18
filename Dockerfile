@@ -1,6 +1,8 @@
 ## Build
 FROM golang:1.23-alpine3.21 AS builder
 
+ARG CACHE_BUST=v1
+
 WORKDIR /app
 
 COPY go.mod ./
@@ -12,10 +14,17 @@ COPY *.go ./
 COPY internal/ ./internal/
 COPY pkg/ ./pkg/
 
+RUN echo "=== Verifying versioning tips code ===" && \
+    grep -F '[!TIP]' internal/git/git.go && \
+    echo "=== Verification passed ===" || \
+    (echo "=== ERROR: [!TIP] not found in git.go ===" && exit 1)
+
 RUN go build -o /action
 
 ## Deploy
 FROM golang:1.23-alpine3.21
+
+ARG CACHE_BUST=v1
 
 RUN apk update
 
