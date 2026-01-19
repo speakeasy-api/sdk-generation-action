@@ -29,6 +29,7 @@ on:
         description: "The version of poetry to use"
         required: false
         type: string
+        default: "2.2.1"
       uv_version:
         description: "The version of uv to use"
         required: false

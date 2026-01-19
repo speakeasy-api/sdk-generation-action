@@ -109,6 +109,7 @@ on:
         description: "Version of poetry to install. Not recommended for use without consulting Speakeasy support."
         required: false
         type: string
+        default: "2.2.1"
       uv_version:
         description: "Version of uv to install. Not recommended for use without consulting Speakeasy support."
         required: false
