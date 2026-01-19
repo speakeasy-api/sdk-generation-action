@@ -33,6 +33,7 @@ RUN apk add --update --no-cache openjdk11 gradle
 
 ### Install Ruby
 #### gcompat is required on Alpine linux to support gcc ruby packages like sorbet
+#### yaml-dev is required on Alpine Linux to support psych gem compilation for irb/rdoc
 RUN apk add --update --no-cache build-base ruby ruby-bundler ruby-dev gcompat yaml-dev
 
 ### Install .NET
