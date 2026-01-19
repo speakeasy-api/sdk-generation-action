@@ -33,7 +33,7 @@ RUN apk add --update --no-cache openjdk11 gradle
 
 ### Install Ruby
 #### gcompat is required on Alpine linux to support gcc ruby packages like sorbet
-RUN apk add --update --no-cache build-base ruby ruby-bundler ruby-dev gcompat
+RUN apk add --update --no-cache build-base ruby ruby-bundler ruby-dev gcompat yaml-dev
 
 ### Install .NET
 ENV DOTNET_ROOT=/usr/lib/dotnet
