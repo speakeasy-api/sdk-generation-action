@@ -17,6 +17,10 @@ RUN go build -o /action
 ## Deploy
 FROM golang:1.23-alpine3.21
 
+# Enable Go toolchain automatic upgrades to prevent Go version errors in
+# customer generations (GOTOOLCHAIN=local default in golang images)
+ENV GOTOOLCHAIN=auto
+
 RUN apk update
 
 ### Install common tools
