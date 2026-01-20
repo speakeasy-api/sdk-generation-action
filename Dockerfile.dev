@@ -1,5 +1,5 @@
 # Dev Stage - Includes build tools, compilers, and source code
-FROM golang:1.23-alpine3.21 AS dev
+FROM golang:1.24-alpine3.22 AS dev
 
 # Install development tools
 RUN apk update && apk add --no-cache \
