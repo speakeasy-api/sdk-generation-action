@@ -885,19 +885,31 @@ func (g *Git) generatePRTitleAndBody(info PRInfo, labelTypes map[string]github.L
 	suffix, labelBumpType, _ := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
 	title += suffix
 
-	if info.LintingReportURL != "" || info.ChangesReportURL != "" {
-		body += `> [!IMPORTANT]
+	// Check if CLI already provided report links in the versioning report (newer CLI versions)
+	// If so, skip this block entirely - the CLI handles the formatting
+	versioningMarkdown := ""
+	if info.VersioningInfo.VersionReport != nil {
+		versioningMarkdown = info.VersioningInfo.VersionReport.GetMarkdownSection()
+	}
+	cliProvidedReportLinks := strings.Contains(versioningMarkdown, "Linting report available") ||
+		strings.Contains(versioningMarkdown, "OpenAPI Change report available")
+
+	// Fallback for older CLI versions that don't provide report links in versioning report
+	if !cliProvidedReportLinks {
+		if info.LintingReportURL != "" || info.ChangesReportURL != "" {
+			body += `> [!IMPORTANT]
 `
-	}
+		}
 
-	if info.LintingReportURL != "" {
-		body += fmt.Sprintf(`> Linting report available at: <%s>
+		if info.LintingReportURL != "" {
+			body += fmt.Sprintf(`> Linting report available at: <%s>
 `, info.LintingReportURL)
-	}
+		}
 
-	if info.ChangesReportURL != "" {
-		body += fmt.Sprintf(`> OpenAPI Change report available at: <%s>
+		if info.ChangesReportURL != "" {
+			body += fmt.Sprintf(`> OpenAPI Change report available at: <%s>
 `, info.ChangesReportURL)
+		}
 	}
 
 	if info.SourceGeneration {
