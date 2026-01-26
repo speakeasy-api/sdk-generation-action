@@ -783,18 +783,27 @@ func (g *Git) CreateOrUpdatePR(info PRInfo) (*github.PullRequest, error) {
 		previousGenVersions = strings.Split(info.PreviousGenVersion, ";")
 	}
 
-	// Deprecated -- kept around for old CLI versions. VersioningReport is newer pathway
-	if info.ReleaseInfo != nil && info.VersioningInfo.VersionReport == nil {
-		changelog, err = g.generateGeneratorChangelogForOldCLIVersions(info, previousGenVersions, changelog)
-		if err != nil {
-			return nil, err
+	// Try to generate PR description via CLI first (new pathway)
+	// Falls back to legacy generatePRTitleAndBody if CLI doesn't support the command
+	cliOutput := g.tryGeneratePRDescriptionViaCLI(info)
+	if cliOutput != nil {
+		title = cliOutput.Title
+		body = cliOutput.Body
+	} else {
+		// Legacy fallback for older CLI versions
+		// Deprecated -- kept around for old CLI versions. VersioningReport is newer pathway
+		if info.ReleaseInfo != nil && info.VersioningInfo.VersionReport == nil {
+			changelog, err = g.generateGeneratorChangelogForOldCLIVersions(info, previousGenVersions, changelog)
+			if err != nil {
+				return nil, err
+			}
 		}
-	}
 
-	// We will use the old PR body if the INPUT_ENABLE_SDK_CHANGELOG env is not set or set to false
-	// We will use the new PR body if INPUT_ENABLE_SDK_CHANGELOG is set to true.
-	// Backwards compatible: If a client uses new sdk-action with old cli we will not get new changelog body
-	title, body = g.generatePRTitleAndBody(info, labelTypes, changelog)
+		// We will use the old PR body if the INPUT_ENABLE_SDK_CHANGELOG env is not set or set to false
+		// We will use the new PR body if INPUT_ENABLE_SDK_CHANGELOG is set to true.
+		// Backwards compatible: If a client uses new sdk-action with old cli we will not get new changelog body
+		title, body = g.generatePRTitleAndBody(info, labelTypes, changelog)
+	}
 
 	_, _, labels := PRVersionMetadata(info.VersioningInfo.VersionReport, labelTypes)
 
@@ -948,6 +957,37 @@ Based on [Speakeasy CLI](https://github.com/speakeasy-api/speakeasy) %s
 	}
 
 	return title, body
+}
+
+// tryGeneratePRDescriptionViaCLI attempts to generate PR title and body via the CLI.
+// Returns nil if the CLI doesn't support the command or if generation fails.
+func (g *Git) tryGeneratePRDescriptionViaCLI(info PRInfo) *cli.PRDescriptionOutput {
+	// Build CLI input from PRInfo
+	input := cli.PRDescriptionInput{
+		LintingReportURL: info.LintingReportURL,
+		ChangesReportURL: info.ChangesReportURL,
+		WorkflowName:     environment.GetWorkflowName(),
+		SourceBranch:     environment.GetSourceBranch(),
+		FeatureBranch:    environment.GetFeatureBranch(),
+		SpecifiedTarget:  environment.SpecifiedTarget(),
+		SourceGeneration: info.SourceGeneration,
+		DocsGeneration:   environment.IsDocsGeneration(),
+		ManualBump:       info.VersioningInfo.ManualBump,
+		VersionReport:    info.VersioningInfo.VersionReport,
+	}
+
+	// Get Speakeasy version for footer
+	if info.ReleaseInfo != nil {
+		input.SpeakeasyVersion = info.ReleaseInfo.SpeakeasyVersion
+	}
+
+	output, err := cli.GeneratePRDescription(input)
+	if err != nil {
+		logging.Info("Error generating PR description via CLI: %v", err)
+		return nil
+	}
+
+	return output
 }
 
 // --- Helper function for changelog generation for old CLI versions ---
