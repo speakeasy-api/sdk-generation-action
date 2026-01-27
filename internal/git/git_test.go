@@ -839,6 +839,47 @@ func TestCreateOrUpdateDocsPR_SourceBranchAware(t *testing.T) {
 	}
 }
 
+func TestLegacyPRTitleWithoutBee(t *testing.T) {
+	// During a bug period, PR titles were created without the bee emoji.
+	// We need to ensure we can find those legacy PRs by stripping the bee.
+	withoutBee := func(s string) string {
+		return strings.ReplaceAll(s, "🐝 ", "")
+	}
+
+	tests := []struct {
+		name     string
+		current  string
+		expected string
+	}{
+		{
+			name:     "SDK PR title",
+			current:  speakeasyGenPRTitle,
+			expected: "chore: Update SDK - ",
+		},
+		{
+			name:     "Specs PR title",
+			current:  speakeasyGenSpecsTitle,
+			expected: "chore: Update Specs - ",
+		},
+		{
+			name:     "Docs PR title",
+			current:  speakeasyDocsPRTitle,
+			expected: "chore: Update SDK Docs - ",
+		},
+		{
+			name:     "Suggest PR title",
+			current:  speakeasySuggestPRTitle,
+			expected: "chore: Suggest OpenAPI changes - ",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, withoutBee(tt.current))
+		})
+	}
+}
+
 func TestCreateSuggestionPR_SourceBranchAware(t *testing.T) {
 	tests := []struct {
 		name                  string
