@@ -211,8 +211,11 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action, sourc
 		prTitle = prTitle + " [" + sanitizedSourceBranch + "]"
 	}
 
+	// Also check for legacy PR titles (without the bee emoji)
+	legacyPrTitle := strings.ReplaceAll(prTitle, "🐝 ", "")
+
 	for _, p := range prs {
-		if strings.HasPrefix(p.GetTitle(), prTitle) {
+		if strings.HasPrefix(p.GetTitle(), prTitle) || strings.HasPrefix(p.GetTitle(), legacyPrTitle) {
 			logging.Info("Found existing PR %s", *p.Title)
 
 			if branchName != "" && p.GetHead().GetRef() != branchName {
