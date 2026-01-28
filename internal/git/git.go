@@ -923,6 +923,7 @@ func (g *Git) generatePRTitleAndBody(info PRInfo, labelTypes map[string]github.L
 		if labelBumpType != nil && *labelBumpType != versioning.BumpCustom && *labelBumpType != versioning.BumpNone {
 			// be very careful if changing this it critically aligns with a regex in parseBumpFromPRBody
 			versionBumpMsg := "Version Bump Type: " + fmt.Sprintf("[%s]", string(*labelBumpType)) + " - "
+
 			if info.VersioningInfo.ManualBump {
 				versionBumpMsg += string(versionbumps.BumpMethodManual) + " (manual)"
 				// if manual we bold the message
@@ -930,6 +931,16 @@ func (g *Git) generatePRTitleAndBody(info PRInfo, labelTypes map[string]github.L
 				versionBumpMsg += fmt.Sprintf("\n\nThis PR will stay on the current version until the %s label is removed and/or modified.", string(*labelBumpType))
 			} else {
 				versionBumpMsg += string(versionbumps.BumpMethodAutomated) + " (automated)"
+
+				versionBumpMsg += "\n\n> [!TIP]"
+				switch *labelBumpType {
+				case versioning.BumpPrerelease:
+					versionBumpMsg += "\n> To exit [pre-release versioning](https://www.speakeasy.com/docs/sdks/manage/versioning#pre-release-version-bumps), set a new version or run `speakeasy bump graduate`."
+				case versioning.BumpPatch, versioning.BumpMinor:
+					versionBumpMsg += "\n> If updates to your OpenAPI document introduce breaking changes, be sure to update the `info.version` field to [trigger the correct version bump](https://www.speakeasy.com/docs/sdks/manage/versioning#openapi-document-changes)."
+				}
+
+				versionBumpMsg += "\n> Speakeasy supports manual control of SDK versioning through [multiple methods](https://www.speakeasy.com/docs/sdks/manage/versioning#manual-version-bumps)."
 			}
 			body += fmt.Sprintf(`## Versioning
 
