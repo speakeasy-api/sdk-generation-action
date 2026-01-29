@@ -407,7 +407,7 @@ func addDirectModeBranchTagging() error {
 		}
 	}
 	if (len(sources) > 0 || len(targets) > 0) && branch != "" {
-		tags := []string{branch}
+		tags := []string{environment.SanitizeBranchName(branch)}
 		if isPublished {
 			tags = append(tags, "published")
 		}
