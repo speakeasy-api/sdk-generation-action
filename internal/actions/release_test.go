@@ -1,6 +1,59 @@
 package actions
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+)
+
+// TestBranchNameSanitizationForOCITags verifies that branch names are properly
+// sanitized for use as OCI registry tags. OCI/Docker tags cannot contain forward
+// slashes, so branches like "releases/2025.01" must be converted to "releases-2025.01".
+// This test documents the expected behavior used in addCurrentBranchTagging.
+func TestBranchNameSanitizationForOCITags(t *testing.T) {
+	tests := []struct {
+		name         string
+		branchName   string
+		expectedTag  string
+	}{
+		{
+			name:        "simple branch",
+			branchName:  "main",
+			expectedTag: "main",
+		},
+		{
+			name:        "versioned release branch with slash",
+			branchName:  "releases/2025.01",
+			expectedTag: "releases-2025.01",
+		},
+		{
+			name:        "versioned branch with slash",
+			branchName:  "versions/2025.10",
+			expectedTag: "versions-2025.10",
+		},
+		{
+			name:        "feature branch with slash",
+			branchName:  "feature/add-auth",
+			expectedTag: "feature-add-auth",
+		},
+		{
+			name:        "branch with multiple slashes",
+			branchName:  "releases/2025.01/hotfix",
+			expectedTag: "releases-2025.01-hotfix",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// This mirrors the logic in addCurrentBranchTagging:
+			// tags := []string{environment.SanitizeBranchName(branch)}
+			tag := environment.SanitizeBranchName(tt.branchName)
+			if tag != tt.expectedTag {
+				t.Errorf("SanitizeBranchName(%q) = %q, want %q", tt.branchName, tag, tt.expectedTag)
+			}
+		})
+	}
+}
 
 func TestGetDirAndShouldUseReleasesMD(t *testing.T) {
 	type args struct {

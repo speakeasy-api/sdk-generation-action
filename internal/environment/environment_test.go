@@ -184,6 +184,16 @@ func TestSanitizeBranchName(t *testing.T) {
 			expected: "feature-my-feature",
 		},
 		{
+			name:     "versioned release branch",
+			branch:   "releases/2025.01",
+			expected: "releases-2025.01",
+		},
+		{
+			name:     "versioned branch with multiple slashes",
+			branch:   "versions/2025.10/hotfix",
+			expected: "versions-2025.10-hotfix",
+		},
+		{
 			name:     "branch with underscore",
 			branch:   "feature_my_feature",
 			expected: "feature-my-feature",
