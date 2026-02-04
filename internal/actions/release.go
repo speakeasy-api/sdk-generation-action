@@ -18,6 +18,8 @@ import (
 )
 
 func Release() error {
+	fmt.Println("RELEASE_ACTION_VERSION: pypi-trusted-publishing-debug-v2")
+
 	accessToken := environment.GetAccessToken()
 	if accessToken == "" {
 		return errors.New("github access token is required")
@@ -150,14 +152,14 @@ func GetDirAndShouldUseReleasesMD(files []string, dir string, usingReleasesMd bo
 }
 
 func addPublishOutputs(dir string, outputs map[string]string) error {
-	logging.Info("DEBUG: addPublishOutputs called with dir=%s", dir)
+	fmt.Printf("DEBUG: addPublishOutputs called with dir=%s\n", dir)
 
 	wf, err := configuration.GetWorkflowAndValidateLanguages(false)
 	if err != nil {
 		return err
 	}
 
-	logging.Info("DEBUG: Found %d targets in workflow", len(wf.Targets))
+	fmt.Printf("DEBUG: Found %d targets in workflow\n", len(wf.Targets))
 
 	for targetID, target := range wf.Targets {
 		logging.Info("DEBUG: Checking target %s (lang=%s)", targetID, target.Target)
