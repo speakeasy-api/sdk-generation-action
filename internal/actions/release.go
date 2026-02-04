@@ -18,13 +18,10 @@ import (
 )
 
 func Release() error {
-	fmt.Println("RELEASE_ACTION_VERSION: pypi-trusted-publishing-debug-v2")
-
 	accessToken := environment.GetAccessToken()
 	if accessToken == "" {
 		return errors.New("github access token is required")
 	}
-	fmt.Println("INPUT_ENABLE_SDK_CHANGELOG: ", environment.GetSDKChangelog())
 
 	g, err := initAction()
 	if err != nil {
@@ -152,18 +149,12 @@ func GetDirAndShouldUseReleasesMD(files []string, dir string, usingReleasesMd bo
 }
 
 func addPublishOutputs(dir string, outputs map[string]string) error {
-	fmt.Printf("DEBUG: addPublishOutputs called with dir=%s\n", dir)
-
 	wf, err := configuration.GetWorkflowAndValidateLanguages(false)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("DEBUG: Found %d targets in workflow\n", len(wf.Targets))
-
-	for targetID, target := range wf.Targets {
-		logging.Info("DEBUG: Checking target %s (lang=%s)", targetID, target.Target)
-
+	for _, target := range wf.Targets {
 		// Only add outputs for the target that was regenerated, based on output directory
 		if dir != "." && target.Output != nil {
 			output, err := filepath.Rel(".", *target.Output)
@@ -175,28 +166,9 @@ func addPublishOutputs(dir string, outputs map[string]string) error {
 				output = filepath.Join(environment.GetWorkingDirectory(), output)
 			}
 
-			logging.Info("DEBUG: dir=%s, output=%s", dir, output)
 			if output != dir {
-				logging.Info("DEBUG: Skipping target %s because output doesn't match dir", targetID)
 				continue
 			}
-		}
-
-		// Debug: Print publishing config
-		logging.Info("DEBUG: Processing target %s", target.Target)
-		if target.Publishing != nil {
-			logging.Info("DEBUG: Publishing config found for %s", target.Target)
-			if target.Publishing.PyPi != nil {
-				if target.Publishing.PyPi.UseTrustedPublishing != nil {
-					logging.Info("DEBUG: PyPi.UseTrustedPublishing=%v", *target.Publishing.PyPi.UseTrustedPublishing)
-				} else {
-					logging.Info("DEBUG: PyPi.UseTrustedPublishing is nil")
-				}
-			} else {
-				logging.Info("DEBUG: PyPi config is nil")
-			}
-		} else {
-			logging.Info("DEBUG: Publishing config is nil for %s", target.Target)
 		}
 
 		run.AddTargetPublishOutputs(target, outputs, nil)

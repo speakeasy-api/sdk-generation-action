@@ -15,11 +15,6 @@ import (
 )
 
 func main() {
-	fmt.Fprintln(os.Stderr, "ACTION_BINARY_VERSION: pypi-trusted-v4-stderr")
-	fmt.Fprintf(os.Stderr, "INPUT_ACTION=%s\n", os.Getenv("INPUT_ACTION"))
-	os.Stdout.Sync()
-	os.Stderr.Sync()
-
 	if environment.IsDebugMode() {
 		envs := os.Environ()
 		slices.SortFunc(envs, func(i, j string) int {
