@@ -15,6 +15,9 @@ import (
 )
 
 func main() {
+	fmt.Println("ACTION_BINARY_VERSION: pypi-trusted-v3")
+	fmt.Printf("INPUT_ACTION=%s\n", os.Getenv("INPUT_ACTION"))
+
 	if environment.IsDebugMode() {
 		envs := os.Environ()
 		slices.SortFunc(envs, func(i, j string) int {
