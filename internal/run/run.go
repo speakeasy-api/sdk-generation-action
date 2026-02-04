@@ -115,7 +115,19 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 			return nil, outputs, err
 		}
 
-		fmt.Printf("Generating %s SDK in %s", lang, outputDir)
+		fmt.Printf("Generating %s SDK in %s\n", lang, outputDir)
+
+		// Debug: Print publishing config
+		if target.Publishing != nil {
+			fmt.Printf("DEBUG: Publishing config found for %s\n", lang)
+			if target.Publishing.PyPi != nil {
+				fmt.Printf("DEBUG: PyPi config found, UseTrustedPublishing=%v\n", target.Publishing.PyPi.UseTrustedPublishing)
+			} else {
+				fmt.Printf("DEBUG: PyPi config is nil\n")
+			}
+		} else {
+			fmt.Printf("DEBUG: Publishing config is nil for %s\n", lang)
+		}
 
 		installationURL := getInstallationURL(lang, dir)
 
