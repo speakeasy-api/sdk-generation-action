@@ -133,19 +133,21 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
-      - name: Extract workflow ref
-        id: workflow-ref
+      - name: Get reusable workflow SHA
+        id: workflow-sha
+        env:
+          GH_TOKEN: ${{ secrets.github_access_token }}
         run: |
-          # Extract ref from github.workflow_ref (format: owner/repo/.github/workflows/file.yaml@ref)
-          WORKFLOW_REF="${{ github.workflow_ref }}"
-          REF="${WORKFLOW_REF##*@}"
-          echo "ref=$REF" >> $GITHUB_OUTPUT
-          echo "Extracted ref: $REF"
+          # Query the GitHub API to get the referenced_workflows for this run
+          SHA=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            --jq '.referenced_workflows[] | select(.path | startswith("speakeasy-api/sdk-generation-action/")) | .sha')
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+          echo "Resolved reusable workflow SHA: $SHA"
       - name: Checkout sdk-generation-action repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ steps.workflow-ref.outputs.ref }}
+          ref: ${{ steps.workflow-sha.outputs.sha }}
           path: _speakeasy
       - id: release
         uses: ./_speakeasy
@@ -194,18 +196,20 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
-      - name: Extract workflow ref
-        id: workflow-ref
+      - name: Get reusable workflow SHA
+        id: workflow-sha
+        env:
+          GH_TOKEN: ${{ secrets.github_access_token }}
         run: |
-          WORKFLOW_REF="${{ github.workflow_ref }}"
-          REF="${WORKFLOW_REF##*@}"
-          echo "ref=$REF" >> $GITHUB_OUTPUT
+          SHA=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            --jq '.referenced_workflows[] | select(.path | startswith("speakeasy-api/sdk-generation-action/")) | .sha')
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
         working-directory: ${{ github.workspace }}
       - name: Checkout sdk-generation-action repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ steps.workflow-ref.outputs.ref }}
+          ref: ${{ steps.workflow-sha.outputs.sha }}
           path: _speakeasy
       - name: Set up Python
         uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
@@ -305,18 +309,20 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Extract workflow ref
-        id: workflow-ref
+      - name: Get reusable workflow SHA
+        id: workflow-sha
+        env:
+          GH_TOKEN: ${{ secrets.github_access_token }}
         run: |
-          WORKFLOW_REF="${{ github.workflow_ref }}"
-          REF="${WORKFLOW_REF##*@}"
-          echo "ref=$REF" >> $GITHUB_OUTPUT
+          SHA=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            --jq '.referenced_workflows[] | select(.path | startswith("speakeasy-api/sdk-generation-action/")) | .sha')
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
         working-directory: ${{ github.workspace }}
       - name: Checkout sdk-generation-action repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ steps.workflow-ref.outputs.ref }}
+          ref: ${{ steps.workflow-sha.outputs.sha }}
           path: _speakeasy
       - name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -429,18 +435,20 @@ jobs:
     steps:
       - uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1.0.0
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Extract workflow ref
-        id: workflow-ref
+      - name: Get reusable workflow SHA
+        id: workflow-sha
+        env:
+          GH_TOKEN: ${{ secrets.github_access_token }}
         run: |
-          WORKFLOW_REF="${{ github.workflow_ref }}"
-          REF="${WORKFLOW_REF##*@}"
-          echo "ref=$REF" >> $GITHUB_OUTPUT
+          SHA=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            --jq '.referenced_workflows[] | select(.path | startswith("speakeasy-api/sdk-generation-action/")) | .sha')
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
         working-directory: ${{ github.workspace }}
       - name: Checkout sdk-generation-action repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ steps.workflow-ref.outputs.ref }}
+          ref: ${{ steps.workflow-sha.outputs.sha }}
           path: _speakeasy
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -562,18 +570,20 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
-      - name: Extract workflow ref
-        id: workflow-ref
+      - name: Get reusable workflow SHA
+        id: workflow-sha
+        env:
+          GH_TOKEN: ${{ secrets.github_access_token }}
         run: |
-          WORKFLOW_REF="${{ github.workflow_ref }}"
-          REF="${WORKFLOW_REF##*@}"
-          echo "ref=$REF" >> $GITHUB_OUTPUT
+          SHA=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            --jq '.referenced_workflows[] | select(.path | startswith("speakeasy-api/sdk-generation-action/")) | .sha')
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
         working-directory: ${{ github.workspace }}
       - name: Checkout sdk-generation-action repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ steps.workflow-ref.outputs.ref }}
+          ref: ${{ steps.workflow-sha.outputs.sha }}
           path: _speakeasy
       - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
@@ -653,18 +663,20 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Extract workflow ref
-        id: workflow-ref
+      - name: Get reusable workflow SHA
+        id: workflow-sha
+        env:
+          GH_TOKEN: ${{ secrets.github_access_token }}
         run: |
-          WORKFLOW_REF="${{ github.workflow_ref }}"
-          REF="${WORKFLOW_REF##*@}"
-          echo "ref=$REF" >> $GITHUB_OUTPUT
+          SHA=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            --jq '.referenced_workflows[] | select(.path | startswith("speakeasy-api/sdk-generation-action/")) | .sha')
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
         working-directory: ${{ github.workspace }}
       - name: Checkout sdk-generation-action repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ steps.workflow-ref.outputs.ref }}
+          ref: ${{ steps.workflow-sha.outputs.sha }}
           path: _speakeasy
       - name: Publish
         uses: speakeasy-api/packagist-update@5e2c88e23c7d21e40c7a02a3b252a749b351eb2f # support-github-creation
@@ -724,18 +736,20 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
-      - name: Extract workflow ref
-        id: workflow-ref
+      - name: Get reusable workflow SHA
+        id: workflow-sha
+        env:
+          GH_TOKEN: ${{ secrets.github_access_token }}
         run: |
-          WORKFLOW_REF="${{ github.workflow_ref }}"
-          REF="${WORKFLOW_REF##*@}"
-          echo "ref=$REF" >> $GITHUB_OUTPUT
+          SHA=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            --jq '.referenced_workflows[] | select(.path | startswith("speakeasy-api/sdk-generation-action/")) | .sha')
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
         working-directory: ${{ github.workspace }}
       - name: Checkout sdk-generation-action repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ steps.workflow-ref.outputs.ref }}
+          ref: ${{ steps.workflow-sha.outputs.sha }}
           path: _speakeasy
       - name: Setup dotnet
         uses: actions/setup-dotnet@55ec9447dda3d1cf6bd587150f3262f30ee10815 # v3
@@ -790,17 +804,19 @@ jobs:
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
-      - name: Extract workflow ref
-        id: workflow-ref
+      - name: Get reusable workflow SHA
+        id: workflow-sha
+        env:
+          GH_TOKEN: ${{ secrets.github_access_token }}
         run: |
-          WORKFLOW_REF="${{ github.workflow_ref }}"
-          REF="${WORKFLOW_REF##*@}"
-          echo "ref=$REF" >> $GITHUB_OUTPUT
+          SHA=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            --jq '.referenced_workflows[] | select(.path | startswith("speakeasy-api/sdk-generation-action/")) | .sha')
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
       - name: Checkout sdk-generation-action repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ steps.workflow-ref.outputs.ref }}
+          ref: ${{ steps.workflow-sha.outputs.sha }}
           path: _speakeasy
       - name: Install GoReleaser
         uses: goreleaser/goreleaser-action@5fdedb94abba051217030cc86d4523cf3f02243d # v4
@@ -874,18 +890,20 @@ jobs:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
-      - name: Extract workflow ref
-        id: workflow-ref
+      - name: Get reusable workflow SHA
+        id: workflow-sha
+        env:
+          GH_TOKEN: ${{ secrets.github_access_token }}
         run: |
-          WORKFLOW_REF="${{ github.workflow_ref }}"
-          REF="${WORKFLOW_REF##*@}"
-          echo "ref=$REF" >> $GITHUB_OUTPUT
+          SHA=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            --jq '.referenced_workflows[] | select(.path | startswith("speakeasy-api/sdk-generation-action/")) | .sha')
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
         working-directory: ${{ github.workspace }}
       - name: Checkout sdk-generation-action repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ steps.workflow-ref.outputs.ref }}
+          ref: ${{ steps.workflow-sha.outputs.sha }}
           path: _speakeasy
       - name: Set up Ruby
         uses: ruby/setup-ruby@d8d83c3960843afb664e821fed6be52f37da5267 # v1.231.0
