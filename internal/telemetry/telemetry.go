@@ -123,7 +123,7 @@ func Track(ctx context.Context, exec shared.InteractionType, fn func(ctx context
 		WorkspaceID:      workspaceID,
 		InteractionType:  exec,
 		LocalStartedAt:   time.Now(),
-		SpeakeasyVersion: fmt.Sprintf(os.Getenv("GH_ACTION_VERSION")),
+		SpeakeasyVersion: os.Getenv("GH_ACTION_VERSION"),
 		Success:          false,
 	}
 	runEvent.WorkspaceID = workspaceID

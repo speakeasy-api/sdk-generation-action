@@ -39,7 +39,7 @@ func WriteSuggestions(g *git.Git, prNumber int, out string) error {
 		if commentsInfo.lineNums[i] != 0 {
 			comment := formatComment(commentsInfo.errs[i], commentsInfo.suggestions[i], commentsInfo.explanations[i], 0, i+1)
 			if err := g.WritePRComment(prNumber, fileName, comment, commentsInfo.lineNums[i]); err != nil {
-				logging.Info(fmt.Sprintf("failed to write PR comment: %s", err.Error()))
+				logging.Info("failed to write PR comment: %s", err.Error())
 				commentsInfo.lineNums[i] = 0
 			}
 		}

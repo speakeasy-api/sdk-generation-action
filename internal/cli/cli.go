@@ -20,7 +20,7 @@ var MinimumSupportedCLIVersion = version.Must(version.NewVersion("1.130.0"))
 func IsAtLeastVersion(version *version.Version) bool {
 	sv, err := GetSpeakeasyVersion()
 	if err != nil {
-		logging.Debug(err.Error())
+		logging.Debug("%s", err.Error())
 		return false
 	}
 
@@ -89,7 +89,7 @@ func GetSpeakeasyVersion() (*version.Version, error) {
 		return nil, err
 	}
 
-	logging.Debug(out)
+	logging.Debug("%s", out)
 
 	r := regexp.MustCompile(`speakeasy version ([0-9]+\.[0-9]+\.[0-9]+)`)
 
@@ -109,7 +109,7 @@ func GetGenerationVersion() (*version.Version, error) {
 		return nil, err
 	}
 
-	logging.Debug(out)
+	logging.Debug("%s", out)
 
 	r := regexp.MustCompile(`(?m)^Version:.*?v([0-9]+\.[0-9]+\.[0-9]+)`)
 
