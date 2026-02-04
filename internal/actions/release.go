@@ -150,12 +150,18 @@ func GetDirAndShouldUseReleasesMD(files []string, dir string, usingReleasesMd bo
 }
 
 func addPublishOutputs(dir string, outputs map[string]string) error {
+	logging.Info("DEBUG: addPublishOutputs called with dir=%s", dir)
+
 	wf, err := configuration.GetWorkflowAndValidateLanguages(false)
 	if err != nil {
 		return err
 	}
 
-	for _, target := range wf.Targets {
+	logging.Info("DEBUG: Found %d targets in workflow", len(wf.Targets))
+
+	for targetID, target := range wf.Targets {
+		logging.Info("DEBUG: Checking target %s (lang=%s)", targetID, target.Target)
+
 		// Only add outputs for the target that was regenerated, based on output directory
 		if dir != "." && target.Output != nil {
 			output, err := filepath.Rel(".", *target.Output)
@@ -167,7 +173,9 @@ func addPublishOutputs(dir string, outputs map[string]string) error {
 				output = filepath.Join(environment.GetWorkingDirectory(), output)
 			}
 
+			logging.Info("DEBUG: dir=%s, output=%s", dir, output)
 			if output != dir {
+				logging.Info("DEBUG: Skipping target %s because output doesn't match dir", targetID)
 				continue
 			}
 		}
