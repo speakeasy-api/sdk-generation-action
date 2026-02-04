@@ -354,7 +354,12 @@ func AddTargetPublishOutputs(target workflow.Target, outputs map[string]string, 
 
 	outputs[utils.OutputTargetPublish(lang)] = fmt.Sprintf("%t", published)
 
-	if published && lang == "java" && target.Publishing.Java != nil {
+	if published && lang == "java" && target.Publishing != nil && target.Publishing.Java != nil {
 		outputs["use_sonatype_legacy"] = strconv.FormatBool(target.Publishing.Java.UseSonatypeLegacy)
+	}
+
+	if lang == "python" && target.Publishing != nil && target.Publishing.PyPi != nil &&
+		target.Publishing.PyPi.UseTrustedPublishing != nil && *target.Publishing.PyPi.UseTrustedPublishing {
+		outputs["use_pypi_trusted_publishing"] = "true"
 	}
 }

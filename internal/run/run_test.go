@@ -8,6 +8,10 @@ import (
 	"github.com/speakeasy-api/sdk-generation-action/internal/run"
 )
 
+func ptr[T any](v T) *T {
+	return &v
+}
+
 func TestAddTargetPublishOutputs(t *testing.T) {
 	t.Parallel()
 
@@ -138,6 +142,20 @@ func TestAddTargetPublishOutputs(t *testing.T) {
 			},
 			expectedOutputs: map[string]string{
 				"publish_python": "true",
+			},
+		},
+		"python-trusted-publishing": {
+			target: workflow.Target{
+				Publishing: &workflow.Publishing{
+					PyPi: &workflow.PyPi{
+						UseTrustedPublishing: ptr(true),
+					},
+				},
+				Target: "python",
+			},
+			expectedOutputs: map[string]string{
+				"publish_python":              "true",
+				"use_pypi_trusted_publishing": "true",
 			},
 		},
 		"ruby-no-publishing": {
