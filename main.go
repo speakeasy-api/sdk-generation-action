@@ -15,8 +15,10 @@ import (
 )
 
 func main() {
-	fmt.Println("ACTION_BINARY_VERSION: pypi-trusted-v3")
-	fmt.Printf("INPUT_ACTION=%s\n", os.Getenv("INPUT_ACTION"))
+	fmt.Fprintln(os.Stderr, "ACTION_BINARY_VERSION: pypi-trusted-v4-stderr")
+	fmt.Fprintf(os.Stderr, "INPUT_ACTION=%s\n", os.Getenv("INPUT_ACTION"))
+	os.Stdout.Sync()
+	os.Stderr.Sync()
 
 	if environment.IsDebugMode() {
 		envs := os.Environ()
