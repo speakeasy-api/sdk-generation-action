@@ -129,6 +129,7 @@ jobs:
       swift_directory: ${{ steps.release.outputs.swift_directory }}
       use_sonatype_legacy: ${{ steps.release.outputs.use_sonatype_legacy }}
       mcp_release_typescript: ${{ steps.release.outputs.mcp_release_typescript }}
+      use_pypi_trusted_publishing: ${{ steps.release.outputs.use_pypi_trusted_publishing }}
     steps:
       - name: Tune GitHub-hosted runner network
         uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
@@ -178,6 +179,9 @@ jobs:
     name: Publish Python SDK
     runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: release
+    permissions:
+      id-token: write
+      contents: read
     defaults:
       run:
         working-directory: ${{ needs.release.outputs.python_directory }}
@@ -211,14 +215,25 @@ jobs:
           if [ -f scripts/publish.sh ]; then
             echo "publish_with_script=true" >> $GITHUB_OUTPUT
           fi
-      - name: Publish with script
-        if: steps.check-publish.outputs.publish_with_script == 'true'
+      - name: Build package
+        if: ${{ needs.release.outputs.use_pypi_trusted_publishing == 'true' }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+          python -m build
+      - name: Publish to PyPI (Trusted Publishing)
+        if: ${{ needs.release.outputs.use_pypi_trusted_publishing == 'true' }}
+        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
+        with:
+          packages-dir: ${{ needs.release.outputs.python_directory }}/dist/
+      - name: Publish with script (Token)
+        if: ${{ needs.release.outputs.use_pypi_trusted_publishing != 'true' && steps.check-publish.outputs.publish_with_script == 'true' }}
         env:
           PYPI_TOKEN: ${{ secrets.pypi_token }}
         run: |
           ./scripts/publish.sh
-      - name: Legacy publish
-        if: steps.check-publish.outputs.publish_with_script != 'true'
+      - name: Legacy publish (Token)
+        if: ${{ needs.release.outputs.use_pypi_trusted_publishing != 'true' && steps.check-publish.outputs.publish_with_script != 'true' }}
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi_token }}
