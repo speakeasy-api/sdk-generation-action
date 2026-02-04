@@ -214,6 +214,7 @@ jobs:
       branch_name: ${{ steps.run-workflow.outputs.branch_name }}
       resolved_speakeasy_version: ${{ steps.run-workflow.outputs.resolved_speakeasy_version }}
       use_sonatype_legacy: ${{ steps.run-workflow.outputs.use_sonatype_legacy }}
+      use_pypi_trusted_publishing: ${{ steps.run-workflow.outputs.use_pypi_trusted_publishing }}
       short_circuit_label_trigger: ${{ steps.check-label.outputs.short_circuit_label_trigger }}
     steps:
       - name: Check Pull Request Label
@@ -310,6 +311,9 @@ jobs:
     name: Publish Python SDK
     runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: [run-workflow]
+    permissions:
+      id-token: write
+      contents: read
     defaults:
       run:
         working-directory: ${{ needs.run-workflow.outputs.python_directory }}
@@ -345,14 +349,25 @@ jobs:
           if [ -f scripts/publish.sh ]; then
             echo "publish_with_script=true" >> $GITHUB_OUTPUT
           fi
-      - name: Publish with script
-        if: steps.check-publish.outputs.publish_with_script == 'true'
+      - name: Build package
+        if: ${{ needs.run-workflow.outputs.use_pypi_trusted_publishing == 'true' }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+          python -m build
+      - name: Publish to PyPI (Trusted Publishing)
+        if: ${{ needs.run-workflow.outputs.use_pypi_trusted_publishing == 'true' }}
+        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
+        with:
+          packages-dir: ${{ needs.run-workflow.outputs.python_directory }}/dist/
+      - name: Publish with script (Token)
+        if: ${{ needs.run-workflow.outputs.use_pypi_trusted_publishing != 'true' && steps.check-publish.outputs.publish_with_script == 'true' }}
         env:
           PYPI_TOKEN: ${{ secrets.pypi_token }}
         run: |
           ./scripts/publish.sh
-      - name: Legacy publish
-        if: steps.check-publish.outputs.publish_with_script != 'true'
+      - name: Legacy publish (Token)
+        if: ${{ needs.run-workflow.outputs.use_pypi_trusted_publishing != 'true' && steps.check-publish.outputs.publish_with_script != 'true' }}
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi_token }}
