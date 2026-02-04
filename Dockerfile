@@ -1,4 +1,5 @@
 ## Build
+# CACHE_BUST: v15.55.2-alpha.2
 FROM golang:1.24-alpine3.22 AS builder
 
 WORKDIR /app
