@@ -172,6 +172,23 @@ func addPublishOutputs(dir string, outputs map[string]string) error {
 			}
 		}
 
+		// Debug: Print publishing config
+		logging.Info("DEBUG: Processing target %s", target.Target)
+		if target.Publishing != nil {
+			logging.Info("DEBUG: Publishing config found for %s", target.Target)
+			if target.Publishing.PyPi != nil {
+				if target.Publishing.PyPi.UseTrustedPublishing != nil {
+					logging.Info("DEBUG: PyPi.UseTrustedPublishing=%v", *target.Publishing.PyPi.UseTrustedPublishing)
+				} else {
+					logging.Info("DEBUG: PyPi.UseTrustedPublishing is nil")
+				}
+			} else {
+				logging.Info("DEBUG: PyPi config is nil")
+			}
+		} else {
+			logging.Info("DEBUG: Publishing config is nil for %s", target.Target)
+		}
+
 		run.AddTargetPublishOutputs(target, outputs, nil)
 	}
 
