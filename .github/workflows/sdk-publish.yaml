@@ -92,6 +92,19 @@ on:
       nuget_api_key:
         description: The api key for publishing to Nuget
         required: false
+    outputs:
+      python_regenerated:
+        description: Whether the Python SDK was regenerated
+        value: ${{ jobs.release.outputs.python_regenerated }}
+      python_directory:
+        description: Directory containing the Python SDK
+        value: ${{ jobs.release.outputs.python_directory }}
+      publish_python:
+        description: Whether the Python SDK should be published
+        value: ${{ jobs.release.outputs.publish_python }}
+      use_pypi_trusted_publishing:
+        description: Whether PyPI trusted publishing (OIDC) is enabled
+        value: ${{ jobs.release.outputs.use_pypi_trusted_publishing }}
 jobs:
   release:
     name: Create Github Release
@@ -173,7 +186,7 @@ jobs:
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-pypi:
-    if: ${{ needs.release.outputs.python_regenerated == 'true' && needs.release.outputs.publish_python == 'true' }}
+    if: ${{ needs.release.outputs.python_regenerated == 'true' && needs.release.outputs.publish_python == 'true' && needs.release.outputs.use_pypi_trusted_publishing != 'true' }}
     name: Publish Python SDK
     runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: release
@@ -210,25 +223,14 @@ jobs:
           if [ -f scripts/publish.sh ]; then
             echo "publish_with_script=true" >> $GITHUB_OUTPUT
           fi
-      - name: Build package
-        if: ${{ needs.release.outputs.use_pypi_trusted_publishing == 'true' }}
-        run: |
-          python -m pip install --upgrade pip
-          pip install build
-          python -m build
-      - name: Publish to PyPI (Trusted Publishing)
-        if: ${{ needs.release.outputs.use_pypi_trusted_publishing == 'true' }}
-        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
-        with:
-          packages-dir: ${{ needs.release.outputs.python_directory }}/dist/
       - name: Publish with script (Token)
-        if: ${{ needs.release.outputs.use_pypi_trusted_publishing != 'true' && steps.check-publish.outputs.publish_with_script == 'true' }}
+        if: ${{ steps.check-publish.outputs.publish_with_script == 'true' }}
         env:
           PYPI_TOKEN: ${{ secrets.pypi_token }}
         run: |
           ./scripts/publish.sh
       - name: Legacy publish (Token)
-        if: ${{ needs.release.outputs.use_pypi_trusted_publishing != 'true' && steps.check-publish.outputs.publish_with_script != 'true' }}
+        if: ${{ steps.check-publish.outputs.publish_with_script != 'true' }}
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi_token }}
