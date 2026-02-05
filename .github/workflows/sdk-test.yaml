@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: 9f1029aae869dbcdd2cc5e6d6c8bd88f6e571ff3
+          ref: 472ebee89088bcbcce8068444402cb01e4f4bb84
           path: _speakeasy
       - name: Set dynamic environment variables
         if: inputs.env_vars != ''
@@ -68,4 +68,4 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           github_access_token: ${{ secrets.github_access_token }}
         env:
-          GH_ACTION_VERSION: 9f1029aae869dbcdd2cc5e6d6c8bd88f6e571ff3
+          GH_ACTION_VERSION: 472ebee89088bcbcce8068444402cb01e4f4bb84
