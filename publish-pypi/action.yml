@@ -31,24 +31,20 @@ runs:
   steps:
     - name: Tune GitHub-hosted runner network
       uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
-
     - name: Checkout sdk-generation-action repository
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         repository: speakeasy-api/sdk-generation-action
-        ref: 1f002dd4d9b2da72b9ff71f8b58dea1f5e294cdd
+        ref: 569ac3113f179531a18375c6d0f4f199305eceaa
         path: _speakeasy
-
     - name: Set up Python
       uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: ${{ inputs.python-version }}
-
     - name: Install uv
       uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
       with:
         version: ${{ inputs.uv-version }}
-
     - name: Build package
       shell: bash
       working-directory: ${{ inputs.python-directory }}
@@ -56,14 +52,12 @@ runs:
         python -m pip install --upgrade pip
         pip install build
         python -m build
-
     - name: Publish to PyPI (Trusted Publishing)
       id: publish
       shell: bash
       working-directory: ${{ inputs.python-directory }}
       run: |
         uv publish --trusted-publishing always dist/*
-
     - name: Log publish event
       id: publish-event
       if: always()
@@ -78,7 +72,6 @@ runs:
         registry_name: "pypi"
       env:
         GH_ACTION_RESULT: ${{ steps.publish.outcome }}
-
     - name: Notify Slack on failure
       if: always() && failure() && inputs.slack_webhook_url != ''
       uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
@@ -91,7 +84,6 @@ runs:
         footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
       env:
         SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
-
     - name: Log result
       id: log-result
       if: always()
