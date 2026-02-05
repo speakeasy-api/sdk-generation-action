@@ -1,5 +1,4 @@
 name: Speakeasy Registry Tagger
-
 on:
   workflow_call:
     inputs:
@@ -37,7 +36,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.workflow_sha }}
+          ref: 9f1029aae869dbcdd2cc5e6d6c8bd88f6e571ff3
           path: _speakeasy
       - id: apply-tags
         name: Apply Tags
@@ -51,4 +50,4 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           github_access_token: ${{ secrets.github_access_token }}
         env:
-          GH_ACTION_VERSION: ${{ github.workflow_sha }}
+          GH_ACTION_VERSION: 9f1029aae869dbcdd2cc5e6d6c8bd88f6e571ff3

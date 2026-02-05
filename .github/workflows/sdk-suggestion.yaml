@@ -1,5 +1,4 @@
 name: Speakeasy SDK Suggestion Workflow
-
 on:
   workflow_call:
     inputs:
