@@ -1,5 +1,4 @@
 name: Speakeasy SDK Publish Workflow
-
 on:
   workflow_call:
     inputs:
@@ -47,7 +46,6 @@ on:
         description: "Options to pass to Node.js when running npm commands"
         required: false
         type: string
-
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -94,6 +92,19 @@ on:
       nuget_api_key:
         description: The api key for publishing to Nuget
         required: false
+    outputs:
+      python_regenerated:
+        description: Whether the Python SDK was regenerated
+        value: ${{ jobs.release.outputs.python_regenerated }}
+      python_directory:
+        description: Directory containing the Python SDK
+        value: ${{ jobs.release.outputs.python_directory }}
+      publish_python:
+        description: Whether the Python SDK should be published
+        value: ${{ jobs.release.outputs.publish_python }}
+      use_pypi_trusted_publishing:
+        description: Whether PyPI trusted publishing (OIDC) is enabled
+        value: ${{ jobs.release.outputs.use_pypi_trusted_publishing }}
 jobs:
   release:
     name: Create Github Release
@@ -137,7 +148,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.job_workflow_sha }}
+          ref: 569ac3113f179531a18375c6d0f4f199305eceaa
           path: _speakeasy
       - id: release
         uses: ./_speakeasy
@@ -171,11 +182,11 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-pypi:
-    if: ${{ needs.release.outputs.python_regenerated == 'true' && needs.release.outputs.publish_python == 'true' }}
+    if: ${{ needs.release.outputs.python_regenerated == 'true' && needs.release.outputs.publish_python == 'true' && needs.release.outputs.use_pypi_trusted_publishing != 'true' }}
     name: Publish Python SDK
     runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: release
@@ -190,7 +201,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.job_workflow_sha }}
+          ref: 569ac3113f179531a18375c6d0f4f199305eceaa
           path: _speakeasy
       - name: Set up Python
         uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
@@ -212,25 +223,14 @@ jobs:
           if [ -f scripts/publish.sh ]; then
             echo "publish_with_script=true" >> $GITHUB_OUTPUT
           fi
-      - name: Build package
-        if: ${{ needs.release.outputs.use_pypi_trusted_publishing == 'true' }}
-        run: |
-          python -m pip install --upgrade pip
-          pip install build
-          python -m build
-      - name: Publish to PyPI (Trusted Publishing)
-        if: ${{ needs.release.outputs.use_pypi_trusted_publishing == 'true' }}
-        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
-        with:
-          packages-dir: ${{ needs.release.outputs.python_directory }}/dist/
       - name: Publish with script (Token)
-        if: ${{ needs.release.outputs.use_pypi_trusted_publishing != 'true' && steps.check-publish.outputs.publish_with_script == 'true' }}
+        if: ${{ steps.check-publish.outputs.publish_with_script == 'true' }}
         env:
           PYPI_TOKEN: ${{ secrets.pypi_token }}
         run: |
           ./scripts/publish.sh
       - name: Legacy publish (Token)
-        if: ${{ needs.release.outputs.use_pypi_trusted_publishing != 'true' && steps.check-publish.outputs.publish_with_script != 'true' }}
+        if: ${{ steps.check-publish.outputs.publish_with_script != 'true' }}
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi_token }}
@@ -252,7 +252,7 @@ jobs:
           registry_name: "pypi"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -275,7 +275,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-npm:
@@ -294,7 +294,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.job_workflow_sha }}
+          ref: 569ac3113f179531a18375c6d0f4f199305eceaa
           path: _speakeasy
       - name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -356,7 +356,6 @@ jobs:
               --data-binary @"$BINARY_PATH" \
               "$UPLOAD_URL?name=$(basename "$BINARY_PATH")"
           done
-
       - id: publish-event
         uses: ./_speakeasy
         if: always()
@@ -370,7 +369,7 @@ jobs:
           registry_name: "npm"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -393,7 +392,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-npm-mcp:
@@ -411,7 +410,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.job_workflow_sha }}
+          ref: 569ac3113f179531a18375c6d0f4f199305eceaa
           path: _speakeasy
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -481,7 +480,6 @@ jobs:
             -H "Content-Type: application/octet-stream" \
             --data-binary @"$MCP_BUNDLE_PATH" \
             "$UPLOAD_URL?name=$(basename "$MCP_BUNDLE_PATH")"
-
       - id: publish-event
         uses: ./_speakeasy
         if: always()
@@ -495,7 +493,7 @@ jobs:
           registry_name: "npm"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2.5.0
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -518,7 +516,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "mcp"
   publish-java:
@@ -537,7 +535,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.job_workflow_sha }}
+          ref: 569ac3113f179531a18375c6d0f4f199305eceaa
           path: _speakeasy
       - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
@@ -579,7 +577,7 @@ jobs:
           registry_name: "sonatype"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -602,7 +600,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-packagist:
@@ -621,7 +619,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.job_workflow_sha }}
+          ref: 569ac3113f179531a18375c6d0f4f199305eceaa
           path: _speakeasy
       - name: Publish
         uses: speakeasy-api/packagist-update@5e2c88e23c7d21e40c7a02a3b252a749b351eb2f # support-github-creation
@@ -643,7 +641,7 @@ jobs:
           registry_name: "packagist"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -666,7 +664,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-nuget:
@@ -685,7 +683,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.job_workflow_sha }}
+          ref: 569ac3113f179531a18375c6d0f4f199305eceaa
           path: _speakeasy
       - name: Setup dotnet
         uses: actions/setup-dotnet@55ec9447dda3d1cf6bd587150f3262f30ee10815 # v3
@@ -706,7 +704,7 @@ jobs:
           registry_name: "nuget"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -729,7 +727,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-terraform:
@@ -744,7 +742,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.job_workflow_sha }}
+          ref: 569ac3113f179531a18375c6d0f4f199305eceaa
           path: _speakeasy
       - name: Install GoReleaser
         uses: goreleaser/goreleaser-action@5fdedb94abba051217030cc86d4523cf3f02243d # v4
@@ -780,7 +778,7 @@ jobs:
           registry_name: "terraform"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -803,7 +801,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-gems:
@@ -822,7 +820,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: ${{ github.job_workflow_sha }}
+          ref: 569ac3113f179531a18375c6d0f4f199305eceaa
           path: _speakeasy
       - name: Set up Ruby
         uses: ruby/setup-ruby@d8d83c3960843afb664e821fed6be52f37da5267 # v1.231.0
@@ -853,7 +851,7 @@ jobs:
           registry_name: "gems"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -876,6 +874,6 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: ${{ github.job_workflow_sha }}
+          GH_ACTION_VERSION: 569ac3113f179531a18375c6d0f4f199305eceaa
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
