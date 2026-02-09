@@ -46,6 +46,10 @@ on:
         description: "Options to pass to Node.js when running npm commands"
         required: false
         type: string
+      npm_tag:
+        description: "Custom npm dist-tag to use instead of 'latest' for non-prerelease versions. Useful when publishing multiple major version lines (e.g., '2024.01' for versions/2024.01 branch)."
+        required: false
+        type: string
     secrets:
       github_access_token:
         description: A GitHub access token with write access to the repo
@@ -309,6 +313,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
           NODE_OPTIONS: ${{ inputs.node_options }}
+          NPM_TAG: ${{ inputs.npm_tag }}
         run: |
           VERSION=$(npm pkg get version | tr -d '"')
           echo "Detected version: $VERSION"
@@ -318,6 +323,9 @@ jobs:
             TAG=${PRERELEASE%%.*}
             echo "Prerelease detected; publishing under dist-tag: $TAG"
             npm publish --tag "$TAG" --access public
+          elif [[ -n "$NPM_TAG" ]]; then
+            echo "Custom tag provided; publishing under dist-tag: $NPM_TAG"
+            npm publish --tag "$NPM_TAG" --access public
           else
             echo "Official release detected; publishing under 'latest'"
             npm publish --access public
@@ -420,6 +428,7 @@ jobs:
       - run: npm rebuild bun
       - env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+          NPM_TAG: ${{ inputs.npm_tag }}
         run: |
           VERSION=$(npm pkg get version | tr -d '"')
           echo "Detected version: $VERSION"
@@ -429,6 +438,9 @@ jobs:
             TAG=${PRERELEASE%%.*}
             echo "Prerelease detected; publishing under dist-tag: $TAG"
             npm publish --tag "$TAG" --access public
+          elif [[ -n "$NPM_TAG" ]]; then
+            echo "Custom tag provided; publishing under dist-tag: $NPM_TAG"
+            npm publish --tag "$NPM_TAG" --access public
           else
             echo "Official release detected; publishing under 'latest'"
             npm publish --access public

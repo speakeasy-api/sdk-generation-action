@@ -9,3 +9,4 @@ openapi/
 *.iml
 .run
 .vscode/
+.DS_Store
