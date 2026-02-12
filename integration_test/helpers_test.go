@@ -406,17 +406,24 @@ func runSpeakeasyLocal(t *testing.T, dir, apiKey string) {
 	t.Logf("speakeasy run completed successfully")
 }
 
-// pushOrphanBranchWithSDK creates a temp directory with speakeasy project
-// files, runs `speakeasy run` to generate a real SDK baseline, and pushes
+// pushOrphanBranchWithSDK creates a temp directory with the default single-op
+// speakeasy project files, runs `speakeasy run` to generate a real SDK
+// baseline, and pushes everything as an orphan branch.
+func pushOrphanBranchWithSDK(t *testing.T, token, branchName, apiKey string) string {
+	return pushOrphanBranchWithCustomSDK(t, token, branchName, apiKey, writeSpeakeasyProjectFiles)
+}
+
+// pushOrphanBranchWithCustomSDK creates a temp directory, calls writeFiles to
+// populate it, runs `speakeasy run` to generate a real SDK baseline, and pushes
 // everything as an orphan branch. Returns the directory path so the caller
 // can modify files (e.g. update the spec) before the workflow runs.
-func pushOrphanBranchWithSDK(t *testing.T, token, branchName, apiKey string) string {
+func pushOrphanBranchWithCustomSDK(t *testing.T, token, branchName, apiKey string, writeFiles func(*testing.T, string)) string {
 	t.Helper()
 
 	dir := t.TempDir()
 
-	// Write minimal speakeasy project files
-	writeSpeakeasyProjectFiles(t, dir)
+	// Write project files using the provided function
+	writeFiles(t, dir)
 
 	// Init git repo and push orphan branch with initial spec
 	runGitCLI(t, dir, "init")
@@ -448,6 +455,263 @@ func pushOrphanBranchWithSDK(t *testing.T, token, branchName, apiKey string) str
 	runGitCLI(t, dir, "push", "--force", "origin", branchName)
 
 	return dir
+}
+
+// enablePersistentEditsInGenYaml modifies the generated gen.yaml to enable
+// persistent edits. After the first `speakeasy run`, gen.yaml contains
+// `persistentEdits: {}` — this replaces it with an enabled config.
+func enablePersistentEditsInGenYaml(t *testing.T, dir string) {
+	t.Helper()
+	genYamlPath := filepath.Join(dir, ".speakeasy", "gen.yaml")
+	content, err := os.ReadFile(genYamlPath)
+	if err != nil {
+		t.Fatalf("read gen.yaml: %v", err)
+	}
+	s := string(content)
+	if strings.Contains(s, "persistentEdits: {}") {
+		s = strings.Replace(s, "  persistentEdits: {}", "  persistentEdits:\n    enabled: true", 1)
+	} else if !strings.Contains(s, "persistentEdits:") {
+		s = strings.Replace(s, "generation:\n", "generation:\n  persistentEdits:\n    enabled: true\n", 1)
+	} else {
+		t.Logf("gen.yaml already has a non-empty persistentEdits section, skipping modification")
+		return
+	}
+	if err := os.WriteFile(genYamlPath, []byte(s), 0o644); err != nil {
+		t.Fatalf("write gen.yaml: %v", err)
+	}
+	t.Logf("enabled persistentEdits in gen.yaml")
+}
+
+// findGeneratedGoFile finds a generated Go file suitable for editing.
+// Prefers files in models/operations/ that should be stable across spec changes.
+func findGeneratedGoFile(t *testing.T, dir string) string {
+	t.Helper()
+	// Try models/operations/ first — these don't change when new endpoints are added
+	patterns := []string{
+		filepath.Join(dir, "models", "operations", "*.go"),
+		filepath.Join(dir, "*", "*.go"),
+		filepath.Join(dir, "*", "*", "*.go"),
+	}
+	for _, pattern := range patterns {
+		matches, _ := filepath.Glob(pattern)
+		if len(matches) > 0 {
+			return matches[0]
+		}
+	}
+	t.Fatal("no generated .go files found")
+	return ""
+}
+
+// addCommentToGoFile adds a unique comment after the package line in a Go file.
+// Returns the comment string for later verification.
+func addCommentToGoFile(t *testing.T, filePath string) string {
+	t.Helper()
+	comment := "// PERSISTENT-EDIT-TEST: this comment should survive SDK regeneration"
+
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		t.Fatalf("read %s: %v", filePath, err)
+	}
+
+	lines := strings.Split(string(content), "\n")
+	var result []string
+	inserted := false
+	for _, line := range lines {
+		result = append(result, line)
+		if !inserted && strings.HasPrefix(line, "package ") {
+			result = append(result, "", comment)
+			inserted = true
+		}
+	}
+	if !inserted {
+		t.Fatalf("could not find package line in %s", filePath)
+	}
+
+	if err := os.WriteFile(filePath, []byte(strings.Join(result, "\n")), 0o644); err != nil {
+		t.Fatalf("write %s: %v", filePath, err)
+	}
+	return comment
+}
+
+// getFileContentFromRef retrieves file content from a specific git ref via
+// the GitHub API.
+func getFileContentFromRef(t *testing.T, client *github.Client, ref, path string) string {
+	t.Helper()
+	ctx := context.Background()
+	fileContent, _, _, err := client.Repositories.GetContents(ctx, testRepoOwner, testRepoName, path, &github.RepositoryContentGetOptions{
+		Ref: ref,
+	})
+	if err != nil {
+		t.Fatalf("get file content from %s:%s: %v", ref, path, err)
+	}
+	content, err := fileContent.GetContent()
+	if err != nil {
+		t.Fatalf("decode file content: %v", err)
+	}
+	return content
+}
+
+// writeSpeakeasyProjectFilesWithBothOps writes project files with a spec
+// containing both /health and /status operations. Used as the starting point
+// for conflict tests where /status will later be removed.
+func writeSpeakeasyProjectFilesWithBothOps(t *testing.T, dir string) {
+	t.Helper()
+
+	specContent := `openapi: "3.0.0"
+info:
+  title: Test API
+  version: "1.0.0"
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        "200":
+          description: OK
+  /status:
+    get:
+      operationId: getStatus
+      summary: Get service status
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+`
+	writeFile(t, filepath.Join(dir, "openapi.yaml"), specContent)
+
+	speakeasyDir := filepath.Join(dir, ".speakeasy")
+	if err := os.MkdirAll(speakeasyDir, 0o755); err != nil {
+		t.Fatalf("mkdir .speakeasy: %v", err)
+	}
+
+	workflowContent := `workflowVersion: 1.0.0
+speakeasyVersion: latest
+sources:
+  test-source:
+    inputs:
+      - location: openapi.yaml
+targets:
+  go:
+    target: go
+    source: test-source
+`
+	writeFile(t, filepath.Join(speakeasyDir, "workflow.yaml"), workflowContent)
+
+	genContent := `configVersion: 2.0.0
+generation:
+  sdkClassName: testsdk
+go:
+  version: 0.0.1
+  packageName: github.com/speakeasy-api/sdk-generation-action-test-repo
+`
+	writeFile(t, filepath.Join(speakeasyDir, "gen.yaml"), genContent)
+}
+
+// writeSpecHealthOnly overwrites openapi.yaml with only the /health endpoint,
+// effectively removing the /status operation.
+func writeSpecHealthOnly(t *testing.T, dir string) {
+	t.Helper()
+	specContent := `openapi: "3.0.0"
+info:
+  title: Test API
+  version: "1.0.0"
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        "200":
+          description: OK
+`
+	writeFile(t, filepath.Join(dir, "openapi.yaml"), specContent)
+}
+
+// addInlineEditToStatusField finds the generated Go file containing the
+// `Status` response field (from the /status operation) and appends an inline
+// comment to that exact line. Returns the file path and the edit marker.
+// This creates a same-line conflict when the spec renames the property.
+func addInlineEditToStatusField(t *testing.T, dir string) (filePath string, editMarker string) {
+	t.Helper()
+	editMarker = "// user-edit: persistent edit test marker"
+
+	// Search for the generated file containing the Status field with json tag
+	patterns := []string{
+		filepath.Join(dir, "models", "operations", "*.go"),
+		filepath.Join(dir, "models", "components", "*.go"),
+		filepath.Join(dir, "models", "*.go"),
+	}
+	for _, pattern := range patterns {
+		matches, _ := filepath.Glob(pattern)
+		for _, match := range matches {
+			content, err := os.ReadFile(match)
+			if err != nil {
+				continue
+			}
+			if !strings.Contains(string(content), `json:"status`) {
+				continue
+			}
+			// Found the file — edit the line with the Status field
+			lines := strings.Split(string(content), "\n")
+			edited := false
+			for i, line := range lines {
+				if strings.Contains(line, `json:"status`) {
+					lines[i] = line + " " + editMarker
+					edited = true
+					break
+				}
+			}
+			if !edited {
+				continue
+			}
+			if err := os.WriteFile(match, []byte(strings.Join(lines, "\n")), 0o644); err != nil {
+				t.Fatalf("write %s: %v", match, err)
+			}
+			t.Logf("edited line with Status field in %s", match)
+			return match, editMarker
+		}
+	}
+	t.Fatal("could not find generated file with Status json field")
+	return "", ""
+}
+
+// writeSpecWithRenamedProperty overwrites openapi.yaml, renaming the `status`
+// response property to `serviceStatus`. The /status operation is kept — only
+// the response schema property name changes.
+func writeSpecWithRenamedProperty(t *testing.T, dir string) {
+	t.Helper()
+	specContent := `openapi: "3.0.0"
+info:
+  title: Test API
+  version: "1.0.0"
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        "200":
+          description: OK
+  /status:
+    get:
+      operationId: getStatus
+      summary: Get service status
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  serviceStatus:
+                    type: string
+`
+	writeFile(t, filepath.Join(dir, "openapi.yaml"), specContent)
 }
 
 // writeUpdatedSpecWithNewOperation overwrites openapi.yaml in dir to add a
