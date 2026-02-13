@@ -29,3 +29,24 @@ test-overlay:
 
 test-manual-repo-url:
 	docker compose run --rm main ./testing/test.sh ./testing/manual-repo-url.env
+
+# Integration tests run the full workflow E2E against a real GitHub repo.
+# They require the following environment variables:
+#
+#   GITHUB_TOKEN       GitHub personal access token (or `gh auth token`)
+#                      with repo scope on speakeasy-api/sdk-generation-action-test-repo
+#
+#   SPEAKEASY_API_KEY  Speakeasy platform API key for SDK generation
+#
+# Example:
+#   export GITHUB_TOKEN=$(gh auth token)
+#   export SPEAKEASY_API_KEY=ey...
+#   make test-integration
+test-integration:
+ifndef GITHUB_TOKEN
+	$(error GITHUB_TOKEN is not set — export a GitHub token with repo scope, e.g. export GITHUB_TOKEN=$$(gh auth token))
+endif
+ifndef SPEAKEASY_API_KEY
+	$(error SPEAKEASY_API_KEY is not set — export your Speakeasy API key, e.g. export SPEAKEASY_API_KEY=ey...)
+endif
+	docker compose run --rm -e SPEAKEASY_ACCEPTANCE=1 main go test -v -tags=integration -timeout 900s ./integration_test/...

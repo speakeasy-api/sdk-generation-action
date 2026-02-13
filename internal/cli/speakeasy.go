@@ -87,6 +87,7 @@ func runSpeakeasyCommand(args ...string) (string, error) {
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "SPEAKEASY_RUN_LOCATION=action")
 	cmd.Env = append(cmd.Env, "SPEAKEASY_ENVIRONMENT=github")
+	cmd.Env = append(cmd.Env, "GIT_TERMINAL_PROMPT=0")
 	cmd.Env = append(cmd.Env, extraRunEnvVars...)
 
 	output, err := cmd.CombinedOutput()

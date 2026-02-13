@@ -880,6 +880,68 @@ func TestLegacyPRTitleWithoutBee(t *testing.T) {
 	}
 }
 
+func TestConfigureSystemGitAuth_DefaultHost(t *testing.T) {
+	repoDir := t.TempDir()
+	runGitCLI(t, repoDir, "init")
+
+	t.Setenv("GITHUB_SERVER_URL", "https://github.com")
+
+	g := &Git{accessToken: "test-token-123"}
+	err := g.configureSystemGitAuth(repoDir)
+	require.NoError(t, err)
+
+	output := runGitCLI(t, repoDir, "config", "--local", "--get-regexp", `url\..*\.insteadOf`)
+	assert.Contains(t, output, "https://gen:test-token-123@github.com/")
+	assert.Contains(t, output, "https://github.com/")
+}
+
+func TestConfigureSystemGitAuth_GHESHost(t *testing.T) {
+	repoDir := t.TempDir()
+	runGitCLI(t, repoDir, "init")
+
+	t.Setenv("GITHUB_SERVER_URL", "https://github.mycompany.com")
+
+	g := &Git{accessToken: "ghes-token-456"}
+	err := g.configureSystemGitAuth(repoDir)
+	require.NoError(t, err)
+
+	output := runGitCLI(t, repoDir, "config", "--local", "--get-regexp", `url\..*\.insteadOf`)
+	assert.Contains(t, output, "https://gen:ghes-token-456@github.mycompany.com/")
+	assert.Contains(t, output, "https://github.mycompany.com/")
+}
+
+func TestConfigureSystemGitAuth_EmptyToken(t *testing.T) {
+	repoDir := t.TempDir()
+	runGitCLI(t, repoDir, "init")
+
+	g := &Git{accessToken: ""}
+	err := g.configureSystemGitAuth(repoDir)
+	require.NoError(t, err)
+
+	// Should be a no-op — no config written
+	cmd := exec.Command("git", "config", "--local", "--get-regexp", `url\..*\.insteadOf`)
+	cmd.Dir = repoDir
+	output, err := cmd.CombinedOutput()
+	// git config --get-regexp returns exit code 1 when no matches found
+	assert.Error(t, err)
+	assert.Empty(t, strings.TrimSpace(string(output)))
+}
+
+func TestConfigureSystemGitAuth_FallbackHost(t *testing.T) {
+	repoDir := t.TempDir()
+	runGitCLI(t, repoDir, "init")
+
+	t.Setenv("GITHUB_SERVER_URL", "")
+
+	g := &Git{accessToken: "fallback-token"}
+	err := g.configureSystemGitAuth(repoDir)
+	require.NoError(t, err)
+
+	output := runGitCLI(t, repoDir, "config", "--local", "--get-regexp", `url\..*\.insteadOf`)
+	assert.Contains(t, output, "https://gen:fallback-token@github.com/")
+	assert.Contains(t, output, "https://github.com/")
+}
+
 func TestCreateSuggestionPR_SourceBranchAware(t *testing.T) {
 	tests := []struct {
 		name                  string

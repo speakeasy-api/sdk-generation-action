@@ -96,6 +96,44 @@ func (g *Git) CloneRepo() error {
 	}
 	g.repo = r
 
+	if err := g.configureSystemGitAuth(repoDir); err != nil {
+		logging.Info("Warning: failed to configure system git credentials: %v", err)
+	}
+
+	return nil
+}
+
+// configureSystemGitAuth configures the cloned repo's local git config so that
+// system git commands (invoked by speakeasy CLI subprocesses) can authenticate.
+// It sets url.<authenticated>.insteadOf so that any HTTPS URL for the GitHub host
+// is transparently rewritten to include credentials.
+func (g *Git) configureSystemGitAuth(repoDir string) error {
+	if g.accessToken == "" {
+		return nil
+	}
+
+	host := "github.com"
+	if serverURL := os.Getenv("GITHUB_SERVER_URL"); serverURL != "" {
+		parsed, err := url.Parse(serverURL)
+		if err == nil && parsed.Host != "" {
+			host = parsed.Host
+		}
+	}
+
+	authenticatedPrefix := fmt.Sprintf("https://gen:%s@%s/", g.accessToken, host)
+	originalPrefix := fmt.Sprintf("https://%s/", host)
+
+	cmd := exec.Command("git", "config", "--local",
+		fmt.Sprintf("url.%s.insteadOf", authenticatedPrefix),
+		originalPrefix,
+	)
+	cmd.Dir = repoDir
+	cmd.Env = os.Environ()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git config failed: %w: %s", err, string(output))
+	}
+
 	return nil
 }
 
@@ -1367,6 +1405,12 @@ func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version s
 	var defaultTagName *string
 
 	for _, release := range releases {
+		// Skip draft and prerelease entries — their download URLs are
+		// untagged and will 404.
+		if release.GetDraft() || release.GetPrerelease() {
+			continue
+		}
+
 		for _, asset := range release.Assets {
 			if version == "latest" || version == release.GetTagName() {
 				downloadUrl := asset.GetBrowserDownloadURL()
