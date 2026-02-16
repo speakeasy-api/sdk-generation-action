@@ -480,7 +480,7 @@ jobs:
               "$UPLOAD_URL?name=$(basename "$BINARY_PATH")"
           done
 
-          // build and publish mcp bundle.
+          # build and publish mcp bundle.
           npx bun mcpb:build
 
           # MCP Bundle Path
