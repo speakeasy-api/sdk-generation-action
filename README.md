@@ -46,12 +46,10 @@ This should open a PR on the [test action repository](https://github.com/speakea
 
 # Releasing
 
-1. Merge your changes to `main`.
+1. Make your last change and commit it. Open a PR and get it merged to `main`.
 2. Run `./scripts/update-refs.sh` to pin all internal workflow refs to the latest commit SHA on `main`. Get this merged to `main` via a PR.
-3. Once the refs PR is merged, tag `main` with the appropriate semver tag and create a release on GitHub:
+3. Create a release on GitHub (this creates the semver tag automatically):
    ```bash
-   git tag v15.x.x
-   git push --tags
    gh release create v15.x.x --generate-notes
    ```
 4. Update the rolling major version tag:
