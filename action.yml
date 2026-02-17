@@ -273,6 +273,7 @@ runs:
     - name: Run speakeasy ci
       id: run
       shell: bash
+      working-directory: ${{ inputs.working_directory && format('{0}/repo/{1}', github.workspace, inputs.working_directory) || format('{0}/repo', github.workspace) }}
       run: |
         speakeasy ci ${{ inputs.action }}
       env:
