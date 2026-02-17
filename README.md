@@ -43,3 +43,18 @@ This should open a PR on the [test action repository](https://github.com/speakea
 1) Push your changes up to a branch.
 2) Navigate to the [test action](https://github.com/speakeasy-api/sdk-generation-action-test-repo/actions/workflows/action-test.yaml) in the test repo.
 3) Click "run workflow" and put in your branch!
+
+# Releasing
+
+1. Merge your changes to `main`.
+2. Run `./scripts/update-refs.sh` to pin all internal workflow refs to the latest commit SHA on `main`. Get this merged to `main` via a PR.
+3. Once the refs PR is merged, tag `main` with the appropriate semver tag and create a release on GitHub:
+   ```bash
+   git tag v15.x.x
+   git push --tags
+   gh release create v15.x.x --generate-notes
+   ```
+4. Update the rolling major version tag:
+   ```bash
+   git tag -f v15 && git push --force --tags
+   ```
