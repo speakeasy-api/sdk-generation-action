@@ -58,6 +58,7 @@ inputs:
         - 'run-workflow' will generate the SDK and commit the changes to the branch.
         - 'release' will create a release on Github.
         - 'tag' will tag the registry images with the provided tags.
+    default: "generate"
   feature_branch:
     description: "The branch that represents the SDK feature. Will be upserted when manually dispatching the workflow."
     required: false
