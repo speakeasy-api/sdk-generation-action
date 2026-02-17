@@ -281,16 +281,15 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - id: log-result
         name: Log Generation Output
-        uses: ./_speakeasy
-        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true'}}
-        with:
-          speakeasy_version: ${{ inputs.speakeasy_version }}
-          github_access_token: ${{ secrets.github_access_token }}
-          working_directory: ${{ inputs.working_directory }}
-          action: log-result
-          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
-          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+        if: ${{ always() && steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
+        shell: bash
+        run: speakeasy ci log-result
         env:
+          SPEAKEASY_API_KEY: ${{ secrets.speakeasy_api_key }}
+          SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
+          SPEAKEASY_ENVIRONMENT: github
+          INPUT_GITHUB_ACCESS_TOKEN: ${{ secrets.github_access_token }}
+          INPUT_WORKING_DIRECTORY: ${{ inputs.working_directory }}
           GH_ACTION_RESULT: ${{ job.status }}
           RESOLVED_SPEAKEASY_VERSION: ${{ steps.run-workflow.outputs.resolved_speakeasy_version }}
           GH_ACTION_VERSION: 788702f013dcd7b0716076b1ce4e5f19be009521
