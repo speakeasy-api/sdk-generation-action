@@ -4,7 +4,7 @@ description: The Speakeasy Generation Action is to be run via the workflows prov
 inputs:
   speakeasy_version:
     description: The version of the Speakeasy CLI to use or "latest"
-    default: latest
+    default: "1.721.0-rc.0"
     required: false
   github_access_token:
     description: A GitHub access token with write access to the repo
@@ -137,121 +137,189 @@ inputs:
 outputs:
   publish_python:
     description: "Whether the Python SDK will be published to PyPi"
+    value: ${{ steps.run.outputs.publish_python }}
   publish_typescript:
     description: "Whether the Typescript SDK will be published to NPM"
+    value: ${{ steps.run.outputs.publish_typescript }}
   publish_terraform:
     description: "Whether the Terraform Provider will be published to the Terraform Registry"
+    value: ${{ steps.run.outputs.publish_terraform }}
   publish_php:
     description: "Whether the PHP SDK will be published to Packagist this will also create a release on Github"
+    value: ${{ steps.run.outputs.publish_php }}
   publish_ruby:
     description: "Whether the Ruby SDK will be published to Rubygems"
+    value: ${{ steps.run.outputs.publish_ruby }}
   publish_java:
     description: "Whether the Java SDK will be published to the provided OSSRH URL"
+    value: ${{ steps.run.outputs.publish_java }}
   publish_csharp:
     description: "Whether the C# SDK will be published to Nuget"
+    value: ${{ steps.run.outputs.publish_csharp }}
   publish_mcp_typescript:
     description: "Whether the MCP Typescript target will be published to NPM"
+    value: ${{ steps.run.outputs.publish_mcp_typescript }}
   python_regenerated:
     description: "true if the Python SDK was regenerated"
+    value: ${{ steps.run.outputs.python_regenerated }}
   python_directory:
     description: "The directory the Python SDK was generated to"
+    value: ${{ steps.run.outputs.python_directory }}
   typescript_regenerated:
     description: "true if the Typescript SDK was regenerated"
+    value: ${{ steps.run.outputs.typescript_regenerated }}
   typescript_directory:
     description: "The directory the Typescript SDK was generated to"
+    value: ${{ steps.run.outputs.typescript_directory }}
   go_regenerated:
     description: "true if the Go SDK was regenerated"
+    value: ${{ steps.run.outputs.go_regenerated }}
   go_directory:
     description: "The directory the Go SDK was generated to"
+    value: ${{ steps.run.outputs.go_directory }}
   java_regenerated:
     description: "true if the Java SDK was regenerated"
+    value: ${{ steps.run.outputs.java_regenerated }}
   java_directory:
     description: "The directory the Java SDK was generated to"
+    value: ${{ steps.run.outputs.java_directory }}
   mcp_typescript_regenerated:
     description: "true if the MCP Typescript target was regenerated"
+    value: ${{ steps.run.outputs.mcp_typescript_regenerated }}
   mcp_typescript_directory:
     description: "The directory the MCP Typescript target was generated to"
+    value: ${{ steps.run.outputs.mcp_typescript_directory }}
   terraform_regenerated:
     description: "true if the Terraform Provider was regenerated"
+    value: ${{ steps.run.outputs.terraform_regenerated }}
   terraform_directory:
     description: "The directory the Terraform Provider was generated to"
+    value: ${{ steps.run.outputs.terraform_directory }}
   php_regenerated:
     description: "true if the PHP SDK was regenerated"
+    value: ${{ steps.run.outputs.php_regenerated }}
   php_directory:
     description: "The directory the PHP SDK was generated to"
+    value: ${{ steps.run.outputs.php_directory }}
   ruby_regenerated:
     description: "true if the Ruby SDK was regenerated"
+    value: ${{ steps.run.outputs.ruby_regenerated }}
   ruby_directory:
     description: "The directory the Ruby SDK was generated to"
+    value: ${{ steps.run.outputs.ruby_directory }}
   csharp_regenerated:
     description: "true if the C# SDK was regenerated"
+    value: ${{ steps.run.outputs.csharp_regenerated }}
   csharp_directory:
     description: "The directory the C# SDK was generated to"
+    value: ${{ steps.run.outputs.csharp_directory }}
   unity_regenerated:
     description: "true if the Unity SDK was regenerated"
+    value: ${{ steps.run.outputs.unity_regenerated }}
   unity_directory:
     description: "The directory the Unity SDK was generated to"
+    value: ${{ steps.run.outputs.unity_directory }}
   swift_regenerated:
     description: "true if the Swift SDK was regenerated"
+    value: ${{ steps.run.outputs.swift_regenerated }}
   swift_directory:
     description: "The directory the Swift SDK was generated to"
+    value: ${{ steps.run.outputs.swift_directory }}
   docs_regenerated:
     description: "true if SDK docs were regenerated"
+    value: ${{ steps.run.outputs.docs_regenerated }}
   docs_directory:
     description: "The directory the SDK docs was generated to"
+    value: ${{ steps.run.outputs.docs_directory }}
   branch_name:
     description: "The name of the branch the SDK was generated or spec was modified on"
+    value: ${{ steps.run.outputs.branch_name }}
   cli_output:
     description: "Output of the CLI command issued in the `suggest` action"
+    value: ${{ steps.run.outputs.cli_output }}
   commit_hash:
     description: "The commit hash of the merge commit into main if using 'direct' mode"
+    value: ${{ steps.run.outputs.commit_hash }}
   previous_gen_version:
     description: "The version of the previous generation"
+    value: ${{ steps.run.outputs.previous_gen_version }}
   openapi_doc:
     description: "The location of the OpenAPI document used for generation"
+    value: ${{ steps.run.outputs.openapi_doc }}
   registry_name:
     description: "The name of the publishing registry"
+    value: ${{ steps.run.outputs.registry_name }}
   target_directory:
     description: "The directory the SDK target was generated to"
+    value: ${{ steps.run.outputs.target_directory }}
   mcp_release_typescript:
     description: "The release tag used for standalone ts mcp binaries"
+    value: ${{ steps.run.outputs.mcp_release_typescript }}
   use_pypi_trusted_publishing:
     description: "Whether to use OIDC trusted publishing for PyPI instead of token-based authentication"
+    value: ${{ steps.run.outputs.use_pypi_trusted_publishing }}
 runs:
-  using: "docker"
-  image: "Dockerfile"
-  env:
-    SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
-    SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
-    OPENAI_API_KEY: ${{ inputs.openai_api_key }}
-    OPENAPI_DOC_AUTH_TOKEN: ${{ inputs.openapi_doc_auth_token }}
-    PR_CREATION_PAT: ${{ inputs.pr_creation_pat }}
-  args:
-    - ${{ inputs.speakeasy_version }}
-    - ${{ inputs.github_access_token }}
-    - ${{ inputs.docs_languages }}
-    - ${{ inputs.max_suggestions }}
-    - ${{ inputs.mode }}
-    - ${{ inputs.action }}
-    - ${{ inputs.branch_name }}
-    - ${{ inputs.cli_output }}
-    - ${{ inputs.signed_commits }}
-    - ${{ inputs.previous_gen_version }}
-    - ${{ inputs.openapi_doc_output }}
-    - ${{ inputs.output_tests }}
-    - ${{ inputs.working_directory }}
-    - ${{ inputs.gpg_fingerprint }}
-    - ${{ inputs.openapi_doc_auth_token }}
-    - ${{ inputs.target }}
-    - ${{ inputs.registry_tags }}
-    - ${{ inputs.registry_name }}
-    - ${{ inputs.target_directory }}
-    - ${{ inputs.sources }}
-    - ${{ inputs.code_samples }}
-    - ${{ inputs.set_version }}
-    - ${{ inputs.cli_environment_variables }}
-    - ${{ inputs.pnpm_version }}
-    - ${{ inputs.poetry_version }}
-    - ${{ inputs.enable_sdk_changelog }}
-    - ${{ inputs.skip_release }}
-    - ${{ inputs.skip_versioning }}
+  using: "composite"
+  steps:
+    - name: Tune GitHub-hosted runner network
+      uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
+    - name: Install speakeasy CLI
+      shell: bash
+      run: |
+        curl -fsSL https://raw.githubusercontent.com/speakeasy-api/speakeasy/main/install.sh | sh
+      env:
+        SPEAKEASY_VERSION: ${{ inputs.speakeasy_version }}
+    - name: Run speakeasy ci
+      id: run
+      shell: bash
+      run: |
+        speakeasy ci ${{ inputs.action }}
+      env:
+        # Speakeasy auth/config
+        SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
+        SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
+        OPENAI_API_KEY: ${{ inputs.openai_api_key }}
+        OPENAPI_DOC_AUTH_TOKEN: ${{ inputs.openapi_doc_auth_token }}
+        PR_CREATION_PAT: ${{ inputs.pr_creation_pat }}
+        # Runtime config
+        SPEAKEASY_ENVIRONMENT: github
+        SPEAKEASY_RUN_LOCATION: action
+        GIT_TERMINAL_PROMPT: "0"
+        # Map all action inputs to INPUT_* env vars
+        # (Docker actions do this automatically; composite must be explicit)
+        INPUT_SPEAKEASY_VERSION: ${{ inputs.speakeasy_version }}
+        INPUT_GITHUB_ACCESS_TOKEN: ${{ inputs.github_access_token }}
+        INPUT_SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
+        INPUT_MODE: ${{ inputs.mode }}
+        INPUT_ACTION: ${{ inputs.action }}
+        INPUT_FORCE: ${{ inputs.force }}
+        INPUT_SIGNED_COMMITS: ${{ inputs.signed_commits }}
+        INPUT_SOURCES: ${{ inputs.sources }}
+        INPUT_TARGET: ${{ inputs.target }}
+        INPUT_CODE_SAMPLES: ${{ inputs.code_samples }}
+        INPUT_REGISTRY_TAGS: ${{ inputs.registry_tags }}
+        INPUT_MAX_SUGGESTIONS: ${{ inputs.max_suggestions }}
+        INPUT_FEATURE_BRANCH: ${{ inputs.feature_branch }}
+        INPUT_SKIP_COMPILE: ${{ inputs.skip_compile }}
+        INPUT_BRANCH_NAME: ${{ inputs.branch_name }}
+        INPUT_CLI_OUTPUT: ${{ inputs.cli_output }}
+        INPUT_PREVIOUS_GEN_VERSION: ${{ inputs.previous_gen_version }}
+        INPUT_OUTPUT_TESTS: ${{ inputs.output_tests }}
+        INPUT_SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
+        INPUT_OPENAI_API_KEY: ${{ inputs.openai_api_key }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working_directory }}
+        INPUT_GPG_FINGERPRINT: ${{ inputs.gpg_fingerprint }}
+        INPUT_OPENAPI_DOC_AUTH_TOKEN: ${{ inputs.openapi_doc_auth_token }}
+        INPUT_SET_VERSION: ${{ inputs.set_version }}
+        INPUT_CLI_ENVIRONMENT_VARIABLES: ${{ inputs.cli_environment_variables }}
+        INPUT_PNPM_VERSION: ${{ inputs.pnpm_version }}
+        INPUT_SKIP_TESTING: ${{ inputs.skip_testing }}
+        INPUT_POETRY_VERSION: ${{ inputs.poetry_version }}
+        INPUT_UV_VERSION: ${{ inputs.uv_version }}
+        INPUT_GITHUB_REPOSITORY: ${{ inputs.github_repository }}
+        INPUT_ENABLE_SDK_CHANGELOG: ${{ inputs.enable_sdk_changelog }}
+        INPUT_SKIP_RELEASE: ${{ inputs.skip_release }}
+        INPUT_SKIP_VERSIONING: ${{ inputs.skip_versioning }}
+        INPUT_PUSH_CODE_SAMPLES_ONLY: ${{ inputs.push_code_samples_only }}
+        INPUT_TARGET_DIRECTORY: ${{ inputs.target_directory }}
+        INPUT_REGISTRY_NAME: ${{ inputs.registry_name }}

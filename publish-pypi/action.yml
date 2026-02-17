@@ -11,6 +11,10 @@ inputs:
   uv-version:
     description: "Version of uv to use for building"
     required: false
+  speakeasy_version:
+    description: "The version of the Speakeasy CLI to use or 'latest'"
+    default: latest
+    required: false
   speakeasy_api_key:
     description: "The Speakeasy API key for logging publish events"
     required: true
@@ -29,12 +33,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout sdk-generation-action repository
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        repository: speakeasy-api/sdk-generation-action
-        ref: 788702f013dcd7b0716076b1ce4e5f19be009521
-        path: _speakeasy
+    - name: Install speakeasy CLI
+      shell: bash
+      run: |
+        curl -fsSL https://raw.githubusercontent.com/speakeasy-api/speakeasy/main/install.sh | sh
+      env:
+        SPEAKEASY_VERSION: ${{ inputs.speakeasy_version }}
     - name: Set up Python
       uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
@@ -59,16 +63,17 @@ runs:
     - name: Log publish event
       id: publish-event
       if: always()
-      uses: ./_speakeasy
-      with:
-        github_access_token: ${{ inputs.github_access_token }}
-        action: publish-event
-        speakeasy_api_key: ${{ inputs.speakeasy_api_key }}
-        working_directory: ${{ inputs.working_directory }}
-        speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
-        target_directory: ${{ inputs.python-directory }}
-        registry_name: "pypi"
+      shell: bash
+      run: |
+        speakeasy ci publish-event
       env:
+        SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
+        SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
+        SPEAKEASY_ENVIRONMENT: github
+        INPUT_GITHUB_ACCESS_TOKEN: ${{ inputs.github_access_token }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working_directory }}
+        INPUT_TARGET_DIRECTORY: ${{ inputs.python-directory }}
+        INPUT_REGISTRY_NAME: "pypi"
         GH_ACTION_RESULT: ${{ steps.publish.outcome }}
     - name: Notify Slack on failure
       if: always() && failure() && inputs.slack_webhook_url != ''
@@ -85,14 +90,15 @@ runs:
     - name: Log result
       id: log-result
       if: always()
-      uses: ./_speakeasy
-      with:
-        github_access_token: ${{ inputs.github_access_token }}
-        action: log-result
-        speakeasy_api_key: ${{ inputs.speakeasy_api_key }}
-        working_directory: ${{ inputs.working_directory }}
-        speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+      shell: bash
+      run: |
+        speakeasy ci log-result
       env:
+        SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
+        SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
+        SPEAKEASY_ENVIRONMENT: github
+        INPUT_GITHUB_ACCESS_TOKEN: ${{ inputs.github_access_token }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working_directory }}
         GH_ACTION_RESULT: ${{ steps.publish.outcome }}
         GH_ACTION_STEP: publish-pypi
         TARGET_TYPE: "sdk"
