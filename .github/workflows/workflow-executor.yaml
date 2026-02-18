@@ -226,9 +226,12 @@ jobs:
           else
             echo "short_circuit_label_trigger=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Tune GitHub-hosted runner network
+      - name: Checkout repository
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
-        uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.github_access_token }}
       - name: Checkout sdk-generation-action repository
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -301,8 +304,6 @@ jobs:
       run:
         working-directory: ${{ needs.run-workflow.outputs.python_directory }}
     steps:
-      - name: Tune GitHub-hosted runner network
-        uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           ref: ${{ needs.run-workflow.outputs.commit_hash }}
@@ -408,8 +409,6 @@ jobs:
       run:
         working-directory: ${{ needs.run-workflow.outputs.typescript_directory }}
     steps:
-      - name: Tune GitHub-hosted runner network
-        uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           ref: ${{ needs.run-workflow.outputs.commit_hash }}
@@ -497,8 +496,6 @@ jobs:
       run:
         working-directory: ${{ needs.run-workflow.outputs.java_directory }}
     steps:
-      - name: Tune GitHub-hosted runner network
-        uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
           ref: ${{ needs.run-workflow.outputs.commit_hash }}
@@ -584,8 +581,6 @@ jobs:
       run:
         working-directory: ${{ needs.run-workflow.outputs.ruby_directory }}
     steps:
-      - name: Tune GitHub-hosted runner network
-        uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           ref: ${{ needs.run-workflow.outputs.commit_hash }}
@@ -660,8 +655,6 @@ jobs:
       run:
         working-directory: ${{ needs.run-workflow.outputs.csharp_directory }}
     steps:
-      - name: Tune GitHub-hosted runner network
-        uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           ref: ${{ needs.run-workflow.outputs.commit_hash }}
@@ -726,8 +719,6 @@ jobs:
       run:
         working-directory: ${{ needs.run-workflow.outputs.php_directory }}
     steps:
-      - name: Tune GitHub-hosted runner network
-        uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ needs.run-workflow.outputs.commit_hash }}

@@ -62,8 +62,6 @@ jobs:
       branch_name: ${{ steps.suggest.outputs.branch_name }}
       cli_output: ${{ steps.suggest.outputs.cli_output }}
     steps:
-      - name: Tune GitHub-hosted runner network
-        uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - id: suggest
         uses: speakeasy-api/sdk-generation-action@5da5280471a9f29218e177d357653e2ec94ce87a # v14
         with:
@@ -98,8 +96,6 @@ jobs:
       - suggest
     runs-on: ubuntu-latest
     steps:
-      - name: Tune GitHub-hosted runner network
-        uses: smorimoto/tune-github-hosted-runner-network@bb252dcb5c8609a31087e7993daa086f5a1c0069 # v1
       - id: Finalize
         uses: speakeasy-api/sdk-generation-action@5da5280471a9f29218e177d357653e2ec94ce87a # v14
         with:
