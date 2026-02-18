@@ -4,7 +4,7 @@ description: The Speakeasy Generation Action is to be run via the workflows prov
 inputs:
   speakeasy_version:
     description: The version of the Speakeasy CLI to use or "latest"
-    default: "1.721.0-rc.0"
+    default: "1.721.6-rc.0"
     required: false
   github_access_token:
     description: A GitHub access token with write access to the repo
