@@ -36,6 +36,7 @@ jobs:
       - id: apply-tags
         name: Apply Tags
         shell: bash
+        working-directory: ${{ inputs.working_directory || '.' }}
         run: speakeasy ci tag
         env:
           SPEAKEASY_API_KEY: ${{ secrets.speakeasy_api_key }}

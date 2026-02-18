@@ -151,6 +151,7 @@ jobs:
         run: curl -fsSL https://raw.githubusercontent.com/speakeasy-api/speakeasy/main/install.sh | sh
       - id: release
         shell: bash
+        working-directory: ${{ inputs.working_directory || '.' }}
         run: speakeasy ci release
         env:
           SPEAKEASY_API_KEY: ${{ secrets.speakeasy_api_key }}
@@ -727,6 +728,7 @@ jobs:
           passphrase: ${{ secrets.terraform_gpg_passphrase }}
       - id: release
         shell: bash
+        working-directory: ${{ inputs.working_directory || '.' }}
         run: speakeasy ci release
         env:
           SPEAKEASY_API_KEY: ${{ secrets.speakeasy_api_key }}
