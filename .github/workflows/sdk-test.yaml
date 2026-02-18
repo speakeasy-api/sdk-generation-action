@@ -49,6 +49,12 @@ jobs:
           else
             echo "run_tests=false" >> $GITHUB_OUTPUT
           fi
+      - name: Checkout repository
+        if: steps.check_commit.outputs.run_tests == 'true'
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.github_access_token }}
       - name: Install speakeasy CLI
         if: steps.check_commit.outputs.run_tests == 'true'
         shell: bash
