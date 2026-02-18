@@ -66,7 +66,7 @@ jobs:
         shell: bash
         run: curl -fsSL https://raw.githubusercontent.com/speakeasy-api/speakeasy/main/install.sh | sh
         env:
-          SPEAKEASY_VERSION: ${{ inputs.speakeasy_version }}
+          VERSION: ${{ inputs.speakeasy_version }}
       - id: suggest
         shell: bash
         run: speakeasy ci suggest
