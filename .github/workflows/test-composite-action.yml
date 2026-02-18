@@ -8,48 +8,36 @@ jobs:
     name: "Test: run-workflow (PR mode)"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout test SDK repo
         uses: actions/checkout@v4
+        with:
+          repository: speakeasy-api/sdk-generation-action-test-repo
+          token: ${{ secrets.BOT_REPO_TOKEN }}
+          fetch-depth: 0
+      - name: Checkout action
+        uses: actions/checkout@v4
+        with:
+          path: _action
       - name: Run action in PR mode
         id: run
-        uses: ./
+        uses: ./_action/
         with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
           action: run-workflow
           mode: pr
           force: "true"
-          github_repository: speakeasy-api/sdk-generation-action-test-repo
-        env:
-          INPUT_DEBUG: "true"
       - name: Verify outputs
-        env:
-          BRANCH_NAME: ${{ steps.run.outputs.branch_name }}
-          PYTHON_REGENERATED: ${{ steps.run.outputs.python_regenerated }}
-          TYPESCRIPT_REGENERATED: ${{ steps.run.outputs.typescript_regenerated }}
-          GO_REGENERATED: ${{ steps.run.outputs.go_regenerated }}
-          JAVA_REGENERATED: ${{ steps.run.outputs.java_regenerated }}
-          PYTHON_DIRECTORY: ${{ steps.run.outputs.python_directory }}
-          TYPESCRIPT_DIRECTORY: ${{ steps.run.outputs.typescript_directory }}
-          GO_DIRECTORY: ${{ steps.run.outputs.go_directory }}
-          JAVA_DIRECTORY: ${{ steps.run.outputs.java_directory }}
         run: |
           echo "=== Verifying run-workflow (PR mode) outputs ==="
-          echo "branch_name=${BRANCH_NAME}"
-          echo "python_regenerated=${PYTHON_REGENERATED}"
-          echo "typescript_regenerated=${TYPESCRIPT_REGENERATED}"
-          echo "go_regenerated=${GO_REGENERATED}"
-          echo "java_regenerated=${JAVA_REGENERATED}"
-          echo "python_directory=${PYTHON_DIRECTORY}"
-          echo "typescript_directory=${TYPESCRIPT_DIRECTORY}"
-          echo "go_directory=${GO_DIRECTORY}"
-          echo "java_directory=${JAVA_DIRECTORY}"
-
-          # Verify that at least one regenerated flag was set (the test repo should produce output)
-          if [ -n "${PYTHON_REGENERATED}" ] || [ -n "${TYPESCRIPT_REGENERATED}" ] || [ -n "${GO_REGENERATED}" ] || [ -n "${JAVA_REGENERATED}" ]; then
-            echo "PASS: At least one language regeneration output was set"
+          echo "branch_name=${{ steps.run.outputs.branch_name }}"
+          echo "go_regenerated=${{ steps.run.outputs.go_regenerated }}"
+          echo "go_directory=${{ steps.run.outputs.go_directory }}"
+          if [ "${{ steps.run.outputs.go_regenerated }}" = "true" ]; then
+            echo "PASS: Go SDK was regenerated"
           else
-            echo "WARN: No language regeneration outputs detected (may be expected if test repo has no targets)"
+            echo "FAIL: Go SDK was not regenerated"
+            exit 1
           fi
           echo "=== PR mode test complete ==="
 
@@ -57,49 +45,36 @@ jobs:
     name: "Test: run-workflow (direct mode)"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout test SDK repo
         uses: actions/checkout@v4
+        with:
+          repository: speakeasy-api/sdk-generation-action-test-repo
+          token: ${{ secrets.BOT_REPO_TOKEN }}
+          fetch-depth: 0
+      - name: Checkout action
+        uses: actions/checkout@v4
+        with:
+          path: _action
       - name: Run action in direct mode
         id: run
-        uses: ./
+        uses: ./_action/
         with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
           action: run-workflow
           mode: direct
           force: "true"
-          github_repository: speakeasy-api/sdk-generation-action-test-repo
-        env:
-          INPUT_DEBUG: "true"
       - name: Verify outputs
-        env:
-          COMMIT_HASH: ${{ steps.run.outputs.commit_hash }}
-          BRANCH_NAME: ${{ steps.run.outputs.branch_name }}
-          PYTHON_REGENERATED: ${{ steps.run.outputs.python_regenerated }}
-          TYPESCRIPT_REGENERATED: ${{ steps.run.outputs.typescript_regenerated }}
-          GO_REGENERATED: ${{ steps.run.outputs.go_regenerated }}
-          JAVA_REGENERATED: ${{ steps.run.outputs.java_regenerated }}
-          PYTHON_DIRECTORY: ${{ steps.run.outputs.python_directory }}
-          TYPESCRIPT_DIRECTORY: ${{ steps.run.outputs.typescript_directory }}
-          GO_DIRECTORY: ${{ steps.run.outputs.go_directory }}
-          JAVA_DIRECTORY: ${{ steps.run.outputs.java_directory }}
         run: |
           echo "=== Verifying run-workflow (direct mode) outputs ==="
-          echo "commit_hash=${COMMIT_HASH}"
-          echo "branch_name=${BRANCH_NAME}"
-          echo "python_regenerated=${PYTHON_REGENERATED}"
-          echo "typescript_regenerated=${TYPESCRIPT_REGENERATED}"
-          echo "go_regenerated=${GO_REGENERATED}"
-          echo "java_regenerated=${JAVA_REGENERATED}"
-          echo "python_directory=${PYTHON_DIRECTORY}"
-          echo "typescript_directory=${TYPESCRIPT_DIRECTORY}"
-          echo "go_directory=${GO_DIRECTORY}"
-          echo "java_directory=${JAVA_DIRECTORY}"
-
-          if [ -n "${PYTHON_REGENERATED}" ] || [ -n "${TYPESCRIPT_REGENERATED}" ] || [ -n "${GO_REGENERATED}" ] || [ -n "${JAVA_REGENERATED}" ]; then
-            echo "PASS: At least one language regeneration output was set"
+          echo "commit_hash=${{ steps.run.outputs.commit_hash }}"
+          echo "go_regenerated=${{ steps.run.outputs.go_regenerated }}"
+          echo "go_directory=${{ steps.run.outputs.go_directory }}"
+          if [ "${{ steps.run.outputs.go_regenerated }}" = "true" ]; then
+            echo "PASS: Go SDK was regenerated"
           else
-            echo "WARN: No language regeneration outputs detected (may be expected if test repo has no targets)"
+            echo "FAIL: Go SDK was not regenerated"
+            exit 1
           fi
           echo "=== Direct mode test complete ==="
 
@@ -108,54 +83,50 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-run-workflow-direct-mode]
     steps:
-      - name: Checkout repository
+      - name: Checkout test SDK repo
         uses: actions/checkout@v4
+        with:
+          repository: speakeasy-api/sdk-generation-action-test-repo
+          token: ${{ secrets.BOT_REPO_TOKEN }}
+          fetch-depth: 0
+      - name: Checkout action
+        uses: actions/checkout@v4
+        with:
+          path: _action
       - name: Run action in release mode
         id: run
-        uses: ./
+        uses: ./_action/
         with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
           action: release
-          github_repository: speakeasy-api/sdk-generation-action-test-repo
-        env:
-          INPUT_DEBUG: "true"
       - name: Verify release outputs
-        env:
-          PUBLISH_PYTHON: ${{ steps.run.outputs.publish_python }}
-          PUBLISH_TYPESCRIPT: ${{ steps.run.outputs.publish_typescript }}
-          PUBLISH_JAVA: ${{ steps.run.outputs.publish_java }}
-          PUBLISH_PHP: ${{ steps.run.outputs.publish_php }}
-          PUBLISH_RUBY: ${{ steps.run.outputs.publish_ruby }}
-          PUBLISH_CSHARP: ${{ steps.run.outputs.publish_csharp }}
-          PUBLISH_TERRAFORM: ${{ steps.run.outputs.publish_terraform }}
         run: |
           echo "=== Verifying release outputs ==="
-          echo "publish_python=${PUBLISH_PYTHON}"
-          echo "publish_typescript=${PUBLISH_TYPESCRIPT}"
-          echo "publish_java=${PUBLISH_JAVA}"
-          echo "publish_php=${PUBLISH_PHP}"
-          echo "publish_ruby=${PUBLISH_RUBY}"
-          echo "publish_csharp=${PUBLISH_CSHARP}"
-          echo "publish_terraform=${PUBLISH_TERRAFORM}"
+          echo "publish_go=${{ steps.run.outputs.publish_go }}"
+          echo "go_regenerated=${{ steps.run.outputs.go_regenerated }}"
           echo "=== Release test complete ==="
 
   test-tag:
     name: "Test: tag"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout test SDK repo
         uses: actions/checkout@v4
+        with:
+          repository: speakeasy-api/sdk-generation-action-test-repo
+          token: ${{ secrets.BOT_REPO_TOKEN }}
+          fetch-depth: 0
+      - name: Checkout action
+        uses: actions/checkout@v4
+        with:
+          path: _action
       - name: Run action in tag mode
         id: run
-        uses: ./
+        uses: ./_action/
         with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
           action: tag
-          github_repository: speakeasy-api/sdk-generation-action-test-repo
-        env:
-          INPUT_DEBUG: "true"
       - name: Verify tag completed
-        run: |
-          echo "=== Tag action completed successfully ==="
+        run: echo "=== Tag action completed successfully ==="
