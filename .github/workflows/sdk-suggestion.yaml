@@ -62,19 +62,30 @@ jobs:
       branch_name: ${{ steps.suggest.outputs.branch_name }}
       cli_output: ${{ steps.suggest.outputs.cli_output }}
     steps:
+      - name: Install speakeasy CLI
+        shell: bash
+        run: curl -fsSL https://raw.githubusercontent.com/speakeasy-api/speakeasy/main/install.sh | sh
+        env:
+          SPEAKEASY_VERSION: ${{ inputs.speakeasy_version }}
       - id: suggest
-        uses: speakeasy-api/sdk-generation-action@5da5280471a9f29218e177d357653e2ec94ce87a # v14
-        with:
-          speakeasy_version: ${{ inputs.speakeasy_version }}
-          openapi_doc_auth_header: ${{ inputs.openapi_doc_auth_header }}
-          openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
-          openapi_docs: ${{ inputs.openapi_docs }}
-          openapi_doc_output: ${{ inputs.openapi_doc_output }}
-          max_suggestions: ${{ inputs.max_suggestions }}
-          github_access_token: ${{ secrets.github_access_token }}
-          action: suggest
-          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
-          openai_api_key: ${{ secrets.openai_api_key }}
+        shell: bash
+        run: speakeasy ci suggest
+        env:
+          SPEAKEASY_API_KEY: ${{ secrets.speakeasy_api_key }}
+          SPEAKEASY_ENVIRONMENT: github
+          SPEAKEASY_RUN_LOCATION: action
+          GIT_TERMINAL_PROMPT: "0"
+          OPENAI_API_KEY: ${{ secrets.openai_api_key }}
+          OPENAPI_DOC_AUTH_TOKEN: ${{ secrets.openapi_doc_auth_token }}
+          INPUT_SPEAKEASY_VERSION: ${{ inputs.speakeasy_version }}
+          INPUT_GITHUB_ACCESS_TOKEN: ${{ secrets.github_access_token }}
+          INPUT_SPEAKEASY_API_KEY: ${{ secrets.speakeasy_api_key }}
+          INPUT_OPENAPI_DOC_AUTH_HEADER: ${{ inputs.openapi_doc_auth_header }}
+          INPUT_OPENAPI_DOC_AUTH_TOKEN: ${{ secrets.openapi_doc_auth_token }}
+          INPUT_OPENAPI_DOCS: ${{ inputs.openapi_docs }}
+          INPUT_OPENAPI_DOC_OUTPUT: ${{ inputs.openapi_doc_output }}
+          INPUT_MAX_SUGGESTIONS: ${{ inputs.max_suggestions }}
+          INPUT_OPENAI_API_KEY: ${{ secrets.openai_api_key }}
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -96,13 +107,20 @@ jobs:
       - suggest
     runs-on: ubuntu-latest
     steps:
-      - id: Finalize
-        uses: speakeasy-api/sdk-generation-action@5da5280471a9f29218e177d357653e2ec94ce87a # v14
-        with:
-          github_access_token: ${{ secrets.github_access_token }}
-          action: finalize-suggestion
-          branch_name: ${{ needs.suggest.outputs.branch_name }}
-          cli_output: ${{ needs.suggest.outputs.cli_output }}
+      - name: Install speakeasy CLI
+        shell: bash
+        run: curl -fsSL https://raw.githubusercontent.com/speakeasy-api/speakeasy/main/install.sh | sh
+      - id: finalize
+        shell: bash
+        run: speakeasy ci finalize
+        env:
+          SPEAKEASY_API_KEY: ${{ secrets.speakeasy_api_key }}
+          SPEAKEASY_ENVIRONMENT: github
+          SPEAKEASY_RUN_LOCATION: action
+          GIT_TERMINAL_PROMPT: "0"
+          INPUT_GITHUB_ACCESS_TOKEN: ${{ secrets.github_access_token }}
+          INPUT_BRANCH_NAME: ${{ needs.suggest.outputs.branch_name }}
+          INPUT_CLI_OUTPUT: ${{ needs.suggest.outputs.cli_output }}
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
