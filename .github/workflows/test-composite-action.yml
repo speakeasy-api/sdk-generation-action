@@ -19,7 +19,10 @@ jobs:
         with:
           path: _action
       - name: Exclude action dir from git
-        run: echo "_action/" >> .gitignore
+        run: |
+          echo "_action/" >> .gitignore
+          git add .gitignore
+          git commit -m "chore: ignore action dir"
       - name: Run action in PR mode
         id: run
         uses: ./_action/
@@ -58,7 +61,10 @@ jobs:
         with:
           path: _action
       - name: Exclude action dir from git
-        run: echo "_action/" >> .gitignore
+        run: |
+          echo "_action/" >> .gitignore
+          git add .gitignore
+          git commit -m "chore: ignore action dir"
       - name: Run action in direct mode
         id: run
         uses: ./_action/
@@ -98,7 +104,10 @@ jobs:
         with:
           path: _action
       - name: Exclude action dir from git
-        run: echo "_action/" >> .gitignore
+        run: |
+          echo "_action/" >> .gitignore
+          git add .gitignore
+          git commit -m "chore: ignore action dir"
       - name: Run action in release mode
         id: run
         uses: ./_action/
@@ -128,7 +137,10 @@ jobs:
         with:
           path: _action
       - name: Exclude action dir from git
-        run: echo "_action/" >> .gitignore
+        run: |
+          echo "_action/" >> .gitignore
+          git add .gitignore
+          git commit -m "chore: ignore action dir"
       - name: Run action in tag mode
         id: run
         uses: ./_action/
