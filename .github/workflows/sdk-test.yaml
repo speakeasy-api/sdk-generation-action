@@ -25,12 +25,6 @@ jobs:
     name: Test SDK
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout sdk-generation-action repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: speakeasy-api/sdk-generation-action
-          ref: 788702f013dcd7b0716076b1ce4e5f19be009521
-          path: _speakeasy
       - name: Set dynamic environment variables
         if: inputs.env_vars != ''
         run: echo "${{ inputs.env_vars }}" >> $GITHUB_ENV
@@ -55,15 +49,29 @@ jobs:
           else
             echo "run_tests=false" >> $GITHUB_OUTPUT
           fi
+      - name: Checkout repository
+        if: steps.check_commit.outputs.run_tests == 'true'
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.github_access_token }}
+      - name: Install speakeasy CLI
+        if: steps.check_commit.outputs.run_tests == 'true'
+        shell: bash
+        run: curl -fsSL https://raw.githubusercontent.com/speakeasy-api/speakeasy/main/install.sh | sh
       - id: test
         name: Run Tests
         if: steps.check_commit.outputs.run_tests == 'true'
-        uses: ./_speakeasy
-        with:
-          action: "test"
-          working_directory: ${{ inputs.working_directory }}
-          target: ${{ inputs.target }}
-          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
-          github_access_token: ${{ secrets.github_access_token }}
+        shell: bash
+        working-directory: ${{ inputs.working_directory || '.' }}
+        run: |
+          if command -v go &>/dev/null; then
+            export PATH="$(go env GOPATH)/bin:$PATH"
+          fi
+          speakeasy ci test
         env:
-          GH_ACTION_VERSION: 788702f013dcd7b0716076b1ce4e5f19be009521
+          SPEAKEASY_API_KEY: ${{ secrets.speakeasy_api_key }}
+          SPEAKEASY_ENVIRONMENT: github
+          INPUT_GITHUB_ACCESS_TOKEN: ${{ secrets.github_access_token }}
+          INPUT_WORKING_DIRECTORY: ${{ inputs.working_directory }}
+          INPUT_TARGET: ${{ inputs.target }}

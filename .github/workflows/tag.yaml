@@ -30,22 +30,24 @@ jobs:
     name: Apply Tags in Speakeasy Registry
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout sdk-generation-action repository
+      - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          repository: speakeasy-api/sdk-generation-action
-          ref: 788702f013dcd7b0716076b1ce4e5f19be009521
-          path: _speakeasy
+          fetch-depth: 0
+          token: ${{ secrets.github_access_token }}
+      - name: Install speakeasy CLI
+        shell: bash
+        run: curl -fsSL https://raw.githubusercontent.com/speakeasy-api/speakeasy/main/install.sh | sh
       - id: apply-tags
         name: Apply Tags
-        uses: ./_speakeasy
-        with:
-          action: "tag"
-          sources: ${{ inputs.sources }}
-          code_samples: ${{ inputs.code_samples }}
-          working_directory: ${{ inputs.working_directory }}
-          registry_tags: ${{ inputs.registry_tags }}
-          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
-          github_access_token: ${{ secrets.github_access_token }}
+        shell: bash
+        working-directory: ${{ inputs.working_directory || '.' }}
+        run: speakeasy ci tag
         env:
-          GH_ACTION_VERSION: 788702f013dcd7b0716076b1ce4e5f19be009521
+          SPEAKEASY_API_KEY: ${{ secrets.speakeasy_api_key }}
+          SPEAKEASY_ENVIRONMENT: github
+          INPUT_GITHUB_ACCESS_TOKEN: ${{ secrets.github_access_token }}
+          INPUT_SOURCES: ${{ inputs.sources }}
+          INPUT_CODE_SAMPLES: ${{ inputs.code_samples }}
+          INPUT_WORKING_DIRECTORY: ${{ inputs.working_directory }}
+          INPUT_REGISTRY_TAGS: ${{ inputs.registry_tags }}

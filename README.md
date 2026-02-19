@@ -22,7 +22,16 @@ The included workflows provide options for publishing the SDKs to various packag
 
 This action provides a self-contained solution for automatically generating new versions of a client SDK when either the reference OpenAPI doc is updated or the Speakeasy CLI that is used to generate the SDKs is updated.
 
-Configuration for the supported workflows is documented in [separate repository](https://github.com/speakeasy-api/sdk-gen-config). 
+Configuration for the supported workflows is documented in [separate repository](https://github.com/speakeasy-api/sdk-gen-config).
+
+## How It Works
+
+This is a [composite GitHub Action](https://docs.github.com/en/actions/sharing-automations/creating-actions/creating-a-composite-action) that:
+
+1. Installs the Speakeasy CLI at the requested version (or `latest`)
+2. Runs `speakeasy ci <action>` with the appropriate inputs passed as environment variables
+
+All SDK generation logic lives in the Speakeasy CLI itself — this action is a thin wrapper that installs the CLI and invokes it.
 
 ## Workflow Reference Documentation
 
@@ -30,19 +39,13 @@ Configuration for the supported workflows is documented in [separate repository]
 
 ### [Publishing Workflow](https://www.speakeasy.com/docs/workflow-reference/publishing-reference)
 
-# Developing in this Repo
-To test
-```
-make test
-```
+## Developing
 
-This should open a PR on the [test action repository](https://github.com/speakeasy-api/sdk-generation-action-test-repo).
+The action is defined entirely in `action.yml`. To test changes:
 
-# When you're ready to test it as a live action
-
-1) Push your changes up to a branch.
-2) Navigate to the [test action](https://github.com/speakeasy-api/sdk-generation-action-test-repo/actions/workflows/action-test.yaml) in the test repo.
-3) Click "run workflow" and put in your branch!
+1. Push your changes to a branch.
+2. Navigate to the [test action](https://github.com/speakeasy-api/sdk-generation-action-test-repo/actions/workflows/action-test.yaml) in the test repo.
+3. Click "Run workflow" and enter your branch name.
 
 # Releasing
 

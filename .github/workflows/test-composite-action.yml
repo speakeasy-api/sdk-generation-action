@@ -1,0 +1,168 @@
+name: Test Composite Action
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test-run-workflow-pr-mode:
+    name: "Test: run-workflow (PR mode)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout test SDK repo
+        uses: actions/checkout@v4
+        with:
+          repository: speakeasy-api/sdk-generation-action-test-repo
+          token: ${{ secrets.BOT_REPO_TOKEN }}
+          fetch-depth: 0
+      - name: Checkout action
+        uses: actions/checkout@v4
+        with:
+          path: _action
+      - name: Prepare workspace
+        run: |
+          echo "_action/" >> .gitignore
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .gitignore
+          git commit -m "chore: ignore action dir"
+      - name: Run action in PR mode
+        id: run
+        uses: ./_action/
+        with:
+          github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
+          speakeasy_api_key: ${{ secrets.TEST_REPO_SPEAKEASY_API_KEY }}
+          github_repository: speakeasy-api/sdk-generation-action-test-repo
+          github_ref: refs/heads/main
+          action: generate
+          mode: pr
+          force: "true"
+      - name: Verify outputs
+        run: |
+          echo "=== Verifying run-workflow (PR mode) outputs ==="
+          echo "branch_name=${{ steps.run.outputs.branch_name }}"
+          echo "go_regenerated=${{ steps.run.outputs.go_regenerated }}"
+          echo "go_directory=${{ steps.run.outputs.go_directory }}"
+          if [ "${{ steps.run.outputs.go_regenerated }}" = "true" ]; then
+            echo "PASS: Go SDK was regenerated"
+          else
+            echo "FAIL: Go SDK was not regenerated"
+            exit 1
+          fi
+          echo "=== PR mode test complete ==="
+
+  test-run-workflow-direct-mode:
+    name: "Test: run-workflow (direct mode)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout test SDK repo
+        uses: actions/checkout@v4
+        with:
+          repository: speakeasy-api/sdk-generation-action-test-repo
+          token: ${{ secrets.BOT_REPO_TOKEN }}
+          fetch-depth: 0
+      - name: Checkout action
+        uses: actions/checkout@v4
+        with:
+          path: _action
+      - name: Prepare workspace
+        run: |
+          echo "_action/" >> .gitignore
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .gitignore
+          git commit -m "chore: ignore action dir"
+      - name: Run action in direct mode
+        id: run
+        uses: ./_action/
+        with:
+          github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
+          speakeasy_api_key: ${{ secrets.TEST_REPO_SPEAKEASY_API_KEY }}
+          github_repository: speakeasy-api/sdk-generation-action-test-repo
+          github_ref: refs/heads/main
+          action: generate
+          mode: direct
+          force: "true"
+      - name: Verify outputs
+        run: |
+          echo "=== Verifying run-workflow (direct mode) outputs ==="
+          echo "commit_hash=${{ steps.run.outputs.commit_hash }}"
+          echo "go_regenerated=${{ steps.run.outputs.go_regenerated }}"
+          echo "go_directory=${{ steps.run.outputs.go_directory }}"
+          if [ "${{ steps.run.outputs.go_regenerated }}" = "true" ]; then
+            echo "PASS: Go SDK was regenerated"
+          else
+            echo "FAIL: Go SDK was not regenerated"
+            exit 1
+          fi
+          echo "=== Direct mode test complete ==="
+
+  test-release:
+    name: "Test: release"
+    runs-on: ubuntu-latest
+    needs: [test-run-workflow-direct-mode]
+    steps:
+      - name: Checkout test SDK repo
+        uses: actions/checkout@v4
+        with:
+          repository: speakeasy-api/sdk-generation-action-test-repo
+          token: ${{ secrets.BOT_REPO_TOKEN }}
+          fetch-depth: 0
+      - name: Checkout action
+        uses: actions/checkout@v4
+        with:
+          path: _action
+      - name: Prepare workspace
+        run: |
+          echo "_action/" >> .gitignore
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .gitignore
+          git commit -m "chore: ignore action dir"
+      - name: Run action in release mode
+        id: run
+        uses: ./_action/
+        with:
+          github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
+          speakeasy_api_key: ${{ secrets.TEST_REPO_SPEAKEASY_API_KEY }}
+          github_repository: speakeasy-api/sdk-generation-action-test-repo
+          github_ref: refs/heads/main
+          action: release
+      - name: Verify release outputs
+        run: |
+          echo "=== Verifying release outputs ==="
+          echo "publish_go=${{ steps.run.outputs.publish_go }}"
+          echo "go_regenerated=${{ steps.run.outputs.go_regenerated }}"
+          echo "=== Release test complete ==="
+
+  test-tag:
+    name: "Test: tag"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout test SDK repo
+        uses: actions/checkout@v4
+        with:
+          repository: speakeasy-api/sdk-generation-action-test-repo
+          token: ${{ secrets.BOT_REPO_TOKEN }}
+          fetch-depth: 0
+      - name: Checkout action
+        uses: actions/checkout@v4
+        with:
+          path: _action
+      - name: Prepare workspace
+        run: |
+          echo "_action/" >> .gitignore
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .gitignore
+          git commit -m "chore: ignore action dir"
+      - name: Run action in tag mode
+        id: run
+        uses: ./_action/
+        with:
+          github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
+          speakeasy_api_key: ${{ secrets.TEST_REPO_SPEAKEASY_API_KEY }}
+          github_repository: speakeasy-api/sdk-generation-action-test-repo
+          github_ref: refs/heads/main
+          action: tag
+      - name: Verify tag completed
+        run: echo "=== Tag action completed successfully ==="

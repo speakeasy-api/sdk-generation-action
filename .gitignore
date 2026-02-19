@@ -1,11 +1,5 @@
-build/
 .env
-repo/
-speakeasy
-bin/
 .idea/
-output.txt
-openapi/
 *.iml
 .run
 .vscode/
