@@ -28,6 +28,8 @@ jobs:
       - name: Run action in PR mode
         id: run
         uses: ./_action/
+        env:
+          GITHUB_REPOSITORY: speakeasy-api/sdk-generation-action-test-repo
         with:
           github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
@@ -73,6 +75,8 @@ jobs:
       - name: Run action in direct mode
         id: run
         uses: ./_action/
+        env:
+          GITHUB_REPOSITORY: speakeasy-api/sdk-generation-action-test-repo
         with:
           github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
@@ -119,6 +123,8 @@ jobs:
       - name: Run action in release mode
         id: run
         uses: ./_action/
+        env:
+          GITHUB_REPOSITORY: speakeasy-api/sdk-generation-action-test-repo
         with:
           github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
@@ -155,6 +161,8 @@ jobs:
       - name: Run action in tag mode
         id: run
         uses: ./_action/
+        env:
+          GITHUB_REPOSITORY: speakeasy-api/sdk-generation-action-test-repo
         with:
           github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
