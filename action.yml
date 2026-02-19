@@ -275,7 +275,11 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working_directory || '.' }}
       run: |
-        speakeasy ci ${{ inputs.action }}
+        ACTION="${{ inputs.action }}"
+        if [ "$ACTION" = "run-workflow" ]; then
+          ACTION="generate"
+        fi
+        speakeasy ci $ACTION
       env:
         # Speakeasy auth/config
         SPEAKEASY_API_KEY: ${{ inputs.speakeasy_api_key }}
