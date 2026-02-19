@@ -30,7 +30,7 @@ jobs:
         uses: ./_action/
         with:
           github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
-          speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
+          speakeasy_api_key: ${{ secrets.TEST_REPO_SPEAKEASY_API_KEY }}
           github_repository: speakeasy-api/sdk-generation-action-test-repo
           github_ref: refs/heads/main
           action: generate
@@ -76,7 +76,7 @@ jobs:
         uses: ./_action/
         with:
           github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
-          speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
+          speakeasy_api_key: ${{ secrets.TEST_REPO_SPEAKEASY_API_KEY }}
           github_repository: speakeasy-api/sdk-generation-action-test-repo
           github_ref: refs/heads/main
           action: generate
@@ -123,7 +123,7 @@ jobs:
         uses: ./_action/
         with:
           github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
-          speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
+          speakeasy_api_key: ${{ secrets.TEST_REPO_SPEAKEASY_API_KEY }}
           github_repository: speakeasy-api/sdk-generation-action-test-repo
           github_ref: refs/heads/main
           action: release
@@ -160,7 +160,7 @@ jobs:
         uses: ./_action/
         with:
           github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
-          speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
+          speakeasy_api_key: ${{ secrets.TEST_REPO_SPEAKEASY_API_KEY }}
           github_repository: speakeasy-api/sdk-generation-action-test-repo
           github_ref: refs/heads/main
           action: tag
