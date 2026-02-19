@@ -18,6 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: _action
+      - name: Exclude action dir from git
+        run: echo "_action/" >> .gitignore
       - name: Run action in PR mode
         id: run
         uses: ./_action/
@@ -55,6 +57,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: _action
+      - name: Exclude action dir from git
+        run: echo "_action/" >> .gitignore
       - name: Run action in direct mode
         id: run
         uses: ./_action/
@@ -93,6 +97,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: _action
+      - name: Exclude action dir from git
+        run: echo "_action/" >> .gitignore
       - name: Run action in release mode
         id: run
         uses: ./_action/
@@ -121,6 +127,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: _action
+      - name: Exclude action dir from git
+        run: echo "_action/" >> .gitignore
       - name: Run action in tag mode
         id: run
         uses: ./_action/
