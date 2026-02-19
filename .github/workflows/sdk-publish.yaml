@@ -157,7 +157,11 @@ jobs:
       - id: release
         shell: bash
         working-directory: ${{ inputs.working_directory || '.' }}
-        run: speakeasy ci release
+        run: |
+          if command -v go &>/dev/null; then
+            export PATH="$(go env GOPATH)/bin:$PATH"
+          fi
+          speakeasy ci release
         env:
           SPEAKEASY_API_KEY: ${{ secrets.speakeasy_api_key }}
           SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
@@ -739,7 +743,11 @@ jobs:
       - id: release
         shell: bash
         working-directory: ${{ inputs.working_directory || '.' }}
-        run: speakeasy ci release
+        run: |
+          if command -v go &>/dev/null; then
+            export PATH="$(go env GOPATH)/bin:$PATH"
+          fi
+          speakeasy ci release
         env:
           SPEAKEASY_API_KEY: ${{ secrets.speakeasy_api_key }}
           SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}

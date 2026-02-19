@@ -275,6 +275,9 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working_directory || '.' }}
       run: |
+        if command -v go &>/dev/null; then
+          export PATH="$(go env GOPATH)/bin:$PATH"
+        fi
         speakeasy ci ${{ inputs.action }}
       env:
         # Speakeasy auth/config

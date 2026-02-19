@@ -64,7 +64,11 @@ jobs:
         if: steps.check_commit.outputs.run_tests == 'true'
         shell: bash
         working-directory: ${{ inputs.working_directory || '.' }}
-        run: speakeasy ci test
+        run: |
+          if command -v go &>/dev/null; then
+            export PATH="$(go env GOPATH)/bin:$PATH"
+          fi
+          speakeasy ci test
         env:
           SPEAKEASY_API_KEY: ${{ secrets.speakeasy_api_key }}
           SPEAKEASY_ENVIRONMENT: github
