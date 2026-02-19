@@ -21,6 +21,8 @@ jobs:
       - name: Exclude action dir from git
         run: |
           echo "_action/" >> .gitignore
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .gitignore
           git commit -m "chore: ignore action dir"
       - name: Run action in PR mode
@@ -63,6 +65,8 @@ jobs:
       - name: Exclude action dir from git
         run: |
           echo "_action/" >> .gitignore
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .gitignore
           git commit -m "chore: ignore action dir"
       - name: Run action in direct mode
@@ -106,6 +110,8 @@ jobs:
       - name: Exclude action dir from git
         run: |
           echo "_action/" >> .gitignore
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .gitignore
           git commit -m "chore: ignore action dir"
       - name: Run action in release mode
@@ -139,6 +145,8 @@ jobs:
       - name: Exclude action dir from git
         run: |
           echo "_action/" >> .gitignore
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .gitignore
           git commit -m "chore: ignore action dir"
       - name: Run action in tag mode
