@@ -24,7 +24,7 @@ jobs:
         with:
           github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
-          action: run-workflow
+          action: generate
           mode: pr
           force: "true"
       - name: Verify outputs
@@ -61,7 +61,7 @@ jobs:
         with:
           github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
-          action: run-workflow
+          action: generate
           mode: direct
           force: "true"
       - name: Verify outputs
