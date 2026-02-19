@@ -25,11 +25,6 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .gitignore
           git commit -m "chore: ignore action dir"
-          # Override GitHub context vars to point at the test repo
-          echo "GITHUB_REPOSITORY=speakeasy-api/sdk-generation-action-test-repo" >> "$GITHUB_ENV"
-          echo "GITHUB_REF=refs/heads/main" >> "$GITHUB_ENV"
-          echo "GITHUB_HEAD_REF=" >> "$GITHUB_ENV"
-          echo "GITHUB_BASE_REF=" >> "$GITHUB_ENV"
       - name: Run action in PR mode
         id: run
         uses: ./_action/
@@ -37,6 +32,7 @@ jobs:
           github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
           github_repository: speakeasy-api/sdk-generation-action-test-repo
+          github_ref: refs/heads/main
           action: generate
           mode: pr
           force: "true"
@@ -75,11 +71,6 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .gitignore
           git commit -m "chore: ignore action dir"
-          # Override GitHub context vars to point at the test repo
-          echo "GITHUB_REPOSITORY=speakeasy-api/sdk-generation-action-test-repo" >> "$GITHUB_ENV"
-          echo "GITHUB_REF=refs/heads/main" >> "$GITHUB_ENV"
-          echo "GITHUB_HEAD_REF=" >> "$GITHUB_ENV"
-          echo "GITHUB_BASE_REF=" >> "$GITHUB_ENV"
       - name: Run action in direct mode
         id: run
         uses: ./_action/
@@ -87,6 +78,7 @@ jobs:
           github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
           github_repository: speakeasy-api/sdk-generation-action-test-repo
+          github_ref: refs/heads/main
           action: generate
           mode: direct
           force: "true"
@@ -126,11 +118,6 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .gitignore
           git commit -m "chore: ignore action dir"
-          # Override GitHub context vars to point at the test repo
-          echo "GITHUB_REPOSITORY=speakeasy-api/sdk-generation-action-test-repo" >> "$GITHUB_ENV"
-          echo "GITHUB_REF=refs/heads/main" >> "$GITHUB_ENV"
-          echo "GITHUB_HEAD_REF=" >> "$GITHUB_ENV"
-          echo "GITHUB_BASE_REF=" >> "$GITHUB_ENV"
       - name: Run action in release mode
         id: run
         uses: ./_action/
@@ -138,6 +125,7 @@ jobs:
           github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
           github_repository: speakeasy-api/sdk-generation-action-test-repo
+          github_ref: refs/heads/main
           action: release
       - name: Verify release outputs
         run: |
@@ -167,11 +155,6 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .gitignore
           git commit -m "chore: ignore action dir"
-          # Override GitHub context vars to point at the test repo
-          echo "GITHUB_REPOSITORY=speakeasy-api/sdk-generation-action-test-repo" >> "$GITHUB_ENV"
-          echo "GITHUB_REF=refs/heads/main" >> "$GITHUB_ENV"
-          echo "GITHUB_HEAD_REF=" >> "$GITHUB_ENV"
-          echo "GITHUB_BASE_REF=" >> "$GITHUB_ENV"
       - name: Run action in tag mode
         id: run
         uses: ./_action/
@@ -179,6 +162,7 @@ jobs:
           github_access_token: ${{ secrets.BOT_REPO_TOKEN }}
           speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
           github_repository: speakeasy-api/sdk-generation-action-test-repo
+          github_ref: refs/heads/main
           action: tag
       - name: Verify tag completed
         run: echo "=== Tag action completed successfully ==="

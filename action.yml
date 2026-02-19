@@ -4,7 +4,7 @@ description: The Speakeasy Generation Action is to be run via the workflows prov
 inputs:
   speakeasy_version:
     description: The version of the Speakeasy CLI to use or "latest"
-    default: "1.721.9-rc.0"
+    default: "1.721.10-rc.0"
     required: false
   github_access_token:
     description: A GitHub access token with write access to the repo
@@ -134,6 +134,10 @@ inputs:
   skip_versioning:
     description: "Skip versioning during SDK generation, preventing version bumps"
     default: "false"
+    required: false
+  github_ref:
+    description: "Override GITHUB_REF for cross-repo workflows"
+    default: ""
     required: false
 outputs:
   publish_python:
@@ -328,3 +332,4 @@ runs:
         INPUT_PUSH_CODE_SAMPLES_ONLY: ${{ inputs.push_code_samples_only }}
         INPUT_TARGET_DIRECTORY: ${{ inputs.target_directory }}
         INPUT_REGISTRY_NAME: ${{ inputs.registry_name }}
+        INPUT_GITHUB_REF: ${{ inputs.github_ref }}
