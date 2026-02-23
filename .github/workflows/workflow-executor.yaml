@@ -79,7 +79,7 @@ on:
         required: false
         type: string
       skip_testing:
-        description: "Set to true to explicitly skip Speakeasy workflow target testing after generation, even when enabled in the Speakeasy workflow configuration. This is useful for running workflow testing as a separate GitHub Actions workflow without affecting/blocking generation."
+        description: "Skip Speakeasy workflow target testing after generation. In mode: pr, testing is always skipped during generation regardless of this input — tests should run separately via the sdk-test.yaml workflow (set up with 'speakeasy configure test'). This input only takes effect in mode: direct."
         default: false
         required: false
         type: boolean
@@ -259,6 +259,7 @@ jobs:
           registry_tags: ${{ inputs.registry_tags }}
           push_code_samples_only: ${{ inputs.push_code_samples }}
           set_version: ${{ inputs.set_version }}
+          skip_testing: ${{ inputs.skip_testing }}
           skip_versioning: ${{ inputs.skip_versioning }}
           skip_compile: ${{ inputs.skip_compile }}
           feature_branch: ${{ inputs.feature_branch }}
