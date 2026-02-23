@@ -776,12 +776,13 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 
 func (g *Git) Add(arg string) error {
 	// We execute this manually because go-git doesn't properly support gitignore
-	cmd := exec.Command("git", "add", arg)
+	// Use -A flag to properly handle deleted files during SDK regeneration
+	cmd := exec.Command("git", "add", "-A", arg)
 	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("error running `git add %s`: %w %s", arg, err, string(output))
+		return fmt.Errorf("error running `git add -A %s`: %w %s", arg, err, string(output))
 	}
 
 	return nil
