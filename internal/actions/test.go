@@ -43,9 +43,8 @@ func Test(ctx context.Context) error {
 		return err
 	}
 
-	// This will only come in via workflow dispatch, we do accept 'all' as a special case
 	var testedTargets []string
-	if providedTargetName := environment.SpecifiedTarget(); providedTargetName != "" && os.Getenv("GITHUB_EVENT_NAME") == "workflow_dispatch" {
+	if providedTargetName := environment.SpecifiedTarget(); providedTargetName != "" {
 		testedTargets = append(testedTargets, providedTargetName)
 	}
 
