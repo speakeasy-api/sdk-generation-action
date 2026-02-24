@@ -67,10 +67,10 @@ jobs:
           github_access_token: ${{ secrets.github_access_token }}
         env:
           GH_ACTION_VERSION: e5f3abef83d5092b952d6a7708cbc3e9e8f1a51a
-      - name: Upload test report
+      - name: Upload test reports
         if: always() && steps.check_commit.outputs.run_tests == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: test-report-${{ inputs.target || 'all' }}
-          path: ${{ inputs.working_directory && format('{0}/.speakeasy/reports/tests.xml', inputs.working_directory) || '.speakeasy/reports/tests.xml' }}
+          name: test-reports-${{ inputs.target || 'all' }}
+          path: ${{ inputs.working_directory && format('{0}/**/.speakeasy/reports/tests.xml', inputs.working_directory) || '**/.speakeasy/reports/tests.xml' }}
           if-no-files-found: warn
