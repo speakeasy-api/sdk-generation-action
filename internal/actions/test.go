@@ -17,7 +17,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-const testReportHeader = "SDK Tests Report"
+const testReportHeader = "SDK Test Report"
 
 type TestReport struct {
 	Success bool
@@ -114,11 +114,11 @@ func Test(ctx context.Context) error {
 		if genLockID, ok := targetLockIDs[target]; ok && genLockID != "" {
 			testReportURL = formatTestReportURL(ctx, genLockID)
 		} else {
-			fmt.Println(fmt.Sprintf("No gen.lock ID found for target %s", target))
+			fmt.Printf("No gen.lock ID found for target %s\n", target)
 		}
 
 		if testReportURL == "" {
-			fmt.Println(fmt.Sprintf("No test report URL could be formed for target %s", target))
+			fmt.Printf("No test report URL could be formed for target %s\n", target)
 		} else {
 			testReports[target] = TestReport{
 				Success: err == nil,
@@ -129,7 +129,7 @@ func Test(ctx context.Context) error {
 
 	if len(testReports) > 0 {
 		if err := writeTestReportComment(g, prNumber, testReports); err != nil {
-			fmt.Println(fmt.Sprintf("Failed to write test report comment: %s\n", err.Error()))
+			fmt.Printf("Failed to write test report comment: %s\n", err.Error())
 		}
 	}
 
@@ -171,32 +171,35 @@ func writeTestReportComment(g *git.Git, prNumber *int, testReports map[string]Te
 	}
 
 	currentPRComments, _ := g.ListIssueComments(*prNumber)
-	for _, comment := range currentPRComments {
-		commentBody := comment.GetBody()
-		if strings.Contains(commentBody, testReportHeader) {
-			if err := g.DeleteIssueComment(comment.GetID()); err != nil {
-				fmt.Println(fmt.Sprintf("Failed to delete existing test report comment: %s\n", err.Error()))
+
+	// Each target gets its own comment to avoid race conditions when
+	// multiple targets run in parallel as separate workflow jobs.
+	for target, report := range testReports {
+		targetHeader := fmt.Sprintf("%s: %s", testReportHeader, target)
+
+		// Delete any existing comment for this specific target
+		for _, comment := range currentPRComments {
+			if strings.Contains(comment.GetBody(), targetHeader) {
+				if err := g.DeleteIssueComment(comment.GetID()); err != nil {
+					fmt.Printf("Failed to delete existing test report comment for %s: %s\n", target, err.Error())
+				}
 			}
 		}
-	}
 
-	titleComment := fmt.Sprintf("## **%s**\n\n", testReportHeader)
-
-	tableHeader := "| Target | Status | Report |\n|--------|--------|--------|\n"
-
-	var tableRows strings.Builder
-	for target, report := range testReports {
 		statusEmoji := "✅"
+		statusText := "passed"
 		if !report.Success {
 			statusEmoji = "❌"
+			statusText = "failed"
 		}
-		tableRows.WriteString(fmt.Sprintf("| %s | <p align='center'>%s</p> | [view report](%s) |\n", target, statusEmoji, report.URL))
+
+		body := fmt.Sprintf("%s **%s** — tests %s &nbsp; [View Report](%s)\n",
+			statusEmoji, targetHeader, statusText, report.URL)
+
+		if err := g.WriteIssueComment(*prNumber, body); err != nil {
+			fmt.Printf("Failed to write test report comment for %s: %s\n", target, err.Error())
+		}
 	}
 
-	// Combine everything
-	body := titleComment + tableHeader + tableRows.String()
-
-	err := g.WriteIssueComment(*prNumber, body)
-
-	return err
+	return nil
 }
