@@ -2,7 +2,6 @@ package configuration
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/speakeasy-api/sdk-gen-config/workflow"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
@@ -31,9 +30,7 @@ func GetWorkflowAndValidateLanguages(checkLangSupported bool) (*workflow.Workflo
 }
 
 func getWorkflow() (*workflow.Workflow, error) {
-	workspace := environment.GetWorkspace()
-
-	localPath := filepath.Join(workspace, "repo", environment.GetWorkingDirectory())
+	localPath := environment.GetRepoPath()
 
 	wf, _, err := workflow.Load(localPath)
 	if err != nil {
