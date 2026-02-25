@@ -59,17 +59,13 @@ func Test(ctx context.Context) error {
 			targetOutput = *target.Output
 		}
 		outDir := filepath.Join(environment.GetRepoPath(), targetOutput)
-		fmt.Printf("[debug] Resolving gen.lock for target %s: outDir=%s\n", name, outDir)
 		cfg, err := config.Load(outDir)
 		if err != nil {
 			fmt.Printf("Failed to load config for target %s: %s\n", name, err.Error())
 			continue
 		}
 		if cfg.LockFile != nil {
-			fmt.Printf("[debug] Found gen.lock ID for target %s: %s\n", name, cfg.LockFile.ID)
 			targetLockIDs[name] = cfg.LockFile.ID
-		} else {
-			fmt.Printf("[debug] config.Load succeeded for target %s but LockFile is nil\n", name)
 		}
 	}
 
@@ -125,7 +121,6 @@ func Test(ctx context.Context) error {
 		testReportURL := ""
 		if genLockID, ok := targetLockIDs[target]; ok && genLockID != "" {
 			testReportURL = formatTestReportURL(ctx, genLockID)
-			fmt.Printf("[debug] formatTestReportURL returned: %s\n", testReportURL)
 		} else {
 			fmt.Printf("No gen.lock ID found for target %s (available targets: %v)\n", target, targetLockIDs)
 		}
@@ -177,7 +172,7 @@ func formatTestReportURL(ctx context.Context, genLockID string) string {
 		return ""
 	}
 
-	return fmt.Sprintf("https://app.speakeasy.com/org/%s/%s/targets/%s/tests/%s", orgSlug, workspaceSlug, genLockID, executionID)
+	return fmt.Sprintf("https://app.speakeasy.com/org/%s/%s/generate/sdks/%s/tests/%s", orgSlug, workspaceSlug, genLockID, executionID)
 }
 
 func writeTestReportComment(g *git.Git, prNumber *int, testReports map[string]TestReport) error {
