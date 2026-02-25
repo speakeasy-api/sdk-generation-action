@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -343,6 +344,12 @@ func GetGithubOIDCRequestToken() string {
 
 func GetWorkspace() string {
 	return os.Getenv("GITHUB_WORKSPACE")
+}
+
+// GetRepoPath returns the absolute path to the cloned repo's working directory.
+// This is the standard base path used for running commands and loading configs.
+func GetRepoPath() string {
+	return filepath.Join(GetWorkspace(), "repo", GetWorkingDirectory())
 }
 
 func ShouldOutputTests() bool {

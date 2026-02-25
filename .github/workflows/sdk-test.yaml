@@ -74,3 +74,4 @@ jobs:
           name: test-reports-${{ inputs.target || 'all' }}
           path: ${{ inputs.working_directory && format('{0}/**/.speakeasy/reports/tests.xml', inputs.working_directory) || '**/.speakeasy/reports/tests.xml' }}
           if-no-files-found: warn
+          include-hidden-files: true

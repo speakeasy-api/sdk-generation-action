@@ -92,7 +92,7 @@ func GeneratePRDescription(input PRDescriptionInput) (*PRDescriptionOutput, erro
 	logging.Debug("PR description input: %s", string(inputJSON))
 
 	cmd := exec.Command(cmdPath, "ci", "pr-description", "--input", "-")
-	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Dir = environment.GetRepoPath()
 	cmd.Stdin = bytes.NewReader(inputJSON)
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "SPEAKEASY_RUN_LOCATION=action")

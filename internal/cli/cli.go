@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -68,13 +67,13 @@ func GetSupportedTargetNames() []string {
 
 func TriggerGoGenerate() error {
 	tidyCmd := exec.Command("go", "mod", "tidy")
-	tidyCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	tidyCmd.Dir = environment.GetRepoPath()
 	output, err := tidyCmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error running command: go mod tidy - %w\n %s", err, string(output))
 	}
 	generateCmd := exec.Command("go", "generate", "./...")
-	generateCmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	generateCmd.Dir = environment.GetRepoPath()
 	output, err = generateCmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error running command: go generate ./... - %w\n %s", err, output)

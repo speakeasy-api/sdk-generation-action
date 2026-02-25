@@ -83,7 +83,7 @@ func runSpeakeasyCommand(args ...string) (string, error) {
 	logging.Info("The command path being executed: %s", cmdPath)
 	logging.Info("The command args: %s", args)
 	cmd := exec.Command(cmdPath, args...)
-	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Dir = environment.GetRepoPath()
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "SPEAKEASY_RUN_LOCATION=action")
 	cmd.Env = append(cmd.Env, "SPEAKEASY_ENVIRONMENT=github")

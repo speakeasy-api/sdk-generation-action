@@ -328,7 +328,7 @@ func (g *Git) Reset(args ...string) error {
 	logging.Info("Running git  %s", strings.Join(args, " "))
 
 	cmd := exec.Command("git", args...)
-	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Dir = environment.GetRepoPath()
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -477,7 +477,7 @@ func (g *Git) findNonCICommits(branchName, defaultBranch string) ([]string, erro
 
 	revSpec := fmt.Sprintf("origin/%s..%s", defaultBranch, branchName)
 	cmd := exec.Command("git", "log", revSpec, "--pretty=format:%H%x09%an%x09%cn%x09%s")
-	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Dir = environment.GetRepoPath()
 	cmd.Env = os.Environ()
 
 	output, err := cmd.CombinedOutput()
@@ -777,7 +777,7 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 func (g *Git) Add(arg string) error {
 	// We execute this manually because go-git doesn't properly support gitignore
 	cmd := exec.Command("git", "add", arg)
-	cmd.Dir = filepath.Join(environment.GetWorkspace(), "repo", environment.GetWorkingDirectory())
+	cmd.Dir = environment.GetRepoPath()
 	cmd.Env = os.Environ()
 	output, err := cmd.CombinedOutput()
 	if err != nil {
