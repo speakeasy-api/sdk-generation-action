@@ -127,11 +127,11 @@ func Test(ctx context.Context) error {
 
 		if testReportURL == "" {
 			fmt.Printf("No test report URL could be formed for target %s\n", target)
-		} else {
-			testReports[target] = TestReport{
-				Success: err == nil,
-				URL:     testReportURL,
-			}
+		}
+
+		testReports[target] = TestReport{
+			Success: err == nil,
+			URL:     testReportURL,
 		}
 	}
 
@@ -206,8 +206,14 @@ func writeTestReportComment(g *git.Git, prNumber *int, testReports map[string]Te
 			statusText = "failed"
 		}
 
-		body := fmt.Sprintf("%s **%s** — tests %s &nbsp; [View Report](%s)\n",
-			statusEmoji, targetHeader, statusText, report.URL)
+		var body string
+		if report.URL != "" {
+			body = fmt.Sprintf("%s **%s** — tests %s &nbsp; [View Report](%s)\n",
+				statusEmoji, targetHeader, statusText, report.URL)
+		} else {
+			body = fmt.Sprintf("%s **%s** — tests %s\n",
+				statusEmoji, targetHeader, statusText)
+		}
 
 		if err := g.WriteIssueComment(*prNumber, body); err != nil {
 			fmt.Printf("Failed to write test report comment for %s: %s\n", target, err.Error())
