@@ -221,7 +221,7 @@ jobs:
         id: check-publish
         run: |
           if [ -f scripts/publish.sh ]; then
-            echo "publish_with_script=true" >> $GITHUB_OUTPUT
+            echo "publish_with_script=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Publish with script (Token)
         if: ${{ steps.check-publish.outputs.publish_with_script == 'true' }}
@@ -341,11 +341,11 @@ jobs:
             fi
 
             # Build the MCP Server binary
-            npx bun build ./src/mcp-server/mcp-server.ts --compile --target=$TARGET --outfile=$BINARY_PATH
+            npx bun build ./src/mcp-server/mcp-server.ts --compile --target="$TARGET" --outfile="$BINARY_PATH"
 
             # Only run chmod for non-Windows targets
             if [[ "$TARGET" != "bun-windows-x64-modern" ]]; then
-              chmod +x $BINARY_PATH
+              chmod +x "$BINARY_PATH"
             fi
 
             # Fetch the upload URL for the release associated with the specific tag
@@ -458,11 +458,11 @@ jobs:
             fi
 
             # Build the MCP Server binary
-            npx bun build ./src/mcp-server/mcp-server.ts --compile --target=$TARGET --outfile=$BINARY_PATH
+            npx bun build ./src/mcp-server/mcp-server.ts --compile --target="$TARGET" --outfile="$BINARY_PATH"
 
             # Only run chmod for non-Windows targets
             if [[ "$TARGET" != "bun-windows-x64-modern" ]]; then
-              chmod +x $BINARY_PATH
+              chmod +x "$BINARY_PATH"
             fi
 
             # Upload the binary to the GitHub Release
@@ -689,7 +689,7 @@ jobs:
         with:
           dotnet-version: ${{ inputs.dotnet_version }}
       - name: Publish
-        run: dotnet pack -c Release -o . && dotnet nuget push *.nupkg --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
+        run: dotnet pack -c Release -o . && dotnet nuget push ./*.nupkg --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
       - id: publish-event
         uses: ./_speakeasy
         if: always()
@@ -827,12 +827,12 @@ jobs:
         env:
           GEM_HOST_API_KEY: ${{ secrets.rubygems_auth_token }}
         run: |
-          mkdir -p $HOME/.gem
-          touch $HOME/.gem/credentials
-          chmod 0600 $HOME/.gem/credentials
-          printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
-          gem build *.gemspec
-          gem push *.gem
+          mkdir -p "$HOME/.gem"
+          touch "$HOME/.gem/credentials"
+          chmod 0600 "$HOME/.gem/credentials"
+          printf -- '---\n:rubygems_api_key: %s\n' "${GEM_HOST_API_KEY}" > "$HOME/.gem/credentials"
+          gem build ./*.gemspec
+          gem push ./*.gem
       - id: publish-event
         uses: ./_speakeasy
         if: always()
