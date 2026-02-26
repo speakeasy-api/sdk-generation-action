@@ -98,7 +98,7 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 
 	out, err := runSpeakeasyCommand(args...)
 	if err != nil {
-		return nil, fmt.Errorf("error running workflow: %w - %s", err, out)
+		return nil, fmt.Errorf("error running workflow: %w", err)
 	}
 
 	lintingReportURL := getLintingReportURL(out)
@@ -108,7 +108,6 @@ func Run(sourcesOnly bool, installationURLs map[string]string, repoURL string, r
 	// and won't be available first run
 	changeSummary, _ := os.ReadFile(file.Name())
 
-	fmt.Println(out)
 	return &RunResults{
 		LintingReportURL:     lintingReportURL,
 		ChangesReportURL:     changesReportURL,
