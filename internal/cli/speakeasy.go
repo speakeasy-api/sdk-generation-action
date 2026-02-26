@@ -90,12 +90,18 @@ func runSpeakeasyCommand(args ...string) (string, error) {
 	cmd.Env = append(cmd.Env, "GIT_TERMINAL_PROMPT=0")
 	cmd.Env = append(cmd.Env, extraRunEnvVars...)
 
-	output, err := cmd.CombinedOutput()
+	// Stream output in real-time so it appears in CI logs as the command
+	// runs, rather than buffering everything until completion.
+	var buf bytes.Buffer
+	cmd.Stdout = io.MultiWriter(os.Stdout, &buf)
+	cmd.Stderr = io.MultiWriter(os.Stderr, &buf)
+
+	err := cmd.Run()
 	if err != nil {
-		return string(output), fmt.Errorf("error running speakeasy command: speakeasy %s - %w\n %s", strings.Join(args, " "), err, string(output))
+		return buf.String(), fmt.Errorf("error running speakeasy command: speakeasy %s - %w", strings.Join(args, " "), err)
 	}
 
-	return string(output), nil
+	return buf.String(), nil
 }
 
 func extract(archive, dest string) error {
@@ -301,12 +307,11 @@ func Tag(tags, sources, codeSamples []string) error {
 	}
 
 	args = append(args, "-t", strings.Join(tags, ","))
-	out, err := runSpeakeasyCommand(args...)
+	_, err := runSpeakeasyCommand(args...)
 	if err != nil {
-		return fmt.Errorf("error running speakeasy tag: %w\n %s", err, out)
+		return fmt.Errorf("error running speakeasy tag: %w", err)
 	}
 
-	fmt.Println(out)
 	return nil
 }
 
@@ -317,10 +322,8 @@ func Test(target string) error {
 		args = append(args, "-t", target)
 	}
 
-	out, err := runSpeakeasyCommand(args...)
-	fmt.Println(out)
+	_, err := runSpeakeasyCommand(args...)
 	if err != nil {
-		fmt.Println(out)
 		return fmt.Errorf("error running speakeasy test for target %s: %w", target, err)
 	}
 
