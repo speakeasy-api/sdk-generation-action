@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: 25cea01d88a56f151a0fdaa654287edd8207cf3b
+          ref: 51dbaa3868e4debe3ba0fa6255bb5a160801b193
           path: _speakeasy
       - name: Set dynamic environment variables
         if: inputs.env_vars != ''
@@ -66,7 +66,7 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           github_access_token: ${{ secrets.github_access_token }}
         env:
-          GH_ACTION_VERSION: 25cea01d88a56f151a0fdaa654287edd8207cf3b
+          GH_ACTION_VERSION: 51dbaa3868e4debe3ba0fa6255bb5a160801b193
       - name: Upload test reports
         if: always() && steps.check_commit.outputs.run_tests == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
