@@ -75,7 +75,7 @@ on:
         type: string
         default: "5.x"
       pnpm_version:
-        description: "Version of pnpm to install. Not recommended for use without consulting Speakeasy support."
+        description: "Version of pnpm to install for TypeScript targets."
         required: false
         type: string
       skip_testing:
@@ -84,7 +84,7 @@ on:
         required: false
         type: boolean
       skip_compile:
-        description: "Skip environment setup and Speakeasy compile steps when generating."
+        description: "Skip SDK compilation after generation."
         default: false
         required: false
         type: boolean
@@ -93,12 +93,11 @@ on:
         required: false
         type: string
       poetry_version:
-        description: "Version of poetry to install. Not recommended for use without consulting Speakeasy support."
+        description: "Version of poetry to install for Python targets."
         required: false
         type: string
-        default: "2.2.1"
       uv_version:
-        description: "Version of uv to install. Not recommended for use without consulting Speakeasy support."
+        description: "Version of uv to install for Python targets."
         required: false
         type: string
       github_repository:
@@ -238,6 +237,49 @@ jobs:
         run: curl -fsSL https://raw.githubusercontent.com/speakeasy-api/speakeasy/main/install.sh | sh
         env:
           VERSION: ${{ inputs.speakeasy_version }}
+      - name: Set up Python
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
+        uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
+        with:
+          python-version: "3.10"
+      - name: Install poetry
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
+        shell: bash
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        env:
+          POETRY_VERSION: ${{ inputs.poetry_version }}
+      - name: Install uv
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: ${{ inputs.uv_version || 'latest' }}
+      - name: Set up Node
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24.x"
+      - name: Install pnpm
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' && inputs.pnpm_version != '' }}
+        shell: bash
+        run: npm install -g pnpm@${{ inputs.pnpm_version }}
+      - name: Set up Ruby
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
+        uses: ruby/setup-ruby@d8d83c3960843afb664e821fed6be52f37da5267 # v1.231.0
+        with:
+          ruby-version: "3.2"
+      - name: Set up Java
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: "corretto"
+          java-version: "11"
+      - name: Set up Gradle
+        if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
+        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+        with:
+          gradle-version: "8.14"
       - id: run-workflow
         name: Run Generation Workflow
         if: ${{ steps.check-label.outputs.short_circuit_label_trigger != 'true' }}
@@ -271,9 +313,6 @@ jobs:
           INPUT_SKIP_TESTING: ${{ inputs.skip_testing }}
           INPUT_FEATURE_BRANCH: ${{ inputs.feature_branch }}
           INPUT_CLI_ENVIRONMENT_VARIABLES: ${{ inputs.environment }}
-          INPUT_PNPM_VERSION: ${{ inputs.pnpm_version }}
-          INPUT_POETRY_VERSION: ${{ inputs.poetry_version }}
-          INPUT_UV_VERSION: ${{ inputs.uv_version }}
           INPUT_GITHUB_REPOSITORY: ${{ inputs.github_repository }}
           INPUT_ENABLE_SDK_CHANGELOG: ${{ inputs.enable_sdk_changelog }}
           INPUT_SPEAKEASY_SERVER_URL: ${{ inputs.speakeasy_server_url }}
@@ -330,7 +369,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
         with:
-          version: ${{ inputs.uv_version }}
+          version: ${{ inputs.uv_version || 'latest' }}
       - name: Check for publish.sh
         id: check-publish
         run: |

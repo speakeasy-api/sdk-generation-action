@@ -63,7 +63,7 @@ inputs:
     description: "The branch that represents the SDK feature. Will be upserted when manually dispatching the workflow."
     required: false
   skip_compile:
-    description: "Skip environment setup and pass --skip-compile to Speakeasy run."
+    description: "Skip SDK compilation after generation."
     default: "false"
     required: false
   branch_name:
@@ -107,17 +107,17 @@ inputs:
       Extra environment variables to set for the speakeasy run execution.
     required: false
   pnpm_version:
-    description: "Version of pnpm to install. Not recommended for use without consulting Speakeasy support."
+    description: "Version of pnpm to install for TypeScript targets."
     required: false
   skip_testing:
     description: "Set to true to explicitly skip Speakeasy workflow target testing after generation, even when enabled in the Speakeasy workflow configuration. This is useful for running workflow testing as a separate GitHub Actions workflow without affecting/blocking generation."
     default: "false"
     required: false
   poetry_version:
-    description: "Version of poetry to install. Not recommended for use without consulting Speakeasy support."
+    description: "Version of poetry to install for Python targets."
     required: false
   uv_version:
-    description: "Version of uv to install. Not recommended for use without consulting Speakeasy support."
+    description: "Version of uv to install for Python targets."
     required: false
   github_repository:
     description: "The GitHub repository path for the SDK. Eg: speakeasy-api/speakeasy-sdk-python"
@@ -274,6 +274,42 @@ runs:
         curl -fsSL https://raw.githubusercontent.com/speakeasy-api/speakeasy/main/install.sh | sh
       env:
         VERSION: ${{ inputs.speakeasy_version }}
+    - name: Set up Python
+      uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
+      with:
+        python-version: "3.10"
+    - name: Install poetry
+      shell: bash
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+      env:
+        POETRY_VERSION: ${{ inputs.poetry_version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      with:
+        version: ${{ inputs.uv_version || 'latest' }}
+    - name: Set up Node
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version: "24.x"
+    - name: Install pnpm
+      if: ${{ inputs.pnpm_version != '' }}
+      shell: bash
+      run: npm install -g pnpm@${{ inputs.pnpm_version }}
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@d8d83c3960843afb664e821fed6be52f37da5267 # v1.231.0
+      with:
+        ruby-version: "3.2"
+    - name: Set up Java
+      uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+      with:
+        distribution: "corretto"
+        java-version: "11"
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+      with:
+        gradle-version: "8.14"
     - name: Run speakeasy ci
       id: run
       shell: bash
@@ -321,10 +357,7 @@ runs:
         INPUT_OPENAPI_DOC_AUTH_TOKEN: ${{ inputs.openapi_doc_auth_token }}
         INPUT_SET_VERSION: ${{ inputs.set_version }}
         INPUT_CLI_ENVIRONMENT_VARIABLES: ${{ inputs.cli_environment_variables }}
-        INPUT_PNPM_VERSION: ${{ inputs.pnpm_version }}
         INPUT_SKIP_TESTING: ${{ inputs.skip_testing }}
-        INPUT_POETRY_VERSION: ${{ inputs.poetry_version }}
-        INPUT_UV_VERSION: ${{ inputs.uv_version }}
         INPUT_GITHUB_REPOSITORY: ${{ inputs.github_repository }}
         INPUT_ENABLE_SDK_CHANGELOG: ${{ inputs.enable_sdk_changelog }}
         INPUT_SKIP_RELEASE: ${{ inputs.skip_release }}

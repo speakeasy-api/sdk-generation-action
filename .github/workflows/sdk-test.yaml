@@ -59,6 +59,41 @@ jobs:
         if: steps.check_commit.outputs.run_tests == 'true'
         shell: bash
         run: curl -fsSL https://raw.githubusercontent.com/speakeasy-api/speakeasy/main/install.sh | sh
+      - name: Set up Python
+        if: steps.check_commit.outputs.run_tests == 'true'
+        uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
+        with:
+          python-version: "3.10"
+      - name: Install poetry
+        if: steps.check_commit.outputs.run_tests == 'true'
+        shell: bash
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Install uv
+        if: steps.check_commit.outputs.run_tests == 'true'
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - name: Set up Node
+        if: steps.check_commit.outputs.run_tests == 'true'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24.x"
+      - name: Set up Ruby
+        if: steps.check_commit.outputs.run_tests == 'true'
+        uses: ruby/setup-ruby@d8d83c3960843afb664e821fed6be52f37da5267 # v1.231.0
+        with:
+          ruby-version: "3.2"
+      - name: Set up Java
+        if: steps.check_commit.outputs.run_tests == 'true'
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: "corretto"
+          java-version: "11"
+      - name: Set up Gradle
+        if: steps.check_commit.outputs.run_tests == 'true'
+        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+        with:
+          gradle-version: "8.14"
       - id: test
         name: Run Tests
         if: steps.check_commit.outputs.run_tests == 'true'
