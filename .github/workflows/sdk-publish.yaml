@@ -24,15 +24,6 @@ on:
         required: false
         type: string
         default: "5.x"
-      poetry_version:
-        description: "The version of poetry to use"
-        required: false
-        type: string
-        default: "2.2.1"
-      uv_version:
-        description: "The version of uv to use"
-        required: false
-        type: string
       target:
         description: "The specific target to publish"
         required: false
@@ -211,12 +202,8 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           poetry --version
-        env:
-          POETRY_VERSION: ${{ inputs.poetry_version }}
       - name: Install uv
         uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
-        with:
-          version: ${{ inputs.uv_version }}
       - name: Check for publish.sh
         id: check-publish
         run: |

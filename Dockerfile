@@ -27,11 +27,14 @@ RUN apk update
 ### Install common tools
 RUN apk add --update --no-cache bash curl git wget
 
-### Install Node / NPM
+### Install Node / NPM / pnpm
 RUN apk add --update --no-cache nodejs npm
+RUN npm install -g pnpm
 
-### Install Python
+### Install Python / poetry / uv
 RUN apk add --update --no-cache python3 py3-pip python3-dev pipx
+RUN pipx install --global poetry
+RUN pipx install --global uv
 
 ### Install Java
 RUN apk add --update --no-cache openjdk11 gradle

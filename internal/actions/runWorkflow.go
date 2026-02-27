@@ -28,14 +28,6 @@ func RunWorkflow() error {
 		return err
 	}
 
-	if !environment.SkipCompile() {
-		if err := SetupEnvironment(); err != nil {
-			return fmt.Errorf("failed to setup environment: %w", err)
-		}
-	} else {
-		logging.Info("Skipping environment setup due to skip_compile input")
-	}
-
 	// The top-level CLI can always use latest. The CLI itself manages pinned versions.
 	resolvedVersion, err := cli.Download("latest", g)
 	if err != nil {

@@ -74,31 +74,18 @@ on:
         required: false
         type: string
         default: "5.x"
-      pnpm_version:
-        description: "Version of pnpm to install. Not recommended for use without consulting Speakeasy support."
-        required: false
-        type: string
       skip_testing:
         description: "Skip Speakeasy workflow target testing after generation. In mode: pr, testing is always skipped during generation regardless of this input — tests should run separately via the sdk-test.yaml workflow (set up with 'speakeasy configure test'). This input only takes effect in mode: direct."
         default: false
         required: false
         type: boolean
       skip_compile:
-        description: "Skip environment setup and Speakeasy compile steps when generating."
+        description: "Skip SDK compilation after generation."
         default: false
         required: false
         type: boolean
       feature_branch:
         description: "The branch that represents the SDK feature. Will be upserted when manually dispatching the workflow."
-        required: false
-        type: string
-      poetry_version:
-        description: "Version of poetry to install. Not recommended for use without consulting Speakeasy support."
-        required: false
-        type: string
-        default: "2.2.1"
-      uv_version:
-        description: "Version of uv to install. Not recommended for use without consulting Speakeasy support."
         required: false
         type: string
       github_repository:
@@ -264,9 +251,6 @@ jobs:
           skip_compile: ${{ inputs.skip_compile }}
           feature_branch: ${{ inputs.feature_branch }}
           cli_environment_variables: ${{ inputs.environment }}
-          pnpm_version: ${{ inputs.pnpm_version }}
-          poetry_version: ${{ inputs.poetry_version }}
-          uv_version: ${{ inputs.uv_version }}
           github_repository: ${{ inputs.github_repository }}
           enable_sdk_changelog: ${{ inputs.enable_sdk_changelog }}
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
@@ -322,12 +306,8 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           poetry --version
-        env:
-          POETRY_VERSION: ${{ inputs.poetry_version }}
       - name: Install uv
         uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
-        with:
-          version: ${{ inputs.uv_version }}
       - name: Check for publish.sh
         id: check-publish
         run: |

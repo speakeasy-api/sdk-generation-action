@@ -30,10 +30,6 @@ func Test(ctx context.Context) error {
 		return err
 	}
 
-	if err := SetupEnvironment(); err != nil {
-		return fmt.Errorf("failed to setup environment: %w", err)
-	}
-
 	if _, err = cli.Download("latest", g); err != nil {
 		return err
 	}

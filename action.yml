@@ -62,7 +62,7 @@ inputs:
     description: "The branch that represents the SDK feature. Will be upserted when manually dispatching the workflow."
     required: false
   skip_compile:
-    description: "Skip environment setup and pass --skip-compile to Speakeasy run."
+    description: "Skip SDK compilation after generation."
     default: "false"
     required: false
   branch_name:
@@ -105,18 +105,9 @@ inputs:
     description: |
       Extra environment variables to set for the speakeasy run execution.
     required: false
-  pnpm_version:
-    description: "Version of pnpm to install. Not recommended for use without consulting Speakeasy support."
-    required: false
   skip_testing:
     description: "Skip Speakeasy workflow target testing after generation. In mode: pr, testing is always skipped during generation regardless of this input — tests should run separately via the sdk-test.yaml workflow (set up with 'speakeasy configure test'). This input only takes effect in mode: direct."
     default: "false"
-    required: false
-  poetry_version:
-    description: "Version of poetry to install. Not recommended for use without consulting Speakeasy support."
-    required: false
-  uv_version:
-    description: "Version of uv to install. Not recommended for use without consulting Speakeasy support."
     required: false
   github_repository:
     description: "The GitHub repository path for the SDK. Eg: speakeasy-api/speakeasy-sdk-python"
@@ -250,8 +241,6 @@ runs:
     - ${{ inputs.code_samples }}
     - ${{ inputs.set_version }}
     - ${{ inputs.cli_environment_variables }}
-    - ${{ inputs.pnpm_version }}
-    - ${{ inputs.poetry_version }}
     - ${{ inputs.enable_sdk_changelog }}
     - ${{ inputs.skip_release }}
     - ${{ inputs.skip_versioning }}
