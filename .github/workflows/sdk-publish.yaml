@@ -25,12 +25,11 @@ on:
         type: string
         default: "5.x"
       poetry_version:
-        description: "The version of poetry to use"
+        description: "Version of poetry to install for Python targets."
         required: false
         type: string
-        default: "2.2.1"
       uv_version:
-        description: "The version of uv to use"
+        description: "Version of uv to install for Python targets."
         required: false
         type: string
       target:
@@ -221,7 +220,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
         with:
-          version: ${{ inputs.uv_version }}
+          version: ${{ inputs.uv_version || 'latest' }}
       - name: Check for publish.sh
         id: check-publish
         run: |
