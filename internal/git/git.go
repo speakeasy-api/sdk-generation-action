@@ -603,12 +603,18 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 		return "", nil
 	}
 
+	logging.Info("Commit and pushing changes to git")
+
+	if environment.GetGranularCommits() &&
+		// TODO: Support signed commits with granular commits
+		!environment.GetSignedCommits() {
+		return g.granularCommitAndPush(openAPIDocVersion, speakeasyVersion, doc, action, sourcesOnly)
+	}
+
 	w, err := g.repo.Worktree()
 	if err != nil {
 		return "", fmt.Errorf("error getting worktree: %w", err)
 	}
-
-	logging.Info("Commit and pushing changes to git")
 
 	if err := g.Add("."); err != nil {
 		return "", fmt.Errorf("error adding changes: %w", err)
@@ -715,6 +721,59 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 	}
 
 	return *commitResult.SHA, nil
+}
+
+func (g *Git) granularCommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, action environment.Action, sourcesOnly bool) (string, error) {
+	w, err := g.repo.Worktree()
+	if err != nil {
+		return "", fmt.Errorf("error getting worktree: %w", err)
+	}
+
+	catchAllCommitMessage := "feat: regenerated with Speakeasy CLI"
+	if action == environment.ActionSuggest {
+		catchAllCommitMessage = "feat: suggestions for OpenAPI spec"
+	}
+
+	commits := []struct {
+		paths []string
+		msg   string
+	}{
+		{paths: []string{"**/.speakeasy/", "*gen.yaml", "*gen.lock", "*workflow.yaml", "*workflow.lock"}, msg: "build: Speakeasy config and lock files"},
+		{paths: []string{"*.md"}, msg: "docs: regenerate markdown files"},
+		{paths: []string{"."}, msg: catchAllCommitMessage},
+	}
+
+	var lastCommitHash plumbing.Hash
+	for _, commit := range commits {
+		for _, path := range commit.paths {
+			if err = g.Add(path); err != nil {
+				logging.Info(fmt.Errorf("unable to add changes for %v: %w", path, err).Error())
+			}
+		}
+
+		h, err := w.Commit(commit.msg, &git.CommitOptions{
+			Author: &object.Signature{
+				Name:  "speakeasybot",
+				Email: "bot@speakeasyapi.dev",
+				When:  time.Now(),
+			},
+			AllowEmptyCommits: false,
+			All:               commit.msg == catchAllCommitMessage,
+		})
+		if err != nil {
+			logging.Info(fmt.Errorf("unable to commit changes for %v: %w", commit.paths, err).Error())
+		} else {
+			lastCommitHash = h
+		}
+	}
+
+	if err := g.repo.Push(&git.PushOptions{
+		Auth:  getGithubAuth(g.accessToken),
+		Force: true, // This is necessary because at the beginning of the workflow we reset the branch
+	}); err != nil {
+		return "", pushErr(err)
+	}
+	return lastCommitHash.String(), nil
 }
 
 // getOrCreateRef returns the commit branch reference object if it exists or creates it
