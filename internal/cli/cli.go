@@ -27,6 +27,7 @@ func IsAtLeastVersion(version *version.Version) bool {
 }
 
 var defaultSupportedTargets = []string{
+	"cli",
 	"csharp",
 	"go",
 	"java",
@@ -41,6 +42,7 @@ var defaultSupportedTargets = []string{
 
 // Targets for the new changelog - JULY 2025
 var DefaultSupportedTargetsForChangelog = []string{
+	"cli",
 	"typescript",
 	"python",
 	"go",
