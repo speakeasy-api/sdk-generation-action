@@ -88,6 +88,15 @@ func (r ReleasesInfo) String() string {
 		pkgID := ""
 		pkgURL := ""
 		switch lang {
+		case "cli":
+			pkgID = "CLI"
+			repoPath := os.Getenv("GITHUB_REPOSITORY")
+			tag := fmt.Sprintf("v%s", info.Version)
+			if info.Path != "." {
+				tag = fmt.Sprintf("%s/%s", info.Path, tag)
+			}
+
+			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
 		case "go":
 			pkgID = "Go"
 			repoPath := os.Getenv("GITHUB_REPOSITORY")
@@ -181,6 +190,7 @@ var (
 	rubyGemReleaseRegex     = regexp.MustCompile(`- \[Ruby Gems v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/rubygems\.org\/gems\/(.*?)\/versions\/.*?) - (.*)`)
 	nugetReleaseRegex       = regexp.MustCompile(`- \[NuGet v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/www\.nuget\.org\/packages\/(.*?)\/\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?) - (.*)`)
 	swiftReleaseRegex       = regexp.MustCompile(`- \[Swift Package Manager v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?) - (.*)`)
+	cliReleaseRegex         = regexp.MustCompile(`- \[CLI v(\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?)] (https:\/\/(github.com\/.*?)\/releases\/tag\/.*?\/?v\d+\.\d+\.\d+(?:-\w+(?:\.\w+)*)?) - (.*)`)
 )
 
 func GetLastReleaseInfo(dir string) (*ReleasesInfo, error) {
@@ -259,6 +269,14 @@ func GetTargetSpecificReleaseNotes(path string) (TargetReleaseNotes, error) {
 
 		pkgURL := ""
 		switch lang {
+		case "cli":
+			repoPath := os.Getenv("GITHUB_REPOSITORY")
+			tag := fmt.Sprintf("v%s", info.Version)
+			if path != "." {
+				tag = fmt.Sprintf("%s/%s", path, tag)
+			}
+
+			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
 		case "go":
 			repoPath := os.Getenv("GITHUB_REPOSITORY")
 			tag := fmt.Sprintf("v%s", info.Version)
@@ -472,6 +490,24 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 		info.Languages["swift"] = LanguageReleaseInfo{
 			Version:     swiftMatches[1],
 			URL:         swiftMatches[2],
+			PackageName: packageName,
+			Path:        path,
+		}
+	}
+
+	cliMatches := cliReleaseRegex.FindStringSubmatch(lastRelease)
+
+	if len(cliMatches) == 5 {
+		packageName := cliMatches[3]
+		path := cliMatches[4]
+
+		if path != "." {
+			packageName = fmt.Sprintf("%s/%s", packageName, strings.TrimPrefix(path, "./"))
+		}
+
+		info.Languages["cli"] = LanguageReleaseInfo{
+			Version:     cliMatches[1],
+			URL:         cliMatches[2],
 			PackageName: packageName,
 			Path:        path,
 		}

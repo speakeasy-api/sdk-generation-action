@@ -298,7 +298,7 @@ func getInstallationURL(lang, subdirectory string) string {
 	subdirectory = filepath.Clean(subdirectory)
 
 	switch lang {
-	case "go":
+	case "cli", "go":
 		base := fmt.Sprintf("%s/%s", environment.GetGithubServerURL(), environment.GetRepo())
 
 		if subdirectory == "." {
@@ -345,7 +345,7 @@ func getRepoURL() string {
 
 func AddTargetPublishOutputs(target workflow.Target, outputs map[string]string, installationURL *string) {
 	lang := target.Target
-	published := target.IsPublished() || lang == "go"
+	published := target.IsPublished() || lang == "go" || lang == "cli"
 
 	// TODO: Temporary check to fix Java. We may remove this entirely, pending conversation
 	if installationURL != nil && *installationURL == "" && lang != "java" {
