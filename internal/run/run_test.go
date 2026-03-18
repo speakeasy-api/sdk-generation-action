@@ -51,6 +51,15 @@ func TestAddTargetPublishOutputs(t *testing.T) {
 				"publish_go": "true",
 			},
 		},
+		"cli-publishing": {
+			target: workflow.Target{
+				Publishing: nil, // intentionally no publishing config, CLI is release-published
+				Target:     "cli",
+			},
+			expectedOutputs: map[string]string{
+				"publish_cli": "true",
+			},
+		},
 		"java-no-publishing": {
 			target: workflow.Target{
 				Publishing: nil, // intentionally no publishing config
