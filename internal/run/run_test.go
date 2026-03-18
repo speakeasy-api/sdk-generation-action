@@ -242,3 +242,45 @@ func TestAddTargetPublishOutputs(t *testing.T) {
 		})
 	}
 }
+
+func TestAddTargetPublishOutputs_NoOverwritePublished(t *testing.T) {
+	t.Parallel()
+
+	// Simulate a workflow.local.yaml target (no publish block) being processed
+	// after the main target (with publish block) for the same language/output.
+	// The non-published target must not overwrite the published=true output.
+	outputs := make(map[string]string)
+
+	publishedTarget := workflow.Target{
+		Publishing: &workflow.Publishing{
+			NPM: &workflow.NPM{
+				Token: "non-empty",
+			},
+		},
+		Target: "typescript",
+	}
+	unpublishedTarget := workflow.Target{
+		Publishing: nil,
+		Target:     "typescript",
+	}
+
+	run.AddTargetPublishOutputs(publishedTarget, outputs, nil)
+	run.AddTargetPublishOutputs(unpublishedTarget, outputs, nil)
+
+	expected := map[string]string{
+		"publish_typescript": "true",
+	}
+
+	if !reflect.DeepEqual(outputs, expected) {
+		t.Errorf("expected %v, got %v", expected, outputs)
+	}
+
+	// Also verify the reverse order works
+	outputs2 := make(map[string]string)
+	run.AddTargetPublishOutputs(unpublishedTarget, outputs2, nil)
+	run.AddTargetPublishOutputs(publishedTarget, outputs2, nil)
+
+	if !reflect.DeepEqual(outputs2, expected) {
+		t.Errorf("expected %v, got %v (reverse order)", expected, outputs2)
+	}
+}

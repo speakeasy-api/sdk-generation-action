@@ -352,7 +352,13 @@ func AddTargetPublishOutputs(target workflow.Target, outputs map[string]string, 
 		published = true // Treat as published if we don't have an installation URL
 	}
 
-	outputs[utils.OutputTargetPublish(lang)] = fmt.Sprintf("%t", published)
+	// Use OR logic: don't let a non-published target overwrite a previously
+	// set published=true (e.g. workflow.local.yaml targets without publish blocks
+	// sharing the same output directory as the main target).
+	outputKey := utils.OutputTargetPublish(lang)
+	if existing, ok := outputs[outputKey]; !ok || existing != "true" || published {
+		outputs[outputKey] = strconv.FormatBool(published)
+	}
 
 	if published && lang == "java" && target.Publishing != nil && target.Publishing.Java != nil {
 		outputs["use_sonatype_legacy"] = strconv.FormatBool(target.Publishing.Java.UseSonatypeLegacy)
