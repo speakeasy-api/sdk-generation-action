@@ -92,9 +92,6 @@ func (r ReleasesInfo) String() string {
 			pkgID = "CLI"
 			repoPath := os.Getenv("GITHUB_REPOSITORY")
 			tag := fmt.Sprintf("v%s", info.Version)
-			if info.Path != "." {
-				tag = fmt.Sprintf("%s/%s", info.Path, tag)
-			}
 
 			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
 		case "go":
@@ -272,9 +269,6 @@ func GetTargetSpecificReleaseNotes(path string) (TargetReleaseNotes, error) {
 		case "cli":
 			repoPath := os.Getenv("GITHUB_REPOSITORY")
 			tag := fmt.Sprintf("v%s", info.Version)
-			if path != "." {
-				tag = fmt.Sprintf("%s/%s", path, tag)
-			}
 
 			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
 		case "go":
