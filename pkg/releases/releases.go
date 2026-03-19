@@ -500,17 +500,25 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 	if len(cliMatches) == 5 {
 		packageName := cliMatches[3]
 		path := cliMatches[4]
-
-		if path != "." {
-			packageName = fmt.Sprintf("%s/%s", packageName, strings.TrimPrefix(path, "./"))
-		}
-
-		info.Languages["cli"] = LanguageReleaseInfo{
+		languageInfo := LanguageReleaseInfo{
 			Version:     cliMatches[1],
 			URL:         cliMatches[2],
 			PackageName: packageName,
 			Path:        path,
 		}
+
+		if path != "." {
+			languageInfo.PackageName = fmt.Sprintf("%s/%s", packageName, strings.TrimPrefix(path, "./"))
+		}
+
+		if previousRelease != nil {
+			previousReleaseCLI := cliReleaseRegex.FindStringSubmatch(*previousRelease)
+			if len(previousReleaseCLI) == 5 {
+				languageInfo.PreviousVersion = previousReleaseCLI[1]
+			}
+		}
+
+		info.Languages["cli"] = languageInfo
 	}
 
 	return info, nil

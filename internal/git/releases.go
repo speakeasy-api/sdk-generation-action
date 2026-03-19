@@ -97,9 +97,17 @@ func (g *Git) CreateRelease(oldReleaseContent string, languages map[string]relea
 			}
 		} else if lang == "cli" {
 			// CLI uses the publish-cli workflow job's GoReleaser invocation to create the release.
-			err = g.CreateTag("v"+info.Version, commitHash)
+			goreleaserTag := "v" + info.Version
+			err = g.CreateTag(goreleaserTag, commitHash)
 			if err != nil {
 				return fmt.Errorf("failed to create tag: %w", err)
+			}
+			if err := g.PushTag(goreleaserTag); err != nil {
+				return fmt.Errorf("failed to push tag: %w", err)
+			}
+			outputs[utils.OutputTargetGoReleaserCurrentTag(lang)] = goreleaserTag
+			if info.PreviousVersion != "" {
+				outputs[utils.OutputTargetGoReleaserPreviousTag(lang)] = "v" + info.PreviousVersion
 			}
 		} else {
 			tagName := github.String(tag)

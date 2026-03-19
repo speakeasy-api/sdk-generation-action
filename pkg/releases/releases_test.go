@@ -6,6 +6,7 @@ import (
 
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReleases_ReversableSerialization_Success(t *testing.T) {
@@ -439,6 +440,45 @@ Based on:
 		},
 		LanguagesGenerated: map[string]releases.GenerationInfo{},
 	}, *info)
+}
+
+func TestReleases_ParseCLIRelease_PreviousVersion(t *testing.T) {
+	releasesStr := `
+## 2024-03-01 00:00:00
+### Changes
+Based on:
+- OpenAPI Doc 1.0 https://example.com/openapi.yaml
+- Speakeasy CLI 1.0.0 https://github.com/speakeasy-api/speakeasy
+### Releases
+- [CLI v1.2.3] https://github.com/example/repo/releases/tag/cli/v1.2.3 - example-cli - cli
+
+## 2024-03-02 00:00:00
+### Changes
+Based on:
+- OpenAPI Doc 1.1 https://example.com/openapi.yaml
+- Speakeasy CLI 1.0.1 https://github.com/speakeasy-api/speakeasy
+### Releases
+- [CLI v1.2.4] https://github.com/example/repo/releases/tag/cli/v1.2.4 - example-cli - cli
+`
+
+	info, err := releases.ParseReleases(releasesStr)
+	assert.NoError(t, err)
+	require.Contains(t, info.Languages, "cli")
+	assert.Equal(t, releases.LanguageReleaseInfo{
+		Version:         "1.2.4",
+		PreviousVersion: "1.2.3",
+		URL:             "https://github.com/example/repo/releases/tag/cli/v1.2.4",
+		PackageName:     "github.com/example/repo/example-cli - cli",
+		Path:            "example-cli - cli",
+	}, info.Languages["cli"])
+
+	currentTag := "v" + info.Languages["cli"].Version
+	previousTag := ""
+	if info.Languages["cli"].PreviousVersion != "" {
+		previousTag = "v" + info.Languages["cli"].PreviousVersion
+	}
+	assert.Equal(t, "v1.2.4", currentTag)
+	assert.Equal(t, "v1.2.3", previousTag)
 }
 
 func TestLanguageReleaseInfo_IsPrerelease(t *testing.T) {

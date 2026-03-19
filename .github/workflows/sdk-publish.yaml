@@ -121,6 +121,12 @@ on:
       cli_directory:
         description: Directory containing the CLI target
         value: ${{ jobs.release.outputs.cli_directory }}
+      cli_goreleaser_current_tag:
+        description: GoReleaser current tag for the CLI target
+        value: ${{ jobs.release.outputs.cli_goreleaser_current_tag }}
+      cli_goreleaser_previous_tag:
+        description: GoReleaser previous tag for the CLI target
+        value: ${{ jobs.release.outputs.cli_goreleaser_previous_tag }}
       use_pypi_trusted_publishing:
         description: Whether PyPI trusted publishing (OIDC) is enabled
         value: ${{ jobs.release.outputs.use_pypi_trusted_publishing }}
@@ -140,6 +146,8 @@ jobs:
       publish_mcp_typescript: ${{ steps.release.outputs.publish_mcp_typescript }}
       cli_regenerated: ${{ steps.release.outputs.cli_regenerated }}
       cli_directory: ${{ steps.release.outputs.cli_directory }}
+      cli_goreleaser_current_tag: ${{ steps.release.outputs.cli_goreleaser_current_tag }}
+      cli_goreleaser_previous_tag: ${{ steps.release.outputs.cli_goreleaser_previous_tag }}
       python_regenerated: ${{ steps.release.outputs.python_regenerated }}
       python_directory: ${{ steps.release.outputs.python_directory }}
       typescript_regenerated: ${{ steps.release.outputs.typescript_regenerated }}
@@ -785,7 +793,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.github_access_token }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-        run: goreleaser release --clean
+          GORELEASER_CURRENT_TAG: ${{ needs.release.outputs.cli_goreleaser_current_tag }}
+        run: |
+          if [ -n "${{ needs.release.outputs.cli_goreleaser_previous_tag }}" ]; then
+            export GORELEASER_PREVIOUS_TAG="${{ needs.release.outputs.cli_goreleaser_previous_tag }}"
+          fi
+          goreleaser release --clean
       - id: publish-event
         uses: ./_speakeasy
         if: always()

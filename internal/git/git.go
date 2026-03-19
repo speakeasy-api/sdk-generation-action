@@ -1637,6 +1637,18 @@ func (g *Git) CreateTag(tag string, hash string) error {
 	return nil
 }
 
+func (g *Git) PushTag(tag string) error {
+	logging.Info("Pushing tag %s", tag)
+
+	_, err := runGitCommand("push", "origin", fmt.Sprintf("refs/tags/%s:refs/tags/%s", tag, tag))
+	if err != nil {
+		return err
+	}
+
+	logging.Info("Pushed tag %s", tag)
+	return nil
+}
+
 func getGithubAuth(accessToken string) *gitHttp.BasicAuth {
 	return &gitHttp.BasicAuth{
 		Username: "gen",
