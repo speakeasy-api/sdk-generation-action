@@ -51,6 +51,29 @@ func TestAddTargetPublishOutputs(t *testing.T) {
 				"publish_go": "true",
 			},
 		},
+		"cli-no-publishing": {
+			target: workflow.Target{
+				Publishing: nil, // intentionally no publishing config
+				Target:     "cli",
+			},
+			expectedOutputs: map[string]string{
+				"publish_cli": "false",
+			},
+		},
+		"cli-publishing": {
+			target: workflow.Target{
+				Publishing: &workflow.Publishing{
+					CLI: &workflow.CLI{
+						GPGPrivateKey: "non-empty",
+						GPGPassPhrase: "non-empty",
+					},
+				},
+				Target: "cli",
+			},
+			expectedOutputs: map[string]string{
+				"publish_cli": "true",
+			},
+		},
 		"java-no-publishing": {
 			target: workflow.Target{
 				Publishing: nil, // intentionally no publishing config

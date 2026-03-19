@@ -33,3 +33,17 @@ func OutputTargetRegenerated(targetName string) string {
 	targetName = strings.ReplaceAll(targetName, "-", "_")
 	return targetName + "_regenerated"
 }
+
+// Returns the GoReleaser current tag output name for the given target name. This
+// automatically handles when the target name contains hyphens.
+func OutputTargetGoReleaserCurrentTag(targetName string) string {
+	targetName = strings.ReplaceAll(targetName, "-", "_")
+	return targetName + "_goreleaser_current_tag"
+}
+
+// Returns the GoReleaser previous tag output name for the given target name. This
+// automatically handles when the target name contains hyphens.
+func OutputTargetGoReleaserPreviousTag(targetName string) string {
+	targetName = strings.ReplaceAll(targetName, "-", "_")
+	return targetName + "_goreleaser_previous_tag"
+}

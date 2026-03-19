@@ -35,6 +35,8 @@ func GetRegistryName(lang string) string {
 		registryName = "gems"
 	case "java":
 		registryName = "sonatype"
+	case "cli":
+		registryName = "go"
 	default:
 		registryName = lang
 	}

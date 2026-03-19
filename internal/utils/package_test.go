@@ -36,5 +36,6 @@ func TestGetRegistryName(t *testing.T) {
 	require.Equal(t, GetRegistryName("ruby"), "gems")
 	require.Equal(t, GetRegistryName("java"), "sonatype")
 	require.Equal(t, GetRegistryName("terraform"), "terraform")
+	require.Equal(t, GetRegistryName("cli"), "go")
 	require.Equal(t, GetRegistryName("go"), "go")
 }

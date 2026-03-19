@@ -92,9 +92,6 @@ func (r ReleasesInfo) String() string {
 			pkgID = "CLI"
 			repoPath := os.Getenv("GITHUB_REPOSITORY")
 			tag := fmt.Sprintf("v%s", info.Version)
-			if info.Path != "." {
-				tag = fmt.Sprintf("%s/%s", info.Path, tag)
-			}
 
 			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
 		case "go":
@@ -272,9 +269,6 @@ func GetTargetSpecificReleaseNotes(path string) (TargetReleaseNotes, error) {
 		case "cli":
 			repoPath := os.Getenv("GITHUB_REPOSITORY")
 			tag := fmt.Sprintf("v%s", info.Version)
-			if path != "." {
-				tag = fmt.Sprintf("%s/%s", path, tag)
-			}
 
 			pkgURL = fmt.Sprintf("https://github.com/%s/releases/tag/%s", repoPath, tag)
 		case "go":
@@ -500,17 +494,25 @@ func ParseReleases(data string) (*ReleasesInfo, error) {
 	if len(cliMatches) == 5 {
 		packageName := cliMatches[3]
 		path := cliMatches[4]
-
-		if path != "." {
-			packageName = fmt.Sprintf("%s/%s", packageName, strings.TrimPrefix(path, "./"))
-		}
-
-		info.Languages["cli"] = LanguageReleaseInfo{
+		languageInfo := LanguageReleaseInfo{
 			Version:     cliMatches[1],
 			URL:         cliMatches[2],
 			PackageName: packageName,
 			Path:        path,
 		}
+
+		if path != "." {
+			languageInfo.PackageName = fmt.Sprintf("%s/%s", packageName, strings.TrimPrefix(path, "./"))
+		}
+
+		if previousRelease != nil {
+			previousReleaseCLI := cliReleaseRegex.FindStringSubmatch(*previousRelease)
+			if len(previousReleaseCLI) == 5 {
+				languageInfo.PreviousVersion = previousReleaseCLI[1]
+			}
+		}
+
+		info.Languages["cli"] = languageInfo
 	}
 
 	return info, nil

@@ -880,6 +880,40 @@ func TestLegacyPRTitleWithoutBee(t *testing.T) {
 	}
 }
 
+func TestGit_PushTag(t *testing.T) {
+	workspace := t.TempDir()
+	repoPath := filepath.Join(workspace, "repo")
+	remotePath := filepath.Join(workspace, "remote.git")
+
+	require.NoError(t, os.MkdirAll(repoPath, 0o755))
+
+	runGitCLI(t, workspace, "init", "--bare", remotePath)
+	runGitCLI(t, repoPath, "init")
+	runGitCLI(t, repoPath, "config", "user.name", "Test User")
+	runGitCLI(t, repoPath, "config", "user.email", "test@example.com")
+
+	require.NoError(t, os.WriteFile(filepath.Join(repoPath, "README.md"), []byte("initial\n"), 0o644))
+	runGitCLI(t, repoPath, "add", "README.md")
+	runGitCLI(t, repoPath, "commit", "-m", "initial commit")
+	runGitCLI(t, repoPath, "branch", "-M", "main")
+	runGitCLI(t, repoPath, "remote", "add", "origin", remotePath)
+	runGitCLI(t, repoPath, "push", "-u", "origin", "main")
+
+	repo, err := git.PlainOpen(repoPath)
+	require.NoError(t, err)
+	head, err := repo.Head()
+	require.NoError(t, err)
+
+	g := &Git{repo: repo}
+	require.NoError(t, g.CreateTag("v1.2.3", head.Hash().String()))
+
+	t.Setenv("GITHUB_WORKSPACE", workspace)
+	require.NoError(t, g.PushTag("v1.2.3"))
+
+	remoteTags := runGitCLI(t, remotePath, "show-ref", "--tags")
+	assert.Contains(t, remoteTags, "refs/tags/v1.2.3")
+}
+
 func TestConfigureSystemGitAuth_DefaultHost(t *testing.T) {
 	repoDir := t.TempDir()
 	runGitCLI(t, repoDir, "init")

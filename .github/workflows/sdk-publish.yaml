@@ -87,6 +87,12 @@ on:
       terraform_gpg_passphrase:
         description: The passphrase for the associated terraform provider key
         required: false
+      cli_gpg_secret_key:
+        description: The GPG secret key to use for signing CLI release checksums
+        required: false
+      cli_gpg_passphrase:
+        description: The passphrase for the associated CLI signing key
+        required: false
       slack_webhook_url:
         description: A Slack webhook URL that pipeline failures will be posted to
         required: false
@@ -106,6 +112,21 @@ on:
       publish_python:
         description: Whether the Python SDK should be published
         value: ${{ jobs.release.outputs.publish_python }}
+      publish_cli:
+        description: Whether the CLI target should be published
+        value: ${{ jobs.release.outputs.publish_cli }}
+      cli_regenerated:
+        description: Whether the CLI target was regenerated
+        value: ${{ jobs.release.outputs.cli_regenerated }}
+      cli_directory:
+        description: Directory containing the CLI target
+        value: ${{ jobs.release.outputs.cli_directory }}
+      cli_goreleaser_current_tag:
+        description: GoReleaser current tag for the CLI target
+        value: ${{ jobs.release.outputs.cli_goreleaser_current_tag }}
+      cli_goreleaser_previous_tag:
+        description: GoReleaser previous tag for the CLI target
+        value: ${{ jobs.release.outputs.cli_goreleaser_previous_tag }}
       use_pypi_trusted_publishing:
         description: Whether PyPI trusted publishing (OIDC) is enabled
         value: ${{ jobs.release.outputs.use_pypi_trusted_publishing }}
@@ -121,7 +142,12 @@ jobs:
       publish_php: ${{ steps.release.outputs.publish_php }}
       publish_ruby: ${{ steps.release.outputs.publish_ruby }}
       publish_csharp: ${{ steps.release.outputs.publish_csharp }}
+      publish_cli: ${{ steps.release.outputs.publish_cli }}
       publish_mcp_typescript: ${{ steps.release.outputs.publish_mcp_typescript }}
+      cli_regenerated: ${{ steps.release.outputs.cli_regenerated }}
+      cli_directory: ${{ steps.release.outputs.cli_directory }}
+      cli_goreleaser_current_tag: ${{ steps.release.outputs.cli_goreleaser_current_tag }}
+      cli_goreleaser_previous_tag: ${{ steps.release.outputs.cli_goreleaser_previous_tag }}
       python_regenerated: ${{ steps.release.outputs.python_regenerated }}
       python_directory: ${{ steps.release.outputs.python_directory }}
       typescript_regenerated: ${{ steps.release.outputs.typescript_regenerated }}
@@ -711,6 +737,89 @@ jobs:
           token: ${{ secrets.github_access_token }}
           notify_when: "failure"
           notification_title: "Publishing of C# SDK Failed"
+          message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
+          footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - id: log-result
+        uses: ./_speakeasy
+        if: always()
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          action: log-result
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          GH_ACTION_VERSION: b823adc6be7d30b25198529f99f46303bc083534
+          GH_ACTION_STEP: ${{ github.job }}
+          TARGET_TYPE: "sdk"
+  publish-cli:
+    if: ${{ needs.release.outputs.cli_regenerated == 'true' && needs.release.outputs.publish_cli == 'true' }}
+    name: Publish CLI Target
+    runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
+    needs: release
+    defaults:
+      run:
+        working-directory: ${{ needs.release.outputs.cli_directory }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+      - name: Checkout sdk-generation-action repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: speakeasy-api/sdk-generation-action
+          ref: b823adc6be7d30b25198529f99f46303bc083534
+          path: _speakeasy
+      - name: Setup Go
+        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v5.0.2
+        with:
+          go-version-file: ${{ needs.release.outputs.cli_directory }}/go.mod
+          cache: true
+      - name: Install GoReleaser
+        uses: goreleaser/goreleaser-action@3f5d47adf77e2be88a0980df3a300d001cde8d4a # v6.3.0
+        with:
+          install-only: true
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549 # v5.2.0
+        id: import_gpg
+        with:
+          gpg_private_key: ${{ secrets.cli_gpg_secret_key }}
+          passphrase: ${{ secrets.cli_gpg_passphrase }}
+      - name: Run GoReleaser
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_access_token }}
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          GORELEASER_CURRENT_TAG: ${{ needs.release.outputs.cli_goreleaser_current_tag }}
+        run: |
+          if [ -n "${{ needs.release.outputs.cli_goreleaser_previous_tag }}" ]; then
+            export GORELEASER_PREVIOUS_TAG="${{ needs.release.outputs.cli_goreleaser_previous_tag }}"
+          fi
+          goreleaser release --clean
+      - id: publish-event
+        uses: ./_speakeasy
+        if: always()
+        with:
+          github_access_token: ${{ secrets.github_access_token }}
+          action: publish-event
+          speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
+          working_directory: ${{ inputs.working_directory }}
+          speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
+          target_directory: ${{ needs.release.outputs.cli_directory }}
+          registry_name: "go"
+        env:
+          GH_ACTION_RESULT: ${{ job.status }}
+          GH_ACTION_VERSION: b823adc6be7d30b25198529f99f46303bc083534
+      - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.github_access_token }}
+          notify_when: "failure"
+          notification_title: "Publishing of CLI Target Failed"
           message_format: "{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>"
           footer: "Linked Repo <{repo_url}|{repo}> | <{run_url}|View Run>"
         env:

@@ -6,6 +6,7 @@ import (
 
 	"github.com/speakeasy-api/sdk-generation-action/pkg/releases"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReleases_ReversableSerialization_Success(t *testing.T) {
@@ -116,6 +117,39 @@ func TestReleases_ReversableSerialization_Success(t *testing.T) {
 	info, err := releases.ParseReleases(r.String())
 	assert.NoError(t, err)
 	assert.Equal(t, r, *info)
+}
+
+func TestReleases_CLIReleaseURLUsesBareTag(t *testing.T) {
+	t.Setenv("GITHUB_REPOSITORY", "test/repo")
+
+	r := releases.ReleasesInfo{
+		ReleaseTitle:      "2023-02-22",
+		DocVersion:        "9.8.7",
+		DocLocation:       "https://example.com",
+		SpeakeasyVersion:  "6.6.6",
+		GenerationVersion: "v7.7.7",
+		Languages: map[string]releases.LanguageReleaseInfo{
+			"cli": {
+				PackageName: "test-cli",
+				Path:        "cli",
+				Version:     "1.2.3",
+			},
+		},
+		LanguagesGenerated: map[string]releases.GenerationInfo{},
+	}
+
+	serialized := r.String()
+	assert.Contains(t, serialized, "https://github.com/test/repo/releases/tag/v1.2.3 - cli")
+	assert.NotContains(t, serialized, "https://github.com/test/repo/releases/tag/cli/v1.2.3")
+
+	info, err := releases.ParseReleases(serialized)
+	assert.NoError(t, err)
+	assert.Equal(t, releases.LanguageReleaseInfo{
+		PackageName: "github.com/test/repo/cli",
+		Path:        "cli",
+		Version:     "1.2.3",
+		URL:         "https://github.com/test/repo/releases/tag/v1.2.3",
+	}, info.Languages["cli"])
 }
 
 func TestReleases_GoPackageNameConstruction_Success(t *testing.T) {
@@ -439,6 +473,61 @@ Based on:
 		},
 		LanguagesGenerated: map[string]releases.GenerationInfo{},
 	}, *info)
+}
+
+func TestReleases_ParseCLIRelease_PreviousVersion(t *testing.T) {
+	t.Setenv("GITHUB_REPOSITORY", "example/repo")
+
+	previous := releases.ReleasesInfo{
+		ReleaseTitle:      "2024-03-01 00:00:00",
+		DocVersion:        "1.0",
+		DocLocation:       "https://example.com/openapi.yaml",
+		SpeakeasyVersion:  "1.0.0",
+		GenerationVersion: "1.0.0",
+		Languages: map[string]releases.LanguageReleaseInfo{
+			"cli": {
+				Version:     "1.2.3",
+				PackageName: "example-cli",
+				Path:        "cli",
+			},
+		},
+		LanguagesGenerated: map[string]releases.GenerationInfo{},
+	}
+
+	current := releases.ReleasesInfo{
+		ReleaseTitle:      "2024-03-02 00:00:00",
+		DocVersion:        "1.1",
+		DocLocation:       "https://example.com/openapi.yaml",
+		SpeakeasyVersion:  "1.0.1",
+		GenerationVersion: "1.0.1",
+		Languages: map[string]releases.LanguageReleaseInfo{
+			"cli": {
+				Version:     "1.2.4",
+				PackageName: "example-cli",
+				Path:        "cli",
+			},
+		},
+		LanguagesGenerated: map[string]releases.GenerationInfo{},
+	}
+
+	info, err := releases.ParseReleases(previous.String() + current.String())
+	assert.NoError(t, err)
+	require.Contains(t, info.Languages, "cli")
+	assert.Equal(t, releases.LanguageReleaseInfo{
+		Version:         "1.2.4",
+		PreviousVersion: "1.2.3",
+		URL:             "https://github.com/example/repo/releases/tag/v1.2.4",
+		PackageName:     "github.com/example/repo/cli",
+		Path:            "cli",
+	}, info.Languages["cli"])
+
+	currentTag := "v" + info.Languages["cli"].Version
+	previousTag := ""
+	if info.Languages["cli"].PreviousVersion != "" {
+		previousTag = "v" + info.Languages["cli"].PreviousVersion
+	}
+	assert.Equal(t, "v1.2.4", currentTag)
+	assert.Equal(t, "v1.2.3", previousTag)
 }
 
 func TestLanguageReleaseInfo_IsPrerelease(t *testing.T) {
