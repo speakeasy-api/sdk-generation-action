@@ -153,6 +153,8 @@ outputs:
     description: "Whether the CLI target will be published"
   publish_mcp_typescript:
     description: "Whether the MCP Typescript target will be published to NPM"
+  publish_mcp_registry:
+    description: "Whether the MCP Typescript target will be published to the MCP Registry"
   cli_regenerated:
     description: "true if the CLI target was regenerated"
   cli_directory:
