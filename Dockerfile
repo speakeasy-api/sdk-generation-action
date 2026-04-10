@@ -1,6 +1,6 @@
 ## Build
 # CACHE_BUST: v15.55.2-alpha.2
-FROM golang:1.24-alpine3.22 AS builder
+FROM golang:1.24-alpine3.23 AS builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ COPY pkg/ ./pkg/
 RUN go build -o /action
 
 ## Deploy
-FROM golang:1.24-alpine3.22
+FROM golang:1.24-alpine3.23
 
 # Enable Go toolchain automatic upgrades to prevent Go version errors in
 # customer generations (GOTOOLCHAIN=local default in golang images)
@@ -43,7 +43,7 @@ RUN apk add --update --no-cache build-base ruby ruby-bundler ruby-dev gcompat ya
 
 ### Install .NET
 ENV DOTNET_ROOT=/usr/lib/dotnet
-RUN apk add --update --no-cache dotnet8-sdk
+RUN apk add --update --no-cache dotnet8-sdk dotnet10-sdk
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin -Channel 6.0 -InstallDir ${DOTNET_ROOT}
 RUN dotnet --list-sdks
 
@@ -63,10 +63,9 @@ RUN apk --update --no-cache add \
 	php83-openssl \
 	php83-iconv \
 	php83-session \
-	php83-fileinfo \
-	--repository http://nl.alpinelinux.org/alpine/edge/testing/
+	php83-fileinfo
 
-
+RUN ln -sf /usr/bin/php83 /usr/bin/php
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 RUN mkdir -p /var/www
 WORKDIR /var/www
