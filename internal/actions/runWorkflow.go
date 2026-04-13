@@ -36,20 +36,10 @@ func RunWorkflow() error {
 		logging.Info("Skipping environment setup due to skip_compile input")
 	}
 
-	// The top-level CLI can always use latest. The CLI itself manages pinned versions.
-	resolvedVersion, err := cli.Download("latest", g)
+	pinnedVersion := cli.GetVersion(environment.GetPinnedSpeakeasyVersion())
+	resolvedVersion, err := cli.Download(pinnedVersion, g)
 	if err != nil {
 		return err
-	}
-
-	// This flag is generally deprecated, it will not be provided on new action instances
-	pinnedVersion := cli.GetVersion(environment.GetPinnedSpeakeasyVersion())
-	if pinnedVersion != "latest" {
-		resolvedVersion = pinnedVersion
-		// This environment variable is read by the CLI to determine which version should be used to execute `run`
-		if err := environment.SetCLIVersionToUse(pinnedVersion); err != nil {
-			return fmt.Errorf("failed to set pinned speakeasy version: %w", err)
-		}
 	}
 
 	mode := environment.GetMode()

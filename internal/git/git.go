@@ -1032,6 +1032,7 @@ func (g *Git) tryGeneratePRDescriptionViaCLI(info PRInfo) *cli.PRDescriptionOutp
 	if info.ReleaseInfo != nil {
 		input.SpeakeasyVersion = info.ReleaseInfo.SpeakeasyVersion
 	}
+	input.ActionRunURL = environment.GetActionRunURL(environment.GetRepo())
 
 	output, err := cli.GeneratePRDescription(input)
 	if err != nil {
@@ -1405,9 +1406,8 @@ func getDownloadLinkFromReleases(releases []*github.RepositoryRelease, version s
 	var defaultTagName *string
 
 	for _, release := range releases {
-		// Skip draft and prerelease entries — their download URLs are
-		// untagged and will 404.
-		if release.GetDraft() || release.GetPrerelease() {
+		// Skip draft entries — their download URLs are untagged and will 404.
+		if release.GetDraft() {
 			continue
 		}
 
