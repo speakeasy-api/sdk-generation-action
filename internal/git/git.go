@@ -1032,6 +1032,7 @@ func (g *Git) tryGeneratePRDescriptionViaCLI(info PRInfo) *cli.PRDescriptionOutp
 	if info.ReleaseInfo != nil {
 		input.SpeakeasyVersion = info.ReleaseInfo.SpeakeasyVersion
 	}
+	input.ActionRunURL = environment.GetActionRunURL(environment.GetRepo())
 
 	output, err := cli.GeneratePRDescription(input)
 	if err != nil {

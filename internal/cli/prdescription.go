@@ -34,6 +34,7 @@ type PRDescriptionInput struct {
 	// Version information
 	SpeakeasyVersion string `json:"speakeasy_version,omitempty"`
 	ManualBump       bool   `json:"manual_bump,omitempty"`
+	ActionRunURL     string `json:"action_run_url,omitempty"`
 
 	// Version report data
 	VersionReport *versioning.MergedVersionReport `json:"version_report,omitempty"`
