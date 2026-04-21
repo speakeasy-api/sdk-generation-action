@@ -880,6 +880,38 @@ func TestLegacyPRTitleWithoutBee(t *testing.T) {
 	}
 }
 
+// TestGit_CreateTag_WithoutUserConfig exercises the production scenario where the
+// Docker image has no git user.name/user.email in any config scope. Without an
+// explicit Tagger in CreateTagOptions, go-git returns ErrMissingTagger.
+func TestGit_CreateTag_WithoutUserConfig(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
+	repoPath := t.TempDir()
+	repo, err := git.PlainInit(repoPath, false)
+	require.NoError(t, err)
+
+	w, err := repo.Worktree()
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(filepath.Join(repoPath, "a.txt"), []byte("x"), 0o644))
+	_, err = w.Add("a.txt")
+	require.NoError(t, err)
+	hash, err := w.Commit("initial", &git.CommitOptions{
+		Author: &object.Signature{Name: "t", Email: "t@example.com", When: time.Now()},
+	})
+	require.NoError(t, err)
+
+	g := &Git{repo: repo}
+	require.NoError(t, g.CreateTag("v1.0.0", hash.String()))
+
+	ref, err := repo.Tag("v1.0.0")
+	require.NoError(t, err)
+	tagObj, err := repo.TagObject(ref.Hash())
+	require.NoError(t, err, "tag should be annotated (have a tag object), not lightweight")
+	assert.Equal(t, speakeasyBotName, tagObj.Tagger.Name)
+	assert.Equal(t, "bot@speakeasyapi.dev", tagObj.Tagger.Email)
+}
+
 func TestGit_PushTag(t *testing.T) {
 	workspace := t.TempDir()
 	repoPath := filepath.Join(workspace, "repo")

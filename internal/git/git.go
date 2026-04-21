@@ -1629,6 +1629,11 @@ func (g *Git) CreateTag(tag string, hash string) error {
 
 	if _, err := g.repo.CreateTag(tag, plumbing.NewHash(hash), &git.CreateTagOptions{
 		Message: tag,
+		Tagger: &object.Signature{
+			Name:  speakeasyBotName,
+			Email: "bot@speakeasyapi.dev",
+			When:  time.Now(),
+		},
 	}); err != nil {
 		logging.Info("Failed to create tag: %s", err)
 		return err
