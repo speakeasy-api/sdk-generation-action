@@ -39,6 +39,7 @@ type Git struct {
 	accessToken string
 	repo        *git.Repository
 	client      *github.Client
+	storerLog   *loggingStorer
 }
 
 const (
@@ -94,6 +95,8 @@ func (g *Git) CloneRepo() error {
 	if err != nil {
 		return fmt.Errorf("failed to clone repo: %w", err)
 	}
+	g.storerLog = newLoggingStorer(r.Storer)
+	r.Storer = g.storerLog
 	g.repo = r
 
 	if err := g.configureSystemGitAuth(repoDir); err != nil {
@@ -645,11 +648,14 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 			return "", fmt.Errorf("error committing changes: %w", err)
 		}
 
+		if g.storerLog != nil {
+			g.storerLog.reset()
+		}
 		if err := g.repo.Push(&git.PushOptions{
 			Auth:  getGithubAuth(g.accessToken),
 			Force: true, // This is necessary because at the beginning of the workflow we reset the branch
 		}); err != nil {
-			return "", pushErr(err)
+			return "", g.pushErr(err)
 		}
 		return commitHash.String(), nil
 	}
@@ -1323,10 +1329,13 @@ func (g *Git) MergeBranch(branchName string) (string, error) {
 		return "", fmt.Errorf("error getting head ref: %w", err)
 	}
 
+	if g.storerLog != nil {
+		g.storerLog.reset()
+	}
 	if err := g.repo.Push(&git.PushOptions{
 		Auth: getGithubAuth(g.accessToken),
 	}); err != nil {
-		return "", pushErr(err)
+		return "", g.pushErr(err)
 	}
 
 	return headRef.Hash().String(), nil
@@ -1708,10 +1717,15 @@ func runGitCommand(args ...string) (string, error) {
 	return outb.String(), nil
 }
 
-func pushErr(err error) error {
+func (g *Git) pushErr(err error) error {
 	if err != nil && err != git.NoErrAlreadyUpToDate {
 		if strings.Contains(err.Error(), "protected branch hook declined") {
 			return fmt.Errorf("error pushing changes: %w\nThis is likely due to a branch protection rule. Please ensure that the branch is not protected (repo > settings > branches)", err)
+		}
+		if errors.Is(err, plumbing.ErrObjectNotFound) && g.storerLog != nil {
+			if h, stack, ok := g.storerLog.lastMissingObject(); ok {
+				return fmt.Errorf("error pushing changes: %w (missing object %s)\nstorer lookup stack:\n%s", err, h, stack)
+			}
 		}
 		return fmt.Errorf("error pushing changes: %w", err)
 	}
