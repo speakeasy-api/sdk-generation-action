@@ -33,9 +33,13 @@ jobs:
           path: _speakeasy
       - name: Set dynamic environment variables
         if: inputs.env_vars != ''
-        run: echo "${{ inputs.env_vars }}" >> $GITHUB_ENV
+        env:
+          ENV_VARS: ${{ inputs.env_vars }}
+        run: echo "$ENV_VARS" >> "$GITHUB_ENV"
       - name: Check commit message condition
         id: check_commit
+        env:
+          HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           # The default trigger for this action will be a PR event.
           # Sometimes we will also add a push event trigger to allow our Github app to run tests by making empty commits, a github token workaround.
@@ -43,17 +47,17 @@ jobs:
           # The only time a push event should trigger tests is when it's a commit from our app with message "[run-tests]"
           if [[ "${{ github.event_name }}" != "push" ]]; then
             echo "Skipping commit message check since event is not push."
-            echo "run_tests=true" >> $GITHUB_OUTPUT
+            echo "run_tests=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+          COMMIT_MESSAGE="$HEAD_COMMIT_MESSAGE"
           echo "Commit message: $COMMIT_MESSAGE"
 
           if [[ "$COMMIT_MESSAGE" == *"[run-tests]"* ]]; then
-            echo "run_tests=true" >> $GITHUB_OUTPUT
+            echo "run_tests=true" >> "$GITHUB_OUTPUT"
           else
-            echo "run_tests=false" >> $GITHUB_OUTPUT
+            echo "run_tests=false" >> "$GITHUB_OUTPUT"
           fi
       - id: test
         name: Run Tests
