@@ -323,6 +323,10 @@ func GetWorkingDirectory() string {
 	return os.Getenv("INPUT_WORKING_DIRECTORY")
 }
 
+func GetPostGenerationScript() string {
+	return os.Getenv("INPUT_POST_GENERATION_SCRIPT")
+}
+
 func GetRepo() string {
 	if os.Getenv("INPUT_GITHUB_REPOSITORY") != "" {
 		return os.Getenv("INPUT_GITHUB_REPOSITORY")

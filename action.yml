@@ -134,6 +134,13 @@ inputs:
     description: "Skip versioning during SDK generation, preventing version bumps"
     default: "false"
     required: false
+  post_generation_script:
+    description: |-
+      Optional shell snippet executed after a successful SDK generation and before changes are committed.
+      Runs from the repository's working_directory via `bash -c`, so any modifications to generated files are included in the same commit/PR.
+      A non-zero exit fails the workflow run; wrap individual commands in `|| true` if you want best-effort behavior.
+      The script runs with a scrubbed environment (PATH, HOME, GITHUB_WORKSPACE, GITHUB_REPOSITORY, etc.) — action secrets like `github_access_token` and `speakeasy_api_key` are NOT exposed. Use `cli_environment_variables` to pass additional variables explicitly.
+    required: false
 outputs:
   publish_python:
     description: "Whether the Python SDK will be published to PyPi"
