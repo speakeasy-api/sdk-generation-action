@@ -3,6 +3,7 @@ package git
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -750,34 +751,86 @@ func (g *Git) getOrCreateRef(commitRef string) (ref *github.Reference, err error
 	return ref, err
 }
 
+type signedTreeBlobCreator func(ctx context.Context, path string, content []byte) (string, error)
+
 // Generates the tree to commit based on the commit reference and source files. If doesn't exist on the remote
 // host, it will create and push it.
 func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (tree *github.Tree, err error) {
 	_, githubRepoLocation := g.getRepoMetadata()
 	owner, repo := g.getOwnerAndRepo(githubRepoLocation)
 	w, _ := g.repo.Worktree()
+	ctx := context.Background()
 
-	entries := []*github.TreeEntry{}
-	for file, fileStatus := range sourceFiles {
-		if fileStatus.Staging != git.Unmodified && fileStatus.Staging != git.Untracked && fileStatus.Staging != git.Deleted {
-			filePath := w.Filesystem.Join(w.Filesystem.Root(), file)
-			content, err := os.ReadFile(filePath)
-			if err != nil {
-				fmt.Println("Error getting file content", err, filePath)
-				return nil, err
-			}
-
-			entries = append(entries, &github.TreeEntry{
-				Path:    github.String(file),
-				Type:    github.String("blob"),
-				Content: github.String(string(content)),
-				Mode:    github.String("100644"),
-			})
+	entries, stats, err := buildSignedCommitTreeEntries(ctx, sourceFiles, w.Filesystem.Root(), w.Filesystem.Join, func(ctx context.Context, path string, content []byte) (string, error) {
+		blob, _, err := g.client.Git.CreateBlob(ctx, owner, repo, &github.Blob{
+			Content:  github.String(base64.StdEncoding.EncodeToString(content)),
+			Encoding: github.String("base64"),
+		})
+		if err != nil {
+			return "", err
 		}
+		if blob.GetSHA() == "" {
+			return "", fmt.Errorf("empty blob SHA returned for %s", path)
+		}
+
+		return blob.GetSHA(), nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	tree, _, err = g.client.Git.CreateTree(context.Background(), owner, repo, *ref.Object.SHA, entries)
+	logging.Info("Creating signed commit tree with %d changed entries (%d deletes), uploaded %d bytes across %d blobs", len(entries), stats.Deletes, stats.BytesUploaded, stats.BlobsUploaded)
+
+	tree, _, err = g.client.Git.CreateTree(ctx, owner, repo, *ref.Object.SHA, entries)
 	return tree, err
+}
+
+type signedTreeStats struct {
+	Deletes       int
+	BlobsUploaded int
+	BytesUploaded int
+}
+
+func buildSignedCommitTreeEntries(ctx context.Context, sourceFiles git.Status, worktreeRoot string, join func(elem ...string) string, createBlob signedTreeBlobCreator) ([]*github.TreeEntry, signedTreeStats, error) {
+	entries := []*github.TreeEntry{}
+	stats := signedTreeStats{}
+
+	for file, fileStatus := range sourceFiles {
+		switch fileStatus.Staging {
+		case git.Unmodified, git.Untracked:
+			continue
+		case git.Deleted:
+			entries = append(entries, &github.TreeEntry{
+				Path: github.String(file),
+				Mode: github.String("100644"),
+			})
+			stats.Deletes++
+			continue
+		}
+
+		filePath := join(worktreeRoot, file)
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			logging.Info("Error getting file content: %v %s", err, filePath)
+			return nil, stats, err
+		}
+
+		sha, err := createBlob(ctx, file, content)
+		if err != nil {
+			return nil, stats, fmt.Errorf("error creating blob for %s: %w", file, err)
+		}
+
+		entries = append(entries, &github.TreeEntry{
+			Path: github.String(file),
+			Type: github.String("blob"),
+			SHA:  github.String(sha),
+			Mode: github.String("100644"),
+		})
+		stats.BlobsUploaded++
+		stats.BytesUploaded += len(content)
+	}
+
+	return entries, stats, nil
 }
 
 func (g *Git) Add(arg string) error {

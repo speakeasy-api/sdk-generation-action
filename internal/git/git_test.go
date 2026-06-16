@@ -1,6 +1,8 @@
 package git
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -128,6 +130,72 @@ func TestGit_CheckDirDirty(t *testing.T) {
 
 	require.Equal(t, `new file found: []string{"dirty-file"}`, str)
 	require.True(t, dirty, "expected the directory to be dirty")
+}
+
+func TestBuildSignedCommitTreeEntries_UsesBlobSHAForChangedFiles(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "README.md"), []byte("updated content"), 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "new.md"), []byte("new content"), 0o600))
+
+	status := git.Status{
+		"README.md":  {Staging: git.Modified, Worktree: git.Unmodified},
+		"new.md":     {Staging: git.Added, Worktree: git.Unmodified},
+		"ignored.md": {Staging: git.Unmodified, Worktree: git.Modified},
+	}
+	createdBlobs := map[string]string{}
+
+	entries, stats, err := buildSignedCommitTreeEntries(context.Background(), status, dir, filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
+		createdBlobs[path] = string(content)
+		return path + "-blob-sha", nil
+	})
+
+	require.NoError(t, err)
+	require.Len(t, entries, 2)
+	require.Equal(t, map[string]string{
+		"README.md": "updated content",
+		"new.md":    "new content",
+	}, createdBlobs)
+	require.Equal(t, signedTreeStats{BlobsUploaded: 2, BytesUploaded: len("updated content") + len("new content")}, stats)
+
+	entriesByPath := map[string]*github.TreeEntry{}
+	for _, entry := range entries {
+		entriesByPath[entry.GetPath()] = entry
+	}
+
+	for _, path := range []string{"README.md", "new.md"} {
+		entry := entriesByPath[path]
+		require.NotNil(t, entry)
+		require.Equal(t, "blob", entry.GetType())
+		require.Equal(t, "100644", entry.GetMode())
+		require.Equal(t, path+"-blob-sha", entry.GetSHA())
+		require.Nil(t, entry.Content, "changed files should reference uploaded blob SHAs instead of inline content")
+	}
+}
+
+func TestBuildSignedCommitTreeEntries_RepresentsDeletedFiles(t *testing.T) {
+	status := git.Status{
+		"removed.md": {Staging: git.Deleted, Worktree: git.Deleted},
+	}
+
+	entries, stats, err := buildSignedCommitTreeEntries(context.Background(), status, t.TempDir(), filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
+		t.Fatalf("deleted files should not upload blobs")
+		return "", nil
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, signedTreeStats{Deletes: 1}, stats)
+	require.Len(t, entries, 1)
+
+	entry := entries[0]
+	require.Equal(t, "removed.md", entry.GetPath())
+	require.Equal(t, "100644", entry.GetMode())
+	require.Empty(t, entry.GetSHA())
+	require.Nil(t, entry.SHA)
+	require.Nil(t, entry.Content)
+
+	payload, err := json.Marshal(entry)
+	require.NoError(t, err)
+	require.JSONEq(t, `{"sha":null,"path":"removed.md","mode":"100644"}`, string(payload))
 }
 
 func TestGit_CheckDirDirty_IgnoredFiles(t *testing.T) {
