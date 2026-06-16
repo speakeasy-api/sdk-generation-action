@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -16,8 +17,10 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -34,6 +37,7 @@ import (
 
 	"github.com/google/go-github/v63/github"
 	"golang.org/x/oauth2"
+	"golang.org/x/sync/errgroup"
 )
 
 type Git struct {
@@ -753,6 +757,10 @@ func (g *Git) getOrCreateRef(commitRef string) (ref *github.Reference, err error
 
 type signedTreeBlobCreator func(ctx context.Context, path string, content []byte) (string, error)
 
+// maxConcurrentBlobUploads bounds parallel Git.CreateBlob calls so large SDK
+// repositories upload quickly without tripping GitHub's secondary rate limits.
+const maxConcurrentBlobUploads = 8
+
 // Generates the tree to commit based on the commit reference and source files. If doesn't exist on the remote
 // host, it will create and push it.
 func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (tree *github.Tree, err error) {
@@ -762,18 +770,7 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 	ctx := context.Background()
 
 	entries, stats, err := buildSignedCommitTreeEntries(ctx, sourceFiles, w.Filesystem.Root(), w.Filesystem.Join, func(ctx context.Context, path string, content []byte) (string, error) {
-		blob, _, err := g.client.Git.CreateBlob(ctx, owner, repo, &github.Blob{
-			Content:  github.String(base64.StdEncoding.EncodeToString(content)),
-			Encoding: github.String("base64"),
-		})
-		if err != nil {
-			return "", err
-		}
-		if blob.GetSHA() == "" {
-			return "", fmt.Errorf("empty blob SHA returned for %s", path)
-		}
-
-		return blob.GetSHA(), nil
+		return g.createBlobWithRetry(ctx, owner, repo, path, content)
 	})
 	if err != nil {
 		return nil, err
@@ -785,6 +782,102 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 	return tree, err
 }
 
+// createBlobWithRetry uploads a single base64-encoded blob, retrying transient
+// GitHub failures (timeouts, 5xx, rate limiting) with exponential backoff.
+// Permanent failures (e.g. auth, 4xx) abort immediately.
+func (g *Git) createBlobWithRetry(ctx context.Context, owner, repo, path string, content []byte) (string, error) {
+	encoded := base64.StdEncoding.EncodeToString(content)
+
+	var sha string
+	op := func() error {
+		blob, resp, err := g.client.Git.CreateBlob(ctx, owner, repo, &github.Blob{
+			Content:  github.String(encoded),
+			Encoding: github.String("base64"),
+		})
+		if err != nil {
+			if !isRetryableBlobError(resp, err) {
+				return backoff.Permanent(err)
+			}
+			// When GitHub tells us how long to wait (rate limiting/abuse
+			// detection), honor that window before letting backoff retry.
+			// A short generic backoff would just burn the remaining retries
+			// against a limit that has not reset yet.
+			if wait, ok := rateLimitRetryAfter(err); ok {
+				if sleepErr := sleepWithContext(ctx, wait); sleepErr != nil {
+					return backoff.Permanent(sleepErr)
+				}
+			}
+			return err
+		}
+		if blob.GetSHA() == "" {
+			return backoff.Permanent(fmt.Errorf("empty blob SHA returned for %s", path))
+		}
+		sha = blob.GetSHA()
+		return nil
+	}
+
+	bo := backoff.WithContext(backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 3), ctx)
+	if err := backoff.Retry(op, bo); err != nil {
+		return "", err
+	}
+	return sha, nil
+}
+
+// isRetryableBlobError reports whether a Git.CreateBlob failure is worth
+// retrying. Transient conditions are network errors, GitHub rate limiting, and
+// 5xx/408/429 responses; everything else is treated as permanent.
+func isRetryableBlobError(resp *github.Response, err error) bool {
+	var rateErr *github.RateLimitError
+	var abuseErr *github.AbuseRateLimitError
+	if errors.As(err, &rateErr) || errors.As(err, &abuseErr) {
+		return true
+	}
+
+	if resp == nil || resp.Response == nil {
+		// No HTTP response usually means a network/transport error.
+		return true
+	}
+
+	switch {
+	case resp.StatusCode >= 500:
+		return true
+	case resp.StatusCode == http.StatusRequestTimeout, resp.StatusCode == http.StatusTooManyRequests:
+		return true
+	default:
+		return false
+	}
+}
+
+// rateLimitRetryAfter returns the server-indicated wait duration for a GitHub
+// rate-limit or abuse-detection error, if one is available and in the future.
+func rateLimitRetryAfter(err error) (time.Duration, bool) {
+	var abuseErr *github.AbuseRateLimitError
+	if errors.As(err, &abuseErr) && abuseErr.RetryAfter != nil && *abuseErr.RetryAfter > 0 {
+		return *abuseErr.RetryAfter, true
+	}
+
+	var rateErr *github.RateLimitError
+	if errors.As(err, &rateErr) {
+		if wait := time.Until(rateErr.Rate.Reset.Time); wait > 0 {
+			return wait, true
+		}
+	}
+
+	return 0, false
+}
+
+// sleepWithContext waits for d or until ctx is done, whichever comes first.
+func sleepWithContext(ctx context.Context, d time.Duration) error {
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
+}
+
 type signedTreeStats struct {
 	Deletes       int
 	BlobsUploaded int
@@ -792,42 +885,73 @@ type signedTreeStats struct {
 }
 
 func buildSignedCommitTreeEntries(ctx context.Context, sourceFiles git.Status, worktreeRoot string, join func(elem ...string) string, createBlob signedTreeBlobCreator) ([]*github.TreeEntry, signedTreeStats, error) {
-	entries := []*github.TreeEntry{}
-	stats := signedTreeStats{}
+	type uploadJob struct {
+		file    string
+		deleted bool
+	}
 
+	jobs := make([]uploadJob, 0, len(sourceFiles))
 	for file, fileStatus := range sourceFiles {
 		switch fileStatus.Staging {
 		case git.Unmodified, git.Untracked:
 			continue
 		case git.Deleted:
-			entries = append(entries, &github.TreeEntry{
-				Path: github.String(file),
+			jobs = append(jobs, uploadJob{file: file, deleted: true})
+		default:
+			jobs = append(jobs, uploadJob{file: file})
+		}
+	}
+
+	entries := make([]*github.TreeEntry, len(jobs))
+	stats := signedTreeStats{}
+	var mu sync.Mutex
+
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.SetLimit(maxConcurrentBlobUploads)
+
+	for i, job := range jobs {
+		i, job := i, job
+
+		if job.deleted {
+			entries[i] = &github.TreeEntry{
+				Path: github.String(job.file),
 				Mode: github.String("100644"),
-			})
+			}
+			mu.Lock()
 			stats.Deletes++
+			mu.Unlock()
 			continue
 		}
 
-		filePath := join(worktreeRoot, file)
-		content, err := os.ReadFile(filePath)
-		if err != nil {
-			logging.Info("Error getting file content: %v %s", err, filePath)
-			return nil, stats, err
-		}
+		eg.Go(func() error {
+			filePath := join(worktreeRoot, job.file)
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				logging.Info("Error getting file content: %v %s", err, filePath)
+				return err
+			}
 
-		sha, err := createBlob(ctx, file, content)
-		if err != nil {
-			return nil, stats, fmt.Errorf("error creating blob for %s: %w", file, err)
-		}
+			sha, err := createBlob(ctx, job.file, content)
+			if err != nil {
+				return fmt.Errorf("error creating blob for %s: %w", job.file, err)
+			}
 
-		entries = append(entries, &github.TreeEntry{
-			Path: github.String(file),
-			Type: github.String("blob"),
-			SHA:  github.String(sha),
-			Mode: github.String("100644"),
+			entries[i] = &github.TreeEntry{
+				Path: github.String(job.file),
+				Type: github.String("blob"),
+				SHA:  github.String(sha),
+				Mode: github.String("100644"),
+			}
+			mu.Lock()
+			stats.BlobsUploaded++
+			stats.BytesUploaded += len(content)
+			mu.Unlock()
+			return nil
 		})
-		stats.BlobsUploaded++
-		stats.BytesUploaded += len(content)
+	}
+
+	if err := eg.Wait(); err != nil {
+		return nil, stats, err
 	}
 
 	return entries, stats, nil

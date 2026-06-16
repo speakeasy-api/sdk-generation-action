@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -143,9 +146,12 @@ func TestBuildSignedCommitTreeEntries_UsesBlobSHAForChangedFiles(t *testing.T) {
 		"ignored.md": {Staging: git.Unmodified, Worktree: git.Modified},
 	}
 	createdBlobs := map[string]string{}
+	var createdBlobsMu sync.Mutex
 
 	entries, stats, err := buildSignedCommitTreeEntries(context.Background(), status, dir, filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
+		createdBlobsMu.Lock()
 		createdBlobs[path] = string(content)
+		createdBlobsMu.Unlock()
 		return path + "-blob-sha", nil
 	})
 
@@ -196,6 +202,174 @@ func TestBuildSignedCommitTreeEntries_RepresentsDeletedFiles(t *testing.T) {
 	payload, err := json.Marshal(entry)
 	require.NoError(t, err)
 	require.JSONEq(t, `{"sha":null,"path":"removed.md","mode":"100644"}`, string(payload))
+}
+
+func TestBuildSignedCommitTreeEntries_UploadsConcurrentlyAndPreservesEntries(t *testing.T) {
+	dir := t.TempDir()
+	const fileCount = 50
+
+	status := git.Status{}
+	want := map[string]string{}
+	for i := 0; i < fileCount; i++ {
+		name := fmt.Sprintf("file-%02d.txt", i)
+		content := fmt.Sprintf("content-%02d", i)
+		require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(content), 0o600))
+		status[name] = &git.FileStatus{Staging: git.Modified, Worktree: git.Unmodified}
+		want[name] = content
+	}
+
+	var (
+		mu         sync.Mutex
+		concurrent int32
+		maxSeen    int32
+		uploaded   = map[string]string{}
+	)
+
+	entries, stats, err := buildSignedCommitTreeEntries(context.Background(), status, dir, filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
+		cur := atomic.AddInt32(&concurrent, 1)
+		for {
+			prev := atomic.LoadInt32(&maxSeen)
+			if cur <= prev || atomic.CompareAndSwapInt32(&maxSeen, prev, cur) {
+				break
+			}
+		}
+		time.Sleep(2 * time.Millisecond)
+		atomic.AddInt32(&concurrent, -1)
+
+		mu.Lock()
+		uploaded[path] = string(content)
+		mu.Unlock()
+		return path + "-sha", nil
+	})
+
+	require.NoError(t, err)
+	require.Len(t, entries, fileCount)
+	require.Equal(t, want, uploaded)
+	require.Equal(t, fileCount, stats.BlobsUploaded)
+	require.LessOrEqual(t, int(maxSeen), maxConcurrentBlobUploads, "blob uploads must respect the concurrency limit")
+	require.Greater(t, int(maxSeen), 1, "blob uploads should run concurrently")
+
+	for _, entry := range entries {
+		require.NotNil(t, entry, "every job slot must be populated")
+		require.Equal(t, entry.GetPath()+"-sha", entry.GetSHA())
+		require.Equal(t, "blob", entry.GetType())
+	}
+}
+
+func TestBuildSignedCommitTreeEntries_PropagatesBlobError(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "a.txt"), []byte("a"), 0o600))
+
+	status := git.Status{
+		"a.txt": {Staging: git.Modified, Worktree: git.Unmodified},
+	}
+
+	_, _, err := buildSignedCommitTreeEntries(context.Background(), status, dir, filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
+		return "", fmt.Errorf("boom")
+	})
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "error creating blob for a.txt")
+	require.Contains(t, err.Error(), "boom")
+}
+
+func TestIsRetryableBlobError(t *testing.T) {
+	tests := []struct {
+		name string
+		resp *github.Response
+		err  error
+		want bool
+	}{
+		{
+			name: "rate limit error is retryable",
+			err:  &github.RateLimitError{},
+			want: true,
+		},
+		{
+			name: "abuse rate limit error is retryable",
+			err:  &github.AbuseRateLimitError{},
+			want: true,
+		},
+		{
+			name: "nil response (transport error) is retryable",
+			resp: nil,
+			err:  fmt.Errorf("connection reset"),
+			want: true,
+		},
+		{
+			name: "500 is retryable",
+			resp: &github.Response{Response: &http.Response{StatusCode: http.StatusInternalServerError}},
+			err:  fmt.Errorf("server error"),
+			want: true,
+		},
+		{
+			name: "408 is retryable",
+			resp: &github.Response{Response: &http.Response{StatusCode: http.StatusRequestTimeout}},
+			err:  fmt.Errorf("timeout"),
+			want: true,
+		},
+		{
+			name: "429 is retryable",
+			resp: &github.Response{Response: &http.Response{StatusCode: http.StatusTooManyRequests}},
+			err:  fmt.Errorf("too many requests"),
+			want: true,
+		},
+		{
+			name: "422 is permanent",
+			resp: &github.Response{Response: &http.Response{StatusCode: http.StatusUnprocessableEntity}},
+			err:  fmt.Errorf("unprocessable"),
+			want: false,
+		},
+		{
+			name: "401 is permanent",
+			resp: &github.Response{Response: &http.Response{StatusCode: http.StatusUnauthorized}},
+			err:  fmt.Errorf("unauthorized"),
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, isRetryableBlobError(tt.resp, tt.err))
+		})
+	}
+}
+
+func TestRateLimitRetryAfter(t *testing.T) {
+	t.Run("abuse RetryAfter is used", func(t *testing.T) {
+		retryAfter := 30 * time.Second
+		wait, ok := rateLimitRetryAfter(&github.AbuseRateLimitError{RetryAfter: &retryAfter})
+		require.True(t, ok)
+		require.Equal(t, retryAfter, wait)
+	})
+
+	t.Run("future rate limit reset is used", func(t *testing.T) {
+		reset := time.Now().Add(time.Minute)
+		wait, ok := rateLimitRetryAfter(&github.RateLimitError{
+			Rate: github.Rate{Reset: github.Timestamp{Time: reset}},
+		})
+		require.True(t, ok)
+		require.Greater(t, wait, time.Duration(0))
+		require.LessOrEqual(t, wait, time.Minute)
+	})
+
+	t.Run("past rate limit reset is ignored", func(t *testing.T) {
+		_, ok := rateLimitRetryAfter(&github.RateLimitError{
+			Rate: github.Rate{Reset: github.Timestamp{Time: time.Now().Add(-time.Minute)}},
+		})
+		require.False(t, ok)
+	})
+
+	t.Run("non rate-limit error returns false", func(t *testing.T) {
+		_, ok := rateLimitRetryAfter(fmt.Errorf("boom"))
+		require.False(t, ok)
+	})
+}
+
+func TestSleepWithContext_CancelledReturnsErr(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	require.ErrorIs(t, sleepWithContext(ctx, time.Hour), context.Canceled)
 }
 
 func TestGit_CheckDirDirty_IgnoredFiles(t *testing.T) {
