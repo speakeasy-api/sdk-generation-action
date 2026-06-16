@@ -7,6 +7,8 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -271,6 +273,90 @@ func TestBuildSignedCommitTreeEntries_PropagatesBlobError(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error creating blob for a.txt")
 	require.Contains(t, err.Error(), "boom")
+}
+
+func TestCreateTreeWithRetry_RetriesTransientGitHubErrors(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/repos/owner/repo/git/trees", r.URL.Path)
+		require.Equal(t, http.MethodPost, r.Method)
+
+		if requests.Add(1) == 1 {
+			http.Error(w, "bad gateway", http.StatusBadGateway)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, err := w.Write([]byte(`{"sha":"tree-sha"}`))
+		require.NoError(t, err)
+	}))
+	defer server.Close()
+
+	baseURL, err := url.Parse(server.URL + "/")
+	require.NoError(t, err)
+
+	client := github.NewClient(server.Client())
+	client.BaseURL = baseURL
+
+	g := &Git{client: client}
+	tree, err := g.createTreeWithRetry(context.Background(), "owner", "repo", "base-sha", []*github.TreeEntry{
+		{Path: github.String("file.txt"), Mode: github.String("100644"), Type: github.String("blob"), SHA: github.String("blob-sha")},
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, "tree-sha", tree.GetSHA())
+	require.Equal(t, int32(2), requests.Load())
+}
+
+func TestCreateTreeWithRetry_DoesNotRetryPermanentGitHubErrors(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		http.Error(w, "validation failed", http.StatusUnprocessableEntity)
+	}))
+	defer server.Close()
+
+	baseURL, err := url.Parse(server.URL + "/")
+	require.NoError(t, err)
+
+	client := github.NewClient(server.Client())
+	client.BaseURL = baseURL
+
+	g := &Git{client: client}
+	_, err = g.createTreeWithRetry(context.Background(), "owner", "repo", "base-sha", nil)
+
+	require.Error(t, err)
+	require.Equal(t, int32(1), requests.Load())
+}
+
+func TestCreateTreeWithRetry_ReturnsErrorAfterTransientRetriesAreExhausted(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadGateway)
+		_, err := w.Write([]byte(`{"message":"Sorry, your request timed out. It's likely that your input was too large to process.","documentation_url":"https://docs.github.com/rest/git/trees#create-a-tree"}`))
+		require.NoError(t, err)
+	}))
+	defer server.Close()
+
+	baseURL, err := url.Parse(server.URL + "/")
+	require.NoError(t, err)
+
+	client := github.NewClient(server.Client())
+	client.BaseURL = baseURL
+
+	g := &Git{client: client}
+	_, err = g.createTreeWithRetry(context.Background(), "owner", "repo", "base-sha", nil)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "create tree failed after retries")
+	require.Contains(t, err.Error(), "base_tree=base-sha")
+	require.Contains(t, err.Error(), "entries=0")
+	require.Contains(t, err.Error(), "status=502")
+	require.Contains(t, err.Error(), "input was too large")
+	require.Contains(t, err.Error(), "documentation_url=https://docs.github.com/rest/git/trees#create-a-tree")
+	require.Equal(t, int32(4), requests.Load())
 }
 
 func TestIsRetryableBlobError(t *testing.T) {

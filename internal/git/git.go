@@ -778,8 +778,66 @@ func (g *Git) createAndPushTree(ref *github.Reference, sourceFiles git.Status) (
 
 	logging.Info("Creating signed commit tree with %d changed entries (%d deletes), uploaded %d bytes across %d blobs", len(entries), stats.Deletes, stats.BytesUploaded, stats.BlobsUploaded)
 
-	tree, _, err = g.client.Git.CreateTree(ctx, owner, repo, *ref.Object.SHA, entries)
-	return tree, err
+	return g.createTreeWithRetry(ctx, owner, repo, *ref.Object.SHA, entries)
+}
+
+// createTreeWithRetry creates a git tree, retrying transient GitHub failures.
+// Large generated SDK commits can produce thousands of tree entries; GitHub's
+// tree API may occasionally return transient 5xx responses after all blobs have
+// already been uploaded, so retrying avoids wasting the whole generation run.
+func (g *Git) createTreeWithRetry(ctx context.Context, owner, repo, baseTree string, entries []*github.TreeEntry) (*github.Tree, error) {
+	var tree *github.Tree
+	op := func() error {
+		createdTree, resp, err := g.client.Git.CreateTree(ctx, owner, repo, baseTree, entries)
+		if err != nil {
+			if !isRetryableGitHubError(resp, err) {
+				return backoff.Permanent(err)
+			}
+			if wait, ok := rateLimitRetryAfter(err); ok {
+				if sleepErr := sleepWithContext(ctx, wait); sleepErr != nil {
+					return backoff.Permanent(sleepErr)
+				}
+			}
+			return err
+		}
+		if createdTree.GetSHA() == "" {
+			return backoff.Permanent(errors.New("empty tree SHA returned"))
+		}
+		tree = createdTree
+		return nil
+	}
+
+	bo := backoff.WithContext(backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 3), ctx)
+	if err := backoff.Retry(op, bo); err != nil {
+		return nil, formatCreateTreeError(err, baseTree, len(entries))
+	}
+	return tree, nil
+}
+
+func formatCreateTreeError(err error, baseTree string, entryCount int) error {
+	message := fmt.Sprintf("create tree failed after retries (base_tree=%s, entries=%d): %v", baseTree, entryCount, err)
+
+	var githubErr *github.ErrorResponse
+	if errors.As(err, &githubErr) {
+		details := []string{}
+		if githubErr.Response != nil {
+			details = append(details, fmt.Sprintf("status=%d", githubErr.Response.StatusCode))
+		}
+		if githubErr.Message != "" {
+			details = append(details, fmt.Sprintf("message=%q", githubErr.Message))
+		}
+		if len(githubErr.Errors) > 0 {
+			details = append(details, fmt.Sprintf("errors=%+v", githubErr.Errors))
+		}
+		if githubErr.DocumentationURL != "" {
+			details = append(details, fmt.Sprintf("documentation_url=%s", githubErr.DocumentationURL))
+		}
+		if len(details) > 0 {
+			message = fmt.Sprintf("%s (%s)", message, strings.Join(details, ", "))
+		}
+	}
+
+	return fmt.Errorf("%s", message)
 }
 
 // createBlobWithRetry uploads a single base64-encoded blob, retrying transient
@@ -827,6 +885,10 @@ func (g *Git) createBlobWithRetry(ctx context.Context, owner, repo, path string,
 // retrying. Transient conditions are network errors, GitHub rate limiting, and
 // 5xx/408/429 responses; everything else is treated as permanent.
 func isRetryableBlobError(resp *github.Response, err error) bool {
+	return isRetryableGitHubError(resp, err)
+}
+
+func isRetryableGitHubError(resp *github.Response, err error) bool {
 	var rateErr *github.RateLimitError
 	var abuseErr *github.AbuseRateLimitError
 	if errors.As(err, &rateErr) || errors.As(err, &abuseErr) {
