@@ -3,6 +3,7 @@ module github.com/speakeasy-api/sdk-generation-action
 go 1.24.3
 
 require (
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/google/go-github/v63 v63.0.0
@@ -18,6 +19,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a
 	golang.org/x/oauth2 v0.11.0
+	golang.org/x/sync v0.17.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -28,7 +30,6 @@ require (
 	github.com/a8m/envsubst v1.4.3 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -57,7 +58,6 @@ require (
 	golang.org/x/crypto v0.40.0 // indirect
 	golang.org/x/mod v0.15.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/term v0.40.0 // indirect
 	golang.org/x/tools v0.18.0 // indirect
