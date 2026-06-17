@@ -212,14 +212,18 @@ jobs:
         if: ${{ github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') }}
         id: check-label
         continue-on-error: true
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          LABEL_NAME: ${{ github.event.label.name }}
+          EVENT_ACTION: ${{ github.event.action }}
         run: |
-          label="${{ github.event.label.name }}"
+          label="$LABEL_NAME"
           tmpfile=$(mktemp)
-          echo "${{ github.event.pull_request.body }}" > "$tmpfile"
+          echo "$PR_BODY" > "$tmpfile"
 
           # Check if the label is a valid version bump and ensure the current PR isn't already on that version bump
           # If either are true we short circuit the rest of the action
-          if [[ "$label" != "patch" && "$label" != "minor" && "$label" != "major" && "$label" != "graduate" ]] || { [[ "${{ github.event.action }}" == "labeled" ]] && grep -Fq "Version Bump Type: [$label]" "$tmpfile"; }; then
+          if [[ "$label" != "patch" && "$label" != "minor" && "$label" != "major" && "$label" != "graduate" ]] || { [[ "$EVENT_ACTION" == "labeled" ]] && grep -Fq "Version Bump Type: [$label]" "$tmpfile"; }; then
             echo "No version bump label found in PR body. Short-circuiting."
             echo "short_circuit_label_trigger=true" >> "$GITHUB_OUTPUT"
             exit 0
@@ -251,13 +255,12 @@ jobs:
           signed_commits: ${{ inputs.signed_commits }}
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           pr_creation_pat: ${{ secrets.pr_creation_pat }}
-          output_tests: ${{ inputs.output_tests }}
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
           working_directory: ${{ inputs.working_directory }}
           openapi_doc_auth_token: ${{ secrets.openapi_doc_auth_token }}
           target: ${{ inputs.target }}
           registry_tags: ${{ inputs.registry_tags }}
-          push_code_samples_only: ${{ inputs.push_code_samples }}
+          push_code_samples_only: ${{ inputs.push_code_samples_only }}
           set_version: ${{ inputs.set_version }}
           skip_testing: ${{ inputs.skip_testing }}
           skip_versioning: ${{ inputs.skip_versioning }}
@@ -332,7 +335,7 @@ jobs:
         id: check-publish
         run: |
           if [ -f scripts/publish.sh ]; then
-            echo "publish_with_script=true" >> $GITHUB_OUTPUT
+            echo "publish_with_script=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Build package
         if: ${{ needs.run-workflow.outputs.use_pypi_trusted_publishing == 'true' }}
@@ -601,12 +604,12 @@ jobs:
         env:
           GEM_HOST_API_KEY: ${{ secrets.rubygems_auth_token }}
         run: |
-          mkdir -p $HOME/.gem
-          touch $HOME/.gem/credentials
-          chmod 0600 $HOME/.gem/credentials
-          printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
-          gem build *.gemspec
-          gem push *.gem
+          mkdir -p "$HOME/.gem"
+          touch "$HOME/.gem/credentials"
+          chmod 0600 "$HOME/.gem/credentials"
+          printf -- '---\n:rubygems_api_key: %s\n' "${GEM_HOST_API_KEY}" > "$HOME/.gem/credentials"
+          gem build ./*.gemspec
+          gem push ./*.gem
       - id: publish-event
         uses: ./_speakeasy
         if: always()
@@ -670,7 +673,7 @@ jobs:
         with:
           dotnet-version: ${{ inputs.dotnet_version }}
       - name: Publish
-        run: dotnet pack -c Release -o . && dotnet nuget push *.nupkg --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
+        run: dotnet pack -c Release -o . && dotnet nuget push ./*.nupkg --api-key ${{ secrets.nuget_api_key }} --source https://api.nuget.org/v3/index.json
       - id: publish-event
         uses: ./_speakeasy
         if: always()
