@@ -21,6 +21,9 @@ import (
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/filemode"
+	"github.com/go-git/go-git/v5/plumbing/format/index"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/google/go-github/v63/github"
@@ -91,6 +94,19 @@ func runGitCLI(t *testing.T, dir string, args ...string) string {
 	return runGitCLIWithEnv(t, dir, nil, args...)
 }
 
+func signedCommitTestIndex(entries map[string]filemode.FileMode) *index.Index {
+	idx := &index.Index{Version: 2}
+	for file, mode := range entries {
+		idx.Entries = append(idx.Entries, &index.Entry{
+			Name:  filepath.ToSlash(file),
+			Mode:  mode,
+			Hash:  plumbing.NewHash(fmt.Sprintf("%040d", len(idx.Entries)+1)),
+			Stage: index.Merged,
+		})
+	}
+	return idx
+}
+
 func runGitCLIWithEnv(t *testing.T, dir string, extraEnv map[string]string, args ...string) string {
 	t.Helper()
 	if len(args) > 0 && args[0] == "commit" {
@@ -149,8 +165,12 @@ func TestBuildSignedCommitTreeEntries_UsesBlobSHAForChangedFiles(t *testing.T) {
 	}
 	createdBlobs := map[string]string{}
 	var createdBlobsMu sync.Mutex
+	idx := signedCommitTestIndex(map[string]filemode.FileMode{
+		"README.md": filemode.Regular,
+		"new.md":    filemode.Regular,
+	})
 
-	entries, stats, err := buildSignedCommitTreeEntries(context.Background(), status, dir, filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
+	entries, stats, err := buildSignedCommitTreeEntries(context.Background(), status, idx, dir, filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
 		createdBlobsMu.Lock()
 		createdBlobs[path] = string(content)
 		createdBlobsMu.Unlock()
@@ -185,7 +205,7 @@ func TestBuildSignedCommitTreeEntries_RepresentsDeletedFiles(t *testing.T) {
 		"removed.md": {Staging: git.Deleted, Worktree: git.Deleted},
 	}
 
-	entries, stats, err := buildSignedCommitTreeEntries(context.Background(), status, t.TempDir(), filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
+	entries, stats, err := buildSignedCommitTreeEntries(context.Background(), status, signedCommitTestIndex(nil), t.TempDir(), filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
 		t.Fatalf("deleted files should not upload blobs")
 		return "", nil
 	})
@@ -220,6 +240,11 @@ func TestBuildSignedCommitTreeEntries_UploadsConcurrentlyAndPreservesEntries(t *
 		want[name] = content
 	}
 
+	idxEntries := map[string]filemode.FileMode{}
+	for name := range status {
+		idxEntries[name] = filemode.Regular
+	}
+
 	var (
 		mu         sync.Mutex
 		concurrent int32
@@ -227,7 +252,7 @@ func TestBuildSignedCommitTreeEntries_UploadsConcurrentlyAndPreservesEntries(t *
 		uploaded   = map[string]string{}
 	)
 
-	entries, stats, err := buildSignedCommitTreeEntries(context.Background(), status, dir, filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
+	entries, stats, err := buildSignedCommitTreeEntries(context.Background(), status, signedCommitTestIndex(idxEntries), dir, filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
 		cur := atomic.AddInt32(&concurrent, 1)
 		for {
 			prev := atomic.LoadInt32(&maxSeen)
@@ -258,6 +283,74 @@ func TestBuildSignedCommitTreeEntries_UploadsConcurrentlyAndPreservesEntries(t *
 	}
 }
 
+func TestBuildSignedCommitTreeEntries_SortsEntriesByPath(t *testing.T) {
+	dir := t.TempDir()
+	for _, file := range []string{"z.txt", "a.txt", "nested/m.txt"} {
+		require.NoError(t, os.MkdirAll(filepath.Dir(filepath.Join(dir, file)), 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, file), []byte(file), 0o600))
+	}
+
+	status := git.Status{
+		"z.txt":        {Staging: git.Modified, Worktree: git.Unmodified},
+		"a.txt":        {Staging: git.Modified, Worktree: git.Unmodified},
+		"nested/m.txt": {Staging: git.Modified, Worktree: git.Unmodified},
+	}
+	idx := signedCommitTestIndex(map[string]filemode.FileMode{
+		"z.txt":        filemode.Regular,
+		"a.txt":        filemode.Regular,
+		"nested/m.txt": filemode.Regular,
+	})
+
+	entries, _, err := buildSignedCommitTreeEntries(context.Background(), status, idx, dir, filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
+		return path + "-sha", nil
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, []string{"a.txt", "nested/m.txt", "z.txt"}, []string{entries[0].GetPath(), entries[1].GetPath(), entries[2].GetPath()})
+}
+
+func TestBuildSignedCommitTreeEntries_PreservesExecutableSymlinkAndSubmoduleModes(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "script.sh"), []byte("#!/bin/sh\n"), 0o755))
+	require.NoError(t, os.Symlink("target.txt", filepath.Join(dir, "link.txt")))
+
+	status := git.Status{
+		"script.sh": {Staging: git.Modified, Worktree: git.Unmodified},
+		"link.txt":  {Staging: git.Modified, Worktree: git.Unmodified},
+		"module":    {Staging: git.Modified, Worktree: git.Unmodified},
+	}
+	idx := signedCommitTestIndex(map[string]filemode.FileMode{
+		"script.sh": filemode.Executable,
+		"link.txt":  filemode.Symlink,
+		"module":    filemode.Submodule,
+	})
+
+	uploaded := map[string]string{}
+	var uploadedMu sync.Mutex
+	entries, _, err := buildSignedCommitTreeEntries(context.Background(), status, idx, dir, filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
+		uploadedMu.Lock()
+		uploaded[path] = string(content)
+		uploadedMu.Unlock()
+		return path + "-sha", nil
+	})
+
+	require.NoError(t, err)
+	entriesByPath := map[string]*github.TreeEntry{}
+	for _, entry := range entries {
+		entriesByPath[entry.GetPath()] = entry
+	}
+
+	require.Equal(t, "100755", entriesByPath["script.sh"].GetMode())
+	require.Equal(t, "blob", entriesByPath["script.sh"].GetType())
+	require.Equal(t, "120000", entriesByPath["link.txt"].GetMode())
+	require.Equal(t, "blob", entriesByPath["link.txt"].GetType())
+	require.Equal(t, "target.txt", uploaded["link.txt"])
+	require.Equal(t, "160000", entriesByPath["module"].GetMode())
+	require.Equal(t, "commit", entriesByPath["module"].GetType())
+	require.NotEmpty(t, entriesByPath["module"].GetSHA())
+	require.NotContains(t, uploaded, "module", "submodules should reference the staged commit SHA without uploading a blob")
+}
+
 func TestBuildSignedCommitTreeEntries_PropagatesBlobError(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "a.txt"), []byte("a"), 0o600))
@@ -266,13 +359,102 @@ func TestBuildSignedCommitTreeEntries_PropagatesBlobError(t *testing.T) {
 		"a.txt": {Staging: git.Modified, Worktree: git.Unmodified},
 	}
 
-	_, _, err := buildSignedCommitTreeEntries(context.Background(), status, dir, filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
+	_, _, err := buildSignedCommitTreeEntries(context.Background(), status, signedCommitTestIndex(map[string]filemode.FileMode{"a.txt": filemode.Regular}), dir, filepath.Join, func(ctx context.Context, path string, content []byte) (string, error) {
 		return "", fmt.Errorf("boom")
 	})
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "error creating blob for a.txt")
 	require.Contains(t, err.Error(), "boom")
+}
+
+func TestCreateTreeChain_ChainsChunksFromPreviousTree(t *testing.T) {
+	type treeRequest struct {
+		BaseTree string              `json:"base_tree"`
+		Tree     []*github.TreeEntry `json:"tree"`
+	}
+	var requests []treeRequest
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/repos/owner/repo/git/trees", r.URL.Path)
+		require.Equal(t, http.MethodPost, r.Method)
+
+		var req treeRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
+		requests = append(requests, req)
+
+		w.Header().Set("Content-Type", "application/json")
+		_, err := w.Write([]byte(fmt.Sprintf(`{"sha":"tree-%d"}`, len(requests))))
+		require.NoError(t, err)
+	}))
+	defer server.Close()
+
+	baseURL, err := url.Parse(server.URL + "/")
+	require.NoError(t, err)
+	client := github.NewClient(server.Client())
+	client.BaseURL = baseURL
+
+	g := &Git{client: client}
+	entries := []*github.TreeEntry{
+		{Path: github.String("a.txt"), Mode: github.String("100644"), Type: github.String("blob"), SHA: github.String("a-sha")},
+		{Path: github.String("b.txt"), Mode: github.String("100644"), Type: github.String("blob"), SHA: github.String("b-sha")},
+		{Path: github.String("c.txt"), Mode: github.String("100644"), Type: github.String("blob"), SHA: github.String("c-sha")},
+	}
+
+	tree, err := g.createTreeChain(context.Background(), "owner", "repo", "base-sha", entries, 2, signedTreeChunkByteLimit)
+
+	require.NoError(t, err)
+	require.Equal(t, "tree-2", tree.GetSHA())
+	require.Len(t, requests, 2)
+	require.Equal(t, "base-sha", requests[0].BaseTree)
+	require.Equal(t, []string{"a.txt", "b.txt"}, []string{requests[0].Tree[0].GetPath(), requests[0].Tree[1].GetPath()})
+	require.Equal(t, "tree-1", requests[1].BaseTree)
+	require.Equal(t, []string{"c.txt"}, []string{requests[1].Tree[0].GetPath()})
+}
+
+func TestCreateTreeChain_SplitsByEstimatedPayloadBytes(t *testing.T) {
+	var requests int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		w.Header().Set("Content-Type", "application/json")
+		_, err := w.Write([]byte(fmt.Sprintf(`{"sha":"tree-%d"}`, requests)))
+		require.NoError(t, err)
+	}))
+	defer server.Close()
+
+	baseURL, err := url.Parse(server.URL + "/")
+	require.NoError(t, err)
+	client := github.NewClient(server.Client())
+	client.BaseURL = baseURL
+
+	g := &Git{client: client}
+	entry1 := &github.TreeEntry{Path: github.String("short-a.txt"), Mode: github.String("100644"), Type: github.String("blob"), SHA: github.String("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")}
+	entry2 := &github.TreeEntry{Path: github.String("short-b.txt"), Mode: github.String("100644"), Type: github.String("blob"), SHA: github.String("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")}
+	singleEntryPayloadBytes, err := estimateCreateTreePayloadBytes("base-sha", []*github.TreeEntry{entry1})
+	require.NoError(t, err)
+
+	tree, err := g.createTreeChain(context.Background(), "owner", "repo", "base-sha", []*github.TreeEntry{entry1, entry2}, 100, singleEntryPayloadBytes+1)
+
+	require.NoError(t, err)
+	require.Equal(t, "tree-2", tree.GetSHA())
+	require.Equal(t, 2, requests)
+}
+
+func TestCreateTreeChain_ReusesBaseTreeForEmptyEntries(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("empty tree chains should not call CreateTree")
+	}))
+	defer server.Close()
+
+	baseURL, err := url.Parse(server.URL + "/")
+	require.NoError(t, err)
+	client := github.NewClient(server.Client())
+	client.BaseURL = baseURL
+
+	g := &Git{client: client}
+	tree, err := g.createTreeChain(context.Background(), "owner", "repo", "base-sha", nil, 100, signedTreeChunkByteLimit)
+
+	require.NoError(t, err)
+	require.Equal(t, "base-sha", tree.GetSHA())
 }
 
 func TestCreateTreeWithRetry_RetriesTransientGitHubErrors(t *testing.T) {
