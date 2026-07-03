@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	gitHttp "github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -298,16 +297,8 @@ func (g *Git) FindAndCheckoutBranch(branchName string) (string, error) {
 		return "", fmt.Errorf("error getting worktree: %w", err)
 	}
 
-	r, err := g.repo.Remote("origin")
-	if err != nil {
-		return "", fmt.Errorf("error getting remote: %w", err)
-	}
-	if err := r.Fetch(&git.FetchOptions{
-		Auth: getGithubAuth(g.accessToken),
-		RefSpecs: []config.RefSpec{
-			config.RefSpec(fmt.Sprintf("refs/heads/%s:refs/heads/%s", branchName, branchName)),
-		},
-	}); err != nil && err != git.NoErrAlreadyUpToDate {
+	refspec := fmt.Sprintf("refs/heads/%s:refs/heads/%s", branchName, branchName)
+	if _, err := runGitCommand("fetch", "origin", refspec); err != nil {
 		return "", fmt.Errorf("error fetching remote: %w", err)
 	}
 
@@ -570,20 +561,7 @@ func (g *Git) DeleteBranch(branchName string) error {
 	}
 
 	logging.Info("Deleting branch %s", branchName)
-
-	r, err := g.repo.Remote("origin")
-	if err != nil {
-		return fmt.Errorf("error getting remote: %w", err)
-	}
-
-	ref := plumbing.NewBranchReferenceName(branchName)
-
-	if err := r.Push(&git.PushOptions{
-		Auth: getGithubAuth(g.accessToken),
-		RefSpecs: []config.RefSpec{
-			config.RefSpec(fmt.Sprintf(":%s", ref.String())),
-		},
-	}); err != nil {
+	if _, err := runGitCommand("push", "origin", "--delete", branchName); err != nil {
 		return fmt.Errorf("error deleting branch: %w", err)
 	}
 
@@ -648,13 +626,10 @@ func (g *Git) CommitAndPush(openAPIDocVersion, speakeasyVersion, doc string, act
 			return "", fmt.Errorf("error committing changes: %w", err)
 		}
 
-		if g.storerLog != nil {
-			g.storerLog.reset()
-		}
-		if err := g.repo.Push(&git.PushOptions{
-			Auth:  getGithubAuth(g.accessToken),
-			Force: true, // This is necessary because at the beginning of the workflow we reset the branch
-		}); err != nil {
+		// Push via system git rather than go-git (see MergeBranch). Force is required
+		// because the workflow resets the branch at the start of the run. HEAD is the
+		// current branch just committed to.
+		if _, err := runGitCommand("push", "--force", "origin", "HEAD"); err != nil {
 			return "", g.pushErr(err)
 		}
 		return commitHash.String(), nil
@@ -1303,12 +1278,7 @@ func (g *Git) MergeBranch(branchName string) (string, error) {
 		return "", fmt.Errorf("error getting head ref: %w", err)
 	}
 
-	if g.storerLog != nil {
-		g.storerLog.reset()
-	}
-	if err := g.repo.Push(&git.PushOptions{
-		Auth: getGithubAuth(g.accessToken),
-	}); err != nil {
+	if _, err := runGitCommand("push", "origin", "HEAD"); err != nil {
 		return "", g.pushErr(err)
 	}
 
