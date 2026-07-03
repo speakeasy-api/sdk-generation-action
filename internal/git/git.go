@@ -38,7 +38,6 @@ type Git struct {
 	accessToken string
 	repo        *git.Repository
 	client      *github.Client
-	storerLog   *loggingStorer
 }
 
 const (
@@ -94,8 +93,6 @@ func (g *Git) CloneRepo() error {
 	if err != nil {
 		return fmt.Errorf("failed to clone repo: %w", err)
 	}
-	g.storerLog = newLoggingStorer(r.Storer)
-	r.Storer = g.storerLog
 	g.repo = r
 
 	if err := g.configureSystemGitAuth(repoDir); err != nil {
@@ -1665,11 +1662,6 @@ func (g *Git) pushErr(err error) error {
 	if err != nil && err != git.NoErrAlreadyUpToDate {
 		if strings.Contains(err.Error(), "protected branch hook declined") {
 			return fmt.Errorf("error pushing changes: %w\nThis is likely due to a branch protection rule. Please ensure that the branch is not protected (repo > settings > branches)", err)
-		}
-		if errors.Is(err, plumbing.ErrObjectNotFound) && g.storerLog != nil {
-			if h, stack, ok := g.storerLog.lastMissingObject(); ok {
-				return fmt.Errorf("error pushing changes: %w (missing object %s)\nstorer lookup stack:\n%s", err, h, stack)
-			}
 		}
 		return fmt.Errorf("error pushing changes: %w", err)
 	}
