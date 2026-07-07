@@ -1602,3 +1602,145 @@ func TestCreateSuggestionPR_SourceBranchAware(t *testing.T) {
 		})
 	}
 }
+
+func setupFindAndCheckoutBranchRepo(t *testing.T) (Git, string, string) {
+	t.Helper()
+
+	workspace := t.TempDir()
+	repoPath := filepath.Join(workspace, "repo")
+	remotePath := filepath.Join(workspace, "remote.git")
+
+	require.NoError(t, os.MkdirAll(repoPath, 0o755))
+
+	runGitCLI(t, workspace, "init", "--bare", remotePath)
+	runGitCLI(t, repoPath, "init")
+	runGitCLI(t, repoPath, "config", "user.name", "Test User")
+	runGitCLI(t, repoPath, "config", "user.email", "test@example.com")
+
+	require.NoError(t, os.WriteFile(filepath.Join(repoPath, "README.md"), []byte("initial\n"), 0o644))
+	runGitCLI(t, repoPath, "add", "README.md")
+	runGitCLI(t, repoPath, "commit", "-m", "initial commit")
+	runGitCLI(t, repoPath, "branch", "-M", "main")
+	runGitCLI(t, repoPath, "remote", "add", "origin", remotePath)
+	runGitCLI(t, repoPath, "push", "-u", "origin", "main")
+
+	runGitCLI(t, repoPath, "checkout", "-b", "regen")
+	require.NoError(t, os.WriteFile(filepath.Join(repoPath, "generated.txt"), []byte("auto\n"), 0o644))
+	runGitCLI(t, repoPath, "add", "generated.txt")
+	runGitCLI(t, repoPath, "commit", "-m", "ci: automated update")
+	runGitCLI(t, repoPath, "push", "-u", "origin", "regen")
+
+	repo, err := git.PlainOpen(repoPath)
+	require.NoError(t, err)
+
+	t.Setenv("GITHUB_WORKSPACE", workspace)
+	t.Setenv("INPUT_WORKING_DIRECTORY", "")
+
+	return Git{repo: repo}, repoPath, remotePath
+}
+
+// pushToRemoteRegen advances the regen branch on the bare remote via a
+// separate clone and returns the new tip hash.
+func pushToRemoteRegen(t *testing.T, remotePath, file, content, message string) string {
+	t.Helper()
+
+	cloneParent := t.TempDir()
+	clonePath := filepath.Join(cloneParent, "writer")
+	runGitCLI(t, cloneParent, "clone", "--branch", "regen", remotePath, clonePath)
+	require.NoError(t, os.WriteFile(filepath.Join(clonePath, file), []byte(content), 0o644))
+	runGitCLI(t, clonePath, "add", file)
+	runGitCLI(t, clonePath, "commit", "-m", message)
+	runGitCLI(t, clonePath, "push", "origin", "regen")
+
+	return strings.TrimSpace(runGitCLI(t, clonePath, "rev-parse", "regen"))
+}
+
+func TestGit_FindAndCheckoutBranch_AlreadyCheckedOut(t *testing.T) {
+	g, repoPath, _ := setupFindAndCheckoutBranchRepo(t)
+
+	// regen is the current branch — the state finalize runs in
+	branch, err := g.FindAndCheckoutBranch("regen")
+	require.NoError(t, err)
+	assert.Equal(t, "regen", branch)
+
+	head, err := g.repo.Head()
+	require.NoError(t, err)
+	assert.Equal(t, "refs/heads/regen", head.Name().String())
+	assert.Equal(t, strings.TrimSpace(runGitCLI(t, repoPath, "rev-parse", "origin/regen")), head.Hash().String())
+}
+
+func TestGit_FindAndCheckoutBranch_NotCheckedOutLocally(t *testing.T) {
+	g, repoPath, _ := setupFindAndCheckoutBranchRepo(t)
+
+	runGitCLI(t, repoPath, "checkout", "main")
+	runGitCLI(t, repoPath, "branch", "-D", "regen")
+
+	branch, err := g.FindAndCheckoutBranch("regen")
+	require.NoError(t, err)
+	assert.Equal(t, "regen", branch)
+
+	head, err := g.repo.Head()
+	require.NoError(t, err)
+	assert.Equal(t, "refs/heads/regen", head.Name().String())
+	assert.Equal(t, strings.TrimSpace(runGitCLI(t, repoPath, "rev-parse", "origin/regen")), head.Hash().String())
+}
+
+func TestGit_FindAndCheckoutBranch_OriginAdvancedPastLocal(t *testing.T) {
+	g, repoPath, remotePath := setupFindAndCheckoutBranchRepo(t)
+
+	remoteTip := pushToRemoteRegen(t, remotePath, "generated.txt", "newer\n", "ci: newer automated update")
+
+	branch, err := g.FindAndCheckoutBranch("regen")
+	require.NoError(t, err)
+	assert.Equal(t, "regen", branch)
+
+	head, err := g.repo.Head()
+	require.NoError(t, err)
+	assert.Equal(t, remoteTip, head.Hash().String())
+
+	content, err := os.ReadFile(filepath.Join(repoPath, "generated.txt"))
+	require.NoError(t, err)
+	assert.Equal(t, "newer\n", string(content))
+}
+
+func TestGit_FindAndCheckoutBranch_ResetsLocalOnlyCommitsToOrigin(t *testing.T) {
+	g, repoPath, _ := setupFindAndCheckoutBranchRepo(t)
+
+	require.NoError(t, os.WriteFile(filepath.Join(repoPath, "local-only.txt"), []byte("unpushed\n"), 0o644))
+	runGitCLI(t, repoPath, "add", "local-only.txt")
+	runGitCLI(t, repoPath, "commit", "-m", "local-only commit")
+
+	branch, err := g.FindAndCheckoutBranch("regen")
+	require.NoError(t, err)
+	assert.Equal(t, "regen", branch)
+
+	head, err := g.repo.Head()
+	require.NoError(t, err)
+	assert.Equal(t, strings.TrimSpace(runGitCLI(t, repoPath, "rev-parse", "origin/regen")), head.Hash().String())
+	assert.NoFileExists(t, filepath.Join(repoPath, "local-only.txt"))
+}
+
+func TestGit_FindAndCheckoutBranch_MissingOnRemote(t *testing.T) {
+	g, _, _ := setupFindAndCheckoutBranchRepo(t)
+
+	_, err := g.FindAndCheckoutBranch("does-not-exist")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "error fetching remote")
+	assert.NotErrorIs(t, err, errBranchCheckout)
+}
+
+func TestGit_FindOrCreateBranch_CheckoutFailureIsFatal(t *testing.T) {
+	g, repoPath, remotePath := setupFindAndCheckoutBranchRepo(t)
+
+	pushToRemoteRegen(t, remotePath, "conflict.txt", "remote content\n", "ci: add conflict file")
+	require.NoError(t, os.WriteFile(filepath.Join(repoPath, "conflict.txt"), []byte("untracked local content\n"), 0o644))
+
+	_, err := g.FindOrCreateBranch("regen", environment.ActionRunWorkflow)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, errBranchCheckout)
+
+	head, err := g.repo.Head()
+	require.NoError(t, err)
+	assert.NotEqual(t, strings.TrimSpace(runGitCLI(t, repoPath, "rev-parse", "origin/regen")), head.Hash().String(),
+		"branch must not silently advance when checkout fails")
+}
