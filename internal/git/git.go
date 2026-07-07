@@ -289,21 +289,15 @@ func (g *Git) FindAndCheckoutBranch(branchName string) (string, error) {
 		return "", fmt.Errorf("repo not cloned")
 	}
 
-	w, err := g.repo.Worktree()
-	if err != nil {
-		return "", fmt.Errorf("error getting worktree: %w", err)
-	}
-
-	refspec := fmt.Sprintf("refs/heads/%s:refs/heads/%s", branchName, branchName)
+	// Fetch into the remote-tracking ref rather than refs/heads/<branch>: git
+	// refuses to update the ref of the currently checked-out branch, which is
+	// the state finalize runs in.
+	refspec := fmt.Sprintf("+refs/heads/%s:refs/remotes/origin/%s", branchName, branchName)
 	if _, err := runGitCommand("fetch", "origin", refspec); err != nil {
 		return "", fmt.Errorf("error fetching remote: %w", err)
 	}
 
-	branchRef := plumbing.NewBranchReferenceName(branchName)
-
-	if err := w.Checkout(&git.CheckoutOptions{
-		Branch: branchRef,
-	}); err != nil {
+	if _, err := runGitCommand("checkout", "-B", branchName, "refs/remotes/origin/"+branchName); err != nil {
 		return "", fmt.Errorf("error checking out branch: %w", err)
 	}
 

@@ -1602,3 +1602,76 @@ func TestCreateSuggestionPR_SourceBranchAware(t *testing.T) {
 		})
 	}
 }
+
+func setupFindAndCheckoutBranchRepo(t *testing.T) (Git, string) {
+	t.Helper()
+
+	workspace := t.TempDir()
+	repoPath := filepath.Join(workspace, "repo")
+	remotePath := filepath.Join(workspace, "remote.git")
+
+	require.NoError(t, os.MkdirAll(repoPath, 0o755))
+
+	runGitCLI(t, workspace, "init", "--bare", remotePath)
+	runGitCLI(t, repoPath, "init")
+	runGitCLI(t, repoPath, "config", "user.name", "Test User")
+	runGitCLI(t, repoPath, "config", "user.email", "test@example.com")
+
+	require.NoError(t, os.WriteFile(filepath.Join(repoPath, "README.md"), []byte("initial\n"), 0o644))
+	runGitCLI(t, repoPath, "add", "README.md")
+	runGitCLI(t, repoPath, "commit", "-m", "initial commit")
+	runGitCLI(t, repoPath, "branch", "-M", "main")
+	runGitCLI(t, repoPath, "remote", "add", "origin", remotePath)
+	runGitCLI(t, repoPath, "push", "-u", "origin", "main")
+
+	runGitCLI(t, repoPath, "checkout", "-b", "regen")
+	require.NoError(t, os.WriteFile(filepath.Join(repoPath, "generated.txt"), []byte("auto\n"), 0o644))
+	runGitCLI(t, repoPath, "add", "generated.txt")
+	runGitCLI(t, repoPath, "commit", "-m", "ci: automated update")
+	runGitCLI(t, repoPath, "push", "-u", "origin", "regen")
+
+	repo, err := git.PlainOpen(repoPath)
+	require.NoError(t, err)
+
+	t.Setenv("GITHUB_WORKSPACE", workspace)
+	t.Setenv("INPUT_WORKING_DIRECTORY", "")
+
+	return Git{repo: repo}, repoPath
+}
+
+func TestGit_FindAndCheckoutBranch_AlreadyCheckedOut(t *testing.T) {
+	g, repoPath := setupFindAndCheckoutBranchRepo(t)
+
+	// regen is the current branch — the state finalize runs in
+	branch, err := g.FindAndCheckoutBranch("regen")
+	require.NoError(t, err)
+	assert.Equal(t, "regen", branch)
+
+	head, err := g.repo.Head()
+	require.NoError(t, err)
+	assert.Equal(t, "refs/heads/regen", head.Name().String())
+	assert.Equal(t, strings.TrimSpace(runGitCLI(t, repoPath, "rev-parse", "origin/regen")), head.Hash().String())
+}
+
+func TestGit_FindAndCheckoutBranch_NotCheckedOutLocally(t *testing.T) {
+	g, repoPath := setupFindAndCheckoutBranchRepo(t)
+
+	runGitCLI(t, repoPath, "checkout", "main")
+	runGitCLI(t, repoPath, "branch", "-D", "regen")
+
+	branch, err := g.FindAndCheckoutBranch("regen")
+	require.NoError(t, err)
+	assert.Equal(t, "regen", branch)
+
+	head, err := g.repo.Head()
+	require.NoError(t, err)
+	assert.Equal(t, "refs/heads/regen", head.Name().String())
+}
+
+func TestGit_FindAndCheckoutBranch_MissingOnRemote(t *testing.T) {
+	g, _ := setupFindAndCheckoutBranchRepo(t)
+
+	_, err := g.FindAndCheckoutBranch("does-not-exist")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "error fetching remote")
+}
