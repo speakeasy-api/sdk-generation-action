@@ -284,6 +284,11 @@ func (g *Git) FindExistingPR(branchName string, action environment.Action, sourc
 	return branchName, nil, nil
 }
 
+// errBranchCheckout marks a failure to check out a branch that was
+// successfully fetched, so callers can distinguish it from the branch not
+// existing on the remote.
+var errBranchCheckout = errors.New("error checking out branch")
+
 func (g *Git) FindAndCheckoutBranch(branchName string) (string, error) {
 	if g.repo == nil {
 		return "", fmt.Errorf("repo not cloned")
@@ -291,14 +296,15 @@ func (g *Git) FindAndCheckoutBranch(branchName string) (string, error) {
 
 	// Fetch into the remote-tracking ref rather than refs/heads/<branch>: git
 	// refuses to update the ref of the currently checked-out branch, which is
-	// the state finalize runs in.
-	refspec := fmt.Sprintf("+refs/heads/%s:refs/remotes/origin/%s", branchName, branchName)
-	if _, err := runGitCommand("fetch", "origin", refspec); err != nil {
+	// the state finalize runs in. checkout -B then resets the local branch to
+	// the remote tip.
+	remoteRef := "refs/remotes/origin/" + branchName
+	if _, err := runGitCommand("fetch", "origin", "+refs/heads/"+branchName+":"+remoteRef); err != nil {
 		return "", fmt.Errorf("error fetching remote: %w", err)
 	}
 
-	if _, err := runGitCommand("checkout", "-B", branchName, "refs/remotes/origin/"+branchName); err != nil {
-		return "", fmt.Errorf("error checking out branch: %w", err)
+	if _, err := runGitCommand("checkout", "-B", branchName, remoteRef); err != nil {
+		return "", fmt.Errorf("%w: %w", errBranchCheckout, err)
 	}
 
 	logging.Info("Found existing branch %s", branchName)
@@ -395,6 +401,14 @@ func (g *Git) FindOrCreateBranch(branchName string, action environment.Action) (
 			}
 
 			return existingBranch, nil
+		}
+
+		// A checkout failure means the branch exists on the remote but the
+		// worktree couldn't switch to it. Falling through would create a fresh
+		// branch, skip the non-CI-commit guard above, and later force-push
+		// over the remote branch.
+		if errors.Is(err, errBranchCheckout) {
+			return "", err
 		}
 
 		logging.Info("failed to checkout existing branch %s: %s", branchName, err.Error())
