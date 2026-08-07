@@ -1,6 +1,8 @@
 package run_test
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -305,5 +307,80 @@ func TestAddTargetPublishOutputs_NoOverwritePublished(t *testing.T) {
 
 	if !reflect.DeepEqual(outputs2, expected) {
 		t.Errorf("expected %v, got %v (reverse order)", expected, outputs2)
+	}
+}
+
+func TestAddJavaLanguageVersionOutput(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		genYAML         string
+		expectedOutputs map[string]string
+	}{
+		"above-default": {
+			genYAML: `configVersion: 2.0.0
+generation: {}
+java:
+  version: 1.0.0
+  languageVersion: 17
+`,
+			expectedOutputs: map[string]string{"java_language_version": "17"},
+		},
+		"quoted": {
+			genYAML: `configVersion: 2.0.0
+generation: {}
+java:
+  version: 1.0.0
+  languageVersion: "21"
+`,
+			expectedOutputs: map[string]string{"java_language_version": "21"},
+		},
+		"floored-at-minimum": {
+			genYAML: `configVersion: 2.0.0
+generation: {}
+java:
+  version: 1.0.0
+  languageVersion: 8
+`,
+			expectedOutputs: map[string]string{"java_language_version": "11"},
+		},
+		"unset": {
+			genYAML: `configVersion: 2.0.0
+generation: {}
+java:
+  version: 1.0.0
+`,
+			expectedOutputs: map[string]string{},
+		},
+		"not-java": {
+			genYAML: `configVersion: 2.0.0
+generation: {}
+go:
+  version: 1.0.0
+`,
+			expectedOutputs: map[string]string{},
+		},
+	}
+
+	for name, testCase := range testCases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			dir := t.TempDir()
+			speakeasyDir := filepath.Join(dir, ".speakeasy")
+			if err := os.MkdirAll(speakeasyDir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(speakeasyDir, "gen.yaml"), []byte(testCase.genYAML), 0o644); err != nil {
+				t.Fatal(err)
+			}
+
+			outputs := map[string]string{}
+			run.AddJavaLanguageVersionOutput(dir, outputs)
+
+			if !reflect.DeepEqual(outputs, testCase.expectedOutputs) {
+				t.Errorf("expected %v, got %v", testCase.expectedOutputs, outputs)
+			}
+		})
 	}
 }

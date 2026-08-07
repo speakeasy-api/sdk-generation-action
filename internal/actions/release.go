@@ -100,6 +100,10 @@ func Release() error {
 	for lang, info := range languages {
 		outputs[utils.OutputTargetRegenerated(lang)] = "true"
 		outputs[utils.OutputTargetDirectory(lang)] = info.Path
+
+		if lang == "java" {
+			run.AddJavaLanguageVersionOutput(filepath.Join(environment.GetWorkspace(), "repo", info.Path), outputs)
+		}
 	}
 
 	if err = addPublishOutputs(dir, outputs); err != nil {

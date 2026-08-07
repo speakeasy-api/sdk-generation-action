@@ -175,6 +175,8 @@ outputs:
     description: "true if the Java SDK was regenerated"
   java_directory:
     description: "The directory the Java SDK was generated to"
+  java_language_version:
+    description: "The languageVersion configured for the Java SDK, floored at 11, used to select the JDK the publish job runs on"
   mcp_typescript_regenerated:
     description: "true if the MCP Typescript target was regenerated"
   mcp_typescript_directory:

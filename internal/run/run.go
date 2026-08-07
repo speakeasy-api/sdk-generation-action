@@ -18,6 +18,7 @@ import (
 	config "github.com/speakeasy-api/sdk-gen-config"
 	"github.com/speakeasy-api/sdk-generation-action/internal/cli"
 	"github.com/speakeasy-api/sdk-generation-action/internal/environment"
+	"github.com/speakeasy-api/sdk-generation-action/internal/logging"
 )
 
 type LanguageGenInfo struct {
@@ -193,6 +194,10 @@ func Run(g Git, pr *github.PullRequest, wf *workflow.Workflow) (*RunResult, map[
 		}
 
 		outputs[utils.OutputTargetDirectory(lang)] = dir
+
+		if lang == "java" {
+			AddJavaLanguageVersionOutput(outputDir, outputs)
+		}
 
 		previousManagementInfo := previousManagementInfos[targetID]
 		dirty, dirtyMsg, err := g.CheckDirDirty(dir, map[string]string{
@@ -374,4 +379,40 @@ func AddTargetPublishOutputs(target workflow.Target, outputs map[string]string, 
 		outputs["publish_mcp_registry"] = "true"
 		outputs["mcp_registry_auth"] = target.Publishing.MCPRegistry.Auth
 	}
+}
+
+// languageVersion 8 targets bytecode 8 but has always been compiled by a JDK 11
+// runner, so it stays on 11 rather than dropping to a JDK 8 runner.
+const javaMinJDKVersion = 11
+
+// AddJavaLanguageVersionOutput sets the java_language_version output from the
+// languageVersion configured in the gen.yaml at dir.
+func AddJavaLanguageVersionOutput(dir string, outputs map[string]string) {
+	cfg, err := config.Load(dir)
+	if err != nil {
+		logging.Info("failed to load gen config at %s for java language version: %v", dir, err)
+		return
+	}
+
+	langCfg, ok := cfg.Config.Languages["java"]
+	if !ok {
+		return
+	}
+
+	raw, ok := langCfg.Cfg["languageVersion"]
+	if !ok || raw == nil {
+		return
+	}
+
+	version, err := strconv.Atoi(strings.TrimSpace(fmt.Sprintf("%v", raw)))
+	if err != nil {
+		logging.Info("unparseable java languageVersion %v at %s: %v", raw, dir, err)
+		return
+	}
+
+	if version < javaMinJDKVersion {
+		version = javaMinJDKVersion
+	}
+
+	outputs["java_language_version"] = strconv.Itoa(version)
 }
