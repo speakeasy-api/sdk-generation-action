@@ -190,6 +190,7 @@ jobs:
       terraform_directory: ${{ steps.run-workflow.outputs.terraform_directory }}
       java_regenerated: ${{ steps.run-workflow.outputs.java_regenerated }}
       java_directory: ${{ steps.run-workflow.outputs.java_directory }}
+      java_language_version: ${{ steps.run-workflow.outputs.java_language_version }}
       php_regenerated: ${{ steps.run-workflow.outputs.php_regenerated }}
       php_directory: ${{ steps.run-workflow.outputs.php_directory }}
       ruby_regenerated: ${{ steps.run-workflow.outputs.ruby_regenerated }}
@@ -509,7 +510,7 @@ jobs:
       - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
           distribution: "corretto"
-          java-version: "11"
+          java-version: ${{ needs.run-workflow.outputs.java_language_version || '11' }}
       - uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
         with:
           gradle-version: "8.14"
