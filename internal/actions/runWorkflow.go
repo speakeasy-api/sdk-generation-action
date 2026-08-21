@@ -1,10 +1,13 @@
 package actions
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v63/github"
 	"github.com/pkg/errors"
@@ -185,6 +188,10 @@ func RunWorkflow() error {
 			return err
 		}
 
+		if err := runPostGenerationScript(); err != nil {
+			return err
+		}
+
 		if _, err := g.CommitAndPush(docVersion, resolvedVersion, "", environment.ActionRunWorkflow, false, runRes.VersioningInfo.VersionReport); err != nil {
 			return err
 		}
@@ -192,6 +199,10 @@ func RunWorkflow() error {
 
 	outputs["resolved_speakeasy_version"] = resolvedVersion
 	if sourcesOnly {
+		if err := runPostGenerationScript(); err != nil {
+			return err
+		}
+
 		if _, err := g.CommitAndPush("", resolvedVersion, "", environment.ActionRunWorkflow, sourcesOnly, nil); err != nil {
 			return err
 		}
@@ -412,6 +423,60 @@ func addDirectModeBranchTagging() error {
 			tags = append(tags, "published")
 		}
 		return cli.Tag(tags, sources, targets)
+	}
+
+	return nil
+}
+
+var postGenerationScriptTimeout = 10 * time.Minute
+
+// postGenerationScriptEnvAllowlist is the set of env vars passed through to the
+// user-provided script. Everything else (GITHUB_TOKEN, INPUT_*, *_API_KEY, OIDC
+// request tokens, ...) is scrubbed so a typo or compromised script can't
+// exfiltrate the action's credentials. Authors who need extra vars can pass
+// them via the `cli_environment_variables` input.
+var postGenerationScriptEnvAllowlist = []string{
+	"PATH", "HOME", "USER", "LANG", "LC_ALL", "TZ", "TMPDIR", "SHELL",
+	"HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY",
+	"http_proxy", "https_proxy", "no_proxy",
+	"GITHUB_WORKSPACE", "GITHUB_REPOSITORY", "GITHUB_REF", "GITHUB_SHA",
+	"GITHUB_RUN_ID", "GITHUB_ACTOR", "GITHUB_SERVER_URL", "GITHUB_WORKFLOW",
+	"RUNNER_OS", "RUNNER_ARCH", "RUNNER_TEMP",
+}
+
+func postGenerationScriptEnv() []string {
+	env := make([]string, 0, len(postGenerationScriptEnvAllowlist))
+	for _, k := range postGenerationScriptEnvAllowlist {
+		if v, ok := os.LookupEnv(k); ok {
+			env = append(env, k+"="+v)
+		}
+	}
+	env = append(env, environment.SpeakeasyEnvVars()...)
+	return env
+}
+
+func runPostGenerationScript() error {
+	script := strings.TrimSpace(environment.GetPostGenerationScript())
+	if script == "" {
+		return nil
+	}
+
+	logging.Info("Running post_generation_script (timeout %s)", postGenerationScriptTimeout)
+
+	ctx, cancel := context.WithTimeout(context.Background(), postGenerationScriptTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "bash", "-c", script)
+	cmd.Dir = environment.GetRepoPath()
+	cmd.Env = postGenerationScriptEnv()
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if ctx.Err() == context.DeadlineExceeded {
+		return fmt.Errorf("post_generation_script exceeded %s timeout", postGenerationScriptTimeout)
+	}
+	if err != nil {
+		return fmt.Errorf("post_generation_script failed: %w", err)
 	}
 
 	return nil
