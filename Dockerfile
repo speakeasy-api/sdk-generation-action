@@ -1,6 +1,6 @@
 ## Build
 # CACHE_BUST: v15.55.2-alpha.2
-FROM golang:1.24-alpine3.23 AS builder
+FROM golang:1.25-alpine3.24 AS builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ COPY pkg/ ./pkg/
 RUN go build -o /action
 
 ## Deploy
-FROM golang:1.24-alpine3.23
+FROM golang:1.25-alpine3.24
 
 # Enable Go toolchain automatic upgrades to prevent Go version errors in
 # customer generations (GOTOOLCHAIN=local default in golang images)
