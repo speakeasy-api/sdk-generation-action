@@ -586,13 +586,13 @@ jobs:
             github)
               mcp-publisher login github --token "$MCP_REGISTRY_TOKEN"
               ;;
-            dns)
+            dns|http)
               # Extract domain from server name in server.json (e.g., "com.example/server" -> "example.com")
               SERVER_NAME=$(jq -r '.name' server.json)
               NAMESPACE=${SERVER_NAME%%/*}
               # Reverse DNS to domain: com.example -> example.com
               DOMAIN=$(echo "$NAMESPACE" | awk -F. '{for(i=NF;i>0;i--) printf "%s%s",$i,(i>1?".":"")}')
-              mcp-publisher login dns --domain "$DOMAIN" --private-key "$MCP_REGISTRY_TOKEN"
+              mcp-publisher login "$MCP_REGISTRY_AUTH" --domain "$DOMAIN" --private-key "$MCP_REGISTRY_TOKEN"
               ;;
           esac
       - name: Publish to MCP Registry
