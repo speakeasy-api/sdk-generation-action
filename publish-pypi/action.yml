@@ -33,7 +33,7 @@ runs:
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         repository: speakeasy-api/sdk-generation-action
-        ref: 6eb2c860da69d3f4cefaa5b8293098a1820c2437
+        ref: 36d2c7011ebf6999afe2b8ca51a4137905811f30
         path: _speakeasy
     - name: Set up Python
       uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
