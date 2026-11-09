@@ -16,10 +16,12 @@ COPY pkg/ ./pkg/
 RUN go build -o /action
 
 ## Deploy
-FROM golang:1.26-alpine3.24
+FROM python:3.12-alpine3.24
 
-# Enable Go toolchain automatic upgrades to prevent Go version errors in
-# customer generations (GOTOOLCHAIN=local default in golang images)
+COPY --from=builder /usr/local/go /usr/local/go
+ENV GOPATH=/go
+ENV PATH=${GOPATH}/bin:/usr/local/go/bin:${PATH}
+
 ENV GOTOOLCHAIN=auto
 
 RUN apk update
@@ -30,8 +32,8 @@ RUN apk add --update --no-cache bash curl git wget
 ### Install Node / NPM
 RUN apk add --update --no-cache nodejs npm
 
-### Install Python
-RUN apk add --update --no-cache python3 py3-pip python3-dev pipx
+### Install Python tooling
+RUN python -m pip install --no-cache-dir pipx
 
 ### Install Java
 RUN apk add --update --no-cache openjdk11 gradle
