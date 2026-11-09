@@ -39,6 +39,7 @@ jobs:
             type=ref,event=tag
             type=sha,format=long
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6,18.0
         with:
           context: .
@@ -46,3 +47,10 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+      - name: Test Python generation runtime
+        run: |
+          docker run --rm \
+            --entrypoint sh \
+            -v "$PWD/scripts/test-python-runtime.sh:/tmp/test-python-runtime.sh:ro" \
+            "${REGISTRY}/${IMAGE_NAME}@${{ steps.build.outputs.digest }}" \
+            /tmp/test-python-runtime.sh
