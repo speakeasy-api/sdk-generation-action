@@ -7,7 +7,7 @@ CURRENT_SHA=$(git rev-parse HEAD)
 echo "Updating refs to: $CURRENT_SHA"
 
 # Process each workflow file and composite action
-for file in .github/workflows/*.yaml .github/workflows/*.yml publish-pypi/action.yml; do
+for file in .github/workflows/*.yaml .github/workflows/*.yml publish-pypi/action.yml publish-nuget/action.yml; do
   [[ -f "$file" ]] || continue
 
   echo "Processing: $file"

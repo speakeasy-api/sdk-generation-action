@@ -227,6 +227,8 @@ outputs:
     description: "The release tag used for standalone ts mcp binaries"
   use_pypi_trusted_publishing:
     description: "Whether to use OIDC trusted publishing for PyPI instead of token-based authentication"
+  use_nuget_trusted_publishing:
+    description: "Whether to use OIDC trusted publishing for NuGet instead of API key authentication"
 runs:
   using: "docker"
   image: "Dockerfile"
