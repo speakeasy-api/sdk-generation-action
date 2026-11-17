@@ -374,6 +374,11 @@ func AddTargetPublishOutputs(target workflow.Target, outputs map[string]string, 
 		outputs["use_pypi_trusted_publishing"] = "true"
 	}
 
+	if lang == "csharp" && target.Publishing != nil && target.Publishing.Nuget != nil &&
+		target.Publishing.Nuget.UseTrustedPublishing != nil && *target.Publishing.Nuget.UseTrustedPublishing {
+		outputs["use_nuget_trusted_publishing"] = "true"
+	}
+
 	if lang == "mcp-typescript" && target.Publishing != nil && target.Publishing.MCPRegistry != nil &&
 		target.Publishing.MCPRegistry.Auth != "" {
 		outputs["publish_mcp_registry"] = "true"

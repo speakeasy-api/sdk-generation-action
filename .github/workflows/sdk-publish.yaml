@@ -133,6 +133,18 @@ on:
       use_pypi_trusted_publishing:
         description: Whether PyPI trusted publishing (OIDC) is enabled
         value: ${{ jobs.release.outputs.use_pypi_trusted_publishing }}
+      csharp_regenerated:
+        description: Whether the C# SDK was regenerated
+        value: ${{ jobs.release.outputs.csharp_regenerated }}
+      csharp_directory:
+        description: Directory containing the C# SDK
+        value: ${{ jobs.release.outputs.csharp_directory }}
+      publish_csharp:
+        description: Whether the C# SDK should be published
+        value: ${{ jobs.release.outputs.publish_csharp }}
+      use_nuget_trusted_publishing:
+        description: Whether NuGet trusted publishing (OIDC) is enabled
+        value: ${{ jobs.release.outputs.use_nuget_trusted_publishing }}
 jobs:
   release:
     name: Create Github Release
@@ -177,6 +189,7 @@ jobs:
       publish_mcp_registry: ${{ steps.release.outputs.publish_mcp_registry }}
       mcp_registry_auth: ${{ steps.release.outputs.mcp_registry_auth }}
       use_pypi_trusted_publishing: ${{ steps.release.outputs.use_pypi_trusted_publishing }}
+      use_nuget_trusted_publishing: ${{ steps.release.outputs.use_nuget_trusted_publishing }}
     steps:
       - name: Checkout sdk-generation-action repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -742,7 +755,7 @@ jobs:
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-nuget:
-    if: ${{ needs.release.outputs.csharp_regenerated == 'true' && needs.release.outputs.publish_csharp == 'true' }}
+    if: ${{ needs.release.outputs.csharp_regenerated == 'true' && needs.release.outputs.publish_csharp == 'true' && needs.release.outputs.use_nuget_trusted_publishing != 'true' }}
     name: Publish C# SDK
     runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: release
