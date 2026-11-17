@@ -35,7 +35,13 @@ runs:
         repository: speakeasy-api/sdk-generation-action
         ref: ae3181c0e4d973f0d27429fb053a8e58bfb54911
         path: _speakeasy
+    - name: Setup dotnet from global.json
+      if: hashFiles(format('{0}/global.json', inputs.csharp-directory)) != ''
+      uses: actions/setup-dotnet@55ec9447dda3d1cf6bd587150f3262f30ee10815 # v3
+      with:
+        global-json-file: ${{ inputs.csharp-directory }}/global.json
     - name: Setup dotnet
+      if: hashFiles(format('{0}/global.json', inputs.csharp-directory)) == ''
       uses: actions/setup-dotnet@55ec9447dda3d1cf6bd587150f3262f30ee10815 # v3
       with:
         dotnet-version: ${{ inputs.dotnet-version }}
