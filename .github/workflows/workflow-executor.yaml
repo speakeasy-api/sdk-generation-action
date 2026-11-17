@@ -167,6 +167,9 @@ on:
       nuget_api_key:
         description: The api key for publishing to the Nuget registry
         required: false
+      nuget_username:
+        description: The nuget.org username that owns the trusted publishing policy, used with NuGet trusted publishing
+        required: false
 jobs:
   run-workflow:
     name: Generate Target
