@@ -148,6 +148,18 @@ on:
       use_nuget_trusted_publishing:
         description: Whether NuGet trusted publishing (OIDC) is enabled
         value: ${{ jobs.release.outputs.use_nuget_trusted_publishing }}
+      ruby_regenerated:
+        description: Whether the Ruby SDK was regenerated
+        value: ${{ jobs.release.outputs.ruby_regenerated }}
+      ruby_directory:
+        description: Directory containing the Ruby SDK
+        value: ${{ jobs.release.outputs.ruby_directory }}
+      publish_ruby:
+        description: Whether the Ruby SDK should be published
+        value: ${{ jobs.release.outputs.publish_ruby }}
+      use_rubygems_trusted_publishing:
+        description: Whether RubyGems trusted publishing (OIDC) is enabled
+        value: ${{ jobs.release.outputs.use_rubygems_trusted_publishing }}
 jobs:
   release:
     name: Create Github Release
@@ -193,6 +205,7 @@ jobs:
       mcp_registry_auth: ${{ steps.release.outputs.mcp_registry_auth }}
       use_pypi_trusted_publishing: ${{ steps.release.outputs.use_pypi_trusted_publishing }}
       use_nuget_trusted_publishing: ${{ steps.release.outputs.use_nuget_trusted_publishing }}
+      use_rubygems_trusted_publishing: ${{ steps.release.outputs.use_rubygems_trusted_publishing }}
     steps:
       - name: Checkout sdk-generation-action repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -974,7 +987,7 @@ jobs:
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-gems:
-    if: ${{ needs.release.outputs.ruby_regenerated == 'true' && needs.release.outputs.publish_ruby == 'true' }}
+    if: ${{ needs.release.outputs.ruby_regenerated == 'true' && needs.release.outputs.publish_ruby == 'true' && needs.release.outputs.use_rubygems_trusted_publishing != 'true' }}
     name: Publish Ruby SDK
     runs-on: ${{ ((startsWith(inputs.runs-on, '[') || startsWith(inputs.runs-on, '{') || startsWith(inputs.runs-on, '"')) && fromJSON(inputs.runs-on)) || inputs.runs-on }}
     needs: release
