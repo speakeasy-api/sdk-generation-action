@@ -8,6 +8,9 @@ inputs:
     description: "Ruby version to use"
     required: false
     default: "3.2"
+  rubygems-owner:
+    description: "rubygems.org account (username or immutable account ID) that owns the gem. Only required for the first push of a gem registered through a pending trusted publisher."
+    required: false
   speakeasy_api_key:
     description: "The Speakeasy API key for logging publish events"
     required: true
@@ -42,12 +45,32 @@ runs:
       run: |
         bundle install
         gem build *.gemspec
-    - name: Configure RubyGems credentials (Trusted Publishing)
-      uses: rubygems/configure-rubygems-credentials@dc5a8d8553e6ee01fc26761a49e99e733d17954a # v2.1.0
+    - name: Log in to RubyGems (Trusted Publishing)
+      id: login
+      shell: bash
+      env:
+        RUBYGEMS_OWNER: ${{ inputs.rubygems-owner }}
+      run: |
+        id_token=$(curl -sSf -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=rubygems.org" | jq -r '.value')
+        if [ -z "${id_token}" ] || [ "${id_token}" = "null" ]; then
+          echo "::error::Could not obtain a GitHub OIDC token. The publish-rubygems job needs the id-token: write permission."
+          exit 1
+        fi
+        body=$(jq -cn --arg jwt "${id_token}" --arg owner "${RUBYGEMS_OWNER}" '{jwt: $jwt} + (if $owner == "" then {} else {owner: $owner} end)')
+        response=$(curl -sS -X POST -H "Content-Type: application/json" -H "Accept: application/json" -d "${body}" https://rubygems.org/api/v1/oidc/trusted_publisher/exchange_token)
+        api_key=$(printf '%s' "${response}" | jq -r '.rubygems_api_key // empty')
+        if [ -z "${api_key}" ]; then
+          echo "::error::rubygems.org did not issue an API key for this workflow. Check the trusted publisher's repository, workflow filename and environment, and set rubygems-owner for the first push of a new gem. Response: ${response}"
+          exit 1
+        fi
+        echo "::add-mask::${api_key}"
+        echo "api-key=${api_key}" >> "${GITHUB_OUTPUT}"
     - name: Publish to RubyGems (Trusted Publishing)
       id: publish
       shell: bash
       working-directory: ${{ inputs.ruby-directory }}
+      env:
+        GEM_HOST_API_KEY: ${{ steps.login.outputs.api-key }}
       run: gem push *.gem
     - name: Log publish event
       id: publish-event

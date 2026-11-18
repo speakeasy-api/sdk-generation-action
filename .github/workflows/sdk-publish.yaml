@@ -99,6 +99,9 @@ on:
       rubygems_auth_token:
         description: The auth token (api key) for publishing to RubyGems
         required: false
+      rubygems_owner:
+        description: The rubygems.org account (username or immutable account ID) that owns the gem, used with RubyGems trusted publishing for the first push of a new gem
+        required: false
       nuget_api_key:
         description: The api key for publishing to Nuget
         required: false
