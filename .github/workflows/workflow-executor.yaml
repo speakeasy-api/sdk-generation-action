@@ -243,7 +243,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          ref: 85dc1201bad764986298467d26d853eb3fb568d9
           path: _speakeasy
       - id: run-workflow
         name: Run Generation Workflow
@@ -300,7 +300,7 @@ jobs:
         env:
           GH_ACTION_RESULT: ${{ job.status }}
           RESOLVED_SPEAKEASY_VERSION: ${{ steps.run-workflow.outputs.resolved_speakeasy_version }}
-          GH_ACTION_VERSION: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          GH_ACTION_VERSION: 85dc1201bad764986298467d26d853eb3fb568d9
           GH_ACTION_STEP: ${{ github.job }}
   publish-pypi:
     if: ${{ always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && needs.run-workflow.outputs.python_regenerated == 'true' && needs.run-workflow.outputs.publish_python == 'true' && inputs.mode != 'pr' }}
@@ -318,7 +318,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          ref: 85dc1201bad764986298467d26d853eb3fb568d9
           path: _speakeasy
       - name: Set up Python
         uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
@@ -380,7 +380,7 @@ jobs:
           registry_name: "pypi"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          GH_ACTION_VERSION: 85dc1201bad764986298467d26d853eb3fb568d9
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -404,7 +404,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          GH_ACTION_VERSION: 85dc1201bad764986298467d26d853eb3fb568d9
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-npm:
@@ -423,7 +423,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          ref: 85dc1201bad764986298467d26d853eb3fb568d9
           path: _speakeasy
       - name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -467,7 +467,7 @@ jobs:
           registry_name: "npm"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          GH_ACTION_VERSION: 85dc1201bad764986298467d26d853eb3fb568d9
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -491,7 +491,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          GH_ACTION_VERSION: 85dc1201bad764986298467d26d853eb3fb568d9
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-java:
@@ -510,7 +510,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          ref: 85dc1201bad764986298467d26d853eb3fb568d9
           path: _speakeasy
       - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
@@ -552,7 +552,7 @@ jobs:
           registry_name: "sonatype"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          GH_ACTION_VERSION: 85dc1201bad764986298467d26d853eb3fb568d9
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -576,7 +576,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          GH_ACTION_VERSION: 85dc1201bad764986298467d26d853eb3fb568d9
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-gems:
@@ -595,7 +595,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          ref: 85dc1201bad764986298467d26d853eb3fb568d9
           path: _speakeasy
       - name: Set up Ruby
         uses: ruby/setup-ruby@d8d83c3960843afb664e821fed6be52f37da5267 # v1.231.0
@@ -633,7 +633,7 @@ jobs:
           registry_name: "gems"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          GH_ACTION_VERSION: 85dc1201bad764986298467d26d853eb3fb568d9
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -657,7 +657,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          GH_ACTION_VERSION: 85dc1201bad764986298467d26d853eb3fb568d9
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-nuget:
@@ -676,7 +676,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          ref: 85dc1201bad764986298467d26d853eb3fb568d9
           path: _speakeasy
       - name: Setup dotnet
         uses: actions/setup-dotnet@55ec9447dda3d1cf6bd587150f3262f30ee10815 # v3
@@ -703,7 +703,7 @@ jobs:
           registry_name: "nuget"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          GH_ACTION_VERSION: 85dc1201bad764986298467d26d853eb3fb568d9
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -727,7 +727,7 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          GH_ACTION_VERSION: 85dc1201bad764986298467d26d853eb3fb568d9
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
   publish-packagist:
@@ -746,7 +746,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          ref: 85dc1201bad764986298467d26d853eb3fb568d9
           path: _speakeasy
       - name: Publish
         uses: speakeasy-api/packagist-update@5e2c88e23c7d21e40c7a02a3b252a749b351eb2f # support-github-creation
@@ -768,7 +768,7 @@ jobs:
           registry_name: "packagist"
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          GH_ACTION_VERSION: 85dc1201bad764986298467d26d853eb3fb568d9
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # v2
         if: always() && env.SLACK_WEBHOOK_URL != ''
         with:
@@ -792,6 +792,6 @@ jobs:
           speakeasy_server_url: ${{ inputs.speakeasy_server_url }}
         env:
           GH_ACTION_RESULT: ${{ job.status }}
-          GH_ACTION_VERSION: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          GH_ACTION_VERSION: 85dc1201bad764986298467d26d853eb3fb568d9
           GH_ACTION_STEP: ${{ github.job }}
           TARGET_TYPE: "sdk"
