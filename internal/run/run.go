@@ -379,6 +379,11 @@ func AddTargetPublishOutputs(target workflow.Target, outputs map[string]string, 
 		outputs["use_nuget_trusted_publishing"] = "true"
 	}
 
+	if lang == "ruby" && target.Publishing != nil && target.Publishing.RubyGems != nil &&
+		target.Publishing.RubyGems.UseTrustedPublishing != nil && *target.Publishing.RubyGems.UseTrustedPublishing {
+		outputs["use_rubygems_trusted_publishing"] = "true"
+	}
+
 	if lang == "mcp-typescript" && target.Publishing != nil && target.Publishing.MCPRegistry != nil &&
 		target.Publishing.MCPRegistry.Auth != "" {
 		outputs["publish_mcp_registry"] = "true"

@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: speakeasy-api/sdk-generation-action
-          ref: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          ref: 85dc1201bad764986298467d26d853eb3fb568d9
           path: _speakeasy
       - id: apply-tags
         name: Apply Tags
@@ -48,4 +48,4 @@ jobs:
           speakeasy_api_key: ${{ secrets.speakeasy_api_key }}
           github_access_token: ${{ secrets.github_access_token }}
         env:
-          GH_ACTION_VERSION: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+          GH_ACTION_VERSION: 85dc1201bad764986298467d26d853eb3fb568d9
