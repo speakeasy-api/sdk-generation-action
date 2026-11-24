@@ -33,7 +33,7 @@ runs:
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         repository: speakeasy-api/sdk-generation-action
-        ref: dc3edb30f73aace3b7ad2849d5a5a7d4db46448d
+        ref: 85dc1201bad764986298467d26d853eb3fb568d9
         path: _speakeasy
     - name: Setup dotnet from global.json
       if: hashFiles(format('{0}/global.json', inputs.csharp-directory)) != ''
